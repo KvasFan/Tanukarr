@@ -480,6 +480,43 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
         }
 
         [Test]
+        public void should_lookup_every_season_in_a_multi_season_range()
+        {
+            var seasonNumbers = new[] { 1, 2, 3, 4 };
+
+            GivenFullSeason();
+            _parsedEpisodeInfo.IsMultiSeason = true;
+            _parsedEpisodeInfo.SeasonNumbers = seasonNumbers;
+
+            foreach (var seasonNumber in seasonNumbers)
+            {
+                var seasonEpisodes = new List<Episode>
+                {
+                    new Episode
+                    {
+                        SeriesId = _series.Id,
+                        SeasonNumber = seasonNumber,
+                        EpisodeNumber = 1
+                    }
+                };
+
+                Mocker.GetMock<IEpisodeService>()
+                    .Setup(s => s.GetEpisodesBySeason(_series.Id, seasonNumber))
+                    .Returns(seasonEpisodes);
+            }
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, false, null);
+
+            result.Select(e => e.SeasonNumber).Should().Equal(seasonNumbers);
+
+            foreach (var seasonNumber in seasonNumbers)
+            {
+                Mocker.GetMock<IEpisodeService>()
+                    .Verify(v => v.GetEpisodesBySeason(_series.Id, seasonNumber), Times.Once);
+            }
+        }
+
+        [Test]
         public void should_lookup_full_season_by_scene_season_number_if_series_uses_scene_numbering()
         {
             GivenSceneNumberingSeries();

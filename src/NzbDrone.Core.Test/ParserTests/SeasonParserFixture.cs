@@ -132,6 +132,62 @@ namespace NzbDrone.Core.Test.ParserTests
             result.SeasonNumber.Should().Be(expected[0]);
         }
 
+        [Test]
+        public void should_expand_voyager_explicit_multi_season_range()
+        {
+            var result = Parser.Parser.ParseTitle("Star Trek Voyager.1995.S01-S07.1080p.H265.10bit.DDP5.1-Zero00");
+
+            result.SeasonNumbers.Should().Equal(1, 2, 3, 4, 5, 6, 7);
+            result.SeasonNumber.Should().Be(1);
+            result.IsMultiSeason.Should().BeTrue();
+            result.FullSeason.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_expand_generic_explicit_multi_season_range()
+        {
+            var result = Parser.Parser.ParseTitle("Example.Show.S01-S04.1080p.WEB-DL");
+
+            result.SeasonNumbers.Should().Equal(1, 2, 3, 4);
+            result.SeasonNumber.Should().Be(1);
+            result.IsMultiSeason.Should().BeTrue();
+            result.FullSeason.Should().BeTrue();
+        }
+
+        [TestCase("The Series S01-05 WS BDRip X264-REWARD-No Rars", new[] { 1, 2, 3, 4, 5 })]
+        [TestCase("Series.Title.S01-S09.1080p.AMZN.WEB-DL.DDP2.0.H.264-NTb", new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
+        [TestCase("Series Title S01 - S07 BluRay 1080p x264 REPACK -SacReD", new[] { 1, 2, 3, 4, 5, 6, 7 })]
+        [TestCase("Series Title Season 01-07 BluRay 1080p x264 REPACK -SacReD", new[] { 1, 2, 3, 4, 5, 6, 7 })]
+        [TestCase("Series Title Season 01 - Season 07 BluRay 1080p x264 REPACK -SacReD", new[] { 1, 2, 3, 4, 5, 6, 7 })]
+        public void should_expand_supported_explicit_multi_season_range_forms(string postTitle, int[] expected)
+        {
+            var result = Parser.Parser.ParseTitle(postTitle);
+
+            result.SeasonNumbers.Should().Equal(expected);
+        }
+
+        [Test]
+        public void should_preserve_discrete_multi_season_values()
+        {
+            var result = Parser.Parser.ParseTitle("Example Show S01 S04 1080p WEB-DL");
+
+            result.SeasonNumbers.Should().Equal(1, 4);
+            result.SeasonNumber.Should().Be(1);
+            result.IsMultiSeason.Should().BeTrue();
+            result.FullSeason.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_preserve_reversed_multi_season_range_endpoints()
+        {
+            var result = Parser.Parser.ParseTitle("Example Show S07-S01 1080p WEB-DL");
+
+            result.SeasonNumbers.Should().Equal(1, 7);
+            result.SeasonNumber.Should().Be(7);
+            result.IsMultiSeason.Should().BeTrue();
+            result.FullSeason.Should().BeTrue();
+        }
+
         [TestCase("Series Title S02 720p HDTV x264-GRP", 2)]
         [TestCase("Series Title Season 3 1080p WEB-DL", 3)]
         public void should_capture_a_single_season_for_a_single_season_release(string postTitle, int expected)
