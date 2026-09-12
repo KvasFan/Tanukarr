@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using FizzWare.NBuilder;
 using FluentAssertions;
 using NUnit.Framework;
@@ -100,6 +101,21 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport.Specifications
         public void should_be_accepted_if_file_episode_is_in_multi_episode_grabbed_release_info()
         {
             GivenHistoryForEpisodes(_episode1, _episode2);
+
+            Subject.IsSatisfiedBy(_localEpisode, _downloadClientItem).Accepted.Should().BeTrue();
+        }
+
+        [TestCase(2)]
+        [TestCase(3)]
+        public void should_accept_middle_season_file_in_multi_season_grabbed_release(int seasonNumber)
+        {
+            var episodes = Enumerable.Range(1, 4)
+                .Select(season => new Episode { Id = (season * 100) + 1, SeasonNumber = season, EpisodeNumber = 1 })
+                .ToArray();
+
+            GivenHistoryForEpisodes(episodes);
+            _localEpisode.Episodes = new List<Episode> { episodes.Single(e => e.SeasonNumber == seasonNumber) };
+            _localEpisode.Path = $@"C:\Test\Unsorted\Example.Show.S01-S04.1080p.WEB-DL\Example Show S{seasonNumber:00}E01.mkv".AsOsAgnostic();
 
             Subject.IsSatisfiedBy(_localEpisode, _downloadClientItem).Accepted.Should().BeTrue();
         }

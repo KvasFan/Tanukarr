@@ -203,7 +203,7 @@ namespace NzbDrone.Core.MediaFiles
                 }
             }
 
-            if (downloadClientItemInfo is { IsMultiSeason: true })
+            if (downloadClientItemInfo is { IsMultiSeason: true } && !_configService.EnableMultiSeasonReleases)
             {
                 _logger.Debug("Download client item is marked as multi-season, not processing automatically to avoid importing incorrect files");
 

@@ -8,6 +8,7 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.MediaFiles;
@@ -500,11 +501,15 @@ namespace NzbDrone.Core.Test.MediaFiles
         }
 
         [Test]
-        public void should_reject_if_download_is_multi_season()
+        public void should_reject_if_download_is_multi_season_and_multi_season_releases_are_disabled()
         {
             GivenValidSeries();
 
-            _trackedDownload.DownloadItem.Title = "Series Title S01-S11";
+            Mocker.GetMock<IConfigService>()
+                .SetupGet(s => s.EnableMultiSeasonReleases)
+                .Returns(false);
+
+            _trackedDownload.DownloadItem.Title = "Series Title S01-S04";
 
             var folderName = @"C:\media\ba09030e-1234-1234-1234-123456789abc\[HorribleSubs] Maria the Virgin Witch - 09 [720p]".AsOsAgnostic();
 
@@ -524,6 +529,64 @@ namespace NzbDrone.Core.Test.MediaFiles
                     Times.Never());
 
             VerifyNoImport();
+        }
+
+        [Test]
+        public void should_process_completed_multi_season_download_when_multi_season_releases_are_enabled()
+        {
+            GivenValidSeries();
+
+            const string releaseTitle = "Example.Show.S01-S04.1080p.WEB-DL";
+            var folderName = @"C:\media\Example.Show.S01-S04.1080p.WEB-DL".AsOsAgnostic();
+            var videoFiles = new[]
+            {
+                Path.Combine(folderName, "Example Show S01E01.mkv"),
+                Path.Combine(folderName, "Example Show S02E01.mkv"),
+                Path.Combine(folderName, "Example Show S03E01.mkv"),
+                Path.Combine(folderName, "Example Show S04E01.mkv")
+            };
+            var decisions = videoFiles.Select(file => new ImportDecision(new LocalEpisode { Path = file })).ToList();
+
+            _trackedDownload.DownloadItem.Title = releaseTitle;
+
+            Mocker.GetMock<IConfigService>()
+                .SetupGet(s => s.EnableMultiSeasonReleases)
+                .Returns(true);
+
+            Mocker.GetMock<IDiskProvider>()
+                .Setup(c => c.FolderExists(folderName))
+                .Returns(true);
+
+            Mocker.GetMock<IDiskScanService>()
+                .Setup(c => c.GetVideoFiles(folderName, It.IsAny<bool>()))
+                .Returns(videoFiles);
+
+            Mocker.GetMock<IMakeImportDecision>()
+                .Setup(s => s.GetImportDecisions(videoFiles.ToList(),
+                    _trackedDownload.RemoteEpisode.Series,
+                    _trackedDownload.DownloadItem,
+                    It.IsAny<ParsedEpisodeInfo>(),
+                    It.IsAny<ParsedEpisodeInfo>(),
+                    true))
+                .Returns(decisions);
+
+            Mocker.GetMock<IImportApprovedEpisodes>()
+                .Setup(s => s.Import(decisions, true, _trackedDownload.DownloadItem, ImportMode.Auto))
+                .Returns(decisions.Select(d => new ImportResult(d)).ToList());
+
+            var result = Subject.ProcessPath(folderName, ImportMode.Auto, _trackedDownload.RemoteEpisode.Series, _trackedDownload.DownloadItem);
+
+            result.SelectMany(r => r.Errors).Should().NotContain("Multi-season download, unable to import automatically");
+            result.Should().HaveCount(4);
+
+            Mocker.GetMock<IMakeImportDecision>()
+                .Verify(s => s.GetImportDecisions(videoFiles.ToList(),
+                    _trackedDownload.RemoteEpisode.Series,
+                    _trackedDownload.DownloadItem,
+                    It.Is<ParsedEpisodeInfo>(p => p.SeasonNumbers.SequenceEqual(new[] { 1, 2, 3, 4 })),
+                    It.Is<ParsedEpisodeInfo>(p => p.SeasonNumbers.SequenceEqual(new[] { 1, 2, 3, 4 })),
+                    true),
+                    Times.Once);
         }
 
         private void VerifyNoImport()

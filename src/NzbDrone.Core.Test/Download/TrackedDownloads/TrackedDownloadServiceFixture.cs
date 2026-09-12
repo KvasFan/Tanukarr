@@ -88,6 +88,54 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
         }
 
         [Test]
+        public void should_restore_complete_multi_season_parse_and_episode_ids_from_grab_history()
+        {
+            var episodeIds = new[] { 101, 201, 301, 401 };
+            var histories = episodeIds.Select(id => new EpisodeHistory
+            {
+                DownloadId = "35238",
+                SourceTitle = "Example.Show.S01-S04.1080p.WEB-DL",
+                SeriesId = 5,
+                EpisodeId = id,
+                EventType = EpisodeHistoryEventType.Grabbed
+            }).ToList();
+
+            Mocker.GetMock<IHistoryService>()
+                .Setup(s => s.FindByDownloadId("35238"))
+                .Returns(histories);
+
+            Mocker.GetMock<IParsingService>()
+                .Setup(s => s.Map(It.Is<ParsedEpisodeInfo>(p => p.SeasonNumbers.SequenceEqual(new[] { 1, 2, 3, 4 })),
+                    5,
+                    It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(episodeIds))))
+                .Returns<ParsedEpisodeInfo, int, IEnumerable<int>>((parsed, seriesId, ids) => new RemoteEpisode
+                {
+                    Series = new Series { Id = seriesId },
+                    Episodes = ids.Select(id => new Episode { Id = id }).ToList(),
+                    ParsedEpisodeInfo = parsed,
+                    MappedSeasonNumber = parsed.SeasonNumber
+                });
+
+            var client = new DownloadClientDefinition { Id = 1, Protocol = DownloadProtocol.Torrent };
+            var item = new DownloadClientItem
+            {
+                Title = "The torrent release folder",
+                DownloadId = "35238",
+                DownloadClientInfo = new DownloadClientItemClientInfo
+                {
+                    Protocol = client.Protocol,
+                    Id = client.Id,
+                    Name = client.Name
+                }
+            };
+
+            var trackedDownload = Subject.TrackDownload(client, item);
+
+            trackedDownload.RemoteEpisode.ParsedEpisodeInfo.SeasonNumbers.Should().Equal(1, 2, 3, 4);
+            trackedDownload.RemoteEpisode.Episodes.Select(e => e.Id).Should().Equal(episodeIds);
+        }
+
+        [Test]
         public void should_set_indexer()
         {
             var episodeHistory = new EpisodeHistory()

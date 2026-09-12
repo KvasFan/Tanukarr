@@ -517,6 +517,44 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
         }
 
         [Test]
+        public void should_apply_scene_mapping_to_each_season_in_a_multi_season_range()
+        {
+            GivenSceneNumberingSeries();
+            GivenFullSeason();
+            _parsedEpisodeInfo.IsMultiSeason = true;
+            _parsedEpisodeInfo.SeasonNumbers = new[] { 1, 2, 3, 4 };
+
+            Mocker.GetMock<ISceneMappingService>()
+                .Setup(s => s.FindSceneMapping(_parsedEpisodeInfo.SeriesTitle, It.IsAny<string>(), 2))
+                .Returns(new SceneMapping
+                {
+                    SceneSeasonNumber = 2,
+                    SeasonNumber = 5,
+                    SceneOrigin = "tvdb"
+                });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySceneSeason(_series.Id, 1))
+                .Returns(new List<Episode> { new Episode { Id = 101, SeasonNumber = 1, EpisodeNumber = 1 } });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySeason(_series.Id, 5))
+                .Returns(new List<Episode> { new Episode { Id = 501, SeasonNumber = 5, EpisodeNumber = 1 } });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySceneSeason(_series.Id, 3))
+                .Returns(new List<Episode> { new Episode { Id = 301, SeasonNumber = 3, EpisodeNumber = 1 } });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySceneSeason(_series.Id, 4))
+                .Returns(new List<Episode> { new Episode { Id = 401, SeasonNumber = 4, EpisodeNumber = 1 } });
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, true, null);
+
+            result.Select(e => e.Id).Should().Equal(101, 501, 301, 401);
+        }
+
+        [Test]
         public void should_lookup_full_season_by_scene_season_number_if_series_uses_scene_numbering()
         {
             GivenSceneNumberingSeries();

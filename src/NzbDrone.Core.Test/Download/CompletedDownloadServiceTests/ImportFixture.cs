@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using FizzWare.NBuilder;
 using FluentAssertions;
 using Moq;
@@ -110,6 +111,36 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
             Mocker.GetMock<IParsingService>()
                   .Setup(s => s.GetSeries(It.IsAny<string>()))
                   .Returns(_trackedDownload.RemoteEpisode.Series);
+        }
+
+        private List<Episode> GivenMultiSeasonRemoteEpisodes()
+        {
+            var episodes = new List<Episode>
+            {
+                new Episode { Id = 101, SeasonNumber = 1, EpisodeNumber = 1 },
+                new Episode { Id = 201, SeasonNumber = 2, EpisodeNumber = 1 },
+                new Episode { Id = 301, SeasonNumber = 3, EpisodeNumber = 1 },
+                new Episode { Id = 401, SeasonNumber = 4, EpisodeNumber = 1 }
+            };
+
+            _trackedDownload.DownloadItem.Title = "Example.Show.S01-S04.1080p.WEB-DL";
+            _trackedDownload.RemoteEpisode.Episodes = episodes;
+            _trackedDownload.RemoteEpisode.ParsedEpisodeInfo = Parser.Parser.ParseTitle(_trackedDownload.DownloadItem.Title);
+
+            return episodes;
+        }
+
+        private static ImportResult ImportedEpisode(Episode episode)
+        {
+            var path = $@"C:\TestPath\Example Show S{episode.SeasonNumber:00}E01.mkv";
+            return new ImportResult(new ImportDecision(new LocalEpisode { Path = path, Episodes = new List<Episode> { episode } }));
+        }
+
+        private static ImportResult RejectedEpisode(Episode episode)
+        {
+            var path = $@"C:\TestPath\Example Show S{episode.SeasonNumber:00}E01.mkv";
+            var rejection = new ImportRejection(ImportRejectionReason.Unknown, "Rejected!");
+            return new ImportResult(new ImportDecision(new LocalEpisode { Path = path, Episodes = new List<Episode> { episode } }, rejection), "Rejected!");
         }
 
         [Test]
@@ -267,6 +298,97 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
             Subject.Import(_trackedDownload);
 
             AssertImported();
+        }
+
+        [Test]
+        public void should_mark_complete_multi_season_download_as_imported()
+        {
+            var episodes = GivenMultiSeasonRemoteEpisodes();
+
+            Mocker.GetMock<IDownloadedEpisodesImportService>()
+                .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>()))
+                .Returns(episodes.Select(ImportedEpisode).ToList());
+
+            Subject.Import(_trackedDownload);
+
+            AssertImported();
+        }
+
+        [Test]
+        public void should_not_mark_multi_season_download_as_imported_when_a_middle_episode_is_missing()
+        {
+            var episodes = GivenMultiSeasonRemoteEpisodes();
+
+            Mocker.GetMock<IDownloadedEpisodesImportService>()
+                .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>()))
+                .Returns(new List<ImportResult>
+                {
+                    ImportedEpisode(episodes[0]),
+                    ImportedEpisode(episodes[1]),
+                    ImportedEpisode(episodes[3])
+                });
+
+            Subject.Import(_trackedDownload);
+
+            AssertNotImported();
+        }
+
+        [Test]
+        public void should_not_mark_multi_season_download_as_imported_when_episode_count_hides_a_missing_middle_episode()
+        {
+            var episodes = GivenMultiSeasonRemoteEpisodes();
+
+            Mocker.GetMock<IDownloadedEpisodesImportService>()
+                .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>()))
+                .Returns(new List<ImportResult>
+                {
+                    ImportedEpisode(episodes[0]),
+                    ImportedEpisode(episodes[1]),
+                    ImportedEpisode(episodes[1]),
+                    ImportedEpisode(episodes[3])
+                });
+
+            Subject.Import(_trackedDownload);
+
+            AssertNotImported();
+        }
+
+        [Test]
+        public void should_not_mark_multi_season_download_as_imported_when_a_middle_episode_is_rejected()
+        {
+            var episodes = GivenMultiSeasonRemoteEpisodes();
+
+            Mocker.GetMock<IDownloadedEpisodesImportService>()
+                .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>()))
+                .Returns(new List<ImportResult>
+                {
+                    ImportedEpisode(episodes[0]),
+                    ImportedEpisode(episodes[1]),
+                    RejectedEpisode(episodes[2]),
+                    ImportedEpisode(episodes[3])
+                });
+
+            Subject.Import(_trackedDownload);
+
+            AssertNotImported();
+        }
+
+        [Test]
+        public void should_not_mark_partially_imported_multi_season_download_as_imported()
+        {
+            var episodes = GivenMultiSeasonRemoteEpisodes();
+
+            Mocker.GetMock<IDownloadedEpisodesImportService>()
+                .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>()))
+                .Returns(new List<ImportResult>
+                {
+                    ImportedEpisode(episodes[0]),
+                    ImportedEpisode(episodes[1])
+                });
+
+            Subject.Import(_trackedDownload);
+
+            AssertNotImported();
         }
 
         [Test]

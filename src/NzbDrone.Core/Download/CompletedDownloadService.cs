@@ -211,10 +211,13 @@ namespace NzbDrone.Core.Download
 
         public bool VerifyImport(TrackedDownload trackedDownload, List<ImportResult> importResults)
         {
-            var allEpisodesImported = importResults.Where(c => c.Result == ImportResultType.Imported)
-                                                   .SelectMany(c => c.ImportDecision.LocalEpisode.Episodes)
-                                                   .Count() >= Math.Max(1,
-                                          trackedDownload.RemoteEpisode.Episodes.Count);
+            var importedEpisodes = importResults.Where(c => c.Result == ImportResultType.Imported)
+                                                .SelectMany(c => c.ImportDecision.LocalEpisode.Episodes)
+                                                .ToList();
+            var expectedEpisodeIds = trackedDownload.RemoteEpisode.Episodes.Select(e => e.Id).Where(id => id > 0).ToHashSet();
+            var importedEpisodeIds = importedEpisodes.Select(e => e.Id).Where(id => id > 0).ToHashSet();
+            var allEpisodesImported = importedEpisodes.Count >= Math.Max(1, trackedDownload.RemoteEpisode.Episodes.Count) &&
+                                      expectedEpisodeIds.IsSubsetOf(importedEpisodeIds);
 
             var historyItems = _historyService.FindByDownloadId(trackedDownload.DownloadItem.DownloadId)
                 .OrderByDescending(h => h.Date)
