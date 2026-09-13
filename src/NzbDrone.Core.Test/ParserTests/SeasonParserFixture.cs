@@ -154,6 +154,26 @@ namespace NzbDrone.Core.Test.ParserTests
             result.FullSeason.Should().BeTrue();
         }
 
+        [Test]
+        public void should_preserve_stargate_discrete_endpoint_seasons()
+        {
+            var result = Parser.Parser.ParseTitle("Stargate SG 1 (1997) S01 S10 (1080p BluRay x265 10bit AC3 5.1 Celdra) [QxR]");
+
+            result.FullSeason.Should().BeTrue();
+            result.IsMultiSeason.Should().BeTrue();
+            result.SeasonNumbers.Should().Equal(1, 10);
+        }
+
+        [Test]
+        public void should_expand_stargate_continuous_season_range()
+        {
+            var result = Parser.Parser.ParseTitle("Stargate SG-1 (1997) S01-S10 (1080p BluRay x265 10bit AC3 5.1 Celdra) [QxR]");
+
+            result.FullSeason.Should().BeTrue();
+            result.IsMultiSeason.Should().BeTrue();
+            result.SeasonNumbers.Should().Equal(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        }
+
         [TestCase("The Series S01-05 WS BDRip X264-REWARD-No Rars", new[] { 1, 2, 3, 4, 5 })]
         [TestCase("Series.Title.S01-S09.1080p.AMZN.WEB-DL.DDP2.0.H.264-NTb", new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
         [TestCase("Series Title S01 - S07 BluRay 1080p x264 REPACK -SacReD", new[] { 1, 2, 3, 4, 5, 6, 7 })]

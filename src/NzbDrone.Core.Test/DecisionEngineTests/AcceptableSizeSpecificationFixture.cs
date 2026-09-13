@@ -6,6 +6,7 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Datastore;
+using NzbDrone.Core.DecisionEngine;
 using NzbDrone.Core.DecisionEngine.Specifications;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Profiles.Qualities;
@@ -245,6 +246,88 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
             _parseResultSingle.Episodes.First().Runtime = 60;
 
             Subject.IsSatisfiedBy(_parseResultSingle, new()).Accepted.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_reject_stargate_discrete_endpoint_pack_at_its_42_episode_limit()
+        {
+            _series.Seasons = Builder<Season>.CreateListOfSize(10).Build().ToList();
+            _series.Runtime = 0;
+            _series.QualityProfile.Value.Items[0].MaxSize = 130;
+
+            var episodes = Enumerable.Range(1, 22)
+                .Select(episodeNumber => new Episode { SeasonNumber = 1, EpisodeNumber = episodeNumber, Runtime = 0 })
+                .Concat(Enumerable.Range(1, 20)
+                    .Select(episodeNumber => new Episode { SeasonNumber = 10, EpisodeNumber = episodeNumber, Runtime = 0 }))
+                .ToList();
+            var remoteEpisode = new RemoteEpisode
+            {
+                Series = _series,
+                Release = new ReleaseInfo { Size = 380.3.Gigabytes(), Title = "Stargate SG 1 (1997) S01 S10" },
+                ParsedEpisodeInfo = new ParsedEpisodeInfo { Quality = new QualityModel(Quality.SDTV) },
+                Episodes = episodes
+            };
+
+            var result = Subject.IsSatisfiedBy(remoteEpisode, new());
+
+            result.Accepted.Should().BeFalse();
+            result.Reason.Should().Be(DownloadRejectionReason.AboveMaximumSize);
+            result.Message.Should().Contain("42 episodes totalling 1890min");
+        }
+
+        [Test]
+        public void should_accept_stargate_continuous_pack_at_its_214_episode_limit()
+        {
+            _series.Seasons = Builder<Season>.CreateListOfSize(10).Build().ToList();
+            _series.Runtime = 0;
+            _series.QualityProfile.Value.Items[0].MaxSize = 130;
+            var seasonSizes = new[] { 22, 22, 22, 22, 22, 22, 21, 21, 20, 20 };
+
+            var episodes = Enumerable.Range(1, 10)
+                .SelectMany(seasonNumber => Enumerable.Range(1, seasonSizes[seasonNumber - 1])
+                    .Select(episodeNumber => new Episode { SeasonNumber = seasonNumber, EpisodeNumber = episodeNumber, Runtime = 0 }))
+                .ToList();
+            var remoteEpisode = new RemoteEpisode
+            {
+                Series = _series,
+                Release = new ReleaseInfo { Size = 380.2.Gigabytes(), Title = "Stargate SG-1 (1997) S01-S10" },
+                ParsedEpisodeInfo = new ParsedEpisodeInfo { Quality = new QualityModel(Quality.SDTV) },
+                Episodes = episodes
+            };
+
+            var result = Subject.IsSatisfiedBy(remoteEpisode, new());
+
+            result.Accepted.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_apply_same_size_decision_regardless_of_indexer()
+        {
+            _series.Runtime = 45;
+            _series.QualityProfile.Value.Items[0].MaxSize = 130;
+            var episodes = Enumerable.Range(1, 2)
+                .Select(episodeNumber => new Episode { SeasonNumber = 1, EpisodeNumber = episodeNumber, Runtime = 45 })
+                .ToList();
+            var first = new RemoteEpisode
+            {
+                Series = _series,
+                Release = new ReleaseInfo { Size = 300.Gigabytes(), Title = "Same.Release.S01", Indexer = "1337x", IndexerId = 1 },
+                ParsedEpisodeInfo = new ParsedEpisodeInfo { Quality = new QualityModel(Quality.SDTV) },
+                Episodes = episodes
+            };
+            var second = new RemoteEpisode
+            {
+                Series = _series,
+                Release = new ReleaseInfo { Size = 300.Gigabytes(), Title = "Same.Release.S01", Indexer = "Knaben", IndexerId = 2 },
+                ParsedEpisodeInfo = new ParsedEpisodeInfo { Quality = new QualityModel(Quality.SDTV) },
+                Episodes = episodes
+            };
+
+            var firstResult = Subject.IsSatisfiedBy(first, new());
+            var secondResult = Subject.IsSatisfiedBy(second, new());
+
+            firstResult.Accepted.Should().Be(secondResult.Accepted);
+            firstResult.Reason.Should().Be(secondResult.Reason);
         }
 
         [Test]
