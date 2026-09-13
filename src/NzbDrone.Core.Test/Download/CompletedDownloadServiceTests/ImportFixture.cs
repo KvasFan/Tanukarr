@@ -35,6 +35,8 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
             _episode3 = new Episode { Id = 2, SeasonNumber = 1, EpisodeNumber = 3 };
 
             var completed = Builder<DownloadClientItem>.CreateNew()
+                                                    .With(h => h.DownloadId = "ABC123")
+                                                    .With(h => h.DownloadClientInfo = new DownloadClientItemClientInfo { Id = 7 })
                                                     .With(h => h.Status = DownloadItemStatus.Completed)
                                                     .With(h => h.OutputPath = new OsPath(@"C:\DropFolder\MyDownload".AsOsAgnostic()))
                                                     .With(h => h.Title = "Drone.S01E01.HDTV")
@@ -312,6 +314,21 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
             Subject.Import(_trackedDownload);
 
             AssertImported();
+        }
+
+        [Test]
+        public void should_begin_import_progress_with_complete_unique_expected_episode_ids()
+        {
+            GivenMultiSeasonRemoteEpisodes();
+            _trackedDownload.RemoteEpisode.Episodes.Add(new Episode { Id = 301, SeasonNumber = 3, EpisodeNumber = 1 });
+            Mocker.GetMock<IDownloadedEpisodesImportService>()
+                .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>()))
+                .Returns(new List<ImportResult>());
+
+            Subject.Import(_trackedDownload);
+
+            Mocker.GetMock<IImportProgressService>()
+                .Verify(s => s.BeginBatch(7, "ABC123", It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 101, 201, 301, 401 }))), Times.Once());
         }
 
         [Test]

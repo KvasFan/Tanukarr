@@ -1,6 +1,7 @@
 using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Languages;
+using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Queue;
 using Sonarr.Api.V5.CustomFormats;
@@ -40,6 +41,32 @@ namespace Sonarr.Api.V5.Queue
         public string? OutputPath { get; set; }
         public int EpisodesWithFilesCount { get; set; }
         public bool IsFullSeason { get; set; }
+        public ImportProgressResource? ImportProgress { get; set; }
+    }
+
+    public class ImportProgressResource
+    {
+        public int TotalEpisodes { get; set; }
+        public int ImportedEpisodes { get; set; }
+        public int ImportingEpisodes { get; set; }
+        public int WaitingEpisodes { get; set; }
+        public int FailedEpisodes { get; set; }
+        public int RejectedEpisodes { get; set; }
+        public List<ImportProgressItemResource> Items { get; set; } = [];
+    }
+
+    public class ImportProgressItemResource
+    {
+        public string? Id { get; set; }
+        public List<int> EpisodeIds { get; set; } = [];
+        public int? SeasonNumber { get; set; }
+        public List<int> EpisodeNumbers { get; set; } = [];
+        public string? SourcePath { get; set; }
+        public long Size { get; set; }
+        public ImportProgressState State { get; set; }
+        public DateTime? Started { get; set; }
+        public DateTime? Completed { get; set; }
+        public List<string> Errors { get; set; } = [];
     }
 
     public static class QueueResourceMapper
@@ -54,7 +81,9 @@ namespace Sonarr.Api.V5.Queue
                 Id = model.Id,
                 SeriesId = model.Series?.Id,
                 EpisodeIds = model.Episodes?.Select(e => e.Id).ToList() ?? [],
-                SeasonNumbers = model.SeasonNumber.HasValue ? [model.SeasonNumber.Value] : [],
+                SeasonNumbers = model.Episodes != null && model.Episodes.Count > 0
+                                    ? model.Episodes.Select(e => e.SeasonNumber).Distinct().OrderBy(s => s).ToList()
+                                    : (model.SeasonNumber.HasValue ? [model.SeasonNumber.Value] : []),
                 Series = includeSeries && model.Series != null ? model.Series.ToResource() : null,
                 Episodes = includeEpisodes ? model.Episodes?.ToResource() : null,
                 Languages = model.Languages,
@@ -79,7 +108,34 @@ namespace Sonarr.Api.V5.Queue
                 Indexer = model.Indexer,
                 OutputPath = model.OutputPath,
                 EpisodesWithFilesCount = model.Episodes?.Count(e => e.HasFile) ?? 0,
-                IsFullSeason = model.RemoteEpisode?.ParsedEpisodeInfo?.FullSeason ?? false
+                IsFullSeason = model.RemoteEpisode?.ParsedEpisodeInfo?.FullSeason ?? false,
+                ImportProgress = model.ImportProgress?.ToResource()
+            };
+        }
+
+        private static ImportProgressResource ToResource(this ImportProgress model)
+        {
+            return new ImportProgressResource
+            {
+                TotalEpisodes = model.TotalEpisodes,
+                ImportedEpisodes = model.ImportedEpisodes,
+                ImportingEpisodes = model.ImportingEpisodes,
+                WaitingEpisodes = model.WaitingEpisodes,
+                FailedEpisodes = model.FailedEpisodes,
+                RejectedEpisodes = model.RejectedEpisodes,
+                Items = model.Items.Select(item => new ImportProgressItemResource
+                {
+                    Id = item.Id,
+                    EpisodeIds = item.EpisodeIds,
+                    SeasonNumber = item.SeasonNumber,
+                    EpisodeNumbers = item.EpisodeNumbers,
+                    SourcePath = item.SourcePath,
+                    Size = item.Size,
+                    State = item.State,
+                    Started = item.Started,
+                    Completed = item.Completed,
+                    Errors = item.Errors
+                }).ToList()
             };
         }
 
