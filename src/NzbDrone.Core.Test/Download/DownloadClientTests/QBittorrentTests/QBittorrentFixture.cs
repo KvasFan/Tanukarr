@@ -2,17 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Download.Clients;
 using NzbDrone.Core.Download.Clients.QBittorrent;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.MediaFiles.TorrentInfo;
+using NzbDrone.Core.Parser.Model;
 using NzbDrone.Test.Common;
 
 namespace NzbDrone.Core.Test.Download.DownloadClientTests.QBittorrentTests
@@ -100,6 +103,154 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.QBittorrentTests
                     };
                     GivenTorrents(new List<QBittorrentTorrent> { torrent });
                 });
+        }
+
+        private void GivenFakeReleaseProtection(bool enabled)
+        {
+            Mocker.GetMock<IConfigService>()
+                .SetupGet(s => s.EnableFakeReleaseProtection)
+                .Returns(enabled);
+        }
+
+        private RemoteEpisode CreateTorrentRemoteEpisode(string title = null, bool includeTorrentUrl = true, bool includeMagnetUrl = true)
+        {
+            var remoteEpisode = CreateRemoteEpisode();
+            var torrentInfo = new TorrentInfo
+            {
+                Title = title ?? remoteEpisode.Release.Title,
+                DownloadUrl = includeTorrentUrl ? _downloadUrl : null,
+                DownloadProtocol = remoteEpisode.Release.DownloadProtocol,
+                MagnetUrl = includeMagnetUrl ? "magnet:?xt=urn:btih:755248817d32b00cc853e633ecdc48e4c21bff15" : null
+            };
+
+            remoteEpisode.Release = torrentInfo;
+            return remoteEpisode;
+        }
+
+        private void GivenTorrentContents(params TorrentContentFile[] files)
+        {
+            Mocker.GetMock<ITorrentFileInfoReader>()
+                .Setup(s => s.GetContentsFromTorrentFile(It.IsAny<byte[]>()))
+                .Returns(new TorrentContents { Files = files.ToList() });
+        }
+
+        [Test]
+        public void Download_should_reject_fake_torrent_before_magnet_submission_when_both_urls_exist()
+        {
+            GivenFakeReleaseProtection(true);
+            GivenTorrentContents(new TorrentContentFile("Episode.mkv.exe", 10000000));
+            var remoteEpisode = CreateTorrentRemoteEpisode();
+
+            Assert.ThrowsAsync<FakeReleaseException>(async () => await Subject.Download(remoteEpisode, CreateIndexer()));
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromFile(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public async Task Download_should_submit_inspected_torrent_once_when_both_urls_exist()
+        {
+            GivenFakeReleaseProtection(true);
+            GivenTorrentContents(new TorrentContentFile("Some.Show.S01E01.1080p.WEB.x265.mkv", 20000000));
+            var remoteEpisode = CreateTorrentRemoteEpisode();
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromFile(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Once());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+        }
+
+        [Test]
+        public async Task Download_should_preserve_magnet_first_when_fake_release_protection_is_disabled()
+        {
+            GivenFakeReleaseProtection(false);
+            var remoteEpisode = CreateTorrentRemoteEpisode();
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Once());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromFile(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+        }
+
+        [Test]
+        public async Task Download_should_allow_magnet_only_release_without_content_inspection()
+        {
+            GivenFakeReleaseProtection(true);
+            var remoteEpisode = CreateTorrentRemoteEpisode(includeTorrentUrl: false);
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<ITorrentFileInfoReader>().Verify(s => s.GetContentsFromTorrentFile(It.IsAny<byte[]>()), Times.Never());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Once());
+
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public async Task Download_should_allow_redirect_to_magnet_without_claiming_content_inspection()
+        {
+            GivenFakeReleaseProtection(true);
+            var httpHeader = new HttpHeader();
+            httpHeader["Location"] = "magnet:?xt=urn:btih:ZPBPA2P6ROZPKRHK44D5OW6NHXU5Z6KR&tr=udp";
+            Mocker.GetMock<IHttpClient>()
+                .Setup(s => s.GetAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request, System.Threading.CancellationToken _) => new HttpResponse(request, httpHeader, Array.Empty<byte>(), System.Net.HttpStatusCode.SeeOther));
+            var remoteEpisode = CreateTorrentRemoteEpisode();
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<ITorrentFileInfoReader>().Verify(s => s.GetContentsFromTorrentFile(It.IsAny<byte[]>()), Times.Never());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Once());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromFile(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public async Task Download_should_fall_back_to_magnet_when_torrent_fetch_fails()
+        {
+            GivenFakeReleaseProtection(true);
+            Mocker.GetMock<IHttpClient>()
+                .Setup(s => s.GetAsync(It.IsAny<HttpRequest>()))
+                .ThrowsAsync(new WebException("torrent unavailable"));
+            var remoteEpisode = CreateTorrentRemoteEpisode();
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Once());
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromFile(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+
+            ExceptionVerification.ExpectedErrors(1);
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [TestCase("Some.Show.S01E01.1080p.WEB.x265.exe")]
+        [TestCase("Some.Show.S01E01.mkv.exe")]
+        [TestCase("Some.Show.S01E01.1080p.scr")]
+        [TestCase("Some.Show.S01E01.1080p.ps1")]
+        public void Download_should_reject_high_confidence_executable_title_before_submission(string title)
+        {
+            GivenFakeReleaseProtection(true);
+            var remoteEpisode = CreateTorrentRemoteEpisode(title, includeTorrentUrl: false);
+
+            Assert.ThrowsAsync<FakeReleaseException>(async () => await Subject.Download(remoteEpisode, CreateIndexer()));
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+        }
+
+        [Test]
+        public async Task Download_should_not_reject_legitimate_dotted_title()
+        {
+            GivenFakeReleaseProtection(true);
+            var remoteEpisode = CreateTorrentRemoteEpisode("Some.Show.Name.With.Many.Dots.S01E01.1080p.mkv", includeTorrentUrl: false);
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Once());
+
+            ExceptionVerification.ExpectedWarns(1);
         }
 
         protected void GivenHighPriority()

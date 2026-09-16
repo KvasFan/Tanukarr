@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NLog;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.MediaFiles.TorrentInfo;
 
 namespace NzbDrone.Core.Download.FakeRelease
@@ -58,6 +59,16 @@ namespace NzbDrone.Core.Download.FakeRelease
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly Logger _logger;
+
+        public static bool IsDangerousReleaseTitle(string title)
+        {
+            if (title.IsNullOrWhiteSpace())
+            {
+                return false;
+            }
+
+            return ExecutableExtensions.Contains(GetExtension(GetFileName(title.Trim())));
+        }
 
         public FakeReleaseInspector(Logger logger)
         {
