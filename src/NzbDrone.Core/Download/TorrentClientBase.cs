@@ -9,6 +9,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Core.Blocklisting;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download.FakeRelease;
+using NzbDrone.Core.Download.MagnetMetadata;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
@@ -26,6 +27,7 @@ namespace NzbDrone.Core.Download
         protected readonly IHttpClient _httpClient;
         private readonly IBlocklistService _blocklistService;
         protected readonly ITorrentFileInfoReader _torrentFileInfoReader;
+        private readonly IMagnetMetadataResolver _magnetMetadataResolver;
 
         // Constructed directly rather than injected: the inspector's only dependency is the
         // logger, and adding a constructor parameter would churn all 13 torrent client
@@ -40,12 +42,14 @@ namespace NzbDrone.Core.Download
             IRemotePathMappingService remotePathMappingService,
             ILocalizationService localizationService,
             IBlocklistService blocklistService,
-            Logger logger)
+            Logger logger,
+            IMagnetMetadataResolver magnetMetadataResolver)
             : base(configService, diskProvider, remotePathMappingService, logger, localizationService)
         {
             _httpClient = httpClient;
             _blocklistService = blocklistService;
             _torrentFileInfoReader = torrentFileInfoReader;
+            _magnetMetadataResolver = magnetMetadataResolver;
             _fakeReleaseInspector = new FakeReleaseInspector(logger);
         }
 
@@ -117,7 +121,7 @@ namespace NzbDrone.Core.Download
                 {
                     try
                     {
-                        return DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl);
+                        return await DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl);
                     }
                     catch (NotSupportedException ex)
                     {
@@ -131,7 +135,7 @@ namespace NzbDrone.Core.Download
                 {
                     try
                     {
-                        return DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl);
+                        return await DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl);
                     }
                     catch (NotSupportedException ex)
                     {
@@ -185,7 +189,7 @@ namespace NzbDrone.Core.Download
                                 _logger.Warn("Torrent URL for '{0}' redirected to a magnet; fake-release content inspection was not performed", remoteEpisode.Release.Title);
                             }
 
-                            return DownloadFromMagnetUrl(remoteEpisode, indexer, locationHeader);
+                            return await DownloadFromMagnetUrl(remoteEpisode, indexer, locationHeader);
                         }
 
                         request.Url += new HttpUri(locationHeader);
@@ -253,10 +257,10 @@ namespace NzbDrone.Core.Download
             }
 
             _logger.Warn(exception, "Unable to inspect torrent for '{0}', falling back to uninspectable magnet route", remoteEpisode.Release.Title);
-            return Task.FromResult(DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl));
+            return DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl);
         }
 
-        private string DownloadFromMagnetUrl(RemoteEpisode remoteEpisode, IIndexer indexer, string magnetUrl)
+        private async Task<string> DownloadFromMagnetUrl(RemoteEpisode remoteEpisode, IIndexer indexer, string magnetUrl)
         {
             string hash = null;
             string actualHash = null;
@@ -273,6 +277,30 @@ namespace NzbDrone.Core.Download
             if (hash != null)
             {
                 EnsureReleaseIsNotBlocklisted(remoteEpisode, indexer, hash);
+
+                if (_configService.EnableFakeReleaseProtection)
+                {
+                    var originalMagnet = MagnetLink.Parse(magnetUrl);
+                    var resolutionMagnet = MagnetMetadataResolver.CreateResolutionMagnet(originalMagnet);
+
+                    if (resolutionMagnet.AnnounceUrls.Count > 0)
+                    {
+                        var resolution = await _magnetMetadataResolver.ResolveAsync(resolutionMagnet, System.Threading.CancellationToken.None);
+
+                        if (resolution?.IsResolved == true)
+                        {
+                            EnsureReleaseIsNotFake(remoteEpisode, resolution.Metadata);
+                        }
+                        else
+                        {
+                            _logger.Debug("Magnet metadata for '{0}' was uninspectable ({1}); submitting original magnet", remoteEpisode.Release.Title, resolution?.Reason);
+                        }
+                    }
+                    else
+                    {
+                        _logger.Debug("Magnet metadata for '{0}' had no allowed HTTP/HTTPS trackers; submitting original magnet", remoteEpisode.Release.Title);
+                    }
+                }
 
                 actualHash = AddFromMagnetLink(remoteEpisode, hash, magnetUrl);
             }

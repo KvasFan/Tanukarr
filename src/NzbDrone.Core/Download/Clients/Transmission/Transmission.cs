@@ -28,8 +28,9 @@ namespace NzbDrone.Core.Download.Clients.Transmission
                             IRemotePathMappingService remotePathMappingService,
                             ILocalizationService localizationService,
                             IBlocklistService blocklistService,
-                            Logger logger)
-            : base(proxy, torrentFileInfoReader, httpClient, configService, diskProvider, remotePathMappingService, localizationService, blocklistService, logger)
+                            Logger logger,
+                            NzbDrone.Core.Download.MagnetMetadata.IMagnetMetadataResolver magnetMetadataResolver)
+            : base(proxy, torrentFileInfoReader, httpClient, configService, diskProvider, remotePathMappingService, localizationService, blocklistService, logger, magnetMetadataResolver)
         {
         }
 

@@ -13,6 +13,7 @@ using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Download.Clients;
 using NzbDrone.Core.Download.Clients.QBittorrent;
+using NzbDrone.Core.Download.MagnetMetadata;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.MediaFiles.TorrentInfo;
 using NzbDrone.Core.Parser.Model;
@@ -112,7 +113,7 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.QBittorrentTests
                 .Returns(enabled);
         }
 
-        private RemoteEpisode CreateTorrentRemoteEpisode(string title = null, bool includeTorrentUrl = true, bool includeMagnetUrl = true)
+        private RemoteEpisode CreateTorrentRemoteEpisode(string title = null, bool includeTorrentUrl = true, bool includeMagnetUrl = true, bool includeHttpTracker = false)
         {
             var remoteEpisode = CreateRemoteEpisode();
             var torrentInfo = new TorrentInfo
@@ -120,7 +121,7 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.QBittorrentTests
                 Title = title ?? remoteEpisode.Release.Title,
                 DownloadUrl = includeTorrentUrl ? _downloadUrl : null,
                 DownloadProtocol = remoteEpisode.Release.DownloadProtocol,
-                MagnetUrl = includeMagnetUrl ? "magnet:?xt=urn:btih:755248817d32b00cc853e633ecdc48e4c21bff15" : null
+                MagnetUrl = includeMagnetUrl ? $"magnet:?xt=urn:btih:755248817d32b00cc853e633ecdc48e4c21bff15{(includeHttpTracker ? "&tr=http%3A%2F%2Ftracker.example%2Fannounce" : string.Empty)}" : null
             };
 
             remoteEpisode.Release = torrentInfo;
@@ -132,6 +133,47 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.QBittorrentTests
             Mocker.GetMock<ITorrentFileInfoReader>()
                 .Setup(s => s.GetContentsFromTorrentFile(It.IsAny<byte[]>()))
                 .Returns(new TorrentContents { Files = files.ToList() });
+        }
+
+        private void GivenResolvedMagnet(byte[] metadata)
+        {
+            Mocker.GetMock<IMagnetMetadataResolver>()
+                .Setup(s => s.ResolveAsync(It.IsAny<MonoTorrent.MagnetLink>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(MagnetMetadataResolutionResult.Resolved(metadata));
+        }
+
+        [Test]
+        public void Download_should_reject_suspicious_resolved_magnet_before_submission()
+        {
+            GivenFakeReleaseProtection(true);
+            GivenResolvedMagnet(new byte[] { 1, 2, 3 });
+            GivenTorrentContents(new TorrentContentFile("Episode.mkv.exe", 10000000));
+            var remoteEpisode = CreateTorrentRemoteEpisode(includeTorrentUrl: false, includeHttpTracker: true);
+
+            Assert.ThrowsAsync<FakeReleaseException>(async () => await Subject.Download(remoteEpisode, CreateIndexer()));
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(It.IsAny<string>(), It.IsAny<TorrentSeedConfiguration>(), It.IsAny<QBittorrentSettings>()), Times.Never());
+
+            ExceptionVerification.ExpectedWarns(2);
+        }
+
+        [Test]
+        public async Task Download_should_submit_original_magnet_after_clean_metadata_inspection()
+        {
+            GivenFakeReleaseProtection(true);
+            GivenResolvedMagnet(new byte[] { 1, 2, 3 });
+            GivenTorrentContents(new TorrentContentFile("Some.Show.S01E01.1080p.WEB.x265.mkv", 20000000));
+            var remoteEpisode = CreateTorrentRemoteEpisode(includeTorrentUrl: false, includeHttpTracker: true);
+
+            await Subject.Download(remoteEpisode, CreateIndexer());
+
+            Mocker.GetMock<IQBittorrentProxy>().Verify(s => s.AddTorrentFromUrl(
+                "magnet:?xt=urn:btih:755248817d32b00cc853e633ecdc48e4c21bff15&tr=http%3A%2F%2Ftracker.example%2Fannounce",
+                It.IsAny<TorrentSeedConfiguration>(),
+                It.IsAny<QBittorrentSettings>()),
+                Times.Once());
+
+            ExceptionVerification.ExpectedWarns(1);
         }
 
         [Test]

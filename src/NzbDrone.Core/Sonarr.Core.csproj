@@ -24,7 +24,7 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NLog" Version="5.5.1" />
-    <PackageReference Include="MonoTorrent" Version="3.0.2" />
+    <PackageReference Include="MonoTorrent" Version="3.0.2-sonarrsecurity.1.rev0002" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>

@@ -41,8 +41,9 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
                            ILocalizationService localizationService,
                            IBlocklistService blocklistService,
                            ITagRepository tagRepository,
-                           Logger logger)
-            : base(torrentFileInfoReader, httpClient, configService, diskProvider, remotePathMappingService, localizationService, blocklistService, logger)
+                           Logger logger,
+                           NzbDrone.Core.Download.MagnetMetadata.IMagnetMetadataResolver magnetMetadataResolver)
+            : base(torrentFileInfoReader, httpClient, configService, diskProvider, remotePathMappingService, localizationService, blocklistService, logger, magnetMetadataResolver)
         {
             _proxySelector = proxySelector;
 
