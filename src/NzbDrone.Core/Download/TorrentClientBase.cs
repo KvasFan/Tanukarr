@@ -24,6 +24,13 @@ namespace NzbDrone.Core.Download
     public abstract class TorrentClientBase<TSettings> : DownloadClientBase<TSettings>
         where TSettings : IProviderConfig, new()
     {
+        private enum MagnetDownloadContext
+        {
+            DirectMagnet,
+            HttpRedirectToMagnet,
+            HttpFallbackMagnet
+        }
+
         protected readonly IHttpClient _httpClient;
         private readonly IBlocklistService _blocklistService;
         protected readonly ITorrentFileInfoReader _torrentFileInfoReader;
@@ -184,12 +191,8 @@ namespace NzbDrone.Core.Download
                     {
                         if (locationHeader.StartsWith("magnet:"))
                         {
-                            if (_configService.EnableFakeReleaseProtection)
-                            {
-                                _logger.Warn("Torrent URL for '{0}' redirected to a magnet; fake-release content inspection was not performed", remoteEpisode.Release.Title);
-                            }
-
-                            return await DownloadFromMagnetUrl(remoteEpisode, indexer, locationHeader);
+                            _logger.Trace("Torrent URL for '{0}' redirected to a magnet; continuing through magnet metadata inspection", remoteEpisode.Release.Title);
+                            return await DownloadFromMagnetUrl(remoteEpisode, indexer, locationHeader, MagnetDownloadContext.HttpRedirectToMagnet);
                         }
 
                         request.Url += new HttpUri(locationHeader);
@@ -257,10 +260,13 @@ namespace NzbDrone.Core.Download
             }
 
             _logger.Warn(exception, "Unable to inspect torrent for '{0}', falling back to uninspectable magnet route", remoteEpisode.Release.Title);
-            return DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl);
+            return DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl, MagnetDownloadContext.HttpFallbackMagnet);
         }
 
-        private async Task<string> DownloadFromMagnetUrl(RemoteEpisode remoteEpisode, IIndexer indexer, string magnetUrl)
+        private async Task<string> DownloadFromMagnetUrl(RemoteEpisode remoteEpisode,
+            IIndexer indexer,
+            string magnetUrl,
+            MagnetDownloadContext context = MagnetDownloadContext.DirectMagnet)
         {
             string hash = null;
             string actualHash = null;
@@ -293,11 +299,25 @@ namespace NzbDrone.Core.Download
                         }
                         else
                         {
+                            if (context == MagnetDownloadContext.HttpRedirectToMagnet)
+                            {
+                                throw new ReleaseDownloadException(
+                                    remoteEpisode.Release,
+                                    "Magnet metadata could not be inspected after an HTTP redirect; the magnet was not submitted.");
+                            }
+
                             _logger.Debug("Magnet metadata for '{0}' was uninspectable ({1}); submitting original magnet", remoteEpisode.Release.Title, resolution?.Reason);
                         }
                     }
                     else
                     {
+                        if (context == MagnetDownloadContext.HttpRedirectToMagnet)
+                        {
+                            throw new ReleaseDownloadException(
+                                remoteEpisode.Release,
+                                "Magnet metadata could not be inspected after an HTTP redirect; the magnet was not submitted.");
+                        }
+
                         _logger.Debug("Magnet metadata for '{0}' had no allowed HTTP/HTTPS trackers; submitting original magnet", remoteEpisode.Release.Title);
                     }
                 }
