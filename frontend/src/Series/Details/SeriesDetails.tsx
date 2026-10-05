@@ -17,7 +17,6 @@ import Label from 'Components/Label';
 import IconButton from 'Components/Link/IconButton';
 import Link from 'Components/Link/Link';
 import LoadingIndicator from 'Components/Loading/LoadingIndicator';
-import MetadataAttribution from 'Components/MetadataAttribution';
 import PageContent from 'Components/Page/PageContent';
 import PageContentBody from 'Components/Page/PageContentBody';
 import { OverflowDivider } from 'Components/Page/Toolbar/Overflow';
@@ -870,8 +869,6 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
 
                 <div className={styles.heroFooter}>
                   <SeriesDetailsPath path={path} />
-
-                  <MetadataAttribution />
                 </div>
               </div>
             </div>
