@@ -63,6 +63,7 @@ import filterAlternateTitles from 'Utilities/Series/filterAlternateTitles';
 import translate from 'Utilities/String/translate';
 import toggleSelected from 'Utilities/Table/toggleSelected';
 import SeriesAlternateTitles from './SeriesAlternateTitles';
+import SeriesCompression from './SeriesCompression';
 import SeriesDetailsLinks from './SeriesDetailsLinks';
 import SeriesDetailsPath from './SeriesDetailsPath';
 import SeriesDetailsProvider from './SeriesDetailsProvider';
@@ -875,6 +876,7 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
           </div>
 
           <div className={styles.contentContainer}>
+            <SeriesCompression seriesId={seriesId} />
             {overview ? (
               <section className={styles.overviewSection}>
                 <div className={styles.overviewFrame} aria-hidden="true">
