@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.LibraryTools;
 
 namespace Sonarr.Http.Authentication
 {
@@ -26,14 +27,17 @@ namespace Sonarr.Http.Authentication
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
     {
         private readonly IConfigFileProvider _configFileProvider;
+        private readonly IProOptionsService _proOptions;
 
         public ApiKeyAuthenticationHandler(IOptionsMonitor<ApiKeyAuthenticationOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            IConfigFileProvider configFileProvider)
+            IConfigFileProvider configFileProvider,
+            IProOptionsService proOptions)
             : base(options, logger, encoder)
         {
             _configFileProvider = configFileProvider;
+            _proOptions = proOptions;
         }
 
         private string ParseApiKey()
@@ -62,12 +66,20 @@ namespace Sonarr.Http.Authentication
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            if (CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(_configFileProvider.ApiKey), Encoding.UTF8.GetBytes(providedApiKey)))
+            var isApiKey = CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(_configFileProvider.ApiKey), Encoding.UTF8.GetBytes(providedApiKey));
+            var companionKey = isApiKey ? null : _proOptions.Authenticate(providedApiKey, Request.Method, Request.Path.Value);
+            if (isApiKey || companionKey != null)
             {
                 var claims = new List<Claim>
                 {
                     new Claim("ApiKey", "true")
                 };
+
+                if (companionKey != null)
+                {
+                    claims.Add(new Claim("CompanionKey", companionKey.Id));
+                    claims.Add(new Claim("Permission", companionKey.Permission));
+                }
 
                 var identity = new ClaimsIdentity(claims, Options.AuthenticationType);
                 var identities = new List<ClaimsIdentity> { identity };
@@ -77,7 +89,7 @@ namespace Sonarr.Http.Authentication
                 return Task.FromResult(AuthenticateResult.Success(ticket));
             }
 
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return Task.FromResult(AuthenticateResult.Fail("Invalid API key or insufficient permission."));
         }
 
         protected override Task HandleChallengeAsync(AuthenticationProperties properties)

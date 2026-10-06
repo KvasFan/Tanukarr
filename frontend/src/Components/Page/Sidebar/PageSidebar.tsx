@@ -160,6 +160,7 @@ const GROUPS: SidebarGroup[] = [
             to: '/system/status',
             statusComponent: HealthStatus,
           },
+          { title: 'Library tools', to: '/system/library' },
           { title: () => translate('Tasks'), to: '/system/tasks' },
           { title: () => translate('Backups'), to: '/system/backups' },
           { title: () => translate('Updates'), to: '/system/updates' },

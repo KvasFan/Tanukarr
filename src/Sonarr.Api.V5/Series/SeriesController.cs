@@ -10,14 +10,12 @@ using NzbDrone.Core.Datastore.Events;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
-using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.SeriesStats;
 using NzbDrone.Core.Tv;
-using NzbDrone.Core.Tv.Commands;
 using NzbDrone.Core.Tv.Events;
 using NzbDrone.Core.Validation;
 using NzbDrone.Core.Validation.Paths;
@@ -45,7 +43,6 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
     private readonly ISceneMappingService _sceneMappingService;
     private readonly ISeriesTranslationService _seriesTranslationService;
     private readonly IMapCoversToLocal _coverMapper;
-    private readonly IManageCommandQueue _commandQueueManager;
     private readonly IRootFolderService _rootFolderService;
 
     private readonly LockByIdPool _seriesLockPool = new();
@@ -57,7 +54,6 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
                         ISceneMappingService sceneMappingService,
                         ISeriesTranslationService seriesTranslationService,
                         IMapCoversToLocal coverMapper,
-                        IManageCommandQueue commandQueueManager,
                         IRootFolderService rootFolderService,
                         RootFolderValidator rootFolderValidator,
                         MappedNetworkDriveValidator mappedNetworkDriveValidator,
@@ -78,7 +74,6 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
         _seriesTranslationService = seriesTranslationService;
 
         _coverMapper = coverMapper;
-        _commandQueueManager = commandQueueManager;
         _rootFolderService = rootFolderService;
 
         SharedValidator.RuleFor(s => s.Path).Cascade(CascadeMode.Stop)
@@ -230,24 +225,12 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
     public Results<Accepted<SeriesResource>, NotFound> UpdateSeries([FromBody] SeriesResource seriesResource, [FromQuery] bool moveFiles = false)
     {
         var series = _seriesService.GetSeries(seriesResource.Id);
-
-        if (moveFiles)
-        {
-            var sourcePath = series.Path;
-            var destinationPath = seriesResource.Path;
-
-            _commandQueueManager.Push(new MoveSeriesCommand
-            {
-                SeriesId = series.Id,
-                SourcePath = sourcePath,
-                DestinationPath = destinationPath
-            },
-                trigger: CommandTrigger.Manual);
-        }
+        var sourcePath = series.Path;
+        var destinationPath = seriesResource.Path;
 
         var model = seriesResource.ToModel(series);
 
-        _seriesService.UpdateSeries(model);
+        _seriesService.UpdateSeries(model, sourcePath, destinationPath, moveFiles);
 
         return TypedAccepted(seriesResource.Id);
     }

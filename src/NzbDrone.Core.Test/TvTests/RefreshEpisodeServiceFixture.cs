@@ -15,6 +15,7 @@ using NzbDrone.Test.Common;
 namespace NzbDrone.Core.Test.TvTests
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class RefreshEpisodeServiceFixture : CoreTest<RefreshEpisodeService>
     {
         private List<Episode> _insertedEpisodes;

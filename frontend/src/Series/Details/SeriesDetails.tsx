@@ -45,6 +45,7 @@ import SeriesHistoryModal from 'Series/History/SeriesHistoryModal';
 import MonitoringOptionsModal from 'Series/MonitoringOptions/MonitoringOptionsModal';
 import { Image, SeriesStatus, Statistics } from 'Series/Series';
 import SeriesGenres from 'Series/SeriesGenres';
+import SeriesMovePending from 'Series/SeriesMovePending';
 import SeriesPoster from 'Series/SeriesPoster';
 import { getSeriesStatusDetails } from 'Series/SeriesStatus';
 import useSeries, {
@@ -68,6 +69,7 @@ import SeriesDetailsLinks from './SeriesDetailsLinks';
 import SeriesDetailsPath from './SeriesDetailsPath';
 import SeriesDetailsProvider from './SeriesDetailsProvider';
 import SeriesDetailsSeason from './SeriesDetailsSeason';
+import SeriesLibraryTools from './SeriesLibraryTools';
 import SeriesProgressLabel from './SeriesProgressLabel';
 import SeriesTags from './SeriesTags';
 import styles from './SeriesDetails.module.css';
@@ -438,6 +440,7 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
     runtime,
     ratings,
     path,
+    pendingPath,
     statistics = {} as Statistics,
     qualityProfileId,
     language,
@@ -870,6 +873,10 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
 
                 <div className={styles.heroFooter}>
                   <SeriesDetailsPath path={path} />
+
+                  {pendingPath ? (
+                    <SeriesMovePending pendingPath={pendingPath} />
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -877,6 +884,7 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
 
           <div className={styles.contentContainer}>
             <SeriesCompression seriesId={seriesId} />
+            <SeriesLibraryTools key={seriesId} seriesId={seriesId} />
             {overview ? (
               <section className={styles.overviewSection}>
                 <div className={styles.overviewFrame} aria-hidden="true">
