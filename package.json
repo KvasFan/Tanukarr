@@ -1,6 +1,6 @@
 {
   "name": "sonarrweeb",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "SonarrWeeb is an anime-focused Sonarr fork for Usenet and BitTorrent users",
   "type": "module",
   "scripts": {

@@ -1,13 +1,14 @@
-# Install SonarrWeeb 0.0.1 with Docker
+# Install SonarrWeeb 0.1.0 with Docker
 
 SonarrWeeb is an independent Sonarr fork. Its source and release notes are on
-[GitHub](https://github.com/KvasExert/SonarrWeeb), and release **0.0.1** uses the Git
-tag [`v0.0.1`](https://github.com/KvasExert/SonarrWeeb/releases/tag/v0.0.1). Original
+[GitHub](https://github.com/KvasExert/SonarrWeeb). The **0.1.0**
+[release notes](releases/0.1.0.md) describe the selected-library Jellyfin
+connection and AniList inclusion/exclusion controls. Original
 Sonarr and fork contributors, including recorded AI tool/model attribution, are
 listed in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
 GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
-below uses `ghcr.io/kvasexert/sonarrweeb:0.0.1`; the GitHub repository itself is source
+below uses `ghcr.io/kvasexert/sonarrweeb:0.1.0`; the GitHub repository itself is source
 code, not a Docker image. Check the release notes and
 [package page](https://github.com/users/KvasExert/packages/container/package/sonarrweeb) for
 the published architectures and image digest. Use only a tag that has finished
@@ -35,7 +36,7 @@ name: sonarrweeb
 
 services:
   sonarrweeb:
-    image: ghcr.io/kvasexert/sonarrweeb:0.0.1
+    image: ghcr.io/kvasexert/sonarrweeb:0.1.0
     container_name: sonarrweeb
     restart: unless-stopped
     ports:
@@ -83,9 +84,11 @@ Open **http://localhost:6970**. The named volume holds the database, `config.xml
 settings and logs. Recreating the container retains this volume. Avoid
 `docker compose down -v`, which deletes it.
 
-The release also provides a ready-to-use
-[`compose.yaml`](https://github.com/KvasExert/SonarrWeeb/releases/download/v0.0.1/compose.yaml)
-with bind-mounted `./config` and `./media` defaults. Download that file into a new
+Once the [0.1.0 release](https://github.com/KvasExert/SonarrWeeb/releases/tag/v0.1.0)
+has finished publishing, its ready-to-use
+[`compose.yaml`](https://github.com/KvasExert/SonarrWeeb/releases/download/v0.1.0/compose.yaml)
+with bind-mounted `./config` and `./media` defaults is an alternative to the
+named-volume example. Download that file into a new
 installation directory, create those two directories with the correct permissions,
 and run the same Compose commands above. Its `SONARRWEEB_*` variables also allow
 custom bind address, host port, config path and media path; inspect
@@ -151,6 +154,10 @@ TMDB metadata or episode groups, configure your own key under
 **Settings -> Metadata Source**. AniList, TheTVDB and MyAnimeList/Jikan do not use
 that TMDB key. AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
+Version 0.1.0 lets you include several AniList custom lists and veto entries by
+custom-list membership or list state. For Jellyfin, configure the dedicated
+connection under **Settings -> Connect** and select one initialized library;
+see [Jellyfin refresh](jellyfin.md) for the three refresh modes and networking.
 
 An existing upstream configuration must be **copied** to a separate SonarrWeeb
 configuration directory or volume while the source instance is stopped for a
@@ -164,7 +171,7 @@ setting for the new instance.
 A **public** GHCR package supports anonymous pulls:
 
 ```sh
-docker pull ghcr.io/kvasexert/sonarrweeb:0.0.1
+docker pull ghcr.io/kvasexert/sonarrweeb:0.1.0
 ```
 
 If GitHub reports `denied` or `unauthorized`, confirm that the tag exists and that
@@ -182,7 +189,7 @@ shell command that saves them in command history.
 
 ## Version pins and updates
 
-`0.0.1` is the SonarrWeeb release version; the application's inherited internal
+`0.1.0` is the SonarrWeeb release version; the application's inherited internal
 Sonarr version may use a different numbering scheme. Prefer the exact release
 tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
@@ -215,13 +222,13 @@ location when a rollback requires it. Never overwrite your only backup.
 ## Release archive fallback
 
 If a release includes a Docker image archive, download that archive and its
-checksum from the [GitHub release](https://github.com/KvasExert/SonarrWeeb/releases/tag/v0.0.1).
+checksum from the [GitHub release](https://github.com/KvasExert/SonarrWeeb/releases/tag/v0.1.0).
 Choose an architecture compatible with your Docker host. Verify the filename
 listed in the release's checksum file before loading it:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input SonarrWeeb-0.0.1-linux-amd64-docker.tar.gz
+docker load --input SonarrWeeb-0.1.0-linux-amd64-docker.tar.gz
 ```
 
 On Windows, use `Get-FileHash -Algorithm SHA256` and compare its output with
@@ -234,27 +241,37 @@ pulling:
 docker compose up -d --pull never
 ```
 
-This is an offline image import, not a source build. The release also includes
-the corresponding `SonarrWeeb-0.0.1-source.tar.gz`, SBOM,
-`release-manifest.json`, `smoke.json` and `functional-security.json`, alongside
-GitHub's source archives. It preserves the project's GPL license and contributor
-notices. The initial release archive targets **Linux amd64**; it does not provide
-an arm64 image.
+Use the actual asset name shown for the release; the command above illustrates
+the 0.1.0 Linux amd64 archive naming convention. This is an offline image import,
+not a source build. Asset availability, architectures, SBOMs, manifests and test
+receipts must be checked on the corresponding release. GitHub source archives
+are source code and cannot be loaded with `docker load`. Source and image assets
+must preserve the project's GPL license and contributor notices.
+
+The initial 0.0.1 release provides an image archive for **Linux amd64** and
+its matching source archive, SBOM, manifest and verification receipts. Its
+immutable assets and dated reports remain historical checkpoints; they do not
+establish that an equivalent 0.1.0 asset has been published or tested.
 
 ## Building from the GitHub source
 
 To build the tagged source instead of pulling the published image:
 
 ```sh
-git clone --branch v0.0.1 --depth 1 https://github.com/KvasExert/SonarrWeeb.git
+git clone --branch v0.1.0 --depth 1 https://github.com/KvasExert/SonarrWeeb.git
 cd SonarrWeeb
-docker build --progress=plain -t sonarrweeb:0.0.1 .
+docker build --progress=plain -t sonarrweeb:0.1.0 .
 ```
 
-Use `image: sonarrweeb:0.0.1` in the standalone Compose example above and run
+Use `image: sonarrweeb:0.1.0` in the standalone Compose example above and run
 `docker compose up -d --pull never`. The build downloads dependencies and runs
 the checks encoded in the Dockerfile. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+The `v0.1.0` checkout command requires that the release tag has been pushed.
+Before that happens, clone `main` and check the repository's `VERSION` file.
+An untagged main checkout can include changes added after a release, so record
+the full Git commit when reproducing a build.
 
 The repository's own `docker-compose.yml` remains a local-build deployment with
 `sonarr-weeb:local` and compatibility environment variables named

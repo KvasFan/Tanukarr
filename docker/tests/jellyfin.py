@@ -15,6 +15,8 @@ import urllib.request
 
 from smoke import ContainerSmoke, SmokeFailure, require
 
+PRODUCT_VERSION = (Path(__file__).resolve().parents[2] / "VERSION").read_text(encoding="utf-8").strip()
+
 
 class JellyfinIntegration(ContainerSmoke):
     def __init__(self, args):
@@ -34,7 +36,10 @@ class JellyfinIntegration(ContainerSmoke):
         self.last_request = f"{'Jellyfin' if base == self.jellyfin_url else 'Sonarr'} {method} {path.split('?')[0]}"
         headers = {"Content-Type": "application/json"}
         if base == self.jellyfin_url:
-            headers["Authorization"] = 'MediaBrowser Client="SonarrWeeb integration test", Device="Generated fixture", DeviceId="sonarrweeb-isolated-audit", Version="0.0.1"'
+            headers["Authorization"] = (
+                'MediaBrowser Client="SonarrWeeb integration test", Device="Generated fixture", '
+                f'DeviceId="sonarrweeb-isolated-audit", Version="{PRODUCT_VERSION}"'
+            )
         if token:
             if base == self.jellyfin_url:
                 headers["Authorization"] += f', Token="{token}"'

@@ -50,6 +50,6 @@ body:
   attributes:
     label: Version
     description: Found under System → Status, or the image tag you pulled.
-    placeholder: e.g. SonarrWeeb 0.0.1, or ghcr.io/kvasexert/sonarrweeb:0.0.1
+    placeholder: e.g. SonarrWeeb 0.1.0, or ghcr.io/kvasexert/sonarrweeb:0.1.0
   validations:
     required: true

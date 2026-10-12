@@ -10,11 +10,12 @@ original content.
 | --- | --- |
 | [Project README](../README.md) | SonarrWeeb features, release links, Docker quick start and toolchain |
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
-| [SonarrWeeb 0.0.1](releases/0.0.1.md) | Release scope, download assets, core/API version compatibility and known limits |
+| [SonarrWeeb 0.1.0](releases/0.1.0.md) | Current release scope, Jellyfin and AniList additions, upgrade guidance and verification limits |
+| [SonarrWeeb 0.0.1](releases/0.0.1.md) | Initial release scope, download assets, core/API version compatibility and known limits |
 | [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
 | [Library tools](library-tools.md) | Filters, pause, lists, retained versions, restore and companion keys |
-| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries on development main |
+| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries in 0.1.0 |
 | [Compression worker](../docker/compression/README.md) | Optional host worker, presets, dependencies and filesystem safeguards |
 | [Container checks](../docker/tests/README.md) | Disposable smoke, API/security and optional Chromium verification |
 | [Contributing](../CONTRIBUTING.md) | Build/test commands, English documentation and source/model attribution |
@@ -37,15 +38,20 @@ original content.
 | [Jellyfin verification](jellyfin-verification-2026-10-12.md) | Post-release Jellyfin integration, queue/security checks and disposable-server tests |
 | [AniList filter verification](anilist-filters-verification-2026-10-13.md) | Post-release inclusion/exclusion precedence, pagination, compatible settings and UI checks |
 
+Version 0.1.0 includes the selected-library Jellyfin connection and AniList
+multiple-list inclusion/exclusion controls. Its release notes describe the
+verification performed for the version change; the linked feature reports retain
+their original source/image identities and executed checks.
+
 The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later
 upstream checkpoints, including `59c22e859`, already present in Git are identified
 in the contributor register. A recorded snapshot is not a continuously updated
 upstream-version promise.
 
-The verified local image is `sonarr-weeb:local` on Linux amd64, with its digest,
-export checksum and runtime version in the final validation report. This is the
-historical security-validation checkpoint. The SonarrWeeb 0.0.1 release uses
+The October 12 security-validation checkpoint records its Linux amd64
+`sonarr-weeb:local` image, digest, export checksum and runtime version in the
+final validation report. The SonarrWeeb 0.0.1 release uses
 `ghcr.io/kvasexert/sonarrweeb:0.0.1` and a release manifest with its own artifact
 identity. Earlier test results do not imply every suite was repeated for release
 packaging. Only Linux amd64 is included in the initial release.

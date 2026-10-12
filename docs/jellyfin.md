@@ -1,16 +1,18 @@
 # Jellyfin library refresh
 
-The dedicated **Jellyfin** connection is available on the development `main`
-branch after release 0.0.1. It is separate from the existing **Emby / Jellyfin**
+The dedicated **Jellyfin** connection is included in SonarrWeeb **0.1.0**.
+It is separate from the existing **Emby / Jellyfin**
 connection, which reports changed media paths. The immutable `v0.0.1` release
-does not contain this new connection. Use a verified `edge` image or build the
-current source; see [Docker installation](docker-installation.md).
+does not contain this new connection. Use the published 0.1.0 image, a verified
+`edge` image or build the current source; check publication status as described
+in [Docker installation](docker-installation.md).
 
 ## Configure the connection
 
 1. In Jellyfin, make sure the library contains media and has completed an initial
-   library scan. A newly created empty library can lack an indexed physical
-   folder; Jellyfin can then accept a selected refresh without scanning anything.
+   library scan for every configured media folder. A newly created empty library
+   can lack an indexed physical folder; Jellyfin can then accept a selected
+   refresh without scanning anything.
    SonarrWeeb checks this condition during Test and before each refresh, and
    retains pending imports until the library has been initialized in Jellyfin.
 2. In Jellyfin, open **Dashboard → API Keys** and create a key for SonarrWeeb.

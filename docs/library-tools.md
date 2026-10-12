@@ -80,7 +80,7 @@ provider results cannot be used to add shows.
 
 Configure AniList under **Settings → Import Lists**, authenticate with AniList
 and enter the target username. The multiple-list inclusion and exclusion controls
-are development features added after the immutable 0.0.1 release. These filters
+are included in **0.1.0**; the immutable 0.0.1 release predates them. These filters
 describe different things and are combined:
 
 | Setting | What it selects |

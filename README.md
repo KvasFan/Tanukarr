@@ -1,12 +1,14 @@
 # SonarrWeeb
 
-**Release 0.0.1** brings together Sonarr `develop` through `57816c149` (earlier
-integration checkpoints used `698bb1dbb` and `59c22e859`), Kakarotto features, compatible
+**SonarrWeeb 0.1.0** adds selected-library Jellyfin refresh and AniList custom-list
+inclusion/exclusion controls to the initial 0.0.1 integration. It retains Sonarr
+`develop` through `57816c149` (earlier integration checkpoints used `698bb1dbb`
+and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
-Get the source and release assets from
-[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb) and
-[release v0.0.1](https://github.com/KvasExert/SonarrWeeb/releases/tag/v0.0.1).
+Get the source from [KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb)
+and read the [release notes for 0.1.0](docs/releases/0.1.0.md). Published versions
+and assets are listed on the [GitHub releases page](https://github.com/KvasExert/SonarrWeeb/releases).
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
 See the [documentation index](docs/README.md),
@@ -81,9 +83,10 @@ for scope, dry-run usage and validation.
 **Anime-aware search matching** — `2nd Season`, `S2`, `Part 2` and `II` all read as "season 2"; accents and articles are stripped; scoring uses Jaro-Winkler rather than upstream's single-character tolerance. Release-to-series matching also compares against every title a provider knows, so a release using a series' English title still matches when it's stored under the romaji one.
 
 **AniList custom lists** — target your own custom lists alongside Planning and
-Watching. Development builds after 0.0.1 also support multiple included lists,
-excluded lists and explicit watching-state exclusions; exclusions take
-precedence even when an anime is Watching. ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
+Watching. Version 0.1.0 supports multiple included lists, excluded lists and
+explicit exclusions for all six list-membership states. Matching any included
+list is sufficient; exclusions take precedence even when an anime is Watching.
+([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
 
 AniList account-list membership (Watching/Planning/Completed/etc.), anime release
 status (Releasing/Finished/etc.) and custom-list membership are separate filters.
@@ -99,11 +102,13 @@ scoped companion keys and per-show retained versions are described in
 [compression worker](docker/compression/README.md) has separate dependencies and
 filesystem requirements; it is not installed inside the main Sonarr image.
 
-**Jellyfin library refresh (development main)** — a dedicated Connect integration
+**Jellyfin library refresh** — a dedicated Connect integration
 selects one library and refreshes it after imports, at configurable intervals
 (minimum 1 minute, default 60), or both. Idle intervals make no requests; pending
 imports survive restarts and failed requests are retried. See the
-[Jellyfin guide](docs/jellyfin.md). This addition follows the published 0.0.1 release.
+[Jellyfin guide](docs/jellyfin.md). New libraries must first complete an initial
+scan in Jellyfin; pending imports are retained until every configured folder is
+indexed. This connection is included in 0.1.0 and was added after 0.0.1.
 
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
@@ -130,17 +135,19 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexert/sonarrweeb:0.0.1
+docker pull ghcr.io/kvasexert/sonarrweeb:0.1.0
 docker run -d --name sonarrweeb \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v sonarrweeb-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexert/sonarrweeb:0.0.1
+  --restart unless-stopped ghcr.io/kvasexert/sonarrweeb:0.1.0
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
 adjust PUID/PGID to the host user's IDs. Then open **http://localhost:6970** and
 configure authentication. Upstream Sonarr can keep using host port 8989.
+Use the release tag after its publishing workflow has completed; a version
+change in the source does not establish that the GHCR image is available.
 
 ### Or with Compose
 
@@ -193,7 +200,8 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `0.0.1` | This specific SonarrWeeb release; recommended for the initial installation. |
+| `0.1.0` | This release, including Jellyfin refresh and AniList inclusion/exclusion controls; use after publication completes. |
+| `0.0.1` | The initial release; it predates these Jellyfin and AniList controls. |
 | `latest` | The newest published release; it can change when a later version is released. |
 | `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |
 | `sha-<full commit>` | Build tag identifying one source commit; use a digest to pin the exact image. |

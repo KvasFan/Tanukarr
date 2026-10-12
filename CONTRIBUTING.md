@@ -83,19 +83,21 @@ public AniList checks; it does not use a private account or start a real downloa
 
 CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tests,
 generated-video worker tests and frontend checks. The Docker workflow builds amd64
-and runs both container scripts. SonarrWeeb 0.0.1 publishes Linux amd64; configured
+and runs both container scripts. SonarrWeeb 0.1.0 publishes Linux amd64; configured
 support for another architecture is not an executed test or a published artifact.
 A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
 The public project is
-[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb). Release **0.0.1** uses
-Git tag `v0.0.1` and container tag `ghcr.io/kvasexert/sonarrweeb:0.0.1`.
+[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb). Release **0.1.0** uses
+Git tag `v0.1.0` and container tag `ghcr.io/kvasexert/sonarrweeb:0.1.0`.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/0.0.1.md) when changing the published deployment.
+[release notes](docs/releases/0.1.0.md) when changing the published deployment.
+Preserve earlier release notes and dated verification reports as historical
+checkpoints; do not apply their results to a new image without running checks.
 
 Keep the SonarrWeeb product release version separate from the inherited Sonarr
 core/API compatibility version. Preserve the GPL license, corresponding source

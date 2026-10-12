@@ -24,11 +24,12 @@ updates. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
 maintainers and source-declared AI co-authors. Local adaptation and hardening
 were performed with OpenAI Codex based on GPT-6.
 
-SonarrWeeb 0.0.1 is the independently named release of this integration, building
-on the credited Sonarr Pro source forks. Its product version is separate from
+SonarrWeeb 0.1.0 is the current independently named release of this integration,
+building on the credited Sonarr Pro source forks and the original 0.0.1 release.
+Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [release notes](docs/releases/0.0.1.md) for packaging scope.
+configuration and [release notes](docs/releases/0.1.0.md) for packaging scope.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -228,7 +229,7 @@ is a third, separate condition. At least one membership state and one media
 release state must be enabled. A named custom list does not override either
 state selection.
 
-Development builds after the immutable 0.0.1 release support multiple included
+SonarrWeeb 0.1.0 supports multiple included
 and excluded custom lists, plus explicit exclusion checkboxes for all six
 watching states. Included names form an OR condition, including the retained
 legacy `CustomList` name. Empty inclusion controls omit that condition.
@@ -279,7 +280,7 @@ host worker or imply hardware-encoder availability.
 
 ## Jellyfin library refresh
 
-Development main adds a dedicated Jellyfin connection under Settings → Connect.
+SonarrWeeb 0.1.0 includes a dedicated Jellyfin connection under Settings → Connect.
 It targets one selected library, with immediate imports, conditional periodic
 ticks (1 minute minimum, 60 minutes default), or both. Migration 243 stores
 per-connection import generations and separate immediate/tick acknowledgements,

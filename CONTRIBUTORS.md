@@ -37,7 +37,7 @@ local commit makes their original author name unreachable from HEAD.
 - **Local OpenAI Codex assistant, based on GPT-6**: this integration,
   AniList lifecycle fixes, compatibility adaptations, test/runtime work,
   security hardening, the English documentation/contributor audit and
-  SonarrWeeb 0.0.1 release packaging/installation documentation and the
+  SonarrWeeb 0.0.1 and 0.1.0 release packaging/installation documentation and the
   subsequent dedicated Jellyfin refresh integration and AniList multiple-list
   inclusion/exclusion controls.
 - **Translators, reviewers and automation**: retained in the full Git
@@ -48,7 +48,7 @@ local commit makes their original author name unreachable from HEAD.
 
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
-| Local integration, documentation, SonarrWeeb 0.0.1 packaging, subsequent Jellyfin refresh and AniList inclusion/exclusion controls | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
+| Local integration, documentation, SonarrWeeb 0.0.1 and 0.1.0 packaging, Jellyfin refresh and AniList inclusion/exclusion controls | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -60,17 +60,22 @@ independently verify that a particular runtime model executed those sessions.
 
 ## SonarrWeeb release identity
 
-The integrated project is distributed as **SonarrWeeb 0.0.1**, with Git tag
-`v0.0.1`, under the GitHub profile
+The current integrated project is distributed as **SonarrWeeb 0.1.0**, with Git tag
+`v0.1.0`, under the GitHub profile
 [KvasExert](https://github.com/KvasExert/SonarrWeeb). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/0.0.1.md) and
+[release notes](docs/releases/0.1.0.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
+The original [0.0.1 release](docs/releases/0.0.1.md) and its immutable tag retain
+their own source and verification history. Version 0.1.0 includes the subsequent
+Jellyfin and AniList controls without reassigning their original contributor
+credits. The product version remains separate from Sonarr's internal core/API
+compatibility version.
 
 ## Feature-to-contributor register
 
