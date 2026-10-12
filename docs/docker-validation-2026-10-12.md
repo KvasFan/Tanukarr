@@ -1,5 +1,12 @@
 # Build e deploy Docker verificati
 
+Questo rapporto conserva la verifica iniziale. L'immagine e il deploy successivi
+alle correzioni di sicurezza sono descritti in
+[security-functional-validation-2026-10-12.md](security-functional-validation-2026-10-12.md).
+L'esportazione originale con il checksum qui riportato è conservata come
+`_artifacts/sonarr-weeb-local-linux-amd64-build-130831c3b.tar`; il nome senza
+identificatore contiene l'immagine conclusiva.
+
 L'immagine `sonarr-weeb:local` è stata costruita realmente dal repository ed
 eseguita come container Linux `amd64`. Il deploy Compose `sonarr-pro` è attivo
 su [http://localhost:6970](http://localhost:6970), raggiungibile anche da Windows.
@@ -15,13 +22,13 @@ Non sono stati usati una libreria reale o client di download.
 - .NET SDK `10.0.401`, frontend Node 24/Vite, Docker Engine `29.9.0`, Compose `v5.6.0`.
 - Docker è installato nella distribuzione WSL 2 dedicata `SonarrWeebBuild`, Ubuntu
   `24.04.5`. Docker Desktop non è stato installato.
-- Archivio esportato: `_artifacts/sonarr-weeb-local-linux-amd64.tar`, 127.636.992 byte.
+- Archivio esportato: `_artifacts/sonarr-weeb-local-linux-amd64-build-130831c3b.tar`, 127.636.992 byte.
 - SHA-256 dell'archivio: `08f7676f65cc544c97a60bd17a84d7fd5e898c5609d4bb01ac7a325bea3bf938`.
 
 Per importare l'immagine su un altro host Linux `amd64`:
 
 ```sh
-docker load -i sonarr-weeb-local-linux-amd64.tar
+docker load -i sonarr-weeb-local-linux-amd64-build-130831c3b.tar
 ```
 
 ## Verifiche effettuate
