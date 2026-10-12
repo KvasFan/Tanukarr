@@ -114,6 +114,10 @@ default; il solo entrypoint accetta anche il parametro storico `UMASK_SET`.
 
 ## Verifica
 
+Questi risultati descrivono l'integrazione iniziale. Build e deploy Docker sono
+stati successivamente eseguiti e verificati nel
+[report Docker](docker-validation-2026-10-12.md).
+
 | Controllo | Esito |
 | --- | --- |
 | Build dell'intera soluzione, Debug | Passata; 0 errori, 0 avvisi |

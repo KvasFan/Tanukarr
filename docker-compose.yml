@@ -7,22 +7,22 @@ services:
     restart: unless-stopped
 
     ports:
-      - "${SONARR_PRO_PORT:-6970}:8989"
+      - "${SONARR_PRO_BIND_ADDRESS:-127.0.0.1}:${SONARR_PRO_PORT:-6970}:8989"
 
     environment:
       # Files are written as this user. Run "id" on the host and use the numbers it
       # prints, otherwise downloads land as root and the host account cannot edit them.
-      - PUID=1000
-      - PGID=1000
+      - PUID=${SONARR_PRO_PUID:-1000}
+      - PGID=${SONARR_PRO_PGID:-1000}
       # Media group members can create subtitles and sidecars alongside imports.
       - UMASK=${SONARR_PRO_UMASK:-002}
-      - TZ=Etc/UTC
+      - TZ=${SONARR_PRO_TZ:-Etc/UTC}
 
     volumes:
       # Database, config.xml and logs. Back this up; everything else is replaceable.
-      - ./config:/config
+      - ${SONARR_PRO_CONFIG_PATH:-./config}:/config
 
       # Media and downloads. Mount the download client's completed folder and the
       # library under a single parent so imports are a move on one filesystem rather
       # than a full copy across two.
-      - /path/to/media:/media
+      - ${SONARR_PRO_MEDIA_PATH:-./media}:/media

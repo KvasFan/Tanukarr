@@ -167,3 +167,12 @@ src/.idea/
 .idea/
 
 frontend/src/**/*.module.css.d.ts
+
+# Local container data and configuration are not source files.
+/config/
+/media/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc

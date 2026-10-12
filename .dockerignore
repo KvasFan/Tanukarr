@@ -18,6 +18,7 @@ node_modules
 
 # Compose runtime data and local environment settings are not source files.
 config/
+media/
 .env
 .env.*
 
@@ -31,6 +32,8 @@ config/
 *.user
 *.suo
 *.log
+**/__pycache__/
+*.pyc
 
 # Documentation and packaging that do not affect the built image. LICENSE.md is
 # deliberately not excluded: the image is a binary distribution of GPL software and

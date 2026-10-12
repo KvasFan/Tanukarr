@@ -86,29 +86,8 @@ jobs:
 
       - name: Smoke test
         run: |
-          set -euo pipefail
-          docker run -d --name smoketest -p 8989:8989 -e PUID=1000 -e PGID=1000 \
-            -v "${RUNNER_TEMP}/smoke-config:/config" sonarr-pro:smoketest
-
-          # First start migrates the database, so allow generous time before failing.
-          for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8989/ping || true)
-            if [ "$code" = "200" ]; then
-              echo "Responded 200 on /ping after ${i}0s"
-              docker rm -f smoketest >/dev/null
-              exit 0
-            fi
-            if [ -z "$(docker ps -q -f name=smoketest)" ]; then
-              echo "::error::Container exited before serving a request"
-              docker logs smoketest
-              exit 1
-            fi
-            sleep 10
-          done
-
-          echo "::error::/ping never returned 200"
-          docker logs smoketest
-          exit 1
+          python3 docker/tests/smoke.py --image sonarr-pro:smoketest \
+            --report "${RUNNER_TEMP}/sonarr-container-smoke.json"
 
       - name: Build and push
         if: github.event_name != 'pull_request'

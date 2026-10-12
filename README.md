@@ -5,6 +5,8 @@ and adds selected gaboy features, AniList list fixes and the compatible ikatun
 features. See the [integration and validation report](docs/integration-2026-10-12.md)
 and the [ikatun feature and validation report](docs/ikatun-integration-2026-10-12.md).
 The included Compose file builds `sonarr-weeb:local` from this working tree.
+The [Docker build and deployment report](docs/docker-validation-2026-10-12.md)
+records the verified Linux image, runtime checks and local Windows deployment.
 
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
 
@@ -81,17 +83,19 @@ You need [Docker](https://docs.docker.com/get-docker/). That's the only prerequi
 ### Quick start
 
 ```bash
-docker run -d --name sonarr-pro -p 6970:8989 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v sonarr-pro-config:/config -v /path/to/media:/media --restart unless-stopped ghcr.io/kakarottocake/sonarr-pro:latest
+docker build -t sonarr-weeb:local .
+docker run -d --name sonarr-pro -p 6970:8989 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v sonarr-pro-config:/config -v /path/to/media:/media --restart unless-stopped sonarr-weeb:local
 ```
 
 Then open **http://localhost:6970**. Upstream Sonarr can keep using port 8989.
 
 ### Or with Compose
 
-Grab [`docker-compose.yml`](docker-compose.yml), edit the media path, and run:
+From this repository, create the empty local media directory and run:
 
 ```bash
-docker compose up -d
+mkdir -p media
+docker compose up -d --build
 ```
 
 Compose also defaults to port 6970; set `SONARR_PRO_PORT` to change it. Keep this
@@ -108,6 +112,17 @@ docker compose build && docker compose up -d
 Without Compose, pull the new image and recreate the container using the same
 volume mounts and environment variables. Restarting an existing container keeps
 its old image, even after a pull.
+
+Compose binds to `127.0.0.1` and uses `./config` plus `./media` by default. Set
+`SONARR_PRO_MEDIA_PATH` to the media/download parent you want to mount, and
+`SONARR_PRO_CONFIG_PATH` for a separate configuration directory. Use
+`SONARR_PRO_PUID` / `SONARR_PRO_PGID` for the host user's IDs and ensure the media
+directory is writable by that user. `SONARR_PRO_BIND_ADDRESS=0.0.0.0` allows
+connections from other hosts; `SONARR_PRO_TZ` selects the container timezone.
+
+Verify a built image with `python docker/tests/smoke.py --image sonarr-weeb:local`.
+The [container smoke test](docker/tests/README.md) checks UI, API, native media
+probe, permissions and persistence using disposable data.
 
 The included Compose file builds this local integration. Public Kakarotto images
 do not include these local changes.
@@ -172,10 +187,13 @@ dotnet build src/Sonarr.sln -c Debug
 Build the **solution**, not individual project files. `Directory.Build.props` loads `stylecop.json` through `$(SolutionDir)`, which is only defined for a solution build — building a bare `.csproj` silently drops the StyleCop config and then fails on every `using` directive in the repo.
 
 ```bash
-yarn install && yarn build --env production
+yarn install --frozen-lockfile
+yarn typecheck
+yarn build
 ```
 
-`--env production` is not optional. Without it webpack emits eval-source-map output and the UI loads as a blank page.
+The frontend uses Vite and Node 24. `yarn build` creates the production bundle;
+the old webpack `--env production` argument is no longer supported.
 
 ---
 

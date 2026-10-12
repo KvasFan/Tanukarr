@@ -61,8 +61,11 @@ RUN set -eux; \
 # The native amd64 build verifies the same published backend. Releases also build
 # arm64 under emulation; the tests have already run on amd64 for that commit.
 # Integration tests require configured external services and run separately.
+# NuGet distributes ffprobe with mode 644. Disk-access tests execute the binary
+# from their own output directory before /app is made executable.
 RUN set -eux; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
+      chmod +x _tests/net10.0/linux-x64/ffprobe; \
       for suite in Core Api Http; do \
         dotnet test "_tests/net10.0/linux-x64/Sonarr.${suite}.Test.dll" \
           --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"; \
