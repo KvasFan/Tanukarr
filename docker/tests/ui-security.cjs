@@ -118,6 +118,9 @@ async function main(input) {
     });
     await check('AniList import-list editor distinguishes username/custom list, user-list status and media-release status', async () => {
       await page.goto(input.baseUrl + '/settings/importlists');
+      await page.getByRole('button', { name: 'Add Import List', exact: true }).waitFor({ state: 'visible' });
+      const advancedButton = page.getByRole('button', { name: 'Show Advanced', exact: true });
+      if (await advancedButton.count()) await advancedButton.click();
       await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
       await page.getByRole('button', { name: 'Add Import List - AniList List', exact: true }).click();
       await page.locator('input[name="username"]').waitFor({ state: 'visible' });
@@ -136,6 +139,64 @@ async function main(input) {
       assert.equal(await page.locator('input[name="customList"]').inputValue(), 'Watching later');
       if (input.artifactDirectory) await page.screenshot({ path: path.join(input.artifactDirectory, 'anilist-list-status-fields.png'), fullPage: true });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
+    });
+    await check('AniList include/exclude controls preserve literal names and exclusion priority in the submitted settings', async () => {
+      const savedBefore = await context.request.get(input.baseUrl + '/api/v5/importlist', {
+        headers: { 'X-Api-Key': input.apiKey },
+      });
+      assert.equal(savedBefore.status(), 200);
+      const originalLists = await savedBefore.json();
+      await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
+      await page.getByRole('button', { name: 'Add Import List - AniList List', exact: true }).click();
+      const included = page.locator('input[name="includedCustomLists"]');
+      const excluded = page.locator('input[name="excludedCustomLists"]');
+      await included.waitFor({ state: 'visible' });
+      await excluded.waitFor({ state: 'visible' });
+      for (const name of ['excludeCurrent', 'excludePlanning', 'excludeCompleted', 'excludeDropped', 'excludePaused', 'excludeRepeating']) {
+        const field = page.locator('input[name="' + name + '"]');
+        assert.equal(await field.count(), 1, 'Missing explicit status exclusion ' + name);
+        assert.equal(await field.isChecked(), false, 'New exclusion unexpectedly enabled');
+      }
+      const selectedName = 'Seasonal, favorites';
+      const excludedName = 'Do not download, duplicates';
+      await included.fill(selectedName);
+      await included.press('Enter');
+      await page.getByText(selectedName, { exact: true }).waitFor({ state: 'visible' });
+      await page.waitForTimeout(300); // TagInput debounces repeated additions for 250 ms.
+      await included.fill('Watching later');
+      await included.press('Enter');
+      await excluded.fill(excludedName);
+      await excluded.press('Enter');
+      await page.getByText(excludedName, { exact: true }).waitFor({ state: 'visible' });
+      await page.waitForTimeout(300);
+      await excluded.fill(selectedName);
+      await excluded.press('Enter');
+      assert.equal(await page.getByText(selectedName, { exact: true }).count(), 2);
+      assert.equal(await page.getByText(excludedName, { exact: true }).count(), 1);
+      assert.equal(await page.locator('input[name="importCurrent"]').isChecked(), true);
+      await page.locator('input[name="excludeCurrent"]').check();
+      await page.locator('input[name="username"]').fill('isolated-user');
+      const testResponse = page.waitForResponse((response) =>
+        /\/api\/v[35]\/importlist\/test\/?$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST');
+      await page.getByRole('button', { name: 'Test', exact: true }).last().click();
+      const response = await testResponse;
+      // Missing OAuth credentials intentionally fail local validation before any AniList call.
+      assert.equal(response.status(), 400);
+      const fields = new Map(response.request().postDataJSON().fields.map((field) => [field.name, field.value]));
+      assert.deepEqual(fields.get('includedCustomLists'), [selectedName, 'Watching later']);
+      assert.deepEqual(fields.get('excludedCustomLists'), [excludedName, selectedName]);
+      assert.equal(fields.get('importCurrent'), true);
+      assert.equal(fields.get('excludeCurrent'), true);
+      if (input.artifactDirectory) await page.screenshot({
+        path: path.join(input.artifactDirectory, 'anilist-included-excluded-lists.png'), fullPage: true,
+        style: 'input[type="password"] { visibility: hidden !important; }',
+      });
+      await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
+      const savedAfter = await context.request.get(input.baseUrl + '/api/v5/importlist', {
+        headers: { 'X-Api-Key': input.apiKey },
+      });
+      assert.equal(savedAfter.status(), 200);
+      assert.deepEqual(await savedAfter.json(), originalLists, 'Cancelled filter editor changed saved lists');
     });
     await check('browser navigation produces no unhandled JavaScript exceptions or forbidden Sonarr-cloud requests', async () => {
       assert.deepEqual(pageErrors, []);

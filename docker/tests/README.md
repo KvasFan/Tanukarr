@@ -153,6 +153,11 @@ The Node helper
 reads disposable credentials from stdin and redacts them from reports. It checks
 login, navigation, provider attribution/links, native-series detail and lookup,
 complete search and AniList list settings. The native-series/complete-search
+scenario also checks custom-list inclusion/exclusion controls, literal names
+containing commas, all six explicit watching-state exclusions and the submitted
+settings payload. Its connection test intentionally fails local validation
+without OAuth credentials; cancelling the editor leaves saved lists unchanged.
+The native-series/complete-search
 scenario needs `--anilist`; the browser's lookup scenario requires network access
 even if that flag is omitted. Browser reports and screenshots are
 written alongside the specified report. These optional live checks require network

@@ -18,6 +18,8 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             _settings = settings;
         }
 
+        public ISet<int> ExcludedMediaIds { get; } = new HashSet<int>();
+
         public virtual IList<ImportListItemInfo> ParseResponse(ImportListResponse importListResponse)
         {
             return ParseResponse(importListResponse, out _);
@@ -52,14 +54,33 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 throw new ImportListException(importListResponse, "AniList returned a list entry without a valid media ID. The previous list will be retained.");
             }
 
-            // Anilist currently does not support filtering this at the query level, they will get filtered out here.
-            var filtered = page.MediaList
-                .Where(x => ValidateMediaStatus(x.Media))
-                .Where(IsOnSelectedCustomList);
+            if (HasExclusions() && page.MediaList.Any(item => !IsKnownListStatus(item.Status)))
+            {
+                throw new ImportListException(importListResponse, "AniList returned an entry without a valid list status needed for exclusions. The previous list will be retained.");
+            }
 
-            foreach (var item in filtered)
+            if (_settings.ExcludedCustomLists?.Any() == true && page.MediaList.Any(item => item.CustomLists == null))
+            {
+                throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for exclusions. The previous list will be retained.");
+            }
+
+            foreach (var item in page.MediaList)
             {
                 var media = item.Media;
+
+                // Process every exclusion before inclusion filters so an excluded duplicate
+                // cannot be admitted by a different status or custom list on another page.
+                if (IsExcludedListStatus(item.Status) || IsOnExcludedCustomList(item, importListResponse))
+                {
+                    ExcludedMediaIds.Add(media.Id);
+                    continue;
+                }
+
+                if (ExcludedMediaIds.Contains(media.Id) || !IsSelectedListStatus(item.Status) ||
+                    !ValidateMediaStatus(media) || !IsOnSelectedCustomList(item))
+                {
+                    continue;
+                }
 
                 var entry = new ImportListItemInfo
                 {
@@ -73,17 +94,24 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             }
 
             pageInfo = page.PageInfo;
-            return result;
+            return result.Where(item => !ExcludedMediaIds.Contains(item.AniListId)).ToList();
         }
 
         /// <summary>
-        /// Restricts the list to one of the user's own custom lists, if they named one.
+        /// Restricts the list to any of the user's selected custom lists, if named.
         /// The standard lists such as Planning and Watching cover everything the user has
         /// ever added, which is usually far more than they want Sonarr to manage.
         /// </summary>
         private bool IsOnSelectedCustomList(MediaList item)
         {
-            if (_settings.CustomList.IsNullOrWhiteSpace())
+            var selectedNames = (_settings.IncludedCustomLists ?? Array.Empty<string>()).ToList();
+
+            if (_settings.CustomList.IsNotNullOrWhiteSpace())
+            {
+                selectedNames.Add(_settings.CustomList.Trim());
+            }
+
+            if (selectedNames.Count == 0)
             {
                 return true;
             }
@@ -93,16 +121,88 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 return false;
             }
 
-            var name = _settings.CustomList.Trim();
+            return selectedNames.Any(name => IsCustomListMember(item.CustomLists, name, false, null));
+        }
 
-            if (item.CustomLists.TryGetValue(name, out var member))
+        private bool IsOnExcludedCustomList(MediaList item, ImportListResponse response)
+        {
+            var excludedNames = (_settings.ExcludedCustomLists ?? Array.Empty<string>()).ToList();
+
+            if (excludedNames.Count == 0)
+            {
+                return false;
+            }
+
+            if (item.CustomLists == null)
+            {
+                throw new ImportListException(response, "AniList returned an entry without custom list membership needed for exclusions. The previous list will be retained.");
+            }
+
+            return excludedNames.Any(name => IsCustomListMember(item.CustomLists, name, true, response));
+        }
+
+        private static bool IsCustomListMember(Dictionary<string, bool> customLists, string name, bool exclude, ImportListResponse response)
+        {
+            if (name.IsNullOrWhiteSpace())
+            {
+                throw new ImportListException(response, "AniList custom list filters contain an empty name. Correct the settings before syncing. The previous list will be retained.");
+            }
+
+            if (customLists.TryGetValue(name, out var member))
             {
                 return member;
             }
 
             // Keep manual entry forgiving without combining distinct lists that differ by case.
-            var matchingLists = item.CustomLists.Where(l => l.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+            var matchingLists = customLists.Where(l => l.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (exclude && matchingLists.Count > 1)
+            {
+                throw new ImportListException(response, "An AniList excluded custom list name is ambiguous by letter case. Use its exact name before syncing. The previous list will be retained.");
+            }
+
             return matchingLists.Count == 1 && matchingLists[0].Value;
+        }
+
+        private bool IsSelectedListStatus(string status)
+        {
+            return status switch
+            {
+                MediaListStatus.Current => _settings.ImportCurrent,
+                MediaListStatus.Planning => _settings.ImportPlanning,
+                MediaListStatus.Completed => _settings.ImportCompleted,
+                MediaListStatus.Dropped => _settings.ImportDropped,
+                MediaListStatus.Paused => _settings.ImportPaused,
+                MediaListStatus.Repeating => _settings.ImportRepeating,
+                _ => false
+            };
+        }
+
+        private static bool IsKnownListStatus(string status)
+        {
+            return status == MediaListStatus.Current || status == MediaListStatus.Planning ||
+                   status == MediaListStatus.Completed || status == MediaListStatus.Dropped ||
+                   status == MediaListStatus.Paused || status == MediaListStatus.Repeating;
+        }
+
+        private bool HasExclusions()
+        {
+            return _settings.ExcludedCustomLists?.Any() == true || _settings.ExcludeCurrent || _settings.ExcludePlanning ||
+                   _settings.ExcludeCompleted || _settings.ExcludeDropped || _settings.ExcludePaused || _settings.ExcludeRepeating;
+        }
+
+        private bool IsExcludedListStatus(string status)
+        {
+            return status switch
+            {
+                MediaListStatus.Current => _settings.ExcludeCurrent,
+                MediaListStatus.Planning => _settings.ExcludePlanning,
+                MediaListStatus.Completed => _settings.ExcludeCompleted,
+                MediaListStatus.Dropped => _settings.ExcludeDropped,
+                MediaListStatus.Paused => _settings.ExcludePaused,
+                MediaListStatus.Repeating => _settings.ExcludeRepeating,
+                _ => false
+            };
         }
 
         private bool ValidateMediaStatus(MediaInfo media)

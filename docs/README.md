@@ -35,6 +35,7 @@ original content.
 | [Final security and functional verification](security-functional-validation-2026-10-12.md) | Tested image, full suite results, fixes, SBOM/scanners, remaining risks and limits |
 | [Documentation review](documentation-review-2026-10-12.md) | Tracked-file inventory, documentation checks and attribution methodology |
 | [Jellyfin verification](jellyfin-verification-2026-10-12.md) | Post-release Jellyfin integration, queue/security checks and disposable-server tests |
+| [AniList filter verification](anilist-filters-verification-2026-10-13.md) | Post-release inclusion/exclusion precedence, pagination, compatible settings and UI checks |
 
 The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later

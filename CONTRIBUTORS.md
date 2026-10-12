@@ -38,7 +38,8 @@ local commit makes their original author name unreachable from HEAD.
   AniList lifecycle fixes, compatibility adaptations, test/runtime work,
   security hardening, the English documentation/contributor audit and
   SonarrWeeb 0.0.1 release packaging/installation documentation and the
-  subsequent dedicated Jellyfin refresh integration.
+  subsequent dedicated Jellyfin refresh integration and AniList multiple-list
+  inclusion/exclusion controls.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -47,7 +48,7 @@ local commit makes their original author name unreachable from HEAD.
 
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
-| Local integration, documentation, SonarrWeeb 0.0.1 packaging and subsequent Jellyfin refresh | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
+| Local integration, documentation, SonarrWeeb 0.0.1 packaging, subsequent Jellyfin refresh and AniList inclusion/exclusion controls | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -130,6 +131,23 @@ Private Contributor (source history); KakarottoCake (fork maintainer).
 - [367d227f0](https://github.com/KakarottoCake/Sonarr-Pro/commit/367d227f062536217a3a85dbf6744a8c7edd769e): Private Contributor; declared co-authors: Claude. Expose the fork settings on the v5 API the UI actually reads.
 
 Local adaptation: `390437b59`, `c4bd6a625`.
+
+### AniList multiple-list inclusion and exclusion precedence
+
+The new controls extend the existing provider and custom-list feature:
+
+- [465a58448](https://github.com/Sonarr/Sonarr/commit/465a58448644907978927e3fa564e96baab81f2f): **Xabis**, original AniList import-list provider.
+- [3ed8fd17b](https://github.com/KakarottoCake/Sonarr-Pro/commit/3ed8fd17baaa509f538eea1201932c3bf8cf950c): **Private Contributor**, original named custom-list filter; source-declared co-author **Claude Opus 4.8**, with **KakarottoCake** maintaining the source fork.
+
+**AniList contributors** maintain the official watching-state and custom-list
+membership API documentation consulted for this adaptation. **OpenAI Codex,
+based on GPT-6**, added multiple included/excluded custom lists, explicit
+watching-state exclusions, exclusion precedence across paginated results,
+literal custom-name inputs, tests and English documentation on October 13,
+2026. This work follows the immutable 0.0.1 release; the inherited author and
+model declarations remain unchanged. See the
+[configuration guide](docs/library-tools.md#anilist-lists) and
+[verification checkpoint](docs/anilist-filters-verification-2026-10-13.md).
 
 ### IMDb orderings, bounded dataset import and Jikan fallback
 

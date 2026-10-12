@@ -110,6 +110,9 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 }
                 while (hasNextPage);
 
+                // A later page can veto an earlier occurrence of the same media ID.
+                releases.RemoveAll(item => parser.ExcludedMediaIds.Contains(item.AniListId));
+
                 _importListStatusService.RecordSuccess(Definition.Id);
                 anyFailure = false;
             }
@@ -195,7 +198,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 var generator = GetRequestGenerator();
                 var pageIndex = 1;
                 var continueTesting = true;
-                var hasResults = false;
+                var matchingIds = new HashSet<int>();
+                var checkAllPages = Settings.ExcludedCustomLists?.Any() == true ||
+                                    Settings.ExcludeCurrent || Settings.ExcludePlanning ||
+                                    Settings.ExcludeCompleted || Settings.ExcludeDropped ||
+                                    Settings.ExcludePaused || Settings.ExcludeRepeating;
 
                 // Anilist caps the result list to 50 items at maximum per query, so the data must be pulled in batches.
                 // The number of pages are not known upfront, so the fetch logic must be changed to look at the returned page data.
@@ -206,14 +213,17 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                     var page = parser.ParseResponse(response, out var pageInfo).ToList();
                     ValidatePagination(response, pageInfo, pageIndex);
 
-                    // Continue testing additional pages if all results were filtered out by 'Media' filters and there are additional pages
-                    continueTesting = pageInfo.HasNextPage == true && page.Count == 0;
+                    matchingIds.UnionWith(page.Where(IsValidItem).Select(item => item.AniListId));
+
+                    // Exclusions may veto an earlier result, so test every page when enabled.
+                    continueTesting = pageInfo.HasNextPage == true && (checkAllPages || page.Count == 0);
                     pageIndex++;
-                    hasResults = page.Count > 0;
                 }
                 while (continueTesting);
 
-                if (!hasResults)
+                matchingIds.ExceptWith(parser.ExcludedMediaIds);
+
+                if (matchingIds.Count == 0)
                 {
                     return new NzbDroneValidationFailure(string.Empty,
                             "No results were returned from your import list, please check your settings and the log for details.")

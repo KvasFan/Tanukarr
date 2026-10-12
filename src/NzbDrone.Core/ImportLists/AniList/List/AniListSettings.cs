@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using FluentValidation;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Annotations;
 using NzbDrone.Core.Validation;
 
@@ -17,6 +20,12 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             RuleFor(c => c.ImportFinished).NotEmpty()
                                           .WithMessage("At least one media release status must be selected")
                                           .When(c => !(c.ImportReleasing || c.ImportUnreleased || c.ImportCancelled || c.ImportHiatus));
+
+            RuleForEach(c => c.IncludedCustomLists).Must(name => name.IsNotNullOrWhiteSpace())
+                                                 .WithMessage("Custom list names must not be empty or whitespace.");
+
+            RuleForEach(c => c.ExcludedCustomLists).Must(name => name.IsNotNullOrWhiteSpace())
+                                                 .WithMessage("Custom list names must not be empty or whitespace.");
         }
     }
 
@@ -24,6 +33,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
     {
         public const string SectionImport = "Import List Status";
         public const string SectionMedia = "Import Media Release Status";
+        public const string SectionExclude = "Exclude List Status";
 
         private static readonly AniListSettingsValidator Validator = new();
 
@@ -33,12 +43,14 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             ImportPlanning = true;
             ImportReleasing = true;
             ImportFinished = true;
+            IncludedCustomLists = Array.Empty<string>();
+            ExcludedCustomLists = Array.Empty<string>();
         }
 
         [FieldDefinition(1, Label = "Username", HelpText = "ImportListsAniListSettingsUsernameHelpText")]
         public string Username { get; set; }
 
-        [FieldDefinition(2, Label = "ImportListsAniListSettingsCustomList", HelpText = "ImportListsAniListSettingsCustomListHelpText")]
+        [FieldDefinition(2, Label = "ImportListsAniListSettingsCustomList", HelpText = "ImportListsAniListSettingsCustomListHelpText", Advanced = true)]
         public string CustomList { get; set; }
 
         [FieldDefinition(3, Label = "ImportListsAniListSettingsImportWatching", Type = FieldType.Checkbox, Section = SectionImport, HelpText = "ImportListsAniListSettingsImportWatchingHelpText")]
@@ -73,6 +85,30 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
         [FieldDefinition(13, Label = "ImportListsAniListSettingsImportHiatus", Type = FieldType.Checkbox, Section = SectionMedia, HelpText = "ImportListsAniListSettingsImportHiatusHelpText")]
         public bool ImportHiatus { get; set; }
+
+        [FieldDefinition(14, Label = "ImportListsAniListSettingsIncludedCustomLists", Type = FieldType.Tag, HelpText = "ImportListsAniListSettingsIncludedCustomListsHelpText")]
+        public IEnumerable<string> IncludedCustomLists { get; set; }
+
+        [FieldDefinition(15, Label = "ImportListsAniListSettingsExcludedCustomLists", Type = FieldType.Tag, HelpText = "ImportListsAniListSettingsExcludedCustomListsHelpText")]
+        public IEnumerable<string> ExcludedCustomLists { get; set; }
+
+        [FieldDefinition(16, Label = "ImportListsAniListSettingsExcludeWatching", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
+        public bool ExcludeCurrent { get; set; }
+
+        [FieldDefinition(17, Label = "ImportListsAniListSettingsExcludePlanning", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
+        public bool ExcludePlanning { get; set; }
+
+        [FieldDefinition(18, Label = "ImportListsAniListSettingsExcludeCompleted", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
+        public bool ExcludeCompleted { get; set; }
+
+        [FieldDefinition(19, Label = "ImportListsAniListSettingsExcludeDropped", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
+        public bool ExcludeDropped { get; set; }
+
+        [FieldDefinition(20, Label = "ImportListsAniListSettingsExcludePaused", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
+        public bool ExcludePaused { get; set; }
+
+        [FieldDefinition(21, Label = "ImportListsAniListSettingsExcludeRepeating", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
+        public bool ExcludeRepeating { get; set; }
 
         public override NzbDroneValidationResult Validate()
         {

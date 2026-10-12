@@ -223,11 +223,33 @@ Private-account synchronization was not exercised in the recorded local tests.
 The membership statuses
 Watching, Planning, Completed, Dropped, Paused and Repeating describe the user's
 relationship to an anime. Media statuses Finished, Releasing, Not Yet Released,
-Cancelled and Hiatus describe the anime's release state. A named custom list is
-a third, separate condition. Configured membership, media and custom-list filters
-apply together; a custom list does not override the other selections. At least
-one membership status and one media status must be selected. Leave the custom
-list field blank to omit that additional condition.
+Cancelled and Hiatus describe the anime's release state. Custom-list membership
+is a third, separate condition. At least one membership state and one media
+release state must be enabled. A named custom list does not override either
+state selection.
+
+Development builds after the immutable 0.0.1 release support multiple included
+and excluded custom lists, plus explicit exclusion checkboxes for all six
+watching states. Included names form an OR condition, including the retained
+legacy `CustomList` name. Empty inclusion controls omit that condition.
+Membership in any excluded custom list or an explicitly excluded watching state
+vetoes an entry, even when Watching or an included custom list would otherwise
+accept it. The release-state filter remains an independent AND condition.
+Custom names retain spaces and punctuation, including commas.
+
+Exact name matches distinguish lists that differ only in case. A unique
+case-insensitive fallback remains convenient for manual entry; an ambiguous
+excluded name fails the sync rather than weakening the exclusion. Unknown
+membership with custom-list exclusions configured also fails the fetch. Vetoes
+persist across pagination before deduplication, so a later excluded copy of the
+same AniList media ID cannot leave an earlier accepted copy in the result.
+The previous cached list is retained when the fetch fails.
+
+Filters belong to one saved AniList connection. They do not write global
+exclusion records or directly delete shows or files; existing list-cleanup
+policy remains separate. Source attribution is preserved in
+[CONTRIBUTORS.md](CONTRIBUTORS.md), and executed checks belong to the
+[AniList filter verification checkpoint](docs/anilist-filters-verification-2026-10-13.md).
 
 Imported AniList entries keep `(AniList, ForeignId)` as their identity. Import,
 preview, deduplication, exclusions and cleanup do not replace a separate anime

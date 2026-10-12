@@ -15,17 +15,27 @@ export interface TextTagInputProps
   > {
   name: string;
   value: string | string[];
+  preserveTagText?: boolean;
   onChange: (change: InputChanged<string[]>) => unknown;
 }
 
 function TextTagInput({
   name,
   value,
+  preserveTagText = false,
   onChange,
   ...otherProps
 }: TextTagInputProps) {
   const { tags, tagList, valueArray } = useMemo(() => {
-    const tagsArray = Array.isArray(value) ? value : split(value);
+    let tagsArray: string[] = [];
+
+    if (Array.isArray(value)) {
+      tagsArray = value;
+    } else if (preserveTagText && value) {
+      tagsArray = [value];
+    } else {
+      tagsArray = split(value);
+    }
 
     return {
       tags: tagsArray.reduce((result: TextTag[], tag) => {
@@ -41,7 +51,7 @@ function TextTagInput({
       tagList: [],
       valueArray: tagsArray,
     };
-  }, [value]);
+  }, [preserveTagText, value]);
 
   const handleTagAdd = useCallback(
     (newTag: TextTag) => {
@@ -50,9 +60,10 @@ function TextTagInput({
       // to oddities with restrictions (as an example).
 
       const newValue = [...valueArray];
-      const newTags = newTag.name.startsWith('/')
-        ? [newTag.name]
-        : split(newTag.name);
+      const newTags =
+        preserveTagText || newTag.name.startsWith('/')
+          ? [newTag.name]
+          : split(newTag.name);
 
       newTags.forEach((newTag) => {
         const newTagValue = newTag.trim();
@@ -64,7 +75,7 @@ function TextTagInput({
 
       onChange({ name, value: newValue });
     },
-    [name, valueArray, onChange]
+    [name, preserveTagText, valueArray, onChange]
   );
 
   const handleTagDelete = useCallback(
@@ -100,7 +111,7 @@ function TextTagInput({
     <TagInput
       {...otherProps}
       name={name}
-      delimiters={['Tab', 'Enter', ',']}
+      delimiters={preserveTagText ? ['Tab', 'Enter'] : ['Tab', 'Enter', ',']}
       tags={tags}
       tagList={tagList}
       onTagAdd={handleTagAdd}

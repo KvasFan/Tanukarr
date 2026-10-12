@@ -421,6 +421,15 @@ class FunctionalSecurity(ContainerSmoke):
         require(len({fields[name].get("section") for name in list_status}) == 1, "User-list statuses are not grouped")
         require(fields["importCurrent"].get("section") != fields["importFinished"].get("section"),
                 "User-list status and media-release status conflated")
+        excluded_status = ("excludeCurrent", "excludePlanning", "excludeCompleted", "excludeDropped", "excludePaused", "excludeRepeating")
+        require(all(name in fields and fields[name].get("value") is False for name in excluded_status),
+                "AniList status exclusions missing or unexpectedly enabled")
+        for name in ("includedCustomLists", "excludedCustomLists"):
+            require(name in fields and fields[name].get("type") == "tag" and fields[name].get("value") == [],
+                    "AniList custom-list inclusion/exclusion field is missing or has unsafe defaults")
+        require(fields["excludeCurrent"].get("section") not in
+                (fields["importCurrent"].get("section"), fields["importFinished"].get("section")),
+                "AniList excluded statuses are not grouped separately")
         require(self.json_api("/api/v5/importlist") == [], "Schema lookup saved an import list")
         self.observations.append("AniList list status, media release status, username and custom-list fields are distinct in runtime schema; private-account synchronization requires real OAuth credentials and was not run.")
 

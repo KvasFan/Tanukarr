@@ -79,26 +79,58 @@ provider results cannot be used to add shows.
 ### AniList lists
 
 Configure AniList under **Settings → Import Lists**, authenticate with AniList
-and enter the target username. These filters describe different things and are
-combined:
+and enter the target username. The multiple-list inclusion and exclusion controls
+are development features added after the immutable 0.0.1 release. These filters
+describe different things and are combined:
 
 | Setting | What it selects |
 | --- | --- |
-| Import List Status | Your membership status: Watching, Planning, Completed, Dropped, Paused or Repeating |
+| Import List Status | Enabled membership states: Watching, Planning, Completed, Dropped, Paused or Repeating |
 | Import Media Release Status | The anime's release status: Finished, Releasing, Not Yet Released, Cancelled or Hiatus |
-| Custom List | Membership in one named custom list owned by the selected user; leave blank to use all matching entries |
+| Included Custom Lists | Membership in any of the named custom lists owned by the selected user |
+| Custom List (Legacy) | The original single-name setting under Show Advanced, retained for saved connections; its name joins Included Custom Lists |
+| Excluded Custom Lists | Membership in any named exclusion list vetoes the import, even when another filter includes the anime |
+| Exclude List Status | Explicit exclusions for Watching, Planning, Completed, Dropped, Paused and Repeating; exclusion wins over the corresponding import checkbox |
 
 Choose at least one membership status and one release status. Watching and
 Planning, together with Finished and Releasing, are the defaults. For example,
 **Completed** does not mean the anime has finished airing: choose **Finished**
-as well if that is required. A named custom list further restricts those matches;
-it does not replace either status filter.
+as well if that is required. AniList gives an entry one watching state, while
+the same entry can belong to several custom lists independently.
 
-Custom-list names are trimmed. An exact name takes precedence; a
-case-insensitive match is accepted only when it identifies a single list, so
-distinct names differing only in case are not merged. A missing membership flag
-does not count as membership. Pagination or GraphQL failures retain the previous
-successful list rather than treating the response as an empty list.
+Included custom-list names are alternatives: matching any one is sufficient.
+The original **Custom List (Legacy)** name participates in that same union, so an existing
+connection keeps its restriction until that name is cleared. Leave both
+inclusion controls empty to accept every entry matching the enabled membership
+and release states. Named-list inclusion does not bypass either state filter.
+
+Exclusions always take precedence. For example, enable **Import Watching** and
+include `Seasonal`, then exclude `Do not download`: an anime marked Watching
+and belonging to both custom lists is excluded. Explicitly checking
+**Exclude Watching** also blocks Watching entries even when **Import Watching**
+is checked. All explicit exclusions start disabled; excluded custom lists start
+empty. Release-state filtering remains separate.
+
+Enter each complete custom-list name and press **Enter** to add it. Repeat for
+more names. Spaces, commas and other punctuation are part of the name, so
+`Seasonal, favorites` is one name, not two. Names are trimmed at their boundaries.
+
+An exact custom-list name takes precedence. A case-insensitive fallback is
+accepted only when it identifies a single list, so distinct names differing
+only in case are not merged. Membership requires a `true` flag; a list name
+whose flag is `false` does not match. If an excluded name has an ambiguous
+case-insensitive match, use its exact spelling: the sync fails and retains the
+previous successful list rather than guessing. Missing custom-list data while
+custom-list exclusions are configured, pagination failures and GraphQL errors
+also retain the previous successful list. An excluded AniList media ID cannot be reintroduced
+by a duplicate accepted entry on another response page.
+
+These filters apply to this saved AniList connection and its previews. They do
+not create a global exclusion for another import-list connection or prevent
+manual additions. Changing a filter does not directly delete an existing show
+or file. The existing **Clean Library** policy remains a separate import-list
+setting and still governs what happens after a successful sync removes entries
+from the cached list.
 
 AniList imports, previews, duplicate checks and exclusions use the native
 `(metadataSource, foreignId)` identity. The AniList media ID and optional
@@ -106,9 +138,12 @@ MyAnimeList ID stay separate. AniList titles are not silently reassigned to a
 TVDB parent show. A negative compatibility `tvdbId` on a native series is an
 internal placeholder, not a real TVDB identifier.
 
-Private-account OAuth synchronization requires your own credentials. The public
-lookup and isolated browser checks described in the validation report do not
-verify that private-account workflow.
+Private-account OAuth synchronization requires your own credentials. Public
+lookup and isolated browser checks do not verify that private-account workflow.
+See the [AniList filter verification report](anilist-filters-verification-2026-10-13.md)
+for the checks actually executed for these controls. The API distinctions above
+follow AniList's [MediaList reference](https://docs.anilist.co/reference/object/medialist)
+and [list-query guide](https://docs.anilist.co/guide/graphql/queries/media-list).
 
 ### Custom-format groups
 
@@ -142,5 +177,6 @@ Companion keys cannot edit or delete existing shows, read settings or logs, use
 lookup subroutes, run commands or start compression. Use the `X-Api-Key` request
 header to send a key. The existing master API key retains full access.
 
-The latest executed checks and their limits are recorded in the
+General functional and security checks for the October 12 checkpoint, including
+their limits, are recorded in the
 [functional and security validation report](security-functional-validation-2026-10-12.md).

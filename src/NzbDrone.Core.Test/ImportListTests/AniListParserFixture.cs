@@ -48,6 +48,7 @@ namespace NzbDrone.Core.Test.ImportListTests
             {
                 Username = "someone",
                 CustomList = customList,
+                ImportCompleted = true,
                 ImportFinished = true
             });
         }

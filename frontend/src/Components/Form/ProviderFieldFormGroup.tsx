@@ -132,6 +132,10 @@ function ProviderFieldFormGroup<T>({
         warnings={warnings}
         pending={pending}
         includeFiles={providerType === 'filePath' ? true : undefined}
+        {...(otherProps.provider === 'importList' &&
+        (name === 'includedCustomLists' || name === 'excludedCustomLists')
+          ? { preserveTagText: true }
+          : {})}
         onChange={onChange}
         {...otherProps}
       />

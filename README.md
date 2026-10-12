@@ -80,7 +80,10 @@ for scope, dry-run usage and validation.
 
 **Anime-aware search matching** — `2nd Season`, `S2`, `Part 2` and `II` all read as "season 2"; accents and articles are stripped; scoring uses Jaro-Winkler rather than upstream's single-character tolerance. Release-to-series matching also compares against every title a provider knows, so a release using a series' English title still matches when it's stored under the romaji one.
 
-**AniList custom lists** — import lists can target one of your own custom lists instead of only Planning and Watching. ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
+**AniList custom lists** — target your own custom lists alongside Planning and
+Watching. Development builds after 0.0.1 also support multiple included lists,
+excluded lists and explicit watching-state exclusions; exclusions take
+precedence even when an anime is Watching. ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
 
 AniList account-list membership (Watching/Planning/Completed/etc.), anime release
 status (Releasing/Finished/etc.) and custom-list membership are separate filters.
