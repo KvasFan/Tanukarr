@@ -7,6 +7,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.DataAugmentation.Scene;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Datastore.Events;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
@@ -180,7 +181,13 @@ namespace Sonarr.Api.V3.Series
         [Produces("application/json")]
         public ActionResult<SeriesResource> AddSeries([FromBody] SeriesResource seriesResource)
         {
-            var series = _addSeriesService.AddSeries(seriesResource.ToModel());
+            var model = seriesResource.ToModel();
+            if (User.HasClaim(claim => claim.Type == "CompanionKey"))
+            {
+                CompanionAddSeriesPolicy.Validate(model, _rootFolderService.All());
+            }
+
+            var series = _addSeriesService.AddSeries(model);
 
             return Created(series.Id);
         }

@@ -2,8 +2,11 @@ using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Xml.Linq;
+using Newtonsoft.Json.Linq;
 using NLog;
 using NUnit.Framework;
 using NzbDrone.Common.EnvironmentInfo;
@@ -28,13 +31,28 @@ namespace NzbDrone.Test.Common
         public PostgresOptions PostgresOptions { get; private set; }
         public int Port { get; private set; }
 
-        public NzbDroneRunner(Logger logger, PostgresOptions postgresOptions, int port = 8989)
+        public NzbDroneRunner(Logger logger, PostgresOptions postgresOptions, int port = 0)
         {
+            Port = port == 0 ? GetAvailablePort() : port;
             _processProvider = new ProcessProvider(logger);
-            _restClient = new RestClient($"http://localhost:{port}/api/v3");
+            _restClient = new RestClient($"http://localhost:{Port}/api/v3");
 
             PostgresOptions = postgresOptions;
-            Port = port;
+        }
+
+        private static int GetAvailablePort()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+
+            try
+            {
+                return ((IPEndPoint)listener.LocalEndpoint).Port;
+            }
+            finally
+            {
+                listener.Stop();
+            }
         }
 
         public void Start(bool enableAuth = false)
@@ -64,7 +82,9 @@ namespace NzbDrone.Test.Common
                 Start(Path.Combine(TestContext.CurrentContext.TestDirectory, "bin", consoleExe));
             }
 
-            while (true)
+            var startupTimer = Stopwatch.StartNew();
+
+            while (startupTimer.Elapsed < TimeSpan.FromMinutes(3))
             {
                 _nzbDroneProcess.Refresh();
 
@@ -79,16 +99,23 @@ namespace NzbDrone.Test.Common
 
                 var statusCall = _restClient.Get(request);
 
-                if (statusCall.ResponseStatus == ResponseStatus.Completed)
+                // Require the expected instance, since another local service may occupy the port.
+                if (statusCall.ResponseStatus == ResponseStatus.Completed &&
+                    statusCall.StatusCode == HttpStatusCode.OK &&
+                    Json.TryDeserialize<JObject>(statusCall.Content ?? string.Empty, out var status) &&
+                    status?["appData"]?.Type == JTokenType.String &&
+                    AppData.PathEquals(status.Value<string>("appData")))
                 {
                     TestContext.Progress.WriteLine($"Sonarr {Port} is started. Running Tests");
                     return;
                 }
 
-                TestContext.Progress.WriteLine("Waiting for Sonarr to start. Response Status : {0}  [{1}] {2}", statusCall.ResponseStatus, statusCall.StatusDescription, statusCall.ErrorException.Message);
+                TestContext.Progress.WriteLine("Waiting for Sonarr {0} to start. Response Status : {1}  [{2}] {3}", Port, statusCall.ResponseStatus, statusCall.StatusDescription ?? statusCall.StatusCode.ToString(), statusCall.ErrorException?.Message);
 
                 Thread.Sleep(500);
             }
+
+            Assert.Fail($"Sonarr on port {Port} did not become ready within 3 minutes.");
         }
 
         public void Kill()

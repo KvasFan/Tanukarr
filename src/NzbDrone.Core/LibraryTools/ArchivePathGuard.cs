@@ -12,10 +12,11 @@ namespace NzbDrone.Core.LibraryTools
                 throw new IOException("Select a file within the configured folder.");
             }
 
-            var basePath = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+            var basePath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+            var containmentPrefix = Path.EndsInDirectorySeparator(basePath) ? basePath : basePath + Path.DirectorySeparatorChar;
             var path = Path.GetFullPath(Path.Combine(basePath, relativePath));
             var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            if (!path.StartsWith(basePath + Path.DirectorySeparatorChar, comparison))
+            if (string.Equals(path, basePath, comparison) || !path.StartsWith(containmentPrefix, comparison))
             {
                 throw new IOException("The file must stay within its configured folder.");
             }
@@ -28,7 +29,7 @@ namespace NzbDrone.Core.LibraryTools
                     throw new IOException("Restore cannot traverse symbolic links or junctions.");
                 }
 
-                current = Path.GetDirectoryName(current);
+                current = Path.GetDirectoryName(current) ?? throw new IOException("The file must stay within its configured folder.");
             }
 
             return path;

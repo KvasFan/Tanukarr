@@ -22,6 +22,12 @@ namespace NzbDrone.Common.Test.InstrumentationTests
         [TestCase(@"https://b-hd.me/torrent/download/auto.343756.is1t1pl127p1sfwur8h4kgyhg1wcsn05")]
         [TestCase(@"https://b-hd.me/torrent/download/a-slug-in-the-url.343756.is1t1pl127p1sfwur8h4kgyhg1wcsn05")]
 
+        // Native metadata providers
+        [TestCase(@"https://api.themoviedb.org/3/search/tv?api_key=mySecret&query=Cowboy")]
+        [TestCase(@"https://api.themoviedb.org/3/tv/30991?language=en&API_KEY=mySecret")]
+        [TestCase(@"Req: [GET] https://api.themoviedb.org/3/tv/30991?api_key=mySecret")]
+        [TestCase(@"https://provider.example/api?provider_api_key=mySecret&query=show")]
+
         // NzbGet
         [TestCase(@"{ ""Name"" : ""ControlUsername"", ""Value"" : ""mySecret"" }, { ""Name"" : ""ControlPassword"", ""Value"" : ""mySecret"" }, ")]
         [TestCase(@"{ ""Name"" : ""Server1.Username"", ""Value"" : ""mySecret"" }, { ""Name"" : ""Server1.Password"", ""Value"" : ""mySecret"" }, ")]

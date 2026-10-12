@@ -41,7 +41,10 @@ These options do not invoke the scripts' Discord notifications.
 
 Files retain their original filename/container. Audio, subtitles, attachments,
 chapters and stream dispositions are copied; unsupported containers, HDR,
-high bit-depth, HEVC/AV1 and previously processed files are skipped. Output must
+high bit-depth, HEVC/AV1 and previously processed files are skipped.
+Probing, encoding and validation restrict FFmpeg input to local files and the
+Matroska and MOV/MP4 demuxers, so a disguised streaming playlist cannot request
+network resources. Unsupported extensions are skipped before probing. Output must
 save at least 2%, retain stream metadata/duration/resolution, and fully decode
 before an atomic replacement. The source and its live Sonarr association are
 rechecked at replacement. Hard-linked torrent originals are preserved.

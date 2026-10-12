@@ -2,12 +2,11 @@
 using NUnit.Framework;
 using NzbDrone.Core.DataAugmentation.DailySeries;
 using NzbDrone.Core.Test.Framework;
-using NzbDrone.Test.Common.Categories;
+using NzbDrone.Test.Common;
 
 namespace NzbDrone.Core.Test.DataAugmentation.DailySeries
 {
     [TestFixture]
-    [IntegrationTest]
     public class DailySeriesDataProxyFixture : CoreTest<DailySeriesDataProxy>
     {
         [SetUp]
@@ -17,11 +16,11 @@ namespace NzbDrone.Core.Test.DataAugmentation.DailySeries
         }
 
         [Test]
-        public void should_get_list_of_daily_series()
+        public void should_return_empty_when_shared_cloud_is_disabled()
         {
             var list = Subject.GetDailySeriesIds();
-            list.Should().NotBeEmpty();
-            list.Should().OnlyHaveUniqueItems();
+            list.Should().BeEmpty();
+            ExceptionVerification.IgnoreWarns();
         }
     }
 }

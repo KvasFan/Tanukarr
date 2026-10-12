@@ -42,10 +42,18 @@ jobs:
       - name: HTTP tests
         run: dotnet test src/Sonarr.Http.Test/Sonarr.Http.Test.csproj -c Debug --no-build --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"
 
-      - name: Common cloud policy tests
-        run: dotnet test src/NzbDrone.Common.Test/Sonarr.Common.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture" --logger "console;verbosity=minimal"
+      - name: Common security regression tests
+        run: dotnet test src/NzbDrone.Common.Test/Sonarr.Common.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture" --logger "console;verbosity=minimal"
 
-      - name: Compression worker safety tests
+      - name: Install FFmpeg for generated media tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Compression worker safety and generated media tests
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+          SONARR_COMPRESSION_INTEGRATION: '1'
         run: python3 docker/compression/test_worker.py
 
   frontend:

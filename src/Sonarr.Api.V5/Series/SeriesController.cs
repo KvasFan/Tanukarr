@@ -7,6 +7,7 @@ using NzbDrone.Common.TPL;
 using NzbDrone.Core.DataAugmentation.Scene;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Datastore.Events;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
@@ -214,7 +215,13 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
     [Produces("application/json")]
     public Results<Created<SeriesResource>, NotFound> AddSeries([FromBody] SeriesResource seriesResource)
     {
-        var series = _addSeriesService.AddSeries(seriesResource.ToModel());
+        var model = seriesResource.ToModel();
+        if (User.HasClaim(claim => claim.Type == "CompanionKey"))
+        {
+            CompanionAddSeriesPolicy.Validate(model, _rootFolderService.All());
+        }
+
+        var series = _addSeriesService.AddSeries(model);
 
         return TypedCreated(series.Id);
     }

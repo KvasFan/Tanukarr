@@ -62,7 +62,7 @@ function ImportSeriesSelectSeries({
   const importSeriesItem = useImportSeriesItem(id);
   const { selectedSeries, name } = importSeriesItem ?? {};
   const language = usePreferredMetadataLanguage();
-  const isExistingSeries = useExistingSeries(selectedSeries?.tvdbId);
+  const isExistingSeries = useExistingSeries(selectedSeries);
 
   const [term, setTerm] = useState(name);
   const [editText, setEditText] = useState('');

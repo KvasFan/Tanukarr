@@ -44,8 +44,10 @@ namespace NzbDrone.Automation.Test
         [Test]
         public void activity_page()
         {
-            _page.ActivityNavIcon.Click();
+            _page.QueueNavIcon.Click();
             _page.WaitForNoSpinner();
+
+            _page.Find(By.CssSelector("main[aria-label='Queue']")).Displayed.Should().BeTrue();
 
             var imageName = MethodBase.GetCurrentMethod().Name;
             TakeScreenshot(imageName);
@@ -84,11 +86,14 @@ namespace NzbDrone.Automation.Test
             _page.WaitForNoSpinner();
 
             _page.Find(By.LinkText("Add New")).Click();
+            _page.WaitForNoSpinner();
+
+            var searchInput = _page.Find(By.CssSelector("input[name='seriesLookup']"));
+            searchInput.Displayed.Should().BeTrue();
+            searchInput.Enabled.Should().BeTrue();
 
             var imageName = MethodBase.GetCurrentMethod().Name;
             TakeScreenshot(imageName);
-
-            _page.Find(By.CssSelector("input[class*='AddNewSeries-searchInput']")).Should().NotBeNull();
         }
     }
 }

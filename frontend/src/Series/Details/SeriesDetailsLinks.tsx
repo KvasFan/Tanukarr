@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import ClipboardButton from 'Components/Link/ClipboardButton';
 import Link from 'Components/Link/Link';
 import { kinds, sizes } from 'Helpers/Props';
+import getMetadataProvider from 'Series/getMetadataProvider';
 import Series from 'Series/Series';
 import translate from 'Utilities/String/translate';
 import styles from './SeriesDetailsLinks.module.css';
 
 type SeriesDetailsLinksProps = Pick<
   Series,
-  'tvdbId' | 'tvMazeId' | 'imdbId' | 'tmdbId'
+  'tvdbId' | 'tvMazeId' | 'imdbId' | 'tmdbId' | 'metadataSource' | 'foreignId'
 >;
 
 interface SeriesDetailsLink {
@@ -18,12 +19,28 @@ interface SeriesDetailsLink {
 }
 
 function SeriesDetailsLinks(props: SeriesDetailsLinksProps) {
-  const { tvdbId, tvMazeId, imdbId, tmdbId } = props;
+  const { tvdbId, tvMazeId, imdbId, tmdbId, metadataSource, foreignId } = props;
 
   const links = useMemo(() => {
     const validLinks: SeriesDetailsLink[] = [];
 
-    if (tvdbId) {
+    const provider = getMetadataProvider({
+      metadataSource,
+      foreignId,
+      tvdbId,
+      tmdbId,
+      imdbId,
+    });
+
+    if (provider.url && metadataSource && metadataSource !== 'tvdb') {
+      validLinks.push({
+        name: provider.name,
+        externalId: provider.externalId,
+        url: provider.url,
+      });
+    }
+
+    if (tvdbId > 0) {
       validLinks.push({
         externalId: tvdbId,
         name: 'The TVDB',
@@ -31,7 +48,7 @@ function SeriesDetailsLinks(props: SeriesDetailsLinksProps) {
       });
     }
 
-    if (tvMazeId) {
+    if (tvMazeId > 0) {
       validLinks.push({
         externalId: tvMazeId,
         name: 'TV Maze',
@@ -57,7 +74,7 @@ function SeriesDetailsLinks(props: SeriesDetailsLinksProps) {
       );
     }
 
-    if (tmdbId) {
+    if (tmdbId > 0 && !validLinks.some((link) => link.name === 'TMDB')) {
       validLinks.push({
         externalId: tmdbId,
         name: 'TMDB',
@@ -68,7 +85,7 @@ function SeriesDetailsLinks(props: SeriesDetailsLinksProps) {
     return validLinks.sort(
       (a, b) => Number(!a.externalId) - Number(!b.externalId)
     );
-  }, [tvdbId, tvMazeId, imdbId, tmdbId]);
+  }, [tvdbId, tvMazeId, imdbId, tmdbId, metadataSource, foreignId]);
 
   return (
     <div className={styles.links}>

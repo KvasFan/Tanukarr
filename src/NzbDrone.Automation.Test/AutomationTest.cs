@@ -44,10 +44,9 @@ namespace NzbDrone.Automation.Test
             driver.Manage().Window.Size = new System.Drawing.Size(1920, 1080);
 
             _runner = new NzbDroneRunner(LogManager.GetCurrentClassLogger(), null);
-            _runner.KillAll();
             _runner.Start(true);
 
-            driver.Url = "http://localhost:8989";
+            driver.Url = $"http://localhost:{_runner.Port}";
 
             var page = new PageBase(driver);
             page.WaitForNoSpinner();
@@ -79,8 +78,8 @@ namespace NzbDrone.Automation.Test
         [OneTimeTearDown]
         public void SmokeTestTearDown()
         {
-            _runner.KillAll();
-            driver.Quit();
+            _runner?.Kill();
+            driver?.Quit();
         }
 
         [TearDown]

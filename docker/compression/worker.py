@@ -27,9 +27,14 @@ import xml.etree.ElementTree as ET
 
 ACTIVE = {'queued', 'running', 'cancelling'}
 
+# An imported file is still untrusted input. In particular, a DASH playlist can
+# masquerade as .mkv and override a protocol whitelist in some FFmpeg versions.
+# Restrict both protocols and demuxers before probing, encoding or validation.
+MEDIA_INPUT_OPTIONS = ('-protocol_whitelist', 'file', '-format_whitelist', 'matroska,mov')
+
 
 def probe(path):
-    result = subprocess.run(['ffprobe', '-v', 'error', '-show_format', '-show_streams',
+    result = subprocess.run(['ffprobe', '-v', 'error', *MEDIA_INPUT_OPTIONS, '-show_format', '-show_streams',
                              '-show_chapters', '-of', 'json', str(path)],
                             capture_output=True, check=True, timeout=60)
     return json.loads(result.stdout)
@@ -306,7 +311,7 @@ class Worker:
         args = ['ffmpeg', '-nostdin', '-hide_banner', '-v', 'error', '-y', '-threads', str(self.threads)]
         if mode['encoder'] == 'h264_vaapi':
             args += ['-vaapi_device', '/dev/dri/renderD128']
-        args += ['-i', str(path), '-map', '0', '-map_metadata', '0', '-map_chapters', '0', '-c', 'copy', '-c:v:0', mode['encoder']]
+        args += [*MEDIA_INPUT_OPTIONS, '-i', str(path), '-map', '0', '-map_metadata', '0', '-map_chapters', '0', '-c', 'copy', '-c:v:0', mode['encoder']]
         if mode['encoder'] == 'h264_vaapi':
             args += ['-filter:v:0', 'format=nv12,hwupload', '-qp', str(mode['qp'])]
             if 'quality' in mode:
@@ -362,14 +367,14 @@ class Worker:
 
     def compress(self, job, mode, path):
         result = {'file': path.name, 'status': 'skipped', 'reason': '', 'savedBytes': 0}
+        if path.suffix.lower() not in {'.mkv', '.mp4', '.m4v'}:
+            return {**result, 'reason': 'Container is not supported.'}
         original_stat = path.stat()
         before = identity(path)
         info = probe(path)
         stream = video(info)
         reason = None
-        if path.suffix.lower() not in {'.mkv', '.mp4', '.m4v'}:
-            reason = 'Container is not supported.'
-        elif original_stat.st_size < job['minSizeMb'] * 1048576:
+        if original_stat.st_size < job['minSizeMb'] * 1048576:
             reason = 'Below the selected minimum file size.'
         elif stream['codec_name'] in {'hevc', 'av1'}:
             reason = 'Already encoded with an efficient codec.'
@@ -395,7 +400,7 @@ class Worker:
                 return {**result, 'reason': 'Output did not save at least 2%; original kept.'}
             validate(info, probe(output), mode['codec'])
             self.process_file(job, ['nice', '-n', '15', 'ffmpeg', '-nostdin', '-v', 'error', '-xerror', '-threads', str(self.threads),
-                                   '-i', str(output), '-map', '0:v:0', '-map', '0:a?', '-progress', 'pipe:1', '-f', 'null', '-'],
+                                   *MEDIA_INPUT_OPTIONS, '-i', str(output), '-map', '0:v:0', '-map', '0:a?', '-progress', 'pipe:1', '-f', 'null', '-'],
                               duration(info), Path(temp) / 'validate.log', 'validating')
             # Recheck both the live Sonarr association and source identity at the commit boundary.
             live = self.api(f"series/{job['seriesId']}")

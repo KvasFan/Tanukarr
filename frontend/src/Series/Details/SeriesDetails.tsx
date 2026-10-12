@@ -444,6 +444,8 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
 
   const {
     tvdbId,
+    metadataSource,
+    foreignId,
     tvMazeId,
     imdbId,
     tmdbId,
@@ -749,6 +751,8 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
                       tooltip={
                         <SeriesDetailsLinks
                           tvdbId={tvdbId}
+                          metadataSource={metadataSource}
+                          foreignId={foreignId}
                           tvMazeId={tvMazeId}
                           imdbId={imdbId}
                           tmdbId={tmdbId}

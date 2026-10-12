@@ -8,6 +8,7 @@ import Link from 'Components/Link/Link';
 import MetadataAttribution from 'Components/MetadataAttribution';
 import { icons } from 'Helpers/Props';
 import { useLanguageById } from 'Language/useLanguages';
+import getMetadataProvider from 'Series/getMetadataProvider';
 import { Statistics } from 'Series/Series';
 import SeriesGenres from 'Series/SeriesGenres';
 import SeriesPoster from 'Series/SeriesPoster';
@@ -38,7 +39,7 @@ interface AddNewSeriesSearchResultProps {
 
 function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
   const {
-    tvdbId,
+    metadataSource,
     titleSlug,
     title: lookupTitle,
     originalTitle,
@@ -58,7 +59,8 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
 
   const { preferredMetadataLanguage } = useMetadataSourceSettingsValues();
   const language = useLanguageById(preferredMetadataLanguage);
-  const isExistingSeries = useExistingSeries(tvdbId);
+  const isExistingSeries = useExistingSeries(series);
+  const provider = getMetadataProvider(series);
   const isSmallScreen = useAppDimension('isSmallScreen');
   const [isNewAddSeriesModalOpen, setIsNewAddSeriesModalOpen] = useState(false);
 
@@ -148,14 +150,20 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
                 />
               ) : null}
 
-              <Link
-                className={styles.tvdbLink}
-                to={`https://www.thetvdb.com/?tab=series&id=${tvdbId}`}
-                aria-label={translate('ViewSeriesOnTvdb', { title })}
-                onPress={handleTvdbLinkPress}
-              >
-                <Icon name={icons.EXTERNAL_LINK} size={16} aria-hidden={true} />
-              </Link>
+              {provider.url ? (
+                <Link
+                  className={styles.tvdbLink}
+                  to={provider.url}
+                  aria-label={`${title} - ${provider.name}`}
+                  onPress={handleTvdbLinkPress}
+                >
+                  <Icon
+                    name={icons.EXTERNAL_LINK}
+                    size={16}
+                    aria-hidden={true}
+                  />
+                </Link>
+              ) : null}
             </div>
           </div>
 
@@ -196,7 +204,7 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
 
           <div className={styles.overview}>{overview}</div>
 
-          <MetadataAttribution />
+          <MetadataAttribution metadataSource={metadataSource} />
         </div>
       </div>
 

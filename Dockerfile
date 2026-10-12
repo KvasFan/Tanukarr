@@ -71,7 +71,7 @@ RUN set -eux; \
           --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"; \
       done; \
       dotnet test _tests/net10.0/linux-x64/Sonarr.Common.Test.dll \
-        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture" --logger "console;verbosity=minimal"; \
+        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture" --logger "console;verbosity=minimal"; \
     fi
 
 # The UI is built separately and is not produced by the .NET build.
@@ -105,12 +105,11 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend /app /app
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=0755 docker/entrypoint.sh /entrypoint.sh
 
 # This image is a binary distribution of GPLv3 software, so it carries its licence
 # and a pointer to the corresponding source.
-COPY LICENSE.md /app/LICENSE.md
+COPY --chmod=0644 LICENSE.md /app/LICENSE.md
 
 # /config holds the database, config.xml and logs. Everything else is media.
 VOLUME ["/config"]

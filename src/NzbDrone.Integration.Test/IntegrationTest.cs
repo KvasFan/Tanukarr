@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading;
 using NLog;
 using NUnit.Framework;
 using NzbDrone.Common.Extensions;
@@ -15,8 +14,6 @@ namespace NzbDrone.Integration.Test
     [Parallelizable(ParallelScope.Fixtures)]
     public abstract class IntegrationTest : IntegrationTestBase
     {
-        protected static int StaticPort = 8989;
-
         protected NzbDroneRunner _runner;
 
         public override string SeriesRootFolder => GetTempDirectory("SeriesRootFolder");
@@ -31,8 +28,6 @@ namespace NzbDrone.Integration.Test
 
         protected override void StartTestTarget()
         {
-            Port = Interlocked.Increment(ref StaticPort);
-
             PostgresOptions = PostgresDatabase.GetTestOptions();
 
             if (PostgresOptions?.Host != null)
@@ -40,7 +35,8 @@ namespace NzbDrone.Integration.Test
                 CreatePostgresDb(PostgresOptions);
             }
 
-            _runner = new NzbDroneRunner(LogManager.GetCurrentClassLogger(), PostgresOptions, Port);
+            _runner = new NzbDroneRunner(LogManager.GetCurrentClassLogger(), PostgresOptions);
+            Port = _runner.Port;
             _runner.Kill();
 
             _runner.Start();

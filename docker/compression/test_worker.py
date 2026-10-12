@@ -1,5 +1,6 @@
 """File safety tests; integration mode only uses generated videos in a temporary folder."""
 import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
 from pathlib import Path
 import queue
@@ -9,7 +10,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from worker import Worker, duration, identity, supported_file, validate
+from worker import Worker, duration, identity, probe, supported_file, validate
 
 
 def media(codec='h264', seconds='10'):
@@ -165,6 +166,15 @@ class WorkerTests(unittest.TestCase):
             result = self.worker.compress(self.job, self.worker.modes[0], self.file)
         self.assertEqual(result['status'], 'skipped')
 
+    def test_unsupported_container_is_not_probed(self):
+        path = self.series / 'Episode.ts'
+        path.write_bytes(b'unsupported imported file')
+        with patch('worker.probe') as metadata:
+            result = self.worker.compress(self.job, self.worker.modes[0], path)
+        self.assertEqual(result['status'], 'skipped')
+        self.assertEqual(result['reason'], 'Container is not supported.')
+        metadata.assert_not_called()
+
     def test_failed_encoder_keeps_original_and_cleans_temp(self):
         before = identity(self.file)
         with patch('worker.probe', return_value=media()), patch.object(self.worker, 'process_file', side_effect=ValueError('encoder failed')):
@@ -231,6 +241,54 @@ class WorkerTests(unittest.TestCase):
 class EncoderIntegrationTests(unittest.TestCase):
     setUp = WorkerTests.setUp
     tearDown = WorkerTests.tearDown
+
+    def test_disguised_dash_playlist_cannot_access_network(self):
+        requests = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                requests.append(self.path)
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'owned fixture only')
+
+            def log_message(self, *_):
+                pass
+
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            url = f'http://127.0.0.1:{server.server_address[1]}'
+            self.file.write_text('<?xml version="1.0"?>\n'
+                                 '<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" '
+                                 'mediaPresentationDuration="PT1S" minBufferTime="PT1S" '
+                                 'profiles="urn:mpeg:dash:profile:full:2011">'
+                                 '<Period><AdaptationSet mimeType="video/mp4" codecs="avc1.42c01e">'
+                                 '<Representation id="1" bandwidth="1000">'
+                                 f'<SegmentTemplate initialization="{url}/audit-init.mp4" '
+                                 f'media="{url}/audit-$Number$.m4s" duration="1" startNumber="1"/>'
+                                 '</Representation></AdaptationSet></Period></MPD>')
+            with self.subTest(stage='probe'), self.assertRaises(subprocess.CalledProcessError):
+                probe(self.file)
+            self.assertEqual(requests, [])
+            encoded = subprocess.run(self.worker.command(self.worker.modes[0], self.file, self.root / 'output.mkv'),
+                                     capture_output=True, timeout=10)
+            self.assertNotEqual(encoded.returncode, 0)
+            self.assertEqual(requests, [])
+            self.assertFalse((self.root / 'output.mkv').exists())
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_real_mp4_input_and_output_are_supported(self):
+        self.file = self.series / 'Episode.mp4'
+        subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-f', 'lavfi', '-i',
+                        'testsrc2=size=320x240:rate=24', '-t', '2', '-c:v', 'mpeg4', '-q:v', '2',
+                        str(self.file)], check=True)
+        result = self.worker.compress(self.job, self.worker.modes[0], self.file)
+        self.assertEqual(result['status'], 'compressed')
+        self.assertEqual(probe(self.file)['streams'][0]['codec_name'], 'h264')
 
     def test_real_encode_and_hardlink_preservation(self):
         self.worker.hardware = self.worker.test_hardware()

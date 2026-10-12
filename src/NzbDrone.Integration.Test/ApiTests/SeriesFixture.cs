@@ -212,9 +212,16 @@ namespace NzbDrone.Integration.Test.ApiTests
 
             WaitForCompletion(() => SignalRMessages.Any(m =>
                 m.Name == "series" &&
+                m.Version == 3 &&
                 m.Body is JsonElement body &&
-                body.GetProperty("resource").GetProperty("path").GetString() == oldPath &&
-                body.GetProperty("resource").GetProperty("pendingPath").GetString() == destinationPath));
+                body.TryGetProperty("resource", out var resource) &&
+                resource.ValueKind == JsonValueKind.Object &&
+                resource.TryGetProperty("id", out var id) &&
+                id.GetInt32() == series.Id &&
+                resource.TryGetProperty("path", out var path) &&
+                path.GetString() == oldPath &&
+                resource.TryGetProperty("pendingPath", out var pendingPath) &&
+                pendingPath.GetString() == destinationPath));
 
             Commands.WaitAll();
         }
