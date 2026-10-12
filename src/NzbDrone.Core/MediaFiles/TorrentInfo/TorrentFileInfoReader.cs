@@ -9,6 +9,7 @@ namespace NzbDrone.Core.MediaFiles.TorrentInfo
     public interface ITorrentFileInfoReader
     {
         string GetHashFromTorrentFile(byte[] fileContents);
+        TorrentContents GetContentsFromTorrentFile(byte[] fileContents);
         List<string> GetFileNamesFromTorrentFile(byte[] fileContents);
     }
 
@@ -26,6 +27,27 @@ namespace NzbDrone.Core.MediaFiles.TorrentInfo
             try
             {
                 return Torrent.Load(fileContents).InfoHashes.V1OrV2.ToHex();
+            }
+            catch
+            {
+                _logger.Trace("Invalid torrent file contents: {0}", Encoding.ASCII.GetString(fileContents));
+                throw;
+            }
+        }
+
+        public TorrentContents GetContentsFromTorrentFile(byte[] fileContents)
+        {
+            try
+            {
+                var torrent = Torrent.Load(fileContents);
+                var contents = new TorrentContents { Name = torrent.Name };
+
+                foreach (var file in torrent.Files)
+                {
+                    contents.Files.Add(new TorrentContentFile(file.Path, file.Length));
+                }
+
+                return contents;
             }
             catch
             {

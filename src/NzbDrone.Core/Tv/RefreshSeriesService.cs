@@ -19,7 +19,7 @@ namespace NzbDrone.Core.Tv
 {
     public class RefreshSeriesService : IExecute<RefreshSeriesCommand>
     {
-        private readonly IProvideSeriesInfo _seriesInfo;
+        private readonly IMetadataProviderFactory _metadataProviderFactory;
         private readonly ISeriesService _seriesService;
         private readonly ISeriesTranslationService _seriesTranslationService;
         private readonly IRefreshEpisodeService _refreshEpisodeService;
@@ -30,7 +30,7 @@ namespace NzbDrone.Core.Tv
         private readonly ICommandResultReporter _commandResultReporter;
         private readonly Logger _logger;
 
-        public RefreshSeriesService(IProvideSeriesInfo seriesInfo,
+        public RefreshSeriesService(IMetadataProviderFactory metadataProviderFactory,
                                     ISeriesService seriesService,
                                     ISeriesTranslationService seriesTranslationService,
                                     IRefreshEpisodeService refreshEpisodeService,
@@ -41,7 +41,7 @@ namespace NzbDrone.Core.Tv
                                     ICommandResultReporter commandResultReporter,
                                     Logger logger)
         {
-            _seriesInfo = seriesInfo;
+            _metadataProviderFactory = metadataProviderFactory;
             _seriesService = seriesService;
             _seriesTranslationService = seriesTranslationService;
             _refreshEpisodeService = refreshEpisodeService;
@@ -66,7 +66,10 @@ namespace NzbDrone.Core.Tv
 
             try
             {
-                var tuple = _seriesInfo.GetSeriesInfo(series.TvdbId, series.Language, series.SeasonType);
+                // Routed through the factory so a series refreshes from whichever provider
+                // owns it. Series added before metadata sources existed default to Tvdb,
+                // which resolves to the same SkyHook proxy as before.
+                var tuple = _metadataProviderFactory.GetProvider(series).GetSeriesInfo(series);
                 seriesInfo = tuple.Item1;
                 episodes = tuple.Item2;
             }
@@ -83,7 +86,10 @@ namespace NzbDrone.Core.Tv
                 throw;
             }
 
-            if (series.TvdbId != seriesInfo.TvdbId)
+            // Only when the provider actually resolved an id. Providers that do not map to
+            // TheTVDB report zero, which would otherwise wipe the placeholder id allocated
+            // when the series was added and break its unique-index invariant on the next save.
+            if (seriesInfo.TvdbId > 0 && series.TvdbId != seriesInfo.TvdbId)
             {
                 _logger.Warn("Series '{0}' (tvdbid {1}) was replaced with '{2}' (tvdbid {3}), because the original was a duplicate.", series.Title, series.TvdbId, seriesInfo.Title, seriesInfo.TvdbId);
                 series.TvdbId = seriesInfo.TvdbId;

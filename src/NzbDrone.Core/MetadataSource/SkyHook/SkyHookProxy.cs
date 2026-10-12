@@ -18,8 +18,10 @@ using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.MetadataSource.SkyHook
 {
-    public class SkyHookProxy : IProvideSeriesInfo, ISearchForNewSeries
+    public class SkyHookProxy : IProvideSeriesInfo, ISearchForNewSeries, IMetadataProvider
     {
+        public MetadataSourceType Source => MetadataSourceType.Tvdb;
+
         private readonly IHttpClient _httpClient;
         private readonly Logger _logger;
         private readonly ISeriesService _seriesService;
@@ -37,6 +39,11 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             _seriesService = seriesService;
             _dailySeriesService = dailySeriesService;
             _requestBuilder = requestBuilder.SkyHookTvdb;
+        }
+
+        public Tuple<Series, List<Episode>> GetSeriesInfo(Series series)
+        {
+            return GetSeriesInfo(series.TvdbId, series.Language, series.SeasonType);
         }
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(int tvdbSeriesId, Language language, string seasonType)
@@ -104,6 +111,11 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             var results = SearchForNewSeries($"mal:{malId}", language);
 
             return results;
+        }
+
+        public List<Series> SearchForNewSeries(string title)
+        {
+            return SearchForNewSeries(title, Language.English);
         }
 
         public List<Series> SearchForNewSeries(string title, Language language)
@@ -187,6 +199,11 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         {
             var series = new Series();
             series.TvdbId = show.TvdbId;
+
+            // Stated explicitly so a series looked up now matches one migrated from an older
+            // database, where ForeignId was backfilled from TvdbId.
+            series.MetadataSource = MetadataSourceType.Tvdb;
+            series.ForeignId = show.TvdbId.ToString();
 
             if (show.TvRageId.HasValue)
             {

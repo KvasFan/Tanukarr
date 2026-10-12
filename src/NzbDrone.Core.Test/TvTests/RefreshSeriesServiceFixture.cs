@@ -22,6 +22,7 @@ namespace NzbDrone.Core.Test.TvTests
     public class RefreshSeriesServiceFixture : CoreTest<RefreshSeriesService>
     {
         private Series _series;
+        private Mock<IMetadataProvider> _metadataProvider;
 
         [SetUp]
         public void Setup()
@@ -44,9 +45,14 @@ namespace NzbDrone.Core.Test.TvTests
                   .Setup(s => s.GetSeries(_series.Id))
                   .Returns(_series);
 
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(It.IsAny<int>(), It.IsAny<Language>(), It.IsAny<string>()))
-                  .Callback<int, Language, string>((p, _, _) => { throw new SeriesNotFoundException(p); });
+            _metadataProvider = new Mock<IMetadataProvider>();
+
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Callback<Series>(p => { throw new SeriesNotFoundException(p.TvdbId); });
+
+            Mocker.GetMock<IMetadataProviderFactory>()
+                  .Setup(s => s.GetProvider(It.IsAny<Series>()))
+                  .Returns(() => _metadataProvider.Object);
 
             Mocker.GetMock<IAutoTaggingService>()
                 .Setup(s => s.GetTagChanges(_series))
@@ -55,9 +61,21 @@ namespace NzbDrone.Core.Test.TvTests
 
         private void GivenNewSeriesInfo(Series series)
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(_series.TvdbId, Language.English, SeasonType.Official))
-                  .Returns(new Tuple<Series, List<Episode>>(series, new List<Episode>()));
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.Is<Series>(v => v.TvdbId == _series.TvdbId)))
+                             .Returns(new Tuple<Series, List<Episode>>(series, new List<Episode>()));
+        }
+
+        [Test]
+        public void should_fetch_series_info_using_the_language_and_season_type_on_the_series()
+        {
+            _series.Language = Language.Spanish;
+            _series.SeasonType = "dvd";
+
+            GivenNewSeriesInfo(_series.JsonClone());
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            _metadataProvider.Verify(s => s.GetSeriesInfo(It.Is<Series>(v => v.Language == Language.Spanish && v.SeasonType == "dvd")), Times.Once());
         }
 
         [Test]
@@ -250,11 +268,47 @@ namespace NzbDrone.Core.Test.TvTests
         }
 
         [Test]
+        public void should_keep_a_synthetic_tvdb_id_when_the_provider_reports_none()
+        {
+            // A series with no TheTVDB entry holds a negative placeholder id. Providers that
+            // do not map to TheTVDB report zero, and taking that would wipe the placeholder
+            // and break the unique-index invariant on the column.
+            _series.TvdbId = -1;
+
+            var newSeriesInfo = _series.JsonClone();
+            newSeriesInfo.TvdbId = 0;
+
+            GivenNewSeriesInfo(newSeriesInfo);
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.UpdateSeries(It.Is<Series>(s => s.TvdbId == -1), It.IsAny<bool>(), It.IsAny<bool>()));
+        }
+
+        [Test]
+        public void should_take_a_real_tvdb_id_when_the_provider_resolves_one()
+        {
+            _series.TvdbId = 100;
+
+            var newSeriesInfo = _series.JsonClone();
+            newSeriesInfo.TvdbId = 200;
+
+            GivenNewSeriesInfo(newSeriesInfo);
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.UpdateSeries(It.Is<Series>(s => s.TvdbId == 200), It.IsAny<bool>(), It.IsAny<bool>()));
+
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
         public void should_rescan_series_if_updating_fails()
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(_series.Id, Language.English, SeasonType.Official))
-                  .Throws(new IOException());
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Throws(new IOException());
 
             Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
 
@@ -267,9 +321,8 @@ namespace NzbDrone.Core.Test.TvTests
         [Test]
         public void should_not_rescan_series_if_updating_fails_with_series_not_found()
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(_series.Id, Language.English, SeasonType.Official))
-                  .Throws(new SeriesNotFoundException(_series.Id));
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Throws(new SeriesNotFoundException(_series.Id));
 
             Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
 

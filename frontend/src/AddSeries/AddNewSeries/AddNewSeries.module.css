@@ -11,6 +11,44 @@
   position: relative;
 }
 
+.metadataSourceContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  gap: 10px 16px;
+}
+
+.metadataSourceLabel {
+  display: flex;
+  align-items: center;
+  color: var(--inkMuted);
+  font-size: 13px;
+  gap: 10px;
+}
+
+.metadataSourceSelect {
+  composes: select from 'Components/Form/SelectInput.module.css';
+
+  min-width: 135px;
+
+  width: auto;
+}
+
+.sourceHelp {
+  flex: 1 1 240px;
+  color: var(--inkMuted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sourceWarning {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--warningColor);
+  font-size: 13px;
+}
+
 .searchIcon {
   position: absolute;
   top: 50%;

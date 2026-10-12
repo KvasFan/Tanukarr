@@ -76,11 +76,10 @@ function ImportSeriesSelectSeries({
   const isCurrentLookupQueueItem = useIsCurrentLookupQueueItem(id);
   const isQueued = useIsCurrentItemQueued(id);
 
-  const { isFetching, isFetched, error, data } = useLookupSeries(
-    query,
+  const { isFetching, isFetched, error, data } = useLookupSeries(query, {
     language,
-    isCurrentLookupQueueItem
-  );
+    isEnabled: isCurrentLookupQueueItem,
+  });
 
   const errorMessage = getErrorMessage(error);
   const isLookingUpSeries = isFetching || isQueued;

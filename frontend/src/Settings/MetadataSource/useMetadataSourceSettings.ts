@@ -7,6 +7,12 @@ import {
 
 export interface MetadataSourceSettingsModel {
   preferredMetadataLanguage: number;
+  /**
+   * Comes back masked once saved, never as the real key. Sending the mask back
+   * leaves the stored key alone.
+   */
+  tmdbApiKey: string;
+  tmdbApiKeyConfigured: boolean;
 }
 
 const PATH = '/settings/metadata';

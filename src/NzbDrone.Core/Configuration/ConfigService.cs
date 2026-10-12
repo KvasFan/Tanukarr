@@ -157,6 +157,36 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("AutoRedownloadFailedFromInteractiveSearch", value); }
         }
 
+        public bool EnableFakeReleaseProtection
+        {
+            get { return GetValueBoolean("EnableFakeReleaseProtection", true); }
+
+            set { SetValue("EnableFakeReleaseProtection", value); }
+        }
+
+        public string TmdbApiKey
+        {
+            get { return GetValue("TmdbApiKey", string.Empty); }
+
+            set { SetValue("TmdbApiKey", value); }
+        }
+
+        public bool EnableMultiSeasonReleases
+        {
+            get { return GetValueBoolean("EnableMultiSeasonReleases", true); }
+
+            set { SetValue("EnableMultiSeasonReleases", value); }
+        }
+
+        // Off by default: it causes files to be skipped, and a file silently not appearing is
+        // harder to diagnose than one that was imported and is unwanted.
+        public bool SkipUnmonitoredEpisodesFromPacks
+        {
+            get { return GetValueBoolean("SkipUnmonitoredEpisodesFromPacks", false); }
+
+            set { SetValue("SkipUnmonitoredEpisodesFromPacks", value); }
+        }
+
         public bool CreateEmptySeriesFolders
         {
             get { return GetValueBoolean("CreateEmptySeriesFolders", false); }

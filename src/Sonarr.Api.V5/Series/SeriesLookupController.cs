@@ -17,14 +17,16 @@ namespace Sonarr.Api.V5.Series;
 [V5ApiController("series/lookup")]
 public class SeriesLookupController : Controller
 {
+    private readonly IMetadataProviderFactory _metadataProviderFactory;
     private readonly ISearchForNewSeries _searchProxy;
     private readonly IBuildFileNames _fileNameBuilder;
     private readonly IMapCoversToLocal _coverMapper;
     private readonly IImportListExclusionService _importListExclusionService;
     private readonly IConfigService _configService;
 
-    public SeriesLookupController(ISearchForNewSeries searchProxy, IBuildFileNames fileNameBuilder, IMapCoversToLocal coverMapper, IImportListExclusionService importListExclusionService, IConfigService configService)
+    public SeriesLookupController(IMetadataProviderFactory metadataProviderFactory, ISearchForNewSeries searchProxy, IBuildFileNames fileNameBuilder, IMapCoversToLocal coverMapper, IImportListExclusionService importListExclusionService, IConfigService configService)
     {
+        _metadataProviderFactory = metadataProviderFactory;
         _searchProxy = searchProxy;
         _fileNameBuilder = fileNameBuilder;
         _coverMapper = coverMapper;
@@ -32,9 +34,14 @@ public class SeriesLookupController : Controller
         _configService = configService;
     }
 
+    /// <summary>
+    /// Searches the given metadata source, defaulting to TheTVDB so existing callers are
+    /// unaffected. The source chosen here becomes the one that owns any series added from
+    /// the results, since a series is owned by exactly one provider.
+    /// </summary>
     [HttpGet]
     [Produces("application/json")]
-    public Ok<IEnumerable<SeriesResource>> Search([FromQuery] string term, [FromQuery] int? language = null)
+    public Ok<IEnumerable<SeriesResource>> Search([FromQuery] string term, [FromQuery] int? language = null, [FromQuery] MetadataSourceType metadataSource = MetadataSourceType.Tvdb)
     {
         var languageId = language ?? _configService.PreferredMetadataLanguage;
         var searchLanguage = Language.All.FirstOrDefault(l => l.Id == languageId);
@@ -44,8 +51,11 @@ public class SeriesLookupController : Controller
             throw new BadRequestException($"Invalid language: {languageId}");
         }
 
-        var tvDbResults = _searchProxy.SearchForNewSeries(term, searchLanguage);
-        return TypedResults.Ok(MapToResource(tvDbResults));
+        var results = metadataSource == MetadataSourceType.Tvdb
+            ? _searchProxy.SearchForNewSeries(term, searchLanguage)
+            : _metadataProviderFactory.GetProvider(metadataSource).SearchForNewSeries(term);
+
+        return TypedResults.Ok(MapToResource(results));
     }
 
     private IEnumerable<SeriesResource> MapToResource(IEnumerable<NzbDrone.Core.Tv.Series> series)

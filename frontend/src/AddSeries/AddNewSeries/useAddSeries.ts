@@ -19,19 +19,31 @@ interface AddSeriesPayload
 
 const DEFAULT_SERIES: AddSeries[] = [];
 
+/**
+ * The metadata source searched, which becomes the source that owns any series added
+ * from the results. A series is owned by exactly one provider.
+ */
+export type MetadataSource = 'tvdb' | 'tmdb' | 'aniList' | 'myAnimeList';
+
+interface LookupSeriesOptions {
+  language: Language;
+  metadataSource?: MetadataSource;
+  isEnabled?: boolean;
+}
+
 export const useLookupSeries = (
   query: string,
-  language: Language,
-  isEnabled = true
+  { language, metadataSource = 'tvdb', isEnabled = true }: LookupSeriesOptions
 ) => {
   const result = useApiQuery<AddSeries[]>({
     path: '/series/lookup',
     queryParams: {
-      term: query,
+      term: query.trim(),
       language: language.id,
+      metadataSource,
     },
     queryOptions: {
-      enabled: isEnabled && !!query,
+      enabled: isEnabled && !!query.trim(),
       // Disable refetch on window focus to prevent refetching when the user switch tabs
       refetchOnWindowFocus: false,
     },

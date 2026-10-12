@@ -13,8 +13,9 @@ import PageHeading from 'Components/Page/PageHeading';
 import { inputTypes, kinds } from 'Helpers/Props';
 import settingsStyles from 'Settings/Settings.module.css';
 import SettingsPage from 'Settings/SettingsPage';
+import { InputChanged } from 'typings/inputs';
 import translate from 'Utilities/String/translate';
-import TheTvdb from './TheTvdb';
+import Sources from './Sources';
 import {
   MetadataSourceSettingsModel,
   useManageMetadataSourceSettings,
@@ -45,6 +46,13 @@ function MetadataSourceSettings() {
   const handleSavePress = useCallback(() => {
     saveSettings();
   }, [saveSettings]);
+
+  const handleTmdbApiKeyChange = useCallback(
+    ({ value }: InputChanged<string>) => {
+      updateSetting('tmdbApiKey', value);
+    },
+    [updateSetting]
+  );
 
   return (
     <SettingsPage
@@ -92,12 +100,27 @@ function MetadataSourceSettings() {
                   />
                 </FormRow>
               </FieldSet>
+
+              <FieldSet legend={translate('Tmdb')}>
+                <FormRow>
+                  <FormLabel>{translate('TmdbApiKey')}</FormLabel>
+
+                  <FormInputHelpText
+                    text={translate('TmdbApiKeyHelpText')}
+                    link="https://www.themoviedb.org/settings/api"
+                  />
+                  <FormInput
+                    type={inputTypes.PASSWORD}
+                    name="tmdbApiKey"
+                    onChange={handleTmdbApiKeyChange}
+                    {...settings.tmdbApiKey}
+                  />
+                </FormRow>
+              </FieldSet>
             </Form>
           ) : null}
 
-          <FieldSet legend={translate('Source')}>
-            <TheTvdb />
-          </FieldSet>
+          <Sources />
         </div>
       </PageContentBody>
     </SettingsPage>

@@ -141,6 +141,29 @@ namespace NzbDrone.Core.Test.ParserTests
             result.SeasonNumbers.Should().Equal(season);
         }
 
+        [TestCase("Series Title S01 S04 (1080p BluRay x265 HEVC 10bit AAC 5.1 Vyndros)", new[] { 1, 2, 3, 4 })]
+        [TestCase("Series Title S01 04 (1080p BluRay x265 HEVC 10bit AAC 5.1 Vyndros)", new[] { 1, 2, 3, 4 })]
+        [TestCase("Series Title Complete Series S01 S04 (1080p BluRay x265 HEVC 10bit AAC 5.1 Vyndros)", new[] { 1, 2, 3, 4 })]
+        public void should_capture_every_season_in_a_multi_season_release(string postTitle, int[] expected)
+        {
+            // Upstream now expands a pair of season endpoints into the complete range.
+            // Every season must remain available to the fork's pack importer.
+            var result = Parser.Parser.ParseTitle(postTitle);
+
+            result.SeasonNumbers.Should().Equal(expected);
+            result.SeasonNumber.Should().Be(expected[0]);
+        }
+
+        [TestCase("Series Title S02 720p HDTV x264-GRP", 2)]
+        [TestCase("Series Title Season 3 1080p WEB-DL", 3)]
+        public void should_capture_a_single_season_for_a_single_season_release(string postTitle, int expected)
+        {
+            var result = Parser.Parser.ParseTitle(postTitle);
+
+            result.SeasonNumbers.Should().Equal(expected);
+            result.IsMultiSeason.Should().BeFalse();
+        }
+
         [Test]
         public void should_not_parse_season_folders()
         {

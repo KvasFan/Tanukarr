@@ -35,6 +35,7 @@ import { InputChanged } from 'typings/inputs';
 import selectSettings from 'Utilities/selectSettings';
 import translate from 'Utilities/String/translate';
 import { useAddSeries } from './useAddSeries';
+import { useEpisodeOrderings } from './useEpisodeOrderings';
 import styles from './AddNewSeriesModalContent.module.css';
 
 export interface AddNewSeriesModalContentProps {
@@ -103,6 +104,30 @@ function AddNewSeriesModalContent({
       'official'
   );
 
+  // An empty string is the default ordering. The select cannot carry null, so it is
+  // translated back on submit.
+  const [orderingId, setOrderingId] = useState('');
+
+  const { data: orderings } = useEpisodeOrderings(series.tmdbId, series.imdbId);
+
+  const orderingOptions = useMemo(() => {
+    return orderings.map((ordering) => ({
+      key: ordering.id ?? '',
+      value: ordering.isDefault
+        ? ordering.name
+        : `${ordering.name} (${ordering.episodeCount} ${translate(
+            'Episodes'
+          )})`,
+    }));
+  }, [orderings]);
+
+  const handleOrderingChange = useCallback(
+    ({ value }: InputChanged<string>) => {
+      setOrderingId(value);
+    },
+    []
+  );
+
   const {
     monitor,
     qualityProfileId,
@@ -157,11 +182,13 @@ function AddNewSeriesModalContent({
       language,
       seasonFolder: seasonFolder.value,
       tags: tags.value,
+      orderingId: orderingId || null,
     });
   }, [
     series,
     seriesType,
     seasonType,
+    orderingId,
     rootFolderPath,
     language,
     monitor,
@@ -261,6 +288,22 @@ function AddNewSeriesModalContent({
                   {...monitor}
                 />
               </FormRow>
+
+              {orderingOptions.length > 1 ? (
+                <FormRow>
+                  <FormLabel>{translate('EpisodeOrdering')}</FormLabel>
+                  <FormInputHelpText
+                    text={translate('EpisodeOrderingHelpText')}
+                  />
+                  <FormInput
+                    type={inputTypes.SELECT}
+                    name="orderingId"
+                    values={orderingOptions}
+                    value={orderingId}
+                    onChange={handleOrderingChange}
+                  />
+                </FormRow>
+              ) : null}
 
               <FormRow>
                 <FormLabel>{translate('SeasonFolder')}</FormLabel>
