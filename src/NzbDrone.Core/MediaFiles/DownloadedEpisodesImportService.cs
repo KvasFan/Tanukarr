@@ -8,6 +8,7 @@ using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
+using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.History;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.Parser;
@@ -35,6 +36,7 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IRuntimeInfo _runtimeInfo;
         private readonly IConfigService _configService;
         private readonly IHistoryService _historyService;
+        private readonly ITrackedDownloadService _trackedDownloadService;
         private readonly Logger _logger;
 
         public DownloadedEpisodesImportService(IDiskProvider diskProvider,
@@ -47,6 +49,7 @@ namespace NzbDrone.Core.MediaFiles
                                                IRuntimeInfo runtimeInfo,
                                                IConfigService configService,
                                                IHistoryService historyService,
+                                               ITrackedDownloadService trackedDownloadService,
                                                Logger logger)
         {
             _diskProvider = diskProvider;
@@ -59,6 +62,7 @@ namespace NzbDrone.Core.MediaFiles
             _runtimeInfo = runtimeInfo;
             _configService = configService;
             _historyService = historyService;
+            _trackedDownloadService = trackedDownloadService;
             _logger = logger;
         }
 
@@ -192,6 +196,11 @@ namespace NzbDrone.Core.MediaFiles
             var folderInfo = Parser.Parser.ParseTitle(directoryInfo.Name);
             var videoFiles = _diskScanService.FilterPaths(directoryInfo.FullName, _diskScanService.GetVideoFiles(directoryInfo.FullName));
             var downloadClientItemInfo = downloadClientItem == null ? null : Parser.Parser.ParseTitle(downloadClientItem.Title);
+            var trackedEpisode = downloadClientItem == null ? null : _trackedDownloadService.Find(downloadClientItem.DownloadId)?.RemoteEpisode;
+            if (trackedEpisode?.Series?.Id == series.Id && trackedEpisode.ParsedEpisodeInfo is { FullSeason: true } trackedPackInfo)
+            {
+                downloadClientItemInfo = trackedPackInfo;
+            }
 
             if (downloadClientItem == null)
             {
@@ -208,8 +217,11 @@ namespace NzbDrone.Core.MediaFiles
             }
 
             HashSet<int> requestedEpisodeIds = null;
-            if (downloadClientItemInfo is { IsMultiSeason: true })
+            if (downloadClientItemInfo is { IsMultiSeason: true } or { IsCompleteSeries: true })
             {
+                // Keep the source pack reusable when only a requested season was grabbed.
+                downloadClientItem.CanMoveFiles = false;
+                downloadClientItem.CanBeRemoved = false;
                 requestedEpisodeIds = (_historyService.FindByDownloadId(downloadClientItem.DownloadId) ?? new List<EpisodeHistory>())
                     .Where(history => history.EventType == EpisodeHistoryEventType.Grabbed && history.SeriesId == series.Id)
                     .Select(history => history.EpisodeId)
@@ -230,7 +242,7 @@ namespace NzbDrone.Core.MediaFiles
             var decisions = _importDecisionMaker.GetImportDecisions(videoFiles.ToList(), series, downloadClientItem, downloadClientItemInfo, folderInfo, true);
             if (requestedEpisodeIds != null)
             {
-                decisions = decisions.Where(decision => decision.LocalEpisode.Episodes.Any() &&
+                decisions = decisions.Where(decision => decision.LocalEpisode.Episodes.Empty() ||
                     decision.LocalEpisode.Episodes.All(episode => requestedEpisodeIds.Contains(episode.Id))).ToList();
 
                 // Unselected seasons remain available to the torrent client, including after seeding stops.

@@ -22,6 +22,7 @@ public class OverrideReleaseResource
 
 public class SearchInfoResource
 {
+    public bool CompleteSeries { get; set; }
     public int? SeriesId { get; set; }
     public int? SeasonNumber { get; set; }
     public int? EpisodeId { get; set; }

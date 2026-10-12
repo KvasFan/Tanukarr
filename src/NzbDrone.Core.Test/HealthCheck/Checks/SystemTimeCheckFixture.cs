@@ -18,7 +18,9 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
         [SetUp]
         public void Setup()
         {
-            Mocker.SetConstant<ISonarrCloudRequestBuilder>(new SonarrCloudRequestBuilder());
+            Mocker.GetMock<ISonarrCloudRequestBuilder>()
+                .Setup(s => s.Services)
+                .Returns(new HttpRequestBuilder("https://clock.example.test/").CreateFactory());
 
             Mocker.GetMock<ILocalizationService>()
                 .Setup(s => s.GetLocalizedString(It.IsAny<string>()))
@@ -49,6 +51,19 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
 
             Subject.Check().ShouldBeError();
             ExceptionVerification.ExpectedErrors(1);
+        }
+
+        [Test]
+        public void should_not_contact_disabled_sonarr_clock_service()
+        {
+            Mocker.GetMock<ISonarrCloudRequestBuilder>()
+                .Setup(s => s.Services)
+                .Returns(new SonarrCloudRequestBuilder().Services);
+
+            Subject.Check().ShouldBeOk();
+
+            Mocker.GetMock<IHttpClient>().Verify(s => s.Execute(It.IsAny<HttpRequest>()), Times.Never());
+            ExceptionVerification.ExpectedWarns(1);
         }
     }
 }

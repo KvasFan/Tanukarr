@@ -39,5 +39,6 @@ public enum ImportRejectionReason
     NotCustomFormatUpgrade,
     NotCustomFormatUpgradeAfterRename,
     MultiSeason,
-    UnmonitoredEpisode
+    UnmonitoredEpisode,
+    AmbiguousNumbering
 }

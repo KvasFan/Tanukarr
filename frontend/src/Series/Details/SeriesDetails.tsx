@@ -43,6 +43,7 @@ import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
 import EditSeriesModal from 'Series/Edit/EditSeriesModal';
 import SeriesHistoryModal from 'Series/History/SeriesHistoryModal';
 import MonitoringOptionsModal from 'Series/MonitoringOptions/MonitoringOptionsModal';
+import CompleteSeriesSearchModal from 'Series/Search/CompleteSeriesSearchModal';
 import { Image, SeriesStatus, Statistics } from 'Series/Series';
 import SeriesGenres from 'Series/SeriesGenres';
 import SeriesMovePending from 'Series/SeriesMovePending';
@@ -222,6 +223,8 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
     };
   }, [seriesId, allSeries]);
 
+  const [isCompleteSeriesSearchOpen, setIsCompleteSeriesSearchOpen] =
+    useState(false);
   const [isOrganizeModalOpen, setIsOrganizeModalOpen] = useState(false);
   const [isManageEpisodesOpen, setIsManageEpisodesOpen] = useState(false);
   const [isEditSeriesModalOpen, setIsEditSeriesModalOpen] = useState(false);
@@ -257,6 +260,14 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
 
   const handleOrganizePress = useCallback(() => {
     setIsOrganizeModalOpen(true);
+  }, []);
+
+  const handleCompleteSeriesSearchPress = useCallback(() => {
+    setIsCompleteSeriesSearchOpen(true);
+  }, []);
+
+  const handleCompleteSeriesSearchClose = useCallback(() => {
+    setIsCompleteSeriesSearchOpen(false);
   }, []);
 
   const handleOrganizeModalClose = useCallback(() => {
@@ -507,6 +518,17 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
                 : translate('NoMonitoredEpisodes')
             }
             onPress={handleSearchPress}
+          />
+
+          <ToolbarItem
+            id="search-complete-series"
+            priority={2}
+            groupId="left-a"
+            label={translate('SearchCompleteSeries')}
+            iconName={icons.INTERACTIVE}
+            title={translate('SearchCompleteSeriesTooltip')}
+            isDisabled={!hasEpisodes}
+            onPress={handleCompleteSeriesSearchPress}
           />
 
           <OverflowDivider groupId="left-a">
@@ -955,6 +977,12 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
               </Alert>
             ) : null}
           </div>
+
+          <CompleteSeriesSearchModal
+            isOpen={isCompleteSeriesSearchOpen}
+            seriesId={seriesId}
+            onModalClose={handleCompleteSeriesSearchClose}
+          />
 
           <OrganizePreviewModal
             isOpen={isOrganizeModalOpen}

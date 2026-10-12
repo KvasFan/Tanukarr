@@ -31,6 +31,10 @@ namespace NzbDrone.Core.Parser.Model
         public MediaInfoModel MediaInfo { get; set; }
         public bool ExistingFile { get; set; }
         public bool SceneSource { get; set; }
+        public bool ManualEpisodeMapping { get; set; }
+        public string NumberingRejection { get; set; }
+        public NumberingConvention? VerifiedNumbering { get; set; }
+        public Dictionary<int, NumberingConvention> BatchNumbering { get; set; }
         public string ReleaseGroup { get; set; }
         public string ReleaseHash { get; set; }
         public string SceneName { get; set; }

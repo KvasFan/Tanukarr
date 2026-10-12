@@ -16,6 +16,8 @@ namespace Sonarr.Api.V5.Queue
         public int? SeriesId { get; set; }
         public IEnumerable<int> EpisodeIds { get; set; } = [];
         public List<int> SeasonNumbers { get; set; } = [];
+        public Dictionary<int, List<int>> EpisodeIdsBySeason { get; set; } = [];
+        public List<int> EpisodeIdsWithFiles { get; set; } = [];
         public SeriesResource? Series { get; set; }
         public List<EpisodeResource>? Episodes { get; set; }
         public List<Language> Languages { get; set; } = [];
@@ -73,6 +75,10 @@ namespace Sonarr.Api.V5.Queue
     {
         public static QueueResource ToResource(this NzbDrone.Core.Queue.Queue model, bool includeSeries, bool includeEpisodes)
         {
+            var episodes = model.Episodes ?? [];
+            var episodeIdsBySeason = episodes.GroupBy(e => e.SeasonNumber)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.Id).Distinct().ToList());
+            var episodeIdsWithFiles = episodes.Where(e => e.HasFile).Select(e => e.Id).Distinct().ToList();
             var customFormats = model.RemoteEpisode?.CustomFormats;
             var customFormatScore = model.Series?.QualityProfile?.Value?.CalculateCustomFormatScore(customFormats) ?? 0;
 
@@ -80,10 +86,12 @@ namespace Sonarr.Api.V5.Queue
             {
                 Id = model.Id,
                 SeriesId = model.Series?.Id,
-                EpisodeIds = model.Episodes?.Select(e => e.Id).ToList() ?? [],
-                SeasonNumbers = model.Episodes != null && model.Episodes.Count > 0
-                                    ? model.Episodes.Select(e => e.SeasonNumber).Distinct().OrderBy(s => s).ToList()
-                                    : (model.SeasonNumber.HasValue ? [model.SeasonNumber.Value] : []),
+                EpisodeIds = episodes.Select(e => e.Id).Distinct().ToList(),
+                SeasonNumbers = episodeIdsBySeason.Count > 0
+                    ? episodeIdsBySeason.Keys.OrderBy(s => s).ToList()
+                    : model.SeasonNumber.HasValue ? [model.SeasonNumber.Value] : [],
+                EpisodeIdsBySeason = episodeIdsBySeason,
+                EpisodeIdsWithFiles = episodeIdsWithFiles,
                 Series = includeSeries && model.Series != null ? model.Series.ToResource() : null,
                 Episodes = includeEpisodes ? model.Episodes?.ToResource() : null,
                 Languages = model.Languages,
@@ -107,7 +115,7 @@ namespace Sonarr.Api.V5.Queue
                 DownloadClientHasPostImportCategory = model.DownloadClientHasPostImportCategory,
                 Indexer = model.Indexer,
                 OutputPath = model.OutputPath,
-                EpisodesWithFilesCount = model.Episodes?.Count(e => e.HasFile) ?? 0,
+                EpisodesWithFilesCount = episodeIdsWithFiles.Count,
                 IsFullSeason = model.RemoteEpisode?.ParsedEpisodeInfo?.FullSeason ?? false,
                 ImportProgress = model.ImportProgress?.ToResource()
             };

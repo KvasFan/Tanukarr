@@ -35,6 +35,32 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport.Aggregation.Aggregators
             Mocker.SetConstant(augmenters.Select(c => c.Object));
         }
 
+        [TestCase(1, false)]
+        [TestCase(4, false)]
+        [TestCase(8, true)]
+        public void should_resolve_each_file_inside_multi_season_pack(int season, bool otherFiles)
+        {
+            var fileInfo = Parser.Parser.ParseTitle($"Series.Title.S{season:00}E02");
+            var packInfo = Parser.Parser.ParseTitle("Series.Title.S01-S08");
+            var localEpisode = new LocalEpisode
+            {
+                FileEpisodeInfo = fileInfo,
+                FolderEpisodeInfo = packInfo,
+                DownloadClientEpisodeInfo = packInfo,
+                Path = $"/downloads/Series.Title.S01-S08/Season {season}/Series.Title.S{season:00}E02.mkv",
+                Series = _series,
+                OtherVideoFiles = otherFiles,
+                SceneSource = true
+            };
+
+            Subject.Aggregate(localEpisode, null);
+
+            Mocker.GetMock<IParsingService>()
+                  .Verify(v => v.GetEpisodes(fileInfo, _series, true, null), Times.Once());
+            Mocker.GetMock<IParsingService>()
+                  .Verify(v => v.GetEpisodes(packInfo, _series, It.IsAny<bool>(), null), Times.Never());
+        }
+
         [Test]
         public void should_not_use_folder_for_full_season()
         {

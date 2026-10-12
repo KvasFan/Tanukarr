@@ -29,6 +29,7 @@ namespace NzbDrone.Core.DecisionEngine
         {
             var comparers = new List<CompareDelegate>
             {
+                CompareReleaseScope,
                 CompareQuality,
                 CompareCustomFormatScore,
                 CompareProtocol,
@@ -61,6 +62,16 @@ namespace NzbDrone.Core.DecisionEngine
         private int CompareAll(params int[] comparers)
         {
             return comparers.Select(comparer => comparer).FirstOrDefault(result => result != 0);
+        }
+
+        private int CompareReleaseScope(DownloadDecision x, DownloadDecision y)
+        {
+            // Prefer wider packs among otherwise acceptable releases. Specifications
+            // still enforce profile, monitoring, size, identity, and upgrade rules.
+            return CompareBy(x.RemoteEpisode, y.RemoteEpisode, episode =>
+                episode.ParsedEpisodeInfo.FullSeason
+                    ? episode.ParsedEpisodeInfo.IsMultiSeason ? 2 : 1
+                    : 0);
         }
 
         private int CompareIndexerPriority(DownloadDecision x, DownloadDecision y)
@@ -106,6 +117,11 @@ namespace NzbDrone.Core.DecisionEngine
             if (seasonPackCompare != 0)
             {
                 return seasonPackCompare;
+            }
+
+            if (x.RemoteEpisode.ParsedEpisodeInfo.FullSeason && y.RemoteEpisode.ParsedEpisodeInfo.FullSeason)
+            {
+                return CompareBy(x.RemoteEpisode, y.RemoteEpisode, remoteEpisode => remoteEpisode.Episodes.Count);
             }
 
             if (x.RemoteEpisode.Series.SeriesType == SeriesTypes.Anime &

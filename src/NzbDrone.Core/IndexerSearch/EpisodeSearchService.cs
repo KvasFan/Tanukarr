@@ -40,11 +40,42 @@ namespace NzbDrone.Core.IndexerSearch
             _logger = logger;
         }
 
-        private async Task SearchForBulkEpisodes(List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch)
+        private async Task SearchForBulkEpisodes(List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool missingOnly = false)
         {
             _logger.ProgressInfo("Performing search for {0} episodes", episodes.Count);
             var downloadedCount = 0;
             var groups = new List<EpisodeSearchGroup>();
+            var grabbedEpisodeIds = new HashSet<int>();
+
+            // Missing searches try a complete-series pack first for every series missing more than one regular
+            // season (after adding a series, or "search all missing"), like SeriesSearchService; full multi-season
+            // packs then outrank season packs and episodes, and the per-group refresh below drops every episode a
+            // grabbed pack covers.
+            if (missingOnly && monitoredOnly)
+            {
+                foreach (var seriesEpisodes in episodes.GroupBy(e => e.SeriesId))
+                {
+                    if (seriesEpisodes.Where(e => e.SeasonNumber > 0).Select(e => e.SeasonNumber).Distinct().Count() < 2)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        var completeDecisions = await _releaseSearchService.CompleteSeriesSearch(seriesEpisodes.Key, userInvokedSearch, false);
+                        if (completeDecisions.Any())
+                        {
+                            var completeResults = await _processDownloadDecisions.ProcessDecisions(completeDecisions);
+                            downloadedCount += completeResults.Grabbed.Count;
+                            grabbedEpisodeIds.UnionWith(completeResults.Grabbed.SelectMany(d => d.RemoteEpisode.Episodes).Select(e => e.Id));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warn(ex, "Complete-series search unavailable for [{0}]; continuing with season searches", seriesEpisodes.Key);
+                    }
+                }
+            }
 
             foreach (var series in episodes.GroupBy(e => e.SeriesId))
             {
@@ -59,13 +90,26 @@ namespace NzbDrone.Core.IndexerSearch
                 }
             }
 
-            foreach (var group in groups.OrderBy(g => g.Episodes.Min(e => e.LastSearchTime ?? DateTime.MinValue)))
+            // Regular seasons before specials: specials search one episode at a time and can take many minutes.
+            foreach (var group in groups.OrderBy(g => g.SeasonNumber == 0).ThenBy(g => g.Episodes.Min(e => e.LastSearchTime ?? DateTime.MinValue)))
             {
                 List<DownloadDecision> decisions;
 
                 var seriesId = group.SeriesId;
                 var seasonNumber = group.SeasonNumber;
-                var groupEpisodes = group.Episodes;
+
+                // A bulk search can run for many minutes; episodes imported, queued or grabbed since it started must
+                // not be searched again with the stale list (they would look missing and pass every upgrade check).
+                var queued = GetQueuedEpisodeIds().ToHashSet();
+                var groupEpisodes = _episodeService.GetEpisodes(group.Episodes.Select(e => e.Id))
+                    .Where(e => !queued.Contains(e.Id) && !grabbedEpisodeIds.Contains(e.Id) && (!missingOnly || !e.HasFile))
+                    .ToList();
+
+                if (groupEpisodes.Empty())
+                {
+                    _logger.Debug("Season {0} of [{1}] no longer needs a search", seasonNumber, seriesId);
+                    continue;
+                }
 
                 if (groupEpisodes.Count > 1)
                 {
@@ -94,9 +138,11 @@ namespace NzbDrone.Core.IndexerSearch
                     }
                 }
 
+                decisions = decisions.Where(d => !d.RemoteEpisode.Episodes.Any(e => grabbedEpisodeIds.Contains(e.Id))).ToList();
                 var processed = await _processDownloadDecisions.ProcessDecisions(decisions);
 
                 downloadedCount += processed.Grabbed.Count;
+                grabbedEpisodeIds.UnionWith(processed.Grabbed.SelectMany(d => d.RemoteEpisode.Episodes).Select(e => e.Id));
             }
 
             _logger.ProgressInfo("Completed search for {0} episodes. {1} reports downloaded.", episodes.Count, downloadedCount);
@@ -172,7 +218,7 @@ namespace NzbDrone.Core.IndexerSearch
             var queue = GetQueuedEpisodeIds();
             var missing = episodes.Where(e => !queue.Contains(e.Id)).ToList();
 
-            SearchForBulkEpisodes(missing, monitored, message.Trigger == CommandTrigger.Manual).GetAwaiter().GetResult();
+            SearchForBulkEpisodes(missing, monitored, message.Trigger == CommandTrigger.Manual, true).GetAwaiter().GetResult();
         }
 
         public void Execute(CutoffUnmetEpisodeSearchCommand message)

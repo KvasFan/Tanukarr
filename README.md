@@ -1,8 +1,9 @@
 # Sonarr Pro
 
 This local integration rebases Sonarr Pro onto Sonarr `v5-develop` at `698bb1dbb`
-and adds selected gaboy features plus AniList list fixes. See the
-[integration and validation report](docs/integration-2026-10-12.md).
+and adds selected gaboy features, AniList list fixes and the compatible ikatun
+features. See the [integration and validation report](docs/integration-2026-10-12.md)
+and the [ikatun feature and validation report](docs/ikatun-integration-2026-10-12.md).
 The included Compose file builds `sonarr-weeb:local` from this working tree.
 
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
@@ -41,6 +42,14 @@ Sonarr Pro keeps everything upstream does and adds a way around each of those.
 
 **Multi-season packs** — `Series.S01-S05` is accepted and mapped to every season it contains, rather than refused. On by default.
 
+**Complete-series search** — a dedicated interactive search in the series toolbar,
+plus automatic pack-first searches for missing monitored episodes. Existing
+complete seasons are skipped by Search Monitored and automatic RSS upgrades.
+Scene/library numbering is checked before acquiring or importing ambiguous files;
+manual episode choices remain available. Queue coverage follows each episode's
+actual season. See the [ikatun integration report](docs/ikatun-integration-2026-10-12.md)
+for scope, dry-run usage and validation.
+
 **Fake release filtering** — the `.torrent` file is inspected before it reaches your download client, rejecting `Episode.mkv.exe`, bare executables and installers, and password-protected archives containing no video. Split RAR sets pass, because those are normal and legitimate. On by default, and every rejection is logged with a specific reason.
 
 **Season pack trimming** — skip episodes you deliberately left unmonitored instead of importing the whole pack. Off by default.
@@ -57,11 +66,11 @@ Sonarr Pro doesn't contact Sonarr's servers for updates, crash reports, or annou
 
 ## A word on Usenet
 
-NZBGet, SABnzbd and NZBVortex are all still in here, completely untouched. They'll work exactly as they do upstream.
-
-None of the new downloading features apply to them, though. Fake release filtering reads the file list inside a `.torrent` before the grab, and Usenet has no equivalent — so it's off there, and multi-season packs and pack trimming have only ever been tested against torrents. Consider Usenet support inherited rather than maintained.
-
-But nobody uses that shit anyways.
+NZBGet, SABnzbd and NZBVortex remain available. Complete-series searches target
+torrent indexers, and fake file filtering requires a `.torrent`. Shared queue,
+numbering and automatic-search rules also apply to Usenet releases. Pack imports
+have only been exercised with torrent fixtures; live Usenet downloads have not
+been validated for this integration.
 
 ---
 
@@ -93,12 +102,15 @@ path mappings, and give each instance its own download category.
 ### Updating
 
 ```bash
-docker compose pull && docker compose up -d
+docker compose build && docker compose up -d
 ```
 
 Without Compose, pull the new image and recreate the container using the same
 volume mounts and environment variables. Restarting an existing container keeps
 its old image, even after a pull.
+
+The included Compose file builds this local integration. Public Kakarotto images
+do not include these local changes.
 
 Your database and settings live in the `/config` volume and survive the upgrade. There's no in-app updater to wait on and nothing to reinstall.
 
@@ -108,7 +120,7 @@ Your database and settings live in the `/config` volume and survive the upgrade.
 |---|---|---|
 | `PUID` / `PGID` | `1000` | The user files are written as. Run `id` on the host and use those numbers, or downloads arrive owned by root and you won't be able to edit them. |
 | `TZ` | `Etc/UTC` | Timezone, so scheduled tasks and log timestamps match your clock. |
-| `UMASK` | `022` | File permission mask. The legacy `UMASK_SET` variable is also accepted. |
+| `UMASK` | `002` | File creation mask. Compose reads `SONARR_PRO_UMASK`; the entrypoint also accepts legacy `UMASK_SET` when `UMASK` is omitted. |
 
 Mount your download client's completed folder and your library under a **single** `/media` parent. If they're separate mounts, every import becomes a full file copy instead of an instant move.
 
@@ -117,7 +129,8 @@ Mount your download client's completed folder and your library under a **single*
 | Tag | What you get |
 |---|---|
 | `latest` | The newest release. Use this one. |
-| `edge` | Every commit to `main`. Untested; expect breakage. |
+| `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |
+| `sha-<full commit>` | Immutable build of one commit from the publishing repository. |
 | `v1.2.3` | A specific release, pinned. |
 
 Built for `linux/amd64` and `linux/arm64`.

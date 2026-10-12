@@ -488,6 +488,34 @@ namespace NzbDrone.Core.Indexers.Newznab
             return pageableRequests;
         }
 
+        public virtual IndexerPageableRequestChain GetSearchRequests(CompleteSeriesSearchCriteria searchCriteria)
+        {
+            var requests = new IndexerPageableRequestChain();
+            var categories = GetSearchCategories(searchCriteria);
+
+            AddTvIdPageableRequests(requests, categories, searchCriteria, string.Empty);
+
+            // ID results can be individual episodes, so title and pack queries share their tier.
+            if (SupportsSearch)
+            {
+                foreach (var title in searchCriteria.QueryTitles)
+                {
+                    requests.Add(GetPagedRequests(MaxPages, categories, "search", $"&q={System.Web.HttpUtility.UrlEncode(title)}"));
+                }
+
+                foreach (var query in searchCriteria.PackQueryTitles)
+                {
+                    requests.Add(GetPagedRequests(MaxPages, categories, "search", $"&q={System.Web.HttpUtility.UrlEncode(query)}"));
+                }
+            }
+            else
+            {
+                AddTitlePageableRequests(requests, categories, searchCriteria, string.Empty);
+            }
+
+            return requests;
+        }
+
         public virtual IndexerPageableRequestChain GetSearchRequests(SpecialEpisodeSearchCriteria searchCriteria)
         {
             var pageableRequests = new IndexerPageableRequestChain();

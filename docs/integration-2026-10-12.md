@@ -4,6 +4,10 @@ Il ramo locale `integration/sonarr-latest-anilist` contiene le funzionalità di
 Sonarr Pro ribasate sull'ultimo commit del ramo predefinito Sonarr disponibile
 durante questo lavoro, `v5-develop`. Questa base è di sviluppo.
 
+L'integrazione successiva del fork ikatun è descritta nel
+[report delle funzionalità e verifiche ikatun](ikatun-integration-2026-10-12.md).
+Le verifiche elencate qui si riferiscono alla prima integrazione Kakarotto/gaboy.
+
 ## Sorgenti
 
 | Repository / ramo | Commit |

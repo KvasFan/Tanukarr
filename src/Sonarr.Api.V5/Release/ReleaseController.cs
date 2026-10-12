@@ -87,6 +87,12 @@ public class ReleaseController : RestController<ReleaseResource>
     [Consumes("application/json")]
     public async Task<Results<Ok<ReleaseGrabResource>, NotFound>> DownloadRelease([FromBody] ReleaseGrabResource release)
     {
+        if (release.SearchInfo is { CompleteSeries: true } searchInfo &&
+            (!searchInfo.SeriesId.HasValue || searchInfo.SeriesId <= 0 || searchInfo.EpisodeId.HasValue || searchInfo.SeasonNumber.HasValue))
+        {
+            throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Complete-series grab requires only seriesId in searchInfo.");
+        }
+
         var remoteEpisode = _remoteEpisodeCache.Find(GetCacheKey(release));
 
         if (remoteEpisode == null)
@@ -94,6 +100,12 @@ public class ReleaseController : RestController<ReleaseResource>
             _logger.Debug("Couldn't find requested release in cache, cache timeout probably expired.");
 
             throw new NzbDroneClientException(HttpStatusCode.NotFound, "Couldn't find requested release in cache, try searching again");
+        }
+
+        if (release.SearchInfo?.CompleteSeries == true &&
+            (remoteEpisode.Series?.Id != release.SearchInfo.SeriesId || remoteEpisode.ParsedEpisodeInfo?.IsCompleteSeries != true))
+        {
+            throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
         }
 
         try
@@ -200,8 +212,18 @@ public class ReleaseController : RestController<ReleaseResource>
 
     [HttpGet]
     [Produces("application/json")]
-    public async Task<Results<Ok<List<ReleaseResource>>, BadRequest>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber)
+    public async Task<Results<Ok<List<ReleaseResource>>, BadRequest>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber, bool completeSeries = false)
     {
+        if (completeSeries)
+        {
+            if (!seriesId.HasValue || episodeId.HasValue || seasonNumber.HasValue)
+            {
+                throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Complete-series search requires only seriesId.");
+            }
+
+            return TypedResults.Ok(await GetCompleteSeriesReleases(seriesId.Value));
+        }
+
         if (episodeId.HasValue)
         {
             return TypedResults.Ok(await GetEpisodeReleases(episodeId.Value));
@@ -218,6 +240,20 @@ public class ReleaseController : RestController<ReleaseResource>
         }
 
         return TypedResults.Ok(await GetRss());
+    }
+
+    private async Task<List<ReleaseResource>> GetCompleteSeriesReleases(int seriesId)
+    {
+        try
+        {
+            var decisions = await _releaseSearchService.CompleteSeriesSearch(seriesId);
+            var prioritized = _prioritizeDownloadDecision.PrioritizeDecisions(decisions);
+            return MapDecisions(prioritized, new List<EpisodeHistory>(), seriesId);
+        }
+        catch (SearchFailedException ex)
+        {
+            throw new NzbDroneClientException(HttpStatusCode.BadRequest, ex.Message);
+        }
     }
 
     private async Task<List<ReleaseResource>> GetEpisodeReleases(int episodeId)
@@ -271,17 +307,19 @@ public class ReleaseController : RestController<ReleaseResource>
         return MapDecisions(prioritizedDecisions, new List<EpisodeHistory>());
     }
 
-    private string GetCacheKey(ReleaseResource resource)
+    private string GetCacheKey(ReleaseResource resource, int? completeSeriesId = null)
     {
-        return string.Concat(resource.Release!.IndexerId, "_", resource.Release!.Guid);
+        var key = string.Concat(resource.Release!.IndexerId, "_", resource.Release!.Guid);
+        return completeSeriesId.HasValue ? $"{key}_complete_{completeSeriesId.Value}" : key;
     }
 
     private string GetCacheKey(ReleaseGrabResource resource)
     {
-        return string.Concat(resource.IndexerId, "_", resource.Guid);
+        var key = string.Concat(resource.IndexerId, "_", resource.Guid);
+        return resource.SearchInfo?.CompleteSeries == true ? $"{key}_complete_{resource.SearchInfo.SeriesId}" : key;
     }
 
-    private List<ReleaseResource> MapDecisions(IEnumerable<DownloadDecision> decisions, List<EpisodeHistory> history)
+    private List<ReleaseResource> MapDecisions(IEnumerable<DownloadDecision> decisions, List<EpisodeHistory> history, int? completeSeriesId = null)
     {
         // Expired entries are only removed when the same key is looked up again (a grab),
         // so without this every interactive search would stay in memory until a restart.
@@ -294,7 +332,7 @@ public class ReleaseController : RestController<ReleaseResource>
             var release = downloadDecision.MapDecision(result.Count, _qualityProfile);
 
             release.History = AddHistory(downloadDecision.RemoteEpisode.Release, history);
-            _remoteEpisodeCache.Set(GetCacheKey(release), downloadDecision.RemoteEpisode, TimeSpan.FromMinutes(30));
+            _remoteEpisodeCache.Set(GetCacheKey(release, completeSeriesId), downloadDecision.RemoteEpisode, TimeSpan.FromMinutes(30));
 
             result.Add(release);
         }

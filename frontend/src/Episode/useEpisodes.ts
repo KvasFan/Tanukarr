@@ -3,6 +3,7 @@ import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import clientSideFilterAndSort from 'Utilities/Filter/clientSideFilterAndSort';
 import Episode from './Episode';
 import { useEpisodeOptions } from './episodeOptionsStore';
+import fetchEpisodes from './fetchEpisodes';
 import { setEpisodeQueryKey } from './useEpisode';
 
 const DEFAULT_EPISODES: Episode[] = [];
@@ -36,6 +37,7 @@ const useEpisodes = (params: EpisodeFilter) => {
 
   const { isPlaceholderData, queryKey, ...result } = useApiQuery<Episode[]>({
     path: '/episode',
+    fetcher: fetchEpisodes,
     queryParams:
       'isSelection' in params
         ? {

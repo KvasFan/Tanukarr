@@ -1,0 +1,3861 @@
+{
+  "episodes": [
+    {
+      "Id": 24461,
+      "SeriesId": 283,
+      "SeasonNumber": 0,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": null,
+      "SceneEpisodeNumber": null,
+      "Title": "Original Pilot"
+    },
+    {
+      "Id": 24462,
+      "SeriesId": 283,
+      "SeasonNumber": 0,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": null,
+      "SceneEpisodeNumber": null,
+      "Title": "American Dad: The New CIA"
+    },
+    {
+      "Id": 24463,
+      "SeriesId": 283,
+      "SeasonNumber": 0,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": null,
+      "SceneEpisodeNumber": null,
+      "Title": "How's Your Aspen?: American Dad! Live at the 2005 U.S Comedy Arts Festival"
+    },
+    {
+      "Id": 24464,
+      "SeriesId": 283,
+      "SeasonNumber": 0,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": null,
+      "SceneEpisodeNumber": null,
+      "Title": "I Love Patrick Stewart"
+    },
+    {
+      "Id": 24465,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 1,
+      "Title": "Pilot"
+    },
+    {
+      "Id": 24466,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 2,
+      "Title": "Threat Levels"
+    },
+    {
+      "Id": 24467,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 3,
+      "Title": "Stan Knows Best"
+    },
+    {
+      "Id": 24468,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 4,
+      "Title": "Francine's Flashback"
+    },
+    {
+      "Id": 24469,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 5,
+      "Title": "Roger Codger"
+    },
+    {
+      "Id": 24470,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 6,
+      "Title": "Homeland Insecurity"
+    },
+    {
+      "Id": 24471,
+      "SeriesId": 283,
+      "SeasonNumber": 1,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 7,
+      "Title": "Deacon Stan, Jesus Man"
+    },
+    {
+      "Id": 24472,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 8,
+      "Title": "Bullocks to Stan"
+    },
+    {
+      "Id": 24473,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 9,
+      "Title": "A Smith in the Hand"
+    },
+    {
+      "Id": 24474,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 10,
+      "Title": "All About Steve"
+    },
+    {
+      "Id": 24475,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 11,
+      "Title": "Con Heir"
+    },
+    {
+      "Id": 24476,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 12,
+      "Title": "Stan of Arabia (1)"
+    },
+    {
+      "Id": 24477,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 13,
+      "Title": "Stan of Arabia (2)"
+    },
+    {
+      "Id": 24478,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 14,
+      "Title": "Stannie Get Your Gun"
+    },
+    {
+      "Id": 24479,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 15,
+      "Title": "Star Trek"
+    },
+    {
+      "Id": 24480,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 16,
+      "Title": "Not Particularly Desperate Housewives"
+    },
+    {
+      "Id": 24481,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 17,
+      "Title": "Rough Trade"
+    },
+    {
+      "Id": 24482,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 18,
+      "Title": "Finances With Wolves"
+    },
+    {
+      "Id": 24483,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 19,
+      "Title": "It's Good to be the Queen"
+    },
+    {
+      "Id": 24484,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 20,
+      "Title": "Roger N' Me"
+    },
+    {
+      "Id": 24485,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 21,
+      "Title": "Helping Handis"
+    },
+    {
+      "Id": 24486,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 22,
+      "Title": "With Friends Like Steve's"
+    },
+    {
+      "Id": 24487,
+      "SeriesId": 283,
+      "SeasonNumber": 2,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 1,
+      "SceneEpisodeNumber": 23,
+      "Title": "Tears of a Clooney"
+    },
+    {
+      "Id": 24488,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 1,
+      "Title": "Camp Refoogee"
+    },
+    {
+      "Id": 24489,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 2,
+      "Title": "The American Dad After School Special"
+    },
+    {
+      "Id": 24490,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 3,
+      "Title": "Failure is Not a Factory-Installed Option"
+    },
+    {
+      "Id": 24491,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 4,
+      "Title": "Lincoln Lover"
+    },
+    {
+      "Id": 24492,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 5,
+      "Title": "Dungeons and Wagons"
+    },
+    {
+      "Id": 24493,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 6,
+      "Title": "Iced, Iced Babies"
+    },
+    {
+      "Id": 24494,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 7,
+      "Title": "Of Ice and Men"
+    },
+    {
+      "Id": 24495,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 8,
+      "Title": "Irregarding Steve"
+    },
+    {
+      "Id": 24496,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 9,
+      "Title": "The Best Christmas Story Never Told"
+    },
+    {
+      "Id": 24497,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 10,
+      "Title": "Bush Comes to Dinner"
+    },
+    {
+      "Id": 24498,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 11,
+      "Title": "American Dream Factory"
+    },
+    {
+      "Id": 24499,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 12,
+      "Title": "A.T. The Abusive Terrestrial"
+    },
+    {
+      "Id": 24500,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 13,
+      "Title": "Black Mystery Month"
+    },
+    {
+      "Id": 24501,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 14,
+      "Title": "An Apocalypse to Remember"
+    },
+    {
+      "Id": 24502,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 15,
+      "Title": "Four Little Words"
+    },
+    {
+      "Id": 24503,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 16,
+      "Title": "When a Stan Loves a Woman"
+    },
+    {
+      "Id": 24504,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 17,
+      "Title": "I Can't Stan You"
+    },
+    {
+      "Id": 24505,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 18,
+      "Title": "The Magnificent Steven"
+    },
+    {
+      "Id": 24506,
+      "SeriesId": 283,
+      "SeasonNumber": 3,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 2,
+      "SceneEpisodeNumber": 19,
+      "Title": "Joint Custody"
+    },
+    {
+      "Id": 24507,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 1,
+      "Title": "The Vacation Goo"
+    },
+    {
+      "Id": 24508,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 2,
+      "Title": "Meter Made"
+    },
+    {
+      "Id": 24509,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 3,
+      "Title": "Dope & Faith"
+    },
+    {
+      "Id": 24510,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 4,
+      "Title": "Big Trouble in Little Langley"
+    },
+    {
+      "Id": 24511,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 5,
+      "Title": "Haylias"
+    },
+    {
+      "Id": 24512,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 6,
+      "Title": "The 42-Year-Old Virgin"
+    },
+    {
+      "Id": 24513,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 7,
+      "Title": "Surro-Gate"
+    },
+    {
+      "Id": 24514,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 8,
+      "Title": "The Most Adequate Christmas Ever"
+    },
+    {
+      "Id": 24515,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 9,
+      "Title": "Frannie 911"
+    },
+    {
+      "Id": 24516,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 10,
+      "Title": "Tearjerker"
+    },
+    {
+      "Id": 24517,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 11,
+      "Title": "Oedipal Panties"
+    },
+    {
+      "Id": 24518,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 12,
+      "Title": "Widowmaker"
+    },
+    {
+      "Id": 24519,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 13,
+      "Title": "Red October Sky"
+    },
+    {
+      "Id": 24520,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 14,
+      "Title": "Office Spaceman"
+    },
+    {
+      "Id": 24521,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 15,
+      "Title": "Stanny Slickers II: The Legend of Ollie's Gold"
+    },
+    {
+      "Id": 24522,
+      "SeriesId": 283,
+      "SeasonNumber": 4,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 3,
+      "SceneEpisodeNumber": 16,
+      "Title": "Spring Breakup"
+    },
+    {
+      "Id": 24523,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 1,
+      "Title": "1600 Candles"
+    },
+    {
+      "Id": 24524,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 2,
+      "Title": "The One That Got Away"
+    },
+    {
+      "Id": 24525,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 3,
+      "Title": "One Little Word"
+    },
+    {
+      "Id": 24526,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 4,
+      "Title": "Choosey Wives Choose Smith"
+    },
+    {
+      "Id": 24527,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 5,
+      "Title": "Escape From Pearl Bailey"
+    },
+    {
+      "Id": 24528,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 6,
+      "Title": "Pulling Double Booty"
+    },
+    {
+      "Id": 24529,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 7,
+      "Title": "Phantom of the Telethon"
+    },
+    {
+      "Id": 24530,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 8,
+      "Title": "Chimdale"
+    },
+    {
+      "Id": 24531,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 9,
+      "Title": "Stan Time"
+    },
+    {
+      "Id": 24532,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 10,
+      "Title": "Family Affair"
+    },
+    {
+      "Id": 24533,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 11,
+      "Title": "Live and Let Fry"
+    },
+    {
+      "Id": 24534,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 12,
+      "Title": "Roy Rogers McFreely"
+    },
+    {
+      "Id": 24535,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 13,
+      "Title": "Jack's Back"
+    },
+    {
+      "Id": 24536,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 14,
+      "Title": "Bar Mitzvah Shuffle"
+    },
+    {
+      "Id": 24537,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 15,
+      "Title": "Wife Insurance"
+    },
+    {
+      "Id": 24538,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 16,
+      "Title": "Delorean Story-An"
+    },
+    {
+      "Id": 24539,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 17,
+      "Title": "Every Which Way But Lose"
+    },
+    {
+      "Id": 24540,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 18,
+      "Title": "Weiner of Our Discontent"
+    },
+    {
+      "Id": 24541,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 19,
+      "Title": "Daddy Queerest"
+    },
+    {
+      "Id": 24542,
+      "SeriesId": 283,
+      "SeasonNumber": 5,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 4,
+      "SceneEpisodeNumber": 20,
+      "Title": "Stan's Night Out"
+    },
+    {
+      "Id": 24543,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 1,
+      "Title": "In Country... Club"
+    },
+    {
+      "Id": 24544,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 2,
+      "Title": "Moon Over Isla Island"
+    },
+    {
+      "Id": 24545,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 3,
+      "Title": "Home Adrone"
+    },
+    {
+      "Id": 24546,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 4,
+      "Title": "Brains, Brains and Automobiles"
+    },
+    {
+      "Id": 24547,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 5,
+      "Title": "Man in the Moonbounce"
+    },
+    {
+      "Id": 24548,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 6,
+      "Title": "Shallow Vows"
+    },
+    {
+      "Id": 24549,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 7,
+      "Title": "My Morning Straitjacket"
+    },
+    {
+      "Id": 24550,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 8,
+      "Title": "G-String Circus"
+    },
+    {
+      "Id": 24551,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 9,
+      "Title": "Rapture's Delight"
+    },
+    {
+      "Id": 24552,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 10,
+      "Title": "Don't Look a Smith Horse in the Mouth"
+    },
+    {
+      "Id": 24553,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 11,
+      "Title": "A Jones for a Smith"
+    },
+    {
+      "Id": 24554,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 12,
+      "Title": "May the Best Stan Win"
+    },
+    {
+      "Id": 24555,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 13,
+      "Title": "Return of the Bling"
+    },
+    {
+      "Id": 24556,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 14,
+      "Title": "Cops & Roger"
+    },
+    {
+      "Id": 24557,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 15,
+      "Title": "Merlot Down Dirty Shame"
+    },
+    {
+      "Id": 24558,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 16,
+      "Title": "Bully for Steve"
+    },
+    {
+      "Id": 24559,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 17,
+      "Title": "An Incident at Owl Creek"
+    },
+    {
+      "Id": 24560,
+      "SeriesId": 283,
+      "SeasonNumber": 6,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 5,
+      "SceneEpisodeNumber": 18,
+      "Title": "Great Space Roaster"
+    },
+    {
+      "Id": 24561,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 1,
+      "Title": "100 A.D."
+    },
+    {
+      "Id": 24562,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 2,
+      "Title": "Son of Stan"
+    },
+    {
+      "Id": 24563,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 3,
+      "Title": "Best Little Horror House in Langley Falls"
+    },
+    {
+      "Id": 24564,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 4,
+      "Title": "Stan's Food Restaurant"
+    },
+    {
+      "Id": 24565,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 5,
+      "Title": "White Rice"
+    },
+    {
+      "Id": 24566,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 6,
+      "Title": "There Will Be Bad Blood"
+    },
+    {
+      "Id": 24567,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 7,
+      "Title": "The People vs. Martin Sugar"
+    },
+    {
+      "Id": 24568,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 8,
+      "Title": "For Whom the Sleigh Bell Tolls"
+    },
+    {
+      "Id": 24569,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 9,
+      "Title": "Fart-break Hotel"
+    },
+    {
+      "Id": 24570,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 10,
+      "Title": "Stanny Boy and Frantastic"
+    },
+    {
+      "Id": 24571,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 11,
+      "Title": "A Pi\u00f1ata Named Desire"
+    },
+    {
+      "Id": 24572,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 12,
+      "Title": "You Debt Your Life"
+    },
+    {
+      "Id": 24573,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 13,
+      "Title": "I Am the Walrus"
+    },
+    {
+      "Id": 24574,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 14,
+      "Title": "School Lies"
+    },
+    {
+      "Id": 24575,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 15,
+      "Title": "License to Till"
+    },
+    {
+      "Id": 24576,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 16,
+      "Title": "Jenny Fromdabloc"
+    },
+    {
+      "Id": 24577,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 17,
+      "Title": "Home Wrecker"
+    },
+    {
+      "Id": 24578,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 18,
+      "Title": "Flirting With Disaster"
+    },
+    {
+      "Id": 24579,
+      "SeriesId": 283,
+      "SeasonNumber": 7,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 6,
+      "SceneEpisodeNumber": 19,
+      "Title": "Gorillas in the Mist"
+    },
+    {
+      "Id": 24580,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 1,
+      "Title": "Hot Water"
+    },
+    {
+      "Id": 24581,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 2,
+      "Title": "Hurricane!"
+    },
+    {
+      "Id": 24582,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 3,
+      "Title": "A Ward Show"
+    },
+    {
+      "Id": 24583,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 4,
+      "Title": "The Worst Stan"
+    },
+    {
+      "Id": 24584,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 5,
+      "Title": "Virtual In-Stanity"
+    },
+    {
+      "Id": 24585,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 6,
+      "Title": "The Scarlett Getter"
+    },
+    {
+      "Id": 24586,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 7,
+      "Title": "Season's Beatings"
+    },
+    {
+      "Id": 24587,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 8,
+      "Title": "The Unbrave One"
+    },
+    {
+      "Id": 24588,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 9,
+      "Title": "Stanny Tendergrass"
+    },
+    {
+      "Id": 24589,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 10,
+      "Title": "Wheels & the Legman and the Case of Grandpa's Key"
+    },
+    {
+      "Id": 24590,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 11,
+      "Title": "Old Stan in the Mountain"
+    },
+    {
+      "Id": 24591,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 12,
+      "Title": "The Wrestler"
+    },
+    {
+      "Id": 24592,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 13,
+      "Title": "Dr. Klaustus"
+    },
+    {
+      "Id": 24593,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 14,
+      "Title": "Stan's Best Friend"
+    },
+    {
+      "Id": 24594,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 15,
+      "Title": "Less Money, Mo' Problems"
+    },
+    {
+      "Id": 24595,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 16,
+      "Title": "The Kidney Stays in the Picture"
+    },
+    {
+      "Id": 24596,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 17,
+      "Title": "Ricky Spanish"
+    },
+    {
+      "Id": 24597,
+      "SeriesId": 283,
+      "SeasonNumber": 8,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 7,
+      "SceneEpisodeNumber": 18,
+      "Title": "Toy Whorey"
+    },
+    {
+      "Id": 24598,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 1,
+      "Title": "Love, AD Style"
+    },
+    {
+      "Id": 24599,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 2,
+      "Title": "Killer Vacation"
+    },
+    {
+      "Id": 24600,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 3,
+      "Title": "Can I Be Frank With You?"
+    },
+    {
+      "Id": 24601,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 4,
+      "Title": "American Stepdad"
+    },
+    {
+      "Id": 24602,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 5,
+      "Title": "Why Can't We Be Friends?"
+    },
+    {
+      "Id": 24603,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 6,
+      "Title": "Adventures in Hayleysitting"
+    },
+    {
+      "Id": 24604,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 7,
+      "Title": "National Treasure 4: Baby Franny: She's Doing Well: The Hole Story"
+    },
+    {
+      "Id": 24605,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 8,
+      "Title": "Finger Lenting Good"
+    },
+    {
+      "Id": 24606,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 9,
+      "Title": "The Adventures of Twill Ongenbone and His Boy Jabari"
+    },
+    {
+      "Id": 24607,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 10,
+      "Title": "Blood Crieth Unto Heaven"
+    },
+    {
+      "Id": 24608,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 11,
+      "Title": "Max Jets"
+    },
+    {
+      "Id": 24609,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 12,
+      "Title": "Naked to the Limit, One More Time"
+    },
+    {
+      "Id": 24610,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 13,
+      "Title": "For Black Eyes Only"
+    },
+    {
+      "Id": 24611,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 14,
+      "Title": "Spelling Bee My Baby"
+    },
+    {
+      "Id": 24612,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 15,
+      "Title": "The Missing Kink"
+    },
+    {
+      "Id": 24613,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 16,
+      "Title": "The Boring Identity"
+    },
+    {
+      "Id": 24614,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 17,
+      "Title": "The Full Cognitive Redaction of Avery Bullock by the Coward Stan Smith"
+    },
+    {
+      "Id": 24615,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 18,
+      "Title": "Lost in Space"
+    },
+    {
+      "Id": 24616,
+      "SeriesId": 283,
+      "SeasonNumber": 9,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 8,
+      "SceneEpisodeNumber": 19,
+      "Title": "Da Flippity Flop"
+    },
+    {
+      "Id": 24617,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 1,
+      "Title": "Steve and Snot's Test-Tubular Adventure"
+    },
+    {
+      "Id": 24618,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 2,
+      "Title": "Poltergasm"
+    },
+    {
+      "Id": 24619,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 3,
+      "Title": "Buck, Wild"
+    },
+    {
+      "Id": 24620,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 4,
+      "Title": "Crotchwalkers"
+    },
+    {
+      "Id": 24621,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 5,
+      "Title": "Kung Pao Turkey"
+    },
+    {
+      "Id": 24622,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 6,
+      "Title": "Independent Movie"
+    },
+    {
+      "Id": 24623,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 7,
+      "Title": "Faking Bad"
+    },
+    {
+      "Id": 24624,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 8,
+      "Title": "Minstrel Krampus"
+    },
+    {
+      "Id": 24625,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 9,
+      "Title": "Vision: Impossible"
+    },
+    {
+      "Id": 24626,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 10,
+      "Title": "Familyland"
+    },
+    {
+      "Id": 24627,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 11,
+      "Title": "Cock of the Sleepwalk"
+    },
+    {
+      "Id": 24628,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 12,
+      "Title": "Introducing the Naughty Stewardesses"
+    },
+    {
+      "Id": 24629,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 13,
+      "Title": "I Ain't No Holodeck Boy"
+    },
+    {
+      "Id": 24630,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 14,
+      "Title": "Stan Goes on the Pill"
+    },
+    {
+      "Id": 24631,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 15,
+      "Title": "Honey, I'm Homeland"
+    },
+    {
+      "Id": 24632,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 16,
+      "Title": "She Swill Survive"
+    },
+    {
+      "Id": 24633,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 17,
+      "Title": "Rubberneckers"
+    },
+    {
+      "Id": 24634,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 18,
+      "Title": "Permanent Record Wrecker"
+    },
+    {
+      "Id": 24635,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 19,
+      "Title": "News Glance With Genevieve Vavance"
+    },
+    {
+      "Id": 24636,
+      "SeriesId": 283,
+      "SeasonNumber": 10,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 9,
+      "SceneEpisodeNumber": 20,
+      "Title": "The Longest Distance Relationship"
+    },
+    {
+      "Id": 24637,
+      "SeriesId": 283,
+      "SeasonNumber": 11,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 10,
+      "SceneEpisodeNumber": 1,
+      "Title": "Roger Passes the Bar"
+    },
+    {
+      "Id": 24638,
+      "SeriesId": 283,
+      "SeasonNumber": 11,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 10,
+      "SceneEpisodeNumber": 2,
+      "Title": "A Boy Named Michael"
+    },
+    {
+      "Id": 24639,
+      "SeriesId": 283,
+      "SeasonNumber": 11,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 10,
+      "SceneEpisodeNumber": 3,
+      "Title": "Blagsnarst, a Love Story"
+    },
+    {
+      "Id": 24640,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 1,
+      "Title": "Blonde Ambition"
+    },
+    {
+      "Id": 24641,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 2,
+      "Title": "CIAPOW"
+    },
+    {
+      "Id": 24642,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 3,
+      "Title": "Scents and Sensei-bility"
+    },
+    {
+      "Id": 24643,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 4,
+      "Title": "Big Stan on Campus"
+    },
+    {
+      "Id": 24644,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 5,
+      "Title": "Now and Gwen"
+    },
+    {
+      "Id": 24645,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 6,
+      "Title": "Dreaming of a White Porsche Christmas"
+    },
+    {
+      "Id": 24646,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 7,
+      "Title": "LGBSteve"
+    },
+    {
+      "Id": 24647,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 8,
+      "Title": "Morning Mimosa"
+    },
+    {
+      "Id": 24648,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 9,
+      "Title": "My Affair Lady"
+    },
+    {
+      "Id": 24649,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 10,
+      "Title": "A Star is Reborn"
+    },
+    {
+      "Id": 24650,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 11,
+      "Title": "Manhattan Magical Murder Mystery Tour"
+    },
+    {
+      "Id": 24651,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 12,
+      "Title": "The Shrink"
+    },
+    {
+      "Id": 24652,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 13,
+      "Title": "Holy Shit, Jeff's Back!"
+    },
+    {
+      "Id": 24653,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 14,
+      "Title": "American Fung"
+    },
+    {
+      "Id": 24654,
+      "SeriesId": 283,
+      "SeasonNumber": 12,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 11,
+      "SceneEpisodeNumber": 15,
+      "Title": "Seizures Suit Stanny"
+    },
+    {
+      "Id": 24655,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 1,
+      "Title": "Roots"
+    },
+    {
+      "Id": 24656,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 2,
+      "Title": "The Life Aquatic with Steve Smith"
+    },
+    {
+      "Id": 24657,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 3,
+      "Title": "Hayley Smith, Seal Team Six"
+    },
+    {
+      "Id": 24658,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 4,
+      "Title": "N.S.A. (No Snoops Allowed)"
+    },
+    {
+      "Id": 24659,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 5,
+      "Title": "Stan Smith as Keanu Reeves as Stanny Utah in Point Breakers"
+    },
+    {
+      "Id": 24660,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 6,
+      "Title": "Kiss Kiss, Cam Cam"
+    },
+    {
+      "Id": 24661,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 7,
+      "Title": "The Devil Wears a Lapel Pin"
+    },
+    {
+      "Id": 24662,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 8,
+      "Title": "Stan-Dan Deliver"
+    },
+    {
+      "Id": 24663,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 9,
+      "Title": "Anchorfran"
+    },
+    {
+      "Id": 24664,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 10,
+      "Title": "The Two Hundred"
+    },
+    {
+      "Id": 24665,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 11,
+      "Title": "The Unincludeds"
+    },
+    {
+      "Id": 24666,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 12,
+      "Title": "The Dentist's Wife"
+    },
+    {
+      "Id": 24667,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 13,
+      "Title": "Widow's Pique"
+    },
+    {
+      "Id": 24668,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 14,
+      "Title": "The Nova Centauris-burgh Board of Tourism Presents: American Dad"
+    },
+    {
+      "Id": 24669,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 15,
+      "Title": "Daesong Heavy Industries"
+    },
+    {
+      "Id": 24670,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 16,
+      "Title": "Daesong Heavy Industries II: Return to Innocence"
+    },
+    {
+      "Id": 24671,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 17,
+      "Title": "Criss-Cross Applesauce: The Ballad of Billy Jesusworth"
+    },
+    {
+      "Id": 24672,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 18,
+      "Title": "Mine Struggle"
+    },
+    {
+      "Id": 24673,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 19,
+      "Title": "Garfield and Friends"
+    },
+    {
+      "Id": 24674,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 20,
+      "Title": "Gifted Me Liberty"
+    },
+    {
+      "Id": 24675,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 21,
+      "Title": "Next of Pin"
+    },
+    {
+      "Id": 24676,
+      "SeriesId": 283,
+      "SeasonNumber": 13,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 12,
+      "SceneEpisodeNumber": 22,
+      "Title": "Standard Deviation"
+    },
+    {
+      "Id": 24677,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 1,
+      "Title": "Father's Daze"
+    },
+    {
+      "Id": 24678,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 2,
+      "Title": "Fight and Flight"
+    },
+    {
+      "Id": 24679,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 3,
+      "Title": "The Enlightenment of Ragi-Baba"
+    },
+    {
+      "Id": 24680,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 4,
+      "Title": "Portrait of Francine's Genitals"
+    },
+    {
+      "Id": 24681,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 5,
+      "Title": "Bahama Mama"
+    },
+    {
+      "Id": 24682,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 6,
+      "Title": "Roger's Baby"
+    },
+    {
+      "Id": 24683,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 7,
+      "Title": "Ninety North, Zero West"
+    },
+    {
+      "Id": 24684,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 8,
+      "Title": "Whole Slotta Love"
+    },
+    {
+      "Id": 24685,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 9,
+      "Title": "The Witches of Langley"
+    },
+    {
+      "Id": 24686,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 10,
+      "Title": "A Nice Night for a Drive"
+    },
+    {
+      "Id": 24687,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 11,
+      "Title": "Casino Normale"
+    },
+    {
+      "Id": 24688,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 12,
+      "Title": "Bazooka Steve"
+    },
+    {
+      "Id": 24689,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 13,
+      "Title": "Camp Campawanda"
+    },
+    {
+      "Id": 24690,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 14,
+      "Title": "Julia Rogerts"
+    },
+    {
+      "Id": 24691,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 15,
+      "Title": "The Life and Times of Stan Smith"
+    },
+    {
+      "Id": 24692,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 16,
+      "Title": "The Bitchin' Race"
+    },
+    {
+      "Id": 24693,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 17,
+      "Title": "Family Plan"
+    },
+    {
+      "Id": 24694,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 18,
+      "Title": "The Long Bomb"
+    },
+    {
+      "Id": 24695,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 19,
+      "Title": "Kloger"
+    },
+    {
+      "Id": 24696,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 20,
+      "Title": "Garbage Stan"
+    },
+    {
+      "Id": 24697,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 21,
+      "Title": "The Talented Mr. Dingleberry"
+    },
+    {
+      "Id": 24698,
+      "SeriesId": 283,
+      "SeasonNumber": 14,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 13,
+      "SceneEpisodeNumber": 22,
+      "Title": "West to Mexico"
+    },
+    {
+      "Id": 24699,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 1,
+      "Title": "Santa, Schmanta"
+    },
+    {
+      "Id": 24700,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 2,
+      "Title": "Paranoid_Frandroid"
+    },
+    {
+      "Id": 24701,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 3,
+      "Title": "The Census of the Lambs"
+    },
+    {
+      "Id": 24702,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 4,
+      "Title": "Shell Game"
+    },
+    {
+      "Id": 24703,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 5,
+      "Title": "The Mural of the Story"
+    },
+    {
+      "Id": 24704,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 6,
+      "Title": "(You Gotta) Strike for Your Right"
+    },
+    {
+      "Id": 24705,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 7,
+      "Title": "Klaustastrophe.tv"
+    },
+    {
+      "Id": 24706,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 8,
+      "Title": "Death by Dinner Party"
+    },
+    {
+      "Id": 24707,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 9,
+      "Title": "The Never-Ending Stories"
+    },
+    {
+      "Id": 24708,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 10,
+      "Title": "Railroaded"
+    },
+    {
+      "Id": 24709,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 11,
+      "Title": "My Purity Ball and Chain"
+    },
+    {
+      "Id": 24710,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 12,
+      "Title": "OreTron Trail"
+    },
+    {
+      "Id": 24711,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 13,
+      "Title": "Mean Francine"
+    },
+    {
+      "Id": 24712,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 14,
+      "Title": "One-Woman Swole"
+    },
+    {
+      "Id": 24713,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 15,
+      "Title": "Flavortown"
+    },
+    {
+      "Id": 24714,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 16,
+      "Title": "Persona Assistant"
+    },
+    {
+      "Id": 24715,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 17,
+      "Title": "The Legend of Old Ulysses"
+    },
+    {
+      "Id": 24716,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 18,
+      "Title": "Twinanigans"
+    },
+    {
+      "Id": 24717,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 19,
+      "Title": "Top of the Steve"
+    },
+    {
+      "Id": 24718,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 20,
+      "Title": "Funnyish Games"
+    },
+    {
+      "Id": 24719,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 21,
+      "Title": "Fleabiscuit"
+    },
+    {
+      "Id": 24720,
+      "SeriesId": 283,
+      "SeasonNumber": 15,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 14,
+      "SceneEpisodeNumber": 22,
+      "Title": "The Future is Borax"
+    },
+    {
+      "Id": 24721,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 1,
+      "Title": "Fantasy Baseball"
+    },
+    {
+      "Id": 24722,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 2,
+      "Title": "I Am the Jeans: The Gina Lavetti Story"
+    },
+    {
+      "Id": 24723,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 3,
+      "Title": "Stan & Francine & Connie & Ted"
+    },
+    {
+      "Id": 24724,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 4,
+      "Title": "Rabbit Ears"
+    },
+    {
+      "Id": 24725,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 5,
+      "Title": "Jeff and the Dank Ass Weed Factory"
+    },
+    {
+      "Id": 24726,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 6,
+      "Title": "Lost Boys"
+    },
+    {
+      "Id": 24727,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 7,
+      "Title": "Shark?!"
+    },
+    {
+      "Id": 24728,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 8,
+      "Title": "The Long March"
+    },
+    {
+      "Id": 24729,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 9,
+      "Title": "The Hall Monitor and the Lunch Lady"
+    },
+    {
+      "Id": 24730,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 10,
+      "Title": "Wild Women Do"
+    },
+    {
+      "Id": 24731,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 11,
+      "Title": "An Irish Goodbye"
+    },
+    {
+      "Id": 24732,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 12,
+      "Title": "Stompe Le Monde"
+    },
+    {
+      "Id": 24733,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 13,
+      "Title": "Mom Sauce"
+    },
+    {
+      "Id": 24734,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 14,
+      "Title": "Hamerican Dad!"
+    },
+    {
+      "Id": 24735,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 15,
+      "Title": "Demolition Daddy"
+    },
+    {
+      "Id": 24736,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 16,
+      "Title": "Pride Before the Fail"
+    },
+    {
+      "Id": 24737,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 17,
+      "Title": "Enter Stanman"
+    },
+    {
+      "Id": 24738,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 18,
+      "Title": "No Weddings and a Funeral"
+    },
+    {
+      "Id": 24739,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 19,
+      "Title": "Eight Fires"
+    },
+    {
+      "Id": 24740,
+      "SeriesId": 283,
+      "SeasonNumber": 16,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 15,
+      "SceneEpisodeNumber": 20,
+      "Title": "The Hand that Rocks the Rogu"
+    },
+    {
+      "Id": 24741,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 1,
+      "Title": "100 Years a Solid Fool"
+    },
+    {
+      "Id": 24742,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 2,
+      "Title": "Downtown"
+    },
+    {
+      "Id": 24743,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 3,
+      "Title": "Cheek to Cheek: A Stripper's Story"
+    },
+    {
+      "Id": 24744,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 4,
+      "Title": "A Starboy is Born"
+    },
+    {
+      "Id": 24745,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 5,
+      "Title": "Tapped Out"
+    },
+    {
+      "Id": 24746,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 6,
+      "Title": "Brave N00b World"
+    },
+    {
+      "Id": 24747,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 7,
+      "Title": "Into the Woods"
+    },
+    {
+      "Id": 24748,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 8,
+      "Title": "One Fish, Two Fish"
+    },
+    {
+      "Id": 24749,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 9,
+      "Title": "Exquisite Corpses"
+    },
+    {
+      "Id": 24750,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 10,
+      "Title": "Trophy Wife, Trophy Life"
+    },
+    {
+      "Id": 24751,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 11,
+      "Title": "Game Night"
+    },
+    {
+      "Id": 24752,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 12,
+      "Title": "American Data?"
+    },
+    {
+      "Id": 24753,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 13,
+      "Title": "Salute Your Sllort"
+    },
+    {
+      "Id": 24754,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 14,
+      "Title": "Ghost Dad"
+    },
+    {
+      "Id": 24755,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 15,
+      "Title": "Men II Boyz"
+    },
+    {
+      "Id": 24756,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 16,
+      "Title": "First, Do No Farm"
+    },
+    {
+      "Id": 24757,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 17,
+      "Title": "Roger Needs Dick"
+    },
+    {
+      "Id": 24758,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 18,
+      "Title": "The Old Country"
+    },
+    {
+      "Id": 24759,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 19,
+      "Title": "Businessly Brunette"
+    },
+    {
+      "Id": 24760,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 20,
+      "Title": "The Chilly Thrillies"
+    },
+    {
+      "Id": 24761,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 21,
+      "Title": "Dammmm, Stan!"
+    },
+    {
+      "Id": 24762,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 22,
+      "Title": "The Last Ride of the Dodge City Rambler"
+    },
+    {
+      "Id": 24763,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 23,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 23,
+      "Title": "300"
+    },
+    {
+      "Id": 24764,
+      "SeriesId": 283,
+      "SeasonNumber": 17,
+      "EpisodeNumber": 24,
+      "SceneSeasonNumber": 16,
+      "SceneEpisodeNumber": 24,
+      "Title": "Yule. Tide. Repeat."
+    },
+    {
+      "Id": 24765,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 1,
+      "Title": "Who Smarted?"
+    },
+    {
+      "Id": 24766,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 2,
+      "Title": "Russian Doll"
+    },
+    {
+      "Id": 24767,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 3,
+      "Title": "Stan Moves to Chicago"
+    },
+    {
+      "Id": 24768,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 4,
+      "Title": "Shakedown Steve"
+    },
+    {
+      "Id": 24769,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 5,
+      "Title": "Klaus and Rogu in Thank God for Loose Rocks: An American Dad! Adventure"
+    },
+    {
+      "Id": 24770,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 6,
+      "Title": "The Wondercabinet"
+    },
+    {
+      "Id": 24771,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 7,
+      "Title": "Little Bonnie Ramirez"
+    },
+    {
+      "Id": 24772,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 8,
+      "Title": "Dancin' A-With My Cells"
+    },
+    {
+      "Id": 24773,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 9,
+      "Title": "Mused and Abused"
+    },
+    {
+      "Id": 24774,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 10,
+      "Title": "Henderson"
+    },
+    {
+      "Id": 24775,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 11,
+      "Title": "Hot Scoomp"
+    },
+    {
+      "Id": 24776,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 12,
+      "Title": "Lumberjerk"
+    },
+    {
+      "Id": 24777,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 13,
+      "Title": "Stan & Francine & Stan & Francine & Radika"
+    },
+    {
+      "Id": 24778,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 14,
+      "Title": "Flush After Reading"
+    },
+    {
+      "Id": 24779,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 15,
+      "Title": "Comb Over: A Hair Piece"
+    },
+    {
+      "Id": 24780,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 16,
+      "Title": "Plot Heavy"
+    },
+    {
+      "Id": 24781,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 17,
+      "Title": "The Sinister Fate!!"
+    },
+    {
+      "Id": 24782,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 18,
+      "Title": "Dr. Sunderson's SunSuckers"
+    },
+    {
+      "Id": 24783,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 19,
+      "Title": "Family Time"
+    },
+    {
+      "Id": 24784,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 20,
+      "Title": "Cry Baby"
+    },
+    {
+      "Id": 24785,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 21,
+      "Title": "Crystal Clear"
+    },
+    {
+      "Id": 24786,
+      "SeriesId": 283,
+      "SeasonNumber": 18,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 17,
+      "SceneEpisodeNumber": 22,
+      "Title": "Steve's Franken Out"
+    },
+    {
+      "Id": 24787,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 1,
+      "Title": "Langley Dollar Listings"
+    },
+    {
+      "Id": 24788,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 2,
+      "Title": "Dressed Down"
+    },
+    {
+      "Id": 24789,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 3,
+      "Title": "The Book of Fischer"
+    },
+    {
+      "Id": 24790,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 4,
+      "Title": "A Roger Story"
+    },
+    {
+      "Id": 24791,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 5,
+      "Title": "Epic Powder Dump"
+    },
+    {
+      "Id": 24792,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 6,
+      "Title": "American Dad Graffito"
+    },
+    {
+      "Id": 24793,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 7,
+      "Title": "Beyond the Alcove or: How I Learned to Stop Worrying and Love Klaus"
+    },
+    {
+      "Id": 24794,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 8,
+      "Title": "A Song of Knives and Fire"
+    },
+    {
+      "Id": 24795,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 9,
+      "Title": "The Curious Case of the Old Hole"
+    },
+    {
+      "Id": 24796,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 10,
+      "Title": "Gold Top Nuts"
+    },
+    {
+      "Id": 24797,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 11,
+      "Title": "The Three Fs"
+    },
+    {
+      "Id": 24798,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 12,
+      "Title": "Smooshed: A Love Story"
+    },
+    {
+      "Id": 24799,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 13,
+      "Title": "The Fast and the Spurious"
+    },
+    {
+      "Id": 24800,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 14,
+      "Title": "A League of His Own"
+    },
+    {
+      "Id": 24801,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 15,
+      "Title": "You Are Here"
+    },
+    {
+      "Id": 24802,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 16,
+      "Title": "I Heard You Wanna Buy Some Speakers"
+    },
+    {
+      "Id": 24803,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 17,
+      "Title": "Hayley Was a Girl Scout?"
+    },
+    {
+      "Id": 24804,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 18,
+      "Title": "Please Please Jeff"
+    },
+    {
+      "Id": 24805,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 19,
+      "Title": "Jambalaya"
+    },
+    {
+      "Id": 24806,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 20,
+      "Title": "Gernot and Strudel"
+    },
+    {
+      "Id": 24807,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 21,
+      "Title": "Echoes"
+    },
+    {
+      "Id": 24808,
+      "SeriesId": 283,
+      "SeasonNumber": 19,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 18,
+      "SceneEpisodeNumber": 22,
+      "Title": "The Grounch"
+    },
+    {
+      "Id": 24809,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 1,
+      "Title": "Fellow Traveler"
+    },
+    {
+      "Id": 24810,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 2,
+      "Title": "The Professor and the Coach"
+    },
+    {
+      "Id": 24811,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 3,
+      "Title": "Viced Principal"
+    },
+    {
+      "Id": 24812,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 4,
+      "Title": "The Pleasanting at Smith House"
+    },
+    {
+      "Id": 24813,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 5,
+      "Title": "Stretched Thin"
+    },
+    {
+      "Id": 24814,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 6,
+      "Title": "Better on Paper"
+    },
+    {
+      "Id": 24815,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 7,
+      "Title": "Cow I Met Your Moo-ther"
+    },
+    {
+      "Id": 24816,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 8,
+      "Title": "Stan Fixes a Shingle"
+    },
+    {
+      "Id": 24817,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 9,
+      "Title": "Saving Face"
+    },
+    {
+      "Id": 24818,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 10,
+      "Title": "Frantastic Voyage"
+    },
+    {
+      "Id": 24819,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 11,
+      "Title": "A Little Mystery"
+    },
+    {
+      "Id": 24820,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 12,
+      "Title": "Don't You Be My Neighbor"
+    },
+    {
+      "Id": 24821,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 13,
+      "Title": "Productive Panic"
+    },
+    {
+      "Id": 24822,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 14,
+      "Title": "Multiverse of American Dadness"
+    },
+    {
+      "Id": 24823,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 15,
+      "Title": "Z.O.I.N.C.S."
+    },
+    {
+      "Id": 24824,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 16,
+      "Title": "A New Era for the Smith House"
+    },
+    {
+      "Id": 24825,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 17,
+      "Title": "Between a Ring and a Hardass"
+    },
+    {
+      "Id": 24826,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 18,
+      "Title": "Footprints"
+    },
+    {
+      "Id": 24827,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 19,
+      "Title": "Steve, Snot, and the Quest for the OG Four Loko"
+    },
+    {
+      "Id": 24828,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 20,
+      "Title": "The Pink Sphinx Holds Her Hearts on the Turn"
+    },
+    {
+      "Id": 24829,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 21,
+      "Title": "A Little Extra Scratch"
+    },
+    {
+      "Id": 24830,
+      "SeriesId": 283,
+      "SeasonNumber": 20,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 19,
+      "SceneEpisodeNumber": 22,
+      "Title": "Into the Jingleverse"
+    },
+    {
+      "Id": 24831,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 1,
+      "Title": "The Grocery Store Bank"
+    },
+    {
+      "Id": 24832,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 2,
+      "Title": "Brown Lotus"
+    },
+    {
+      "Id": 24833,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 3,
+      "Title": "I've Got a Friend in Me"
+    },
+    {
+      "Id": 24834,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 4,
+      "Title": "Touch the Sun: A Chimborazo Adventure"
+    },
+    {
+      "Id": 24835,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 5,
+      "Title": "Under (and over, and beside) the Boardwalk"
+    },
+    {
+      "Id": 24836,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 6,
+      "Title": "The Violence of the Clams"
+    },
+    {
+      "Id": 24837,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 7,
+      "Title": "An Adult Woman"
+    },
+    {
+      "Id": 24838,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 8,
+      "Title": "Piece by Piece"
+    },
+    {
+      "Id": 24839,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 9,
+      "Title": "Nasty Christmas"
+    },
+    {
+      "Id": 24840,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 10,
+      "Title": "Idiot Rich"
+    },
+    {
+      "Id": 24841,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 11,
+      "Title": "Killer Mimosa"
+    },
+    {
+      "Id": 24842,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 12,
+      "Title": "The Legend of Mike Madonia, the Rototiller Man"
+    },
+    {
+      "Id": 24843,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 13,
+      "Title": "The Clearview Motel"
+    },
+    {
+      "Id": 24844,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 14,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 14,
+      "Title": "The Girl Who Cried Space Jam"
+    },
+    {
+      "Id": 24845,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 15,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 15,
+      "Title": "Get Him to the Greek Life Style"
+    },
+    {
+      "Id": 24846,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 16,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 16,
+      "Title": "The Mystery of the Missing Bazooka Shark Babe"
+    },
+    {
+      "Id": 24847,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 17,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 17,
+      "Title": "Pork 'N Feelings"
+    },
+    {
+      "Id": 24848,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 18,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 18,
+      "Title": "Oh Brothel, Where Art Thou?"
+    },
+    {
+      "Id": 24849,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 19,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 19,
+      "Title": "The Sickness"
+    },
+    {
+      "Id": 24850,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 20,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 20,
+      "Title": "Silicon Steve"
+    },
+    {
+      "Id": 24851,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 21,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 21,
+      "Title": "Guardian"
+    },
+    {
+      "Id": 24852,
+      "SeriesId": 283,
+      "SeasonNumber": 21,
+      "EpisodeNumber": 22,
+      "SceneSeasonNumber": 20,
+      "SceneEpisodeNumber": 22,
+      "Title": "What Great Advancements!"
+    },
+    {
+      "Id": 24853,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 1,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 1,
+      "Title": "Aw Rats, A Pool Party"
+    },
+    {
+      "Id": 24854,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 2,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 2,
+      "Title": "The Flume Flume Room"
+    },
+    {
+      "Id": 24855,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 3,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 3,
+      "Title": "Powering Through"
+    },
+    {
+      "Id": 24856,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 4,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 4,
+      "Title": "Camera Stan"
+    },
+    {
+      "Id": 24857,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 5,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 5,
+      "Title": "Idol Threat"
+    },
+    {
+      "Id": 24858,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 6,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 6,
+      "Title": "The Treasure of Old Chinatown"
+    },
+    {
+      "Id": 24859,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 7,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 7,
+      "Title": "Reaper Madness"
+    },
+    {
+      "Id": 24860,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 8,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 8,
+      "Title": "Dude, You're Getting a Del!"
+    },
+    {
+      "Id": 24861,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 9,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 9,
+      "Title": "Where the Wild Boars Are"
+    },
+    {
+      "Id": 24862,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 10,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 10,
+      "Title": "Dumbston Checks In"
+    },
+    {
+      "Id": 24863,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 11,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 11,
+      "Title": "A Donkey's Shame"
+    },
+    {
+      "Id": 24864,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 12,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 12,
+      "Title": "400?!"
+    },
+    {
+      "Id": 24865,
+      "SeriesId": 283,
+      "SeasonNumber": 22,
+      "EpisodeNumber": 13,
+      "SceneSeasonNumber": 21,
+      "SceneEpisodeNumber": 13,
+      "Title": "Tales from the Outer Frontier"
+    }
+  ],
+  "mappings": [
+    {
+      "Id": 31030840,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 17,
+      "FilterRegex": "(?i)-(?:CHX|TMSF|ION10|Goki)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "CHX/TMSF/ION10/Goki/",
+      "MappingId": "s-607f372e3631808286276fb9"
+    },
+    {
+      "Id": 31030947,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": -1,
+      "FilterRegex": "(?i)-(?:REWARD|DIMENSION|CAKES|BAE)(?:-|$)",
+      "SceneOrigin": "scene",
+      "SearchMode": null,
+      "Comment": "Scene",
+      "MappingId": "s-608919583631808286d3f26f"
+    },
+    {
+      "Id": 31031025,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": -1,
+      "FilterRegex": "(?i)-(?:ViSUM|TrollHD|ETHiCS|WvF|4SF|SiQ|WAYNE|EDGE2020|FUN|NTb|Kitsune|CtrlHD)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "Follow TheTVDB",
+      "MappingId": "s-6095d5133631808286778a0f"
+    },
+    {
+      "Id": 31031026,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": -1,
+      "FilterRegex": null,
+      "SceneOrigin": "unknown",
+      "SearchMode": null,
+      "Comment": "Unknown Group",
+      "MappingId": "s-6095d5f036318082867824a3"
+    },
+    {
+      "Id": 31032899,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 7,
+      "FilterRegex": "(?i)-(?:playWEB)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "playWEB",
+      "MappingId": "s-62b1d835739961a088eb803c"
+    },
+    {
+      "Id": 31032900,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 8,
+      "FilterRegex": "(?i)-(?:playWEB)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "playWEB",
+      "MappingId": "s-62b1d835739961a088eb803d"
+    },
+    {
+      "Id": 31032901,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 9,
+      "FilterRegex": "(?i)-(?:playWEB)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "playWEB",
+      "MappingId": "s-62b1d835739961a088eb803e"
+    },
+    {
+      "Id": 31033483,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "Padre made in USA",
+      "ParseTerm": "padremadeinusa",
+      "Title": "Padre made in USA",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": null,
+      "FilterRegex": null,
+      "SceneOrigin": null,
+      "SearchMode": null,
+      "Comment": null,
+      "MappingId": "s-637fb921739961c2dcf4852b"
+    },
+    {
+      "Id": 31033607,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 19,
+      "FilterRegex": "(?i)-(?:NTb|TvR)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "NTb/TvR",
+      "MappingId": "s-63ab2dd1a777402807d36cfe"
+    },
+    {
+      "Id": 31034153,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad! 2005",
+      "ParseTerm": "americandad2005",
+      "Title": "American Dad! 2005",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": null,
+      "FilterRegex": null,
+      "SceneOrigin": null,
+      "SearchMode": null,
+      "Comment": null,
+      "MappingId": "s-64372d6f667ec65989969012"
+    },
+    {
+      "Id": 31034490,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 20,
+      "FilterRegex": "\\[TAoE\\]$",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "TAoE",
+      "MappingId": "s-64fb9c27ca4977a8db25aba7"
+    },
+    {
+      "Id": 31035631,
+      "TvdbId": 73141,
+      "SeasonNumber": 1,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 1,
+      "FilterRegex": "(?i)-(?:CNHD)(?:-|$)",
+      "SceneOrigin": "tvdb",
+      "SearchMode": null,
+      "Comment": "CNHD ",
+      "MappingId": "s-66ba91f779645aea92dba700"
+    },
+    {
+      "Id": 31035632,
+      "TvdbId": 73141,
+      "SeasonNumber": 13,
+      "SearchTerm": "American Dad",
+      "ParseTerm": "americandad",
+      "Title": "American Dad",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": 13,
+      "FilterRegex": "(?i)-(?:CNHD)(?:-|$)",
+      "SceneOrigin": "scene",
+      "SearchMode": null,
+      "Comment": "CNHD",
+      "MappingId": "s-66ba91f979645aea92dba709"
+    },
+    {
+      "Id": 31037194,
+      "TvdbId": 73141,
+      "SeasonNumber": -1,
+      "SearchTerm": "American Dad,",
+      "ParseTerm": "americandad",
+      "Title": "American Dad,",
+      "Type": "ServicesProvider",
+      "SceneSeasonNumber": null,
+      "FilterRegex": null,
+      "SceneOrigin": null,
+      "SearchMode": null,
+      "Comment": null,
+      "MappingId": "s-68432e160c734f0055c47d03"
+    }
+  ]
+}

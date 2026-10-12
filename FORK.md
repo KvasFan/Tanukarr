@@ -4,9 +4,10 @@ The reasoning behind each of Sonarr Pro's changes, and the trade-offs they carry
 [README.md](README.md) covers what the features are and how to install; this file
 covers why they work the way they do.
 
-Everything below is additive: an untouched install behaves exactly as upstream
-does, because every new behaviour is either off by default or defaults to the
-path that already existed.
+Metadata providers and import options are additive. This integration also changes
+automatic acquisition: complete monitored seasons are skipped, and approved packs
+are preferred before individual episodes. Explicit manual searches retain the
+normal upgrade rules.
 
 Originally forked from upstream `v5-develop` at `7e627f6`.
 Rebased through `698bb1dbb` on 2026-10-12. The upstream quality-rank migration
@@ -14,7 +15,8 @@ remains numbered 236 here; the upstream import-list tag migration is numbered
 241 to preserve the fork's existing migrations 233–240. Migration 242 preserves
 provider identities in import-list exclusions. See the
 [integration report](docs/integration-2026-10-12.md) and
-[additional gaboy features](docs/gaboy-integration.md).
+[additional gaboy features](docs/gaboy-integration.md) and
+[ikatun features and validation](docs/ikatun-integration-2026-10-12.md).
 
 ---
 

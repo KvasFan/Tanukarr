@@ -561,6 +561,23 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
             ExceptionVerification.ExpectedWarns(1);
         }
 
+        [TestCase(1, 1, false)]
+        [TestCase(1, 3, false)]
+        [TestCase(1, 2, true)]
+        public void should_require_each_expected_episode_in_multi_season_import(int firstId, int secondId, bool complete)
+        {
+            _trackedDownload.RemoteEpisode.ParsedEpisodeInfo = Parser.Parser.ParseTitle("Drone.S01-S08");
+            _trackedDownload.RemoteEpisode.Episodes = new List<Episode>
+            {
+                new Episode { Id = 1, SeasonNumber = 1 },
+                new Episode { Id = 2, SeasonNumber = 8 }
+            };
+            var results = new[] { firstId, secondId }.Select(id => new ImportResult(
+                new ImportDecision(new LocalEpisode { Episodes = new List<Episode> { new Episode { Id = id } } }))).ToList();
+
+            Subject.VerifyImport(_trackedDownload, results).Should().Be(complete);
+        }
+
         private void AssertNotImported()
         {
             Mocker.GetMock<IEventAggregator>()

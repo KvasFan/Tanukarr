@@ -17,6 +17,7 @@ namespace NzbDrone.Core.Parser.Model
         public int? MappedSeasonNumber { get; set; }
         public Series Series { get; set; }
         public List<Episode> Episodes { get; set; }
+        public string NumberingRejection { get; set; }
         public bool EpisodeRequested { get; set; }
         public bool ManualEpisodeMapping { get; set; }
         public bool DownloadAllowed { get; set; }

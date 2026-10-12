@@ -77,6 +77,9 @@ namespace Sonarr.Api.V3.Indexers
         // Sent when queuing an unknown release
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool CompleteSeries { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int? SeriesId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

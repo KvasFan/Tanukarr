@@ -6,8 +6,10 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.CustomFormats;
+using NzbDrone.Core.DecisionEngine;
 using NzbDrone.Core.DecisionEngine.Specifications;
 using NzbDrone.Core.Download.TrackedDownloads;
+using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
@@ -475,6 +477,31 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
             GivenQueue(new List<RemoteEpisode> { remoteEpisode });
 
             Subject.IsSatisfiedBy(_remoteEpisode, new()).Accepted.Should().BeFalse();
+        }
+
+        [TestCase(TrackedDownloadState.Downloading, false, false)]
+        [TestCase(TrackedDownloadState.ImportPending, false, false)]
+        [TestCase(TrackedDownloadState.Importing, false, false)]
+        [TestCase(TrackedDownloadState.FailedPending, false, true)]
+        [TestCase(TrackedDownloadState.Failed, false, true)]
+        [TestCase(TrackedDownloadState.ImportBlocked, false, true)]
+        [TestCase(TrackedDownloadState.Imported, false, true)]
+        [TestCase(TrackedDownloadState.Ignored, false, true)]
+        [TestCase(TrackedDownloadState.Downloading, true, true)]
+        public void should_protect_active_multi_season_pack_from_automatic_upgrade(TrackedDownloadState state, bool interactive, bool accepted)
+        {
+            _series.QualityProfile.Value.Cutoff = Quality.Bluray1080p.Id;
+            var pack = new RemoteEpisode
+            {
+                Series = _series,
+                Episodes = new List<Episode> { _episode, new Episode { Id = 9876, SeasonNumber = _episode.SeasonNumber + 1 } },
+                ParsedEpisodeInfo = new ParsedEpisodeInfo { FullSeason = true, Quality = new QualityModel(Quality.SDTV) },
+                CustomFormats = new List<CustomFormat>()
+            };
+            GivenQueue(new[] { pack }, state);
+            var information = new ReleaseDecisionInformation(false, new SeasonSearchCriteria { InteractiveSearch = interactive });
+
+            Subject.IsSatisfiedBy(_remoteEpisode, information).Accepted.Should().Be(accepted);
         }
     }
 }

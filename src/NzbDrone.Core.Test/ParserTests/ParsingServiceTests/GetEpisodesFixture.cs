@@ -523,6 +523,7 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
                 {
                     new Episode
                     {
+                        Id = (seasonNumber * 100) + 1,
                         SeriesId = _series.Id,
                         SeasonNumber = seasonNumber,
                         EpisodeNumber = 1
@@ -559,6 +560,7 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
                     .Returns(Enumerable.Range(1, seasonSize)
                         .Select(episodeNumber => new Episode
                         {
+                            Id = (seasonNumber * 100) + episodeNumber,
                             SeriesId = _series.Id,
                             SeasonNumber = seasonNumber,
                             EpisodeNumber = episodeNumber
@@ -586,6 +588,7 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
                     .Returns(Enumerable.Range(1, seasonSize)
                         .Select(episodeNumber => new Episode
                         {
+                            Id = (seasonNumber * 100) + episodeNumber,
                             SeriesId = _series.Id,
                             SeasonNumber = seasonNumber,
                             EpisodeNumber = episodeNumber
@@ -702,6 +705,9 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
             var seasonOneEpisodes = Builder<Episode>.CreateListOfSize(2).Build().ToList();
             var seasonTwoEpisodes = Builder<Episode>.CreateListOfSize(3).Build().ToList();
             var seasonThreeEpisodes = Builder<Episode>.CreateListOfSize(1).Build().ToList();
+            seasonOneEpisodes.ForEach(episode => episode.Id += 100);
+            seasonTwoEpisodes.ForEach(episode => episode.Id += 200);
+            seasonThreeEpisodes.ForEach(episode => episode.Id += 300);
 
             Mocker.GetMock<IEpisodeService>()
                 .Setup(s => s.GetEpisodesBySeason(_series.Id, 1))

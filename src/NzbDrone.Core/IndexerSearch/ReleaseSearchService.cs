@@ -21,6 +21,9 @@ namespace NzbDrone.Core.IndexerSearch
 {
     public interface ISearchForReleases
     {
+        Task<List<DownloadDecision>> CompleteSeriesSearch(int seriesId);
+        Task<List<DownloadDecision>> CompleteSeriesSearch(int seriesId, bool userInvokedSearch, bool interactiveSearch);
+        Task<List<DownloadDecision>> AnimeSeasonPackSearch(Series series, List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch);
         Task<List<DownloadDecision>> EpisodeSearch(int episodeId, bool userInvokedSearch, bool interactiveSearch);
         Task<List<DownloadDecision>> EpisodeSearch(Episode episode, bool userInvokedSearch, bool interactiveSearch);
         Task<List<DownloadDecision>> SeasonSearch(int seriesId, int seasonNumber, bool missingOnly, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch);
@@ -55,6 +58,29 @@ namespace NzbDrone.Core.IndexerSearch
             _logger = logger;
             _activity = activity;
             _options = options;
+        }
+
+        public Task<List<DownloadDecision>> CompleteSeriesSearch(int seriesId)
+        {
+            return CompleteSeriesSearch(seriesId, true, true);
+        }
+
+        public async Task<List<DownloadDecision>> CompleteSeriesSearch(int seriesId, bool userInvokedSearch, bool interactiveSearch)
+        {
+            var series = _seriesService.GetSeries(seriesId);
+            var episodes = _episodeService.GetEpisodeBySeries(seriesId)
+                .Where(e => e.SeasonNumber > 0).ToList();
+
+            if (episodes.Empty())
+            {
+                throw new SearchFailedException("No regular episodes are known for this series. Refresh its metadata first.");
+            }
+
+            var criteria = Get<CompleteSeriesSearchCriteria>(series, episodes, !interactiveSearch, userInvokedSearch, interactiveSearch);
+            criteria.SceneTitles = criteria.SceneTitles.Concat(series.AlternateTitles ?? new List<string>())
+                .Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+            return DeDupeDecisions(await Dispatch(indexer => indexer.Fetch(criteria), criteria));
         }
 
         public async Task<List<DownloadDecision>> EpisodeSearch(int episodeId, bool userInvokedSearch, bool interactiveSearch)
@@ -415,7 +441,7 @@ namespace NzbDrone.Core.IndexerSearch
             return DeDupeDecisions(downloadDecisions);
         }
 
-        private async Task<List<DownloadDecision>> SearchAnimeSeason(Series series, List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch)
+        public async Task<List<DownloadDecision>> AnimeSeasonPackSearch(Series series, List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch)
         {
             var downloadDecisions = new List<DownloadDecision>();
 
@@ -429,8 +455,6 @@ namespace NzbDrone.Core.IndexerSearch
             var seasonEpisodes = episodes.Select(e => e.SeasonNumber).Distinct()
                 .SelectMany(seasonNumber => _episodeService.GetEpisodesBySeason(series.Id, seasonNumber))
                 .ToList();
-
-            var allEpisodesAiredOrAiringSoon = seasonEpisodes.All(ep => ep.AirDateUtc.HasValue && !ep.AirDateUtc.Value.After(DateTime.UtcNow.AddHours(24)));
 
             var seasonMappings = GetSceneSeasonMappings(series, episodesToSearch);
 
@@ -461,9 +485,19 @@ namespace NzbDrone.Core.IndexerSearch
                 downloadDecisions.AddRange(decisions);
             }
 
-            var packFirst = _options.Read()?.PreferAnimeSeasonPacks == true;
+            return DeDupeDecisions(downloadDecisions);
+        }
+
+        private async Task<List<DownloadDecision>> SearchAnimeSeason(Series series, List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch)
+        {
+            var downloadDecisions = await AnimeSeasonPackSearch(series, episodes, monitoredOnly, userInvokedSearch, interactiveSearch);
+            var episodesToSearch = episodes
+                .Where(ep => interactiveSearch || !monitoredOnly || ep.Monitored)
+                .Where(ep => ep.AirDateUtc.HasValue && ep.AirDateUtc.Value.Before(DateTime.UtcNow));
+
+            var packFirst = !interactiveSearch && _options.Read()?.PreferAnimeSeasonPacks == true;
             var coveredEpisodeIds = downloadDecisions.Where(d => !d.Rejections.Any() && d.RemoteEpisode.ParsedEpisodeInfo.FullSeason).SelectMany(d => d.RemoteEpisode.Episodes.Select(e => e.Id)).ToHashSet();
-            foreach (var episode in episodesToSearch.Where(ep => packFirst ? !coveredEpisodeIds.Contains(ep.Id) : !allEpisodesAiredOrAiringSoon))
+            foreach (var episode in episodesToSearch.Where(ep => !packFirst || !coveredEpisodeIds.Contains(ep.Id)))
             {
                 downloadDecisions.AddRange(await SearchAnime(series, episode, monitoredOnly, userInvokedSearch, interactiveSearch, true));
             }
@@ -564,6 +598,15 @@ namespace NzbDrone.Core.IndexerSearch
             var indexers = criteriaBase.InteractiveSearch ?
                 _indexerFactory.InteractiveSearchEnabled() :
                 _indexerFactory.AutomaticSearchEnabled();
+
+            if (criteriaBase is CompleteSeriesSearchCriteria)
+            {
+                indexers = indexers.Where(i => i.Protocol == DownloadProtocol.Torrent).ToList();
+                if (indexers.Empty())
+                {
+                    throw new SearchFailedException($"No torrent indexers are enabled for {(criteriaBase.InteractiveSearch ? "interactive" : "automatic")} search.");
+                }
+            }
 
             // Filter indexers to untagged indexers and indexers with intersecting tags
             indexers = indexers.Where(i => i.Definition.Tags.Empty() || i.Definition.Tags.Intersect(criteriaBase.Series.Tags).Any()).ToList();

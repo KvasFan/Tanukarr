@@ -41,6 +41,16 @@ namespace NzbDrone.Core.Indexers
             _httpClient = httpClient;
         }
 
+        public override Task<IList<ReleaseInfo>> Fetch(CompleteSeriesSearchCriteria searchCriteria)
+        {
+            if (!SupportsSearch)
+            {
+                return Task.FromResult<IList<ReleaseInfo>>(Array.Empty<ReleaseInfo>());
+            }
+
+            return FetchReleases(g => g.GetSearchRequests(searchCriteria));
+        }
+
         public override Task<IList<ReleaseInfo>> FetchRecent()
         {
             if (!SupportsRss)

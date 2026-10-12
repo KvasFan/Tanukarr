@@ -14,6 +14,8 @@ services:
       # prints, otherwise downloads land as root and the host account cannot edit them.
       - PUID=1000
       - PGID=1000
+      # Media group members can create subtitles and sidecars alongside imports.
+      - UMASK=${SONARR_PRO_UMASK:-002}
       - TZ=Etc/UTC
 
     volumes:

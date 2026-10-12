@@ -1,3 +1,4 @@
+using System.Linq;
 using NLog;
 using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.MediaFiles.Events;
@@ -44,6 +45,19 @@ namespace NzbDrone.Core.Tv
             }
 
             _logger.Info("[{0}] was recently added, performing post-add actions", series.Title);
+
+            // Legacy add clients omit the monitor choice and often send every season, including specials.
+            // An explicit monitor choice from the UI or an import list retains its intended behavior.
+            if (addOptions.Monitor == MonitorTypes.Unknown)
+            {
+                var specials = series.Seasons.SingleOrDefault(season => season.SeasonNumber == 0);
+                if (specials is { Monitored: true })
+                {
+                    _logger.Info("[{0}] Not monitoring specials requested without a monitor choice", series.Title);
+                    specials.Monitored = false;
+                }
+            }
+
             _episodeMonitoredService.SetEpisodeMonitoredStatus(series, addOptions);
 
             // If both options are enabled search for the whole series, which will only include monitored episodes.

@@ -55,6 +55,19 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
                     continue;
                 }
 
+                // An automatic search must not dismantle an in-flight multi-season grab
+                // into overlapping season/episode upgrades. Interactive decisions keep
+                // their existing quality checks; failed/blocked/imported items are not protected.
+                if (information.SearchCriteria?.InteractiveSearch != true &&
+                    ActiveMultiSeasonCoverage.IsProtected(queueItem) &&
+                    (!subject.ParsedEpisodeInfo.FullSeason ||
+                     subject.Episodes.Select(e => e.SeasonNumber).Distinct().Count() <= 1 ||
+                     subject.Episodes.All(e => remoteEpisode.Episodes.Any(q => q.Id == e.Id))))
+                {
+                    return DownloadSpecDecision.Reject(DownloadRejectionReason.QueueHigherPreference,
+                        "Episodes are already covered by an active multi-season download");
+                }
+
                 var queuedItemCustomFormats = _formatService.ParseCustomFormat(remoteEpisode, (long)queueItem.Size);
 
                 _logger.Debug("Checking if existing release in queue meets cutoff. Queued: {0}", remoteEpisode.ParsedEpisodeInfo.Quality);

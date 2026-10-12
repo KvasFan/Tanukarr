@@ -13,15 +13,40 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Aggregation.Aggregators
         public int Order => 1;
 
         private readonly IParsingService _parsingService;
+        private readonly IEpisodeNumberingResolver _numberingResolver;
 
-        public AggregateEpisodes(IParsingService parsingService)
+        public AggregateEpisodes(IParsingService parsingService, IEpisodeNumberingResolver numberingResolver)
         {
             _parsingService = parsingService;
+            _numberingResolver = numberingResolver;
         }
 
         public LocalEpisode Aggregate(LocalEpisode localEpisode, DownloadClientItem downloadClientItem)
         {
+            localEpisode.VerifiedNumbering = null;
+            if (localEpisode.SceneSource && !localEpisode.ExistingFile && localEpisode.Series.UseSceneNumbering)
+            {
+                // Aggregation catches exceptions; retain a rejection if verification fails.
+                localEpisode.NumberingRejection = "Unable to verify scene/library numbering";
+            }
+
             localEpisode.Episodes = GetEpisodes(localEpisode);
+
+            // Use the physical file's coordinates and title whenever available. A pack
+            // or download name cannot establish that a differently titled file is correct.
+            var parsed = localEpisode.FileEpisodeInfo;
+            if (parsed == null || parsed.FullSeason)
+            {
+                parsed = GetBestEpisodeInfo(localEpisode);
+            }
+
+            var numbering = _numberingResolver.ResolveLocal(localEpisode, parsed);
+            localEpisode.NumberingRejection = numbering?.Rejection;
+            if (numbering?.Episodes != null)
+            {
+                localEpisode.Episodes = numbering.Episodes;
+                localEpisode.VerifiedNumbering = numbering.Convention;
+            }
 
             return localEpisode;
         }

@@ -18,11 +18,12 @@ WORKDIR /src
 COPY package.json yarn.lock .yarnrc ./
 RUN yarn install --frozen-lockfile --network-timeout 600000
 
-COPY index.html vite.config.ts ./
+COPY index.html vite.config.ts tsconfig.json ./
 COPY frontend/ ./frontend/
 
-# Vite emits a production bundle by default. Check types before packaging it.
-RUN yarn typecheck && yarn build
+# Fail the image build on frontend regressions before packaging Vite's production
+# bundle. The checks use the same toolchain as CI.
+RUN yarn test:queue-details && yarn lint && yarn stylelint && yarn typecheck && yarn build
 
 # ---------------------------------------------------------------------------
 # Backend
@@ -56,6 +57,19 @@ RUN set -eux; \
       -t:PublishAllRids; \
     mkdir -p /app; \
     cp -r "_output/net10.0/${RID}/publish/." /app/
+
+# The native amd64 build verifies the same published backend. Releases also build
+# arm64 under emulation; the tests have already run on amd64 for that commit.
+# Integration tests require configured external services and run separately.
+RUN set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+      for suite in Core Api Http; do \
+        dotnet test "_tests/net10.0/linux-x64/Sonarr.${suite}.Test.dll" \
+          --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"; \
+      done; \
+      dotnet test _tests/net10.0/linux-x64/Sonarr.Common.Test.dll \
+        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture" --logger "console;verbosity=minimal"; \
+    fi
 
 # The UI is built separately and is not produced by the .NET build.
 COPY --from=ui /src/_output/UI /app/UI

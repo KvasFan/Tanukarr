@@ -38,6 +38,76 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
                 .Build();
         }
 
+        [TestCase(SeriesTypes.Standard)]
+        [TestCase(SeriesTypes.Anime)]
+        public void should_prefer_multiseason_then_season_then_episodes_before_quality_and_codec(SeriesTypes seriesType)
+        {
+            _series.SeriesType = seriesType;
+            var multi = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1), GivenEpisode(2) }, new QualityModel(Quality.HDTV720p), Language.English, downloadProtocol: DownloadProtocol.Torrent);
+            multi.ParsedEpisodeInfo.FullSeason = true;
+            multi.ParsedEpisodeInfo.SeasonNumbers = new List<int> { 1, 2 };
+            var season = GivenRemoteEpisode(new List<Episode> { GivenEpisode(3) }, new QualityModel(Quality.WEBDL1080p), Language.English);
+            season.ParsedEpisodeInfo.FullSeason = true;
+            season.CustomFormatScore = 100;
+            var episode = GivenRemoteEpisode(new List<Episode> { GivenEpisode(4) }, new QualityModel(Quality.WEBDL2160p), Language.English);
+            episode.CustomFormatScore = 100;
+
+            var ordered = Subject.PrioritizeDecisions(new List<DownloadDecision>
+            {
+                new DownloadDecision(episode), new DownloadDecision(season), new DownloadDecision(multi)
+            });
+
+            ordered.Select(d => d.RemoteEpisode).Should().Equal(multi, season, episode);
+        }
+
+        [Test]
+        public void should_prefer_larger_multiseason_coverage_when_quality_and_codec_match()
+        {
+            var smaller = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1) }, new QualityModel(Quality.WEBDL1080p), Language.English);
+            var larger = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1), GivenEpisode(2), GivenEpisode(3) }, new QualityModel(Quality.WEBDL1080p), Language.English);
+            foreach (var episode in new[] { smaller, larger })
+            {
+                episode.ParsedEpisodeInfo.FullSeason = true;
+                episode.ParsedEpisodeInfo.SeasonNumbers = new List<int> { 1, 2 };
+            }
+
+            Subject.PrioritizeDecisions(new List<DownloadDecision> { new DownloadDecision(smaller), new DownloadDecision(larger) })
+                .First().RemoteEpisode.Should().Be(larger);
+        }
+
+        [Test]
+        public void should_still_prefer_quality_then_codec_within_same_pack_scope()
+        {
+            var lowQuality = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1) }, new QualityModel(Quality.HDTV720p), Language.English);
+            lowQuality.CustomFormatScore = 100;
+            var h264 = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1) }, new QualityModel(Quality.WEBDL1080p), Language.English);
+            var h265 = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1) }, new QualityModel(Quality.WEBDL1080p), Language.English);
+            h265.CustomFormatScore = 100;
+            foreach (var episode in new[] { lowQuality, h264, h265 })
+            {
+                episode.ParsedEpisodeInfo.FullSeason = true;
+                episode.ParsedEpisodeInfo.SeasonNumbers = new List<int> { 1, 2 };
+            }
+
+            var ordered = Subject.PrioritizeDecisions(new List<DownloadDecision>
+            {
+                new DownloadDecision(h264), new DownloadDecision(lowQuality), new DownloadDecision(h265)
+            });
+
+            ordered.Select(d => d.RemoteEpisode).Should().Equal(h265, h264, lowQuality);
+        }
+
+        [Test]
+        public void multiseason_flag_without_a_full_pack_should_not_override_quality()
+        {
+            var flagged = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1) }, new QualityModel(Quality.HDTV720p), Language.English);
+            flagged.ParsedEpisodeInfo.SeasonNumbers = new List<int> { 1, 2 };
+            var higher = GivenRemoteEpisode(new List<Episode> { GivenEpisode(1) }, new QualityModel(Quality.WEBDL1080p), Language.English);
+
+            Subject.PrioritizeDecisions(new List<DownloadDecision> { new DownloadDecision(flagged), new DownloadDecision(higher) })
+                .First().RemoteEpisode.Should().Be(higher);
+        }
+
         private void GivenPreferredSize(QualityProfile qualityProfile, double? size)
         {
             foreach (var qualityOrGroup in qualityProfile.Items)

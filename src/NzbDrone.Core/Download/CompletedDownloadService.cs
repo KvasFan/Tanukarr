@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NLog;
+using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
@@ -37,6 +38,7 @@ namespace NzbDrone.Core.Download
         private readonly IMediaFileService _mediaFileService;
         private readonly IRejectedImportService _rejectedImportService;
         private readonly IImportProgressService _importProgressService;
+        private readonly IDiskProvider _diskProvider;
         private readonly Logger _logger;
 
         public CompletedDownloadService(IEventAggregator eventAggregator,
@@ -50,6 +52,7 @@ namespace NzbDrone.Core.Download
                                         IMediaFileService mediaFileService,
                                         IRejectedImportService rejectedImportService,
                                         IImportProgressService importProgressService,
+                                        IDiskProvider diskProvider,
                                         Logger logger)
         {
             _eventAggregator = eventAggregator;
@@ -63,6 +66,7 @@ namespace NzbDrone.Core.Download
             _mediaFileService = mediaFileService;
             _rejectedImportService = rejectedImportService;
             _importProgressService = importProgressService;
+            _diskProvider = diskProvider;
             _logger = logger;
         }
 
@@ -75,7 +79,8 @@ namespace NzbDrone.Core.Download
 
             SetImportItem(trackedDownload);
 
-            if (Parser.Parser.ParseTitle(trackedDownload.DownloadItem.Title) is { IsMultiSeason: true })
+            if (Parser.Parser.ParseTitle(trackedDownload.DownloadItem.Title) is { IsMultiSeason: true } ||
+                trackedDownload.RemoteEpisode?.ParsedEpisodeInfo is { IsMultiSeason: true } or { IsCompleteSeries: true })
             {
                 trackedDownload.DownloadItem.CanMoveFiles = false;
                 trackedDownload.DownloadItem.CanBeRemoved = false;
@@ -298,8 +303,114 @@ namespace NzbDrone.Core.Download
                 return true;
             }
 
+            if (VerifyRetainedEpisodes(trackedDownload, importResults, historyItems, importedEpisodeIds, releaseInfo))
+            {
+                return true;
+            }
+
             _logger.Debug("Not all episodes have been imported for the release '{0}'", trackedDownload.DownloadItem.Title);
             return false;
+        }
+
+        private bool VerifyRetainedEpisodes(TrackedDownload trackedDownload,
+                                            List<ImportResult> importResults,
+                                            List<EpisodeHistory> historyItems,
+                                            HashSet<int> importedEpisodeIds,
+                                            GrabbedReleaseInfo releaseInfo)
+        {
+            var expectedEpisodes = trackedDownload.RemoteEpisode.Episodes;
+            if (expectedEpisodes.Empty() || trackedDownload.RemoteEpisode.Series.Path.IsNullOrWhiteSpace())
+            {
+                return false;
+            }
+
+            var historyEpisodeIds = historyItems.GroupBy(h => h.EpisodeId)
+                .Where(g => g.First().EventType == EpisodeHistoryEventType.DownloadFolderImported)
+                .Select(g => g.Key).ToHashSet();
+            var accountedEpisodeIds = importedEpisodeIds.Union(historyEpisodeIds).ToHashSet();
+            var retainedEpisodeIds = new HashSet<int>();
+
+            foreach (var result in importResults.Where(r => r.Result != ImportResultType.Imported))
+            {
+                var localEpisode = result.ImportDecision.LocalEpisode;
+                var rejections = result.ImportDecision.Rejections.ToList();
+                if (localEpisode?.Episodes == null || localEpisode.Episodes.Empty() ||
+                    localEpisode.Series?.Id != trackedDownload.RemoteEpisode.Series.Id ||
+                    result.Result != ImportResultType.Rejected || rejections.Empty())
+                {
+                    return false;
+                }
+
+                if (rejections.All(r => r.Reason == ImportRejectionReason.EpisodeAlreadyImported) &&
+                    localEpisode.Episodes.All(e => accountedEpisodeIds.Contains(e.Id)))
+                {
+                    continue;
+                }
+
+                // Only explicit preference decisions can retain existing files. A second rejection
+                // (mapping, permissions, format loss after rename, etc.) still requires attention.
+                if (!rejections.All(r => r.Reason == ImportRejectionReason.NotQualityUpgrade ||
+                                         r.Reason == ImportRejectionReason.NotRevisionUpgrade ||
+                                         r.Reason == ImportRejectionReason.NotCustomFormatUpgrade))
+                {
+                    return false;
+                }
+
+                retainedEpisodeIds.UnionWith(localEpisode.Episodes.Select(e => e.Id));
+            }
+
+            accountedEpisodeIds.UnionWith(retainedEpisodeIds);
+            if (retainedEpisodeIds.Empty() || !expectedEpisodes.All(e => accountedEpisodeIds.Contains(e.Id)))
+            {
+                return false;
+            }
+
+            // Re-read associations and open the files as the service user. A stale database record,
+            // missing mount or unreadable file must never satisfy the download's expected coverage.
+            var episodes = _episodeService.GetEpisodes(expectedEpisodes.Select(e => e.Id));
+            var files = _mediaFileService.GetFiles(episodes.Select(e => e.EpisodeFileId).Where(i => i > 0).Distinct());
+            var filesById = files.ToDictionary(f => f.Id);
+            if (!expectedEpisodes.All(e => episodes.Any(current => current.Id == e.Id &&
+                    current.SeriesId == trackedDownload.RemoteEpisode.Series.Id &&
+                    filesById.TryGetValue(current.EpisodeFileId, out var file) &&
+                    file.SeriesId == trackedDownload.RemoteEpisode.Series.Id &&
+                    file.RelativePath.IsNotNullOrWhiteSpace())))
+            {
+                return false;
+            }
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var path = Path.Combine(trackedDownload.RemoteEpisode.Series.Path, file.RelativePath);
+                    using var stream = _diskProvider.OpenReadStream(path);
+                    if (stream.ReadByte() < 0)
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    _logger.Debug(ex, "Unable to verify retained library file {0}", file.Path);
+                    return false;
+                }
+            }
+
+            foreach (var episode in expectedEpisodes.Where(e => retainedEpisodeIds.Contains(e.Id)))
+            {
+                _logger.Info("Existing version retained for S{0:00}E{1:00} in {2}", episode.SeasonNumber, episode.EpisodeNumber, trackedDownload.DownloadItem.Title);
+            }
+
+            _logger.Info("All {0} expected episodes accounted for in {1}; {2} existing versions retained", expectedEpisodes.Count, trackedDownload.DownloadItem.Title, expectedEpisodes.Count(e => retainedEpisodeIds.Contains(e.Id)));
+            trackedDownload.State = TrackedDownloadState.Imported;
+
+            // Retained files were not imported from this download. Keep the completion notification's
+            // file list limited to actual imports, without fabricating per-episode import history.
+            var actuallyImportedFiles = files.Where(f => episodes.Any(e => e.EpisodeFileId == f.Id &&
+                (importedEpisodeIds.Contains(e.Id) || historyEpisodeIds.Contains(e.Id)))).ToList();
+            _eventAggregator.PublishEvent(new DownloadCompletedEvent(trackedDownload, trackedDownload.RemoteEpisode.Series.Id, actuallyImportedFiles, releaseInfo));
+            return true;
         }
 
         private void SetStateToImportBlocked(TrackedDownload trackedDownload)

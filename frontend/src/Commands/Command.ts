@@ -99,6 +99,7 @@ export interface NewCommandBody {
 export interface CommandBodyMap {
   RefreshSeries: SeriesCommandBody | MultipleSeriesCommandBody;
   SeriesSearch: SeriesCommandBody;
+  CompleteSeriesSearch: SeriesCommandBody;
   SeasonSearch: SeasonCommandBody;
   EpisodeSearch: EpisodeCommandBody | SeriesEpisodeCommandBody;
   MissingEpisodeSearch: BaseCommandBody;

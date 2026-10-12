@@ -10,6 +10,7 @@ using NzbDrone.Core.DataAugmentation.Scene;
 using NzbDrone.Core.DecisionEngine.Specifications;
 using NzbDrone.Core.Download.Aggregation;
 using NzbDrone.Core.IndexerSearch.Definitions;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
 
@@ -76,7 +77,15 @@ namespace NzbDrone.Core.DecisionEngine
 
                 try
                 {
-                    var parsedEpisodeInfo = Parser.Parser.ParseTitle(report.Title);
+                    var parsedEpisodeInfo = searchCriteria is CompleteSeriesSearchCriteria completeSeries
+                        ? CompleteSeriesReleaseParser.Parse(report.Title, completeSeries)
+                        : Parser.Parser.ParseTitle(report.Title);
+
+                    if (searchCriteria is CompleteSeriesSearchCriteria && parsedEpisodeInfo == null)
+                    {
+                        reportNumber++;
+                        continue;
+                    }
 
                     if (searchCriteria is AnimeSeasonSearchCriteria animeSeason &&
                         (parsedEpisodeInfo == null || (!parsedEpisodeInfo.FullSeason && parsedEpisodeInfo.EpisodeNumbers.Length == 0)))
@@ -106,7 +115,17 @@ namespace NzbDrone.Core.DecisionEngine
                         remoteEpisode.Release = report;
                         remoteEpisode.ReleaseSource = GetReleaseSource(pushedRelease, searchCriteria);
 
-                        if (remoteEpisode.Series == null)
+                        var nativeMetadataSource = searchCriteria?.Series is { TvdbId: < 0, MetadataSource: not MetadataSourceType.Tvdb };
+
+                        if (searchCriteria is CompleteSeriesSearchCriteria &&
+                            ((report.TvdbId > 0 && (nativeMetadataSource || (searchCriteria.Series.TvdbId > 0 && report.TvdbId != searchCriteria.Series.TvdbId))) ||
+                             (report.TvRageId > 0 && (nativeMetadataSource || searchCriteria.Series.TvRageId > 0) && report.TvRageId != searchCriteria.Series.TvRageId) ||
+                             (report.ImdbId.IsNotNullOrWhiteSpace() && (nativeMetadataSource || searchCriteria.Series.ImdbId.IsNotNullOrWhiteSpace()) &&
+                              !string.Equals(report.ImdbId, searchCriteria.Series.ImdbId, StringComparison.OrdinalIgnoreCase))))
+                        {
+                            decision = new DownloadDecision(remoteEpisode, new DownloadRejection(DownloadRejectionReason.WrongSeries, "Release identifiers conflict with searched series"));
+                        }
+                        else if (remoteEpisode.Series == null)
                         {
                             var matchingTvdbId = _sceneMappingService.FindTvdbId(parsedEpisodeInfo.SeriesTitle, parsedEpisodeInfo.ReleaseTitle, parsedEpisodeInfo.SeasonNumber ?? -1);
 

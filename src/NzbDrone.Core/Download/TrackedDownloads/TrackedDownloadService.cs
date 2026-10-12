@@ -5,9 +5,11 @@ using NLog;
 using NzbDrone.Common.Cache;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.CustomFormats;
+using NzbDrone.Core.DataAugmentation.Scene;
 using NzbDrone.Core.Download.Aggregation;
 using NzbDrone.Core.Download.History;
 using NzbDrone.Core.History;
+using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
@@ -38,6 +40,8 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         private readonly IParsingService _parsingService;
         private readonly IHistoryService _historyService;
         private readonly ISeriesService _seriesService;
+        private readonly IEpisodeService _episodeService;
+        private readonly ISceneMappingService _sceneMappingService;
         private readonly IDownloadHistoryService _downloadHistoryService;
         private readonly IRemoteEpisodeAggregationService _aggregationService;
         private readonly ICustomFormatCalculationService _formatCalculator;
@@ -49,6 +53,8 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         public TrackedDownloadService(IParsingService parsingService,
                                       IHistoryService historyService,
                                       ISeriesService seriesService,
+                                      IEpisodeService episodeService,
+                                      ISceneMappingService sceneMappingService,
                                       IDownloadHistoryService downloadHistoryService,
                                       IRemoteEpisodeAggregationService aggregationService,
                                       ICustomFormatCalculationService formatCalculator,
@@ -59,6 +65,8 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             _parsingService = parsingService;
             _historyService = historyService;
             _seriesService = seriesService;
+            _episodeService = episodeService;
+            _sceneMappingService = sceneMappingService;
             _downloadHistoryService = downloadHistoryService;
             _aggregationService = aggregationService;
             _formatCalculator = formatCalculator;
@@ -99,7 +107,10 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         {
             var existingItem = Find(downloadItem.DownloadId);
 
-            if (existingItem != null && existingItem.State != TrackedDownloadState.Downloading)
+            // An unresolved import must be allowed to recover when grab history becomes
+            // available. Keeping a null RemoteEpisode cached makes that failure permanent.
+            var unresolvedImport = existingItem?.State == TrackedDownloadState.ImportBlocked && existingItem.RemoteEpisode == null;
+            if (existingItem != null && existingItem.State != TrackedDownloadState.Downloading && !unresolvedImport)
             {
                 LogItemChange(existingItem, existingItem.DownloadItem, downloadItem);
 
@@ -154,28 +165,30 @@ namespace NzbDrone.Core.Download.TrackedDownloads
 
                 if (historyItems.Any())
                 {
-                    var firstHistoryItem = historyItems.First();
                     var grabbedEvent = historyItems.FirstOrDefault(v => v.EventType == EpisodeHistoryEventType.Grabbed);
+
+                    // Import history describes individual files, not the original pack.
+                    var sourceHistoryItem = grabbedEvent ?? historyItems.First();
 
                     trackedDownload.Indexer = grabbedEvent?.Data?.GetValueOrDefault("indexer");
                     trackedDownload.Added = grabbedEvent?.Date;
 
-                    if (parsedEpisodeInfo == null ||
-                        (parsedEpisodeInfo.IsMultiSeason && grabbedEvent != null) ||
+                    if (grabbedEvent != null || parsedEpisodeInfo == null ||
                         trackedDownload.RemoteEpisode?.Series == null ||
                         trackedDownload.RemoteEpisode.Episodes.Empty())
                     {
                         // Try parsing the original source title and if that fails, try parsing it as a special
                         // TODO: Pass the TVDB ID and TVRage IDs in as well so we have a better chance for finding the item
-                        parsedEpisodeInfo = Parser.Parser.ParseTitle(firstHistoryItem.SourceTitle) ??
-                                            _parsingService.ParseSpecialEpisodeTitle(parsedEpisodeInfo, firstHistoryItem.SourceTitle, 0, 0, null);
+                        parsedEpisodeInfo = Parser.Parser.ParseTitle(sourceHistoryItem.SourceTitle) ??
+                                            _parsingService.ParseSpecialEpisodeTitle(parsedEpisodeInfo, sourceHistoryItem.SourceTitle, 0, 0, null) ??
+                                            ParseCompleteSeriesGrab(historyItems) ?? parsedEpisodeInfo;
 
                         if (parsedEpisodeInfo != null)
                         {
                             trackedDownload.RemoteEpisode = _parsingService.Map(parsedEpisodeInfo,
-                                firstHistoryItem.SeriesId,
+                                sourceHistoryItem.SeriesId,
                                 historyItems.Where(v => v.EventType == EpisodeHistoryEventType.Grabbed)
-                                    .Where(h => h.SeriesId == firstHistoryItem.SeriesId)
+                                    .Where(h => h.SeriesId == sourceHistoryItem.SeriesId)
                                     .Select(h => h.EpisodeId).Distinct());
                         }
                     }
@@ -275,13 +288,82 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             }
         }
 
+        private ParsedEpisodeInfo ParseCompleteSeriesGrab(List<EpisodeHistory> historyItems)
+        {
+            // The complete-series search understands unnumbered COMPLETE titles that
+            // the ordinary parser cannot. Reconstruct that context only from an actual
+            // grab, never from the client category or imported-file history.
+            var grabs = historyItems.Where(h => h.EventType == EpisodeHistoryEventType.Grabbed).ToList();
+            if (grabs.Empty() || grabs.Select(h => h.SeriesId).Distinct().Count() != 1 ||
+                grabs.Select(h => h.SourceTitle).Distinct(StringComparer.OrdinalIgnoreCase).Count() != 1)
+            {
+                return null;
+            }
+
+            var series = _seriesService.GetSeries(grabs[0].SeriesId);
+            var episodeIds = grabs.Select(h => h.EpisodeId).Distinct().ToList();
+            if (series == null || episodeIds.Any(id => id <= 0))
+            {
+                return null;
+            }
+
+            var episodes = _episodeService.GetEpisodes(episodeIds);
+            if (episodes.Count != episodeIds.Count || episodes.Any(e => e.SeriesId != series.Id || e.SeasonNumber <= 0) ||
+                !episodes.Select(e => e.Id).ToHashSet().SetEquals(episodeIds))
+            {
+                return null;
+            }
+
+            var titles = new List<string> { series.Title };
+            titles.AddRange(series.AlternateTitles ?? new List<string>());
+            if (series.TvdbId > 0)
+            {
+                titles.AddRange(_sceneMappingService.GetSceneNames(series.TvdbId,
+                    episodes.Select(e => e.SeasonNumber).Distinct().ToList(),
+                    episodes.Where(e => e.SceneSeasonNumber.HasValue).Select(e => e.SceneSeasonNumber.Value).Distinct().ToList()));
+            }
+
+            var parsed = CompleteSeriesReleaseParser.Parse(grabs[0].SourceTitle, new CompleteSeriesSearchCriteria
+            {
+                Series = series,
+                SceneTitles = titles.Where(t => t.IsNotNullOrWhiteSpace()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                Episodes = episodes
+            });
+
+            if (parsed != null)
+            {
+                _logger.Debug("Recovered complete-series context for '{0}' from {1} grabbed episode IDs", grabs[0].SourceTitle, episodeIds.Count);
+            }
+
+            return parsed;
+        }
+
         private void UpdateCachedItem(TrackedDownload trackedDownload)
         {
             var parsedEpisodeInfo = Parser.Parser.ParseTitle(trackedDownload.DownloadItem.Title);
+            var history = _historyService.FindByDownloadId(trackedDownload.DownloadItem.DownloadId)
+                .OrderByDescending(h => h.Date).ToList();
+            var grab = history.FirstOrDefault(h => h.EventType == EpisodeHistoryEventType.Grabbed);
+            var oldRelease = trackedDownload.RemoteEpisode?.Release;
+            if (grab != null)
+            {
+                parsedEpisodeInfo = Parser.Parser.ParseTitle(grab.SourceTitle) ??
+                    _parsingService.ParseSpecialEpisodeTitle(parsedEpisodeInfo, grab.SourceTitle, 0, 0, null) ??
+                    ParseCompleteSeriesGrab(history);
+                var grabbedEpisodeIds = history.Where(h => h.EventType == EpisodeHistoryEventType.Grabbed && h.SeriesId == grab.SeriesId)
+                    .Select(h => h.EpisodeId).Distinct();
+                trackedDownload.RemoteEpisode = parsedEpisodeInfo == null ? null : _parsingService.Map(parsedEpisodeInfo, grab.SeriesId, grabbedEpisodeIds);
+            }
+            else
+            {
+                trackedDownload.RemoteEpisode = parsedEpisodeInfo == null ? null : _parsingService.Map(parsedEpisodeInfo, 0, 0, null);
+            }
 
-            trackedDownload.RemoteEpisode = parsedEpisodeInfo == null ? null : _parsingService.Map(parsedEpisodeInfo, 0, 0, null);
-
-            _aggregationService.Augment(trackedDownload.RemoteEpisode);
+            if (trackedDownload.RemoteEpisode != null)
+            {
+                trackedDownload.RemoteEpisode.Release = oldRelease;
+                _aggregationService.Augment(trackedDownload.RemoteEpisode);
+            }
         }
 
         private static TrackedDownloadState GetStateFromHistory(DownloadHistoryEventType eventType)
@@ -312,6 +394,19 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                                             TrackedDownloadState.Failed or
                                             TrackedDownloadState.Ignored })
             {
+                _cache.Remove(message.DownloadId);
+            }
+            else if (trackedDownload != null &&
+                     message.DownloadClientId > 0 && trackedDownload.DownloadClient == message.DownloadClientId &&
+                     trackedDownload.RemoteEpisode?.Series?.Id > 0 &&
+                     trackedDownload.RemoteEpisode.Series.Id == message.Episode?.Series?.Id &&
+                     trackedDownload.RemoteEpisode.Series.MetadataSource == message.Episode.Series.MetadataSource &&
+                     trackedDownload.RemoteEpisode.Series.ForeignId == message.Episode.Series.ForeignId &&
+                     trackedDownload.RemoteEpisode.ParsedEpisodeInfo is { FullSeason: true } pack &&
+                     (pack.IsMultiSeason || pack.IsCompleteSeries))
+            {
+                // Reusing a pack can add a second requested season while the first import
+                // is pending. The next client poll must reload its actual grabbed IDs.
                 _cache.Remove(message.DownloadId);
             }
         }

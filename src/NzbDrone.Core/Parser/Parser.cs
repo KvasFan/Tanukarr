@@ -217,6 +217,14 @@ namespace NzbDrone.Core.Parser
                 new Regex(@"^(?<title>.+?)(?:[-_\W](?<![()\[!]))+S(?<season>(?<!\d+)(?:\d{2})(?!\d+))(?:\.)(?<episode>\d{2,3}(?!\d+))(?:[-_. ]|$)",
                     RegexOptions.IgnoreCase | RegexOptions.Compiled),
 
+                // Anime with a trailing subgroup: Title S2 - 10 [SubGroup][1080p].
+                // Keep the season alias in the title, as in the leading-subgroup format.
+                // Require the subgroup/resolution pair and spaced separator to avoid changing
+                // ordinary S01-S03 / S01-03 pack syntax. SimpleTitleRegex removes the
+                // resolution text, leaving its empty brackets. Fractional specials are not inferred.
+                new Regex(@"^(?<title>.+?[ ._]S(?<season>\d{1,2})) +\- +(?<absoluteepisode>\d{2,3})(?![\d.])(?:v\d+)? +\[(?<subgroup>(?!\d{3,4}[pi]\])[A-Za-z][^\]]*)\]\s*\[\s*\]",
+                    RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
                 // Multi-season pack
                 new Regex(@"^(?<title>.+?)(?<completeseries>Complete Series)?[-_. ]+(?:S|(?:Season|Saison|Series|Stagione)[_. ])(?<season>(?<!\d+)(?:\d{1,2})(?!\d+))(?:(?<seasonseparator>[-_. ]{1}|[-_. ]{3})(?:S|(?:Season|Saison|Series|Stagione)[_. ])?(?<season>(?<!\d+)(?:\d{1,2})(?!\d+))){1,}",
                     RegexOptions.IgnoreCase | RegexOptions.Compiled),

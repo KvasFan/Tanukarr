@@ -13,16 +13,18 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Specifications
     {
         private readonly Logger _logger;
         private readonly IParsingService _parsingService;
+        private readonly IEpisodeNumberingResolver _numberingResolver;
 
-        public MatchesFolderSpecification(IParsingService parsingService, Logger logger)
+        public MatchesFolderSpecification(IParsingService parsingService, Logger logger, IEpisodeNumberingResolver numberingResolver)
         {
             _logger = logger;
             _parsingService = parsingService;
+            _numberingResolver = numberingResolver;
         }
 
         public ImportSpecDecision IsSatisfiedBy(LocalEpisode localEpisode, DownloadClientItem downloadClientItem)
         {
-            if (localEpisode.ExistingFile)
+            if (localEpisode.ExistingFile || localEpisode.ManualEpisodeMapping)
             {
                 return ImportSpecDecision.Accept();
             }
@@ -54,6 +56,22 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Specifications
 
             var folderEpisodes = _parsingService.GetEpisodes(folderInfo, localEpisode.Series, true);
             var fileEpisodes = _parsingService.GetEpisodes(fileInfo, localEpisode.Series, true);
+            if (localEpisode.VerifiedNumbering.HasValue && localEpisode.Episodes.Any())
+            {
+                var numbering = _numberingResolver.Resolve(localEpisode.Series, folderInfo);
+                if (numbering?.NeedsEvidence == true)
+                {
+                    numbering = _numberingResolver.Resolve(localEpisode.Series, folderInfo, null, localEpisode.VerifiedNumbering);
+                }
+
+                if (numbering?.Rejection != null)
+                {
+                    return ImportSpecDecision.Reject(ImportRejectionReason.AmbiguousNumbering, numbering.Rejection);
+                }
+
+                folderEpisodes = numbering?.Episodes ?? folderEpisodes;
+                fileEpisodes = localEpisode.Episodes;
+            }
 
             if (folderEpisodes.Empty())
             {

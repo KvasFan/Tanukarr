@@ -532,12 +532,13 @@ namespace NzbDrone.Core.Test.MediaFiles
             VerifyNoImport();
         }
 
-        [Test]
-        public void should_process_completed_multi_season_download_when_multi_season_releases_are_enabled()
+        [TestCase("Example.Show.S01-S04.1080p.WEB-DL")]
+        [TestCase("Example.Show.COMPLETE.1080p.WEB-DL")]
+        [TestCase("Example.Show.S01E01.1080p.WEB-DL")]
+        public void should_process_completed_numbered_or_complete_multi_season_download(string releaseTitle)
         {
             GivenValidSeries();
 
-            const string releaseTitle = "Example.Show.S01-S04.1080p.WEB-DL";
             var folderName = @"C:\media\Example.Show.S01-S04.1080p.WEB-DL".AsOsAgnostic();
             var videoFiles = new[]
             {
@@ -552,6 +553,10 @@ namespace NzbDrone.Core.Test.MediaFiles
             var decisions = videoFiles.Select((file, index) => new ImportDecision(new LocalEpisode { Path = file, Episodes = [episodes[index]] })).ToList();
 
             _trackedDownload.DownloadItem.Title = releaseTitle;
+            _trackedDownload.RemoteEpisode.ParsedEpisodeInfo = Parser.Parser.ParseTitle("Example.Show.S01-S04.1080p.WEB-DL");
+            Mocker.GetMock<ITrackedDownloadService>()
+                .Setup(s => s.Find(_trackedDownload.DownloadItem.DownloadId))
+                .Returns(_trackedDownload);
 
             Mocker.GetMock<IHistoryService>()
                 .Setup(service => service.FindByDownloadId(_trackedDownload.DownloadItem.DownloadId))
@@ -591,6 +596,9 @@ namespace NzbDrone.Core.Test.MediaFiles
 
             result.SelectMany(r => r.Errors).Should().NotContain("Multi-season download, unable to import automatically");
             result.Should().HaveCount(4);
+            _trackedDownload.DownloadItem.CanMoveFiles.Should().BeFalse();
+            _trackedDownload.DownloadItem.CanBeRemoved.Should().BeFalse();
+            Mocker.GetMock<IDiskProvider>().Verify(s => s.DeleteFolder(It.IsAny<string>(), true), Times.Never());
 
             Mocker.GetMock<IMakeImportDecision>()
                 .Verify(s => s.GetImportDecisions(videoFiles.ToList(),
@@ -600,6 +608,55 @@ namespace NzbDrone.Core.Test.MediaFiles
                     It.Is<ParsedEpisodeInfo>(p => p.SeasonNumbers.SequenceEqual(new[] { 1, 2, 3, 4 })),
                     true),
                     Times.Once);
+        }
+
+        [Test]
+        public void should_keep_complete_pack_source_when_only_one_season_was_selected()
+        {
+            var folder = @"C:\downloads\Example.Show.COMPLETE".AsOsAgnostic();
+            var series = _trackedDownload.RemoteEpisode.Series;
+            var files = new[]
+            {
+                Path.Combine(folder, "Example.Show.S01E01.mkv"),
+                Path.Combine(folder, "Example.Show.S02E01.mkv")
+            };
+            var episodes = new[]
+            {
+                new Episode { Id = 101, SeriesId = series.Id, SeasonNumber = 1, EpisodeNumber = 1 },
+                new Episode { Id = 201, SeriesId = series.Id, SeasonNumber = 2, EpisodeNumber = 1 }
+            };
+            var decisions = files.Select((file, index) => new ImportDecision(new LocalEpisode { Path = file, Episodes = [episodes[index]] })).ToList();
+            _trackedDownload.DownloadItem.Title = "Example.Show.S01E01.1080p.WEB-DL";
+            _trackedDownload.RemoteEpisode.ParsedEpisodeInfo = new ParsedEpisodeInfo
+            {
+                SeriesTitle = "Example Show",
+                SeasonNumbers = [2],
+                FullSeason = true,
+                IsCompleteSeries = true
+            };
+            Mocker.GetMock<ITrackedDownloadService>()
+                .Setup(s => s.Find(_trackedDownload.DownloadItem.DownloadId))
+                .Returns(_trackedDownload);
+            Mocker.GetMock<IDiskScanService>().Setup(s => s.GetVideoFiles(folder, true)).Returns(files);
+            Mocker.GetMock<IHistoryService>()
+                .Setup(s => s.FindByDownloadId(_trackedDownload.DownloadItem.DownloadId))
+                .Returns(new List<EpisodeHistory>
+                {
+                    new EpisodeHistory { SeriesId = series.Id, EpisodeId = 201, EventType = EpisodeHistoryEventType.Grabbed }
+                });
+            Mocker.GetMock<IMakeImportDecision>()
+                .Setup(s => s.GetImportDecisions(It.IsAny<List<string>>(), series, _trackedDownload.DownloadItem, It.IsAny<ParsedEpisodeInfo>(), It.IsAny<ParsedEpisodeInfo>(), true))
+                .Returns(decisions);
+            Mocker.GetMock<IImportApprovedEpisodes>()
+                .Setup(s => s.Import(It.Is<List<ImportDecision>>(list => list.Count == 1 && list[0].LocalEpisode.Episodes[0].Id == 201), true, _trackedDownload.DownloadItem, ImportMode.Copy))
+                .Returns(new List<ImportResult> { new ImportResult(decisions[1]) });
+
+            var results = Subject.ProcessPath(folder, ImportMode.Auto, series, _trackedDownload.DownloadItem);
+
+            results.Should().ContainSingle().Which.ImportDecision.LocalEpisode.Episodes.Should().Equal(episodes[1]);
+            _trackedDownload.DownloadItem.CanMoveFiles.Should().BeFalse();
+            _trackedDownload.DownloadItem.CanBeRemoved.Should().BeFalse();
+            Mocker.GetMock<IDiskProvider>().Verify(s => s.DeleteFolder(It.IsAny<string>(), true), Times.Never());
         }
 
         private void VerifyNoImport()

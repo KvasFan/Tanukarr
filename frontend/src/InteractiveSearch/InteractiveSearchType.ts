@@ -1,3 +1,3 @@
-type InteractiveSearchType = 'episode' | 'season';
+type InteractiveSearchType = 'episode' | 'season' | 'series';
 
 export default InteractiveSearchType;

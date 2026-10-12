@@ -8,6 +8,7 @@ using NzbDrone.Core.Download;
 using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.History;
 using NzbDrone.Core.Languages;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.MediaFiles.EpisodeImport.Aggregation;
@@ -336,6 +337,44 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
             decisions.SelectMany(decision => decision.Rejections)
                 .Should().NotContain(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
             decisions.Should().OnlyContain(decision => decision.Approved);
+        }
+
+        [Test]
+        public void ambiguous_numbering_should_block_automatic_import_even_when_other_specs_accept()
+        {
+            GivenSpecifications(_pass1, _pass2, _pass3);
+            Mocker.GetMock<IAggregationService>()
+                .Setup(s => s.Augment(It.IsAny<LocalEpisode>(), It.IsAny<DownloadClientItem>()))
+                .Callback<LocalEpisode, DownloadClientItem>((localEpisode, item) =>
+                {
+                    localEpisode.Episodes = _localEpisode.Episodes;
+                    localEpisode.NumberingRejection = "Ambiguous scene/library numbering";
+                });
+            var decision = Subject.GetImportDecisions(_videoFiles, _series).Single();
+            decision.Approved.Should().BeFalse();
+            decision.Rejections.Should().ContainSingle().Which.Reason.Should().Be(ImportRejectionReason.AmbiguousNumbering);
+            _pass1.Verify(s => s.IsSatisfiedBy(It.IsAny<LocalEpisode>(), It.IsAny<DownloadClientItem>()), Times.Never());
+        }
+
+        [Test]
+        public void saved_manual_mapping_should_override_automatic_numbering_rejection()
+        {
+            GivenSpecifications(_pass1);
+            Mocker.GetMock<IManualEpisodeMappingService>()
+                .Setup(s => s.Find(It.IsAny<LocalEpisode>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Returns(new ManualEpisodeMapping { Episodes = _localEpisode.Episodes });
+            Mocker.GetMock<IAggregationService>()
+                .Setup(s => s.Augment(It.IsAny<LocalEpisode>(), It.IsAny<DownloadClientItem>()))
+                .Callback<LocalEpisode, DownloadClientItem>((localEpisode, item) =>
+                {
+                    localEpisode.NumberingRejection = "Ambiguous scene/library numbering";
+                });
+
+            var decision = Subject.GetImportDecisions(_videoFiles, _series).Single();
+
+            decision.Approved.Should().BeTrue();
+            decision.LocalEpisode.Episodes.Should().Equal(_localEpisode.Episodes);
+            decision.LocalEpisode.NumberingRejection.Should().BeNull();
         }
 
         [Test]

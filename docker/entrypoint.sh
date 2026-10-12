@@ -8,7 +8,9 @@ set -e
 
 PUID=${PUID:-1000}
 PGID=${PGID:-1000}
-umask "${UMASK:-${UMASK_SET:-022}}"
+# Keep new media files writable by the media group; UMASK_SET is supported for
+# compatibility with existing deployments, while UMASK takes precedence.
+umask "${UMASK:-${UMASK_SET:-002}}"
 
 if [ "$(id -u)" = "0" ]; then
     if ! getent group sonarr >/dev/null 2>&1; then

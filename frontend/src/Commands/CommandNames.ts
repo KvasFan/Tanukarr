@@ -3,6 +3,7 @@ enum CommandNames {
   Backup = 'Backup',
   ClearBlocklist = 'ClearBlocklist',
   ClearLog = 'ClearLog',
+  CompleteSeriesSearch = 'CompleteSeriesSearch',
   CutoffUnmetEpisodeSearch = 'CutoffUnmetEpisodeSearch',
   DeleteLogFiles = 'DeleteLogFiles',
   DeleteSeriesFiles = 'DeleteSeriesFiles',

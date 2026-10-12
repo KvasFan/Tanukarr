@@ -6,6 +6,9 @@ import React, {
 } from 'react';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import Queue from 'typings/Queue';
+import getSeriesQueueDetails from './getSeriesQueueDetails';
+
+export type { SeriesQueueDetails } from './getSeriesQueueDetails';
 
 interface EpisodeDetails {
   episodeIds: number[];
@@ -76,49 +79,16 @@ export function useIsDownloadingEpisodes(episodeIds: number[]) {
   }, [episodeIds, queue]);
 }
 
-export interface SeriesQueueDetails {
-  count: number;
-  episodesWithFiles: number;
-}
-
 export function useQueueDetailsForSeries(
   seriesId: number,
   seasonNumber?: number
 ) {
   const queue = useContext(QueueDetailsContext);
 
-  return useMemo<SeriesQueueDetails>(() => {
-    if (!queue) {
-      return { count: 0, episodesWithFiles: 0 };
-    }
-
-    return queue.reduce<SeriesQueueDetails>(
-      (acc: SeriesQueueDetails, item) => {
-        if (
-          item.trackedDownloadState === 'imported' ||
-          item.seriesId !== seriesId
-        ) {
-          return acc;
-        }
-
-        if (
-          seasonNumber != null &&
-          !item.seasonNumbers?.includes(seasonNumber)
-        ) {
-          return acc;
-        }
-
-        acc.count += item.episodeIds.length;
-        acc.episodesWithFiles += item.episodesWithFilesCount;
-
-        return acc;
-      },
-      {
-        count: 0,
-        episodesWithFiles: 0,
-      }
-    );
-  }, [seriesId, seasonNumber, queue]);
+  return useMemo(
+    () => getSeriesQueueDetails(queue, seriesId, seasonNumber),
+    [seriesId, seasonNumber, queue]
+  );
 }
 
 export const useQueueDetails = () => {

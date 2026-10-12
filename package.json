@@ -11,6 +11,7 @@
     "watch": "vite build --watch",
     "types:css": "tcm frontend/src --camelCase --pattern \"**/*.module.css\"",
     "typecheck": "yarn types:css && tsc --noEmit -p frontend/tsconfig.json",
+    "test:queue-details": "node --test frontend/tests/queueDetails.test.cjs frontend/tests/episodeBatches.test.cjs",
     "lint": "eslint --config frontend/.eslintrc.cjs --ignore-path frontend/.eslintignore frontend/",
     "lint-fix": "yarn lint --fix",
     "stylelint": "stylelint \"frontend/**/*.css\" --config frontend/.stylelintrc"

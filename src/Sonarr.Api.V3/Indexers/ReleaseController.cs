@@ -70,6 +70,11 @@ namespace Sonarr.Api.V3.Indexers
         [Consumes("application/json")]
         public async Task<object> DownloadRelease([FromBody] ReleaseResource release)
         {
+            if (release.CompleteSeries && (!release.SeriesId.HasValue || release.SeriesId <= 0 || release.EpisodeId.HasValue))
+            {
+                throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Complete-series grab requires only seriesId.");
+            }
+
             var remoteEpisode = _remoteEpisodeCache.Find(GetCacheKey(release));
 
             if (remoteEpisode == null)
@@ -77,6 +82,12 @@ namespace Sonarr.Api.V3.Indexers
                 _logger.Debug("Couldn't find requested release in cache, cache timeout probably expired.");
 
                 throw new NzbDroneClientException(HttpStatusCode.NotFound, "Couldn't find requested release in cache, try searching again");
+            }
+
+            if (release.CompleteSeries &&
+                (remoteEpisode.Series?.Id != release.SeriesId || remoteEpisode.ParsedEpisodeInfo?.IsCompleteSeries != true))
+            {
+                throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
             }
 
             try
@@ -171,8 +182,18 @@ namespace Sonarr.Api.V3.Indexers
 
         [HttpGet]
         [Produces("application/json")]
-        public async Task<List<ReleaseResource>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber)
+        public async Task<List<ReleaseResource>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber, bool completeSeries = false)
         {
+            if (completeSeries)
+            {
+                if (!seriesId.HasValue || episodeId.HasValue || seasonNumber.HasValue)
+                {
+                    throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Complete-series search requires only seriesId.");
+                }
+
+                return await GetCompleteSeriesReleases(seriesId.Value);
+            }
+
             if (episodeId.HasValue)
             {
                 return await GetEpisodeReleases(episodeId.Value);
@@ -189,6 +210,31 @@ namespace Sonarr.Api.V3.Indexers
             }
 
             return await GetRss();
+        }
+
+        private async Task<List<ReleaseResource>> GetCompleteSeriesReleases(int seriesId)
+        {
+            try
+            {
+                var decisions = await _releaseSearchService.CompleteSeriesSearch(seriesId);
+                var prioritized = _prioritizeDownloadDecision.PrioritizeDecisions(decisions);
+                _remoteEpisodeCache.ClearExpired();
+                var resources = new List<ReleaseResource>();
+                foreach (var decision in prioritized)
+                {
+                    var resource = base.MapDecision(decision, resources.Count);
+                    resource.CompleteSeries = true;
+                    resource.SeriesId = seriesId;
+                    _remoteEpisodeCache.Set(GetCacheKey(resource), decision.RemoteEpisode, TimeSpan.FromMinutes(30));
+                    resources.Add(resource);
+                }
+
+                return resources;
+            }
+            catch (SearchFailedException ex)
+            {
+                throw new NzbDroneClientException(HttpStatusCode.BadRequest, ex.Message);
+            }
         }
 
         private async Task<List<ReleaseResource>> GetEpisodeReleases(int episodeId)
@@ -259,7 +305,8 @@ namespace Sonarr.Api.V3.Indexers
 
         private string GetCacheKey(ReleaseResource resource)
         {
-            return string.Concat(resource.IndexerId, "_", resource.Guid);
+            var key = string.Concat(resource.IndexerId, "_", resource.Guid);
+            return resource.CompleteSeries ? $"{key}_complete_{resource.SeriesId}" : key;
         }
     }
 }

@@ -7,6 +7,7 @@ using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Indexers.Newznab;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Test.Framework;
+using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.Test.IndexerTests.NewznabTests
 {
@@ -70,6 +71,86 @@ namespace NzbDrone.Core.Test.IndexerTests.NewznabTests
             Mocker.GetMock<INewznabCapabilitiesProvider>()
                 .Setup(v => v.GetCapabilities(It.IsAny<NewznabSettings>()))
                 .Returns(_capabilities);
+        }
+
+        [Test]
+        public void complete_series_queries_ids_and_aliases_without_season_or_episode_filters()
+        {
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                Series = _seasonSearchCriteria.Series,
+                SceneTitles = new List<string> { "Monkey Island", "Alternate Title" }
+            };
+            var requests = Subject.GetSearchRequests(criteria);
+            requests.Tiers.Should().Be(1);
+            var urls = requests.GetAllTiers().Select(r => r.First().Url.FullUri).ToList();
+            urls.Should().Contain(u => u.Contains("rid=10"));
+            urls.Should().Contain(u => u.Contains("q=Monkey+Island"));
+            urls.Should().Contain(u => u.Contains("q=Alternate+Title"));
+            urls.Should().OnlyContain(u => !u.Contains("&season=") && !u.Contains("&ep="));
+        }
+
+        [Test]
+        public void complete_series_adds_targeted_pack_queries_for_titles()
+        {
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                Series = _seasonSearchCriteria.Series,
+                SceneTitles = new List<string> { "House", "House MD" },
+                Episodes = Enumerable.Range(1, 8).Select(s => new Episode { SeasonNumber = s, EpisodeNumber = 1 })
+                    .Append(new Episode { SeasonNumber = 0, EpisodeNumber = 1 }).ToList()
+            };
+
+            var urls = Subject.GetSearchRequests(criteria).GetAllTiers().Select(r => r.First().Url.FullUri).ToList();
+
+            urls.Should().Contain(u => u.Contains("q=House&") || u.EndsWith("q=House"));
+            urls.Should().Contain(u => u.Contains("q=House+S01-S08"));
+            urls.Should().Contain(u => u.Contains("q=House+complete"));
+            urls.Should().Contain(u => u.Contains("q=House+MD+S01-S08"));
+            urls.Should().OnlyContain(u => !u.Contains("&season=") && !u.Contains("&ep="));
+        }
+
+        [Test]
+        public void complete_series_with_one_season_only_adds_complete_query()
+        {
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                Series = _seasonSearchCriteria.Series,
+                SceneTitles = new List<string> { "Monkey Island" },
+                Episodes = new List<Episode> { new Episode { SeasonNumber = 1, EpisodeNumber = 1 } }
+            };
+
+            criteria.PackQueryTitles.Should().BeEquivalentTo(new[] { "Monkey Island complete" });
+        }
+
+        [Test]
+        public void complete_series_uses_tv_text_when_generic_text_is_unsupported()
+        {
+            _capabilities.SupportedSearchParameters = new string[0];
+            var requests = Subject.GetSearchRequests(new CompleteSeriesSearchCriteria
+            {
+                Series = _seasonSearchCriteria.Series,
+                SceneTitles = new List<string> { "Monkey Island" }
+            });
+            requests.GetAllTiers().Select(r => r.First().Url.FullUri)
+                .Should().Contain(u => u.Contains("t=tvsearch") && u.Contains("q=Monkey"));
+        }
+
+        [Test]
+        public void complete_series_should_not_send_synthetic_tvdb_ids_to_indexers()
+        {
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                Series = new Series { TvdbId = -1234, SeriesType = SeriesTypes.Anime },
+                SceneTitles = new List<string> { "Anime Title" },
+                Episodes = new List<Episode> { new Episode { SeasonNumber = 1, EpisodeNumber = 1 } }
+            };
+
+            var urls = Subject.GetSearchRequests(criteria).GetAllTiers().Select(r => r.First().Url.FullUri).ToList();
+
+            urls.Should().NotBeEmpty();
+            urls.Should().OnlyContain(u => !u.Contains("tvdbid="));
+            urls.Should().Contain(u => u.Contains("q=Anime+Title+complete"));
         }
 
         [Test]

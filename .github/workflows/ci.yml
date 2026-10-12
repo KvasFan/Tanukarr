@@ -33,6 +33,15 @@ jobs:
       - name: Test
         run: dotnet test src/NzbDrone.Core.Test/Sonarr.Core.Test.csproj -c Debug --no-build --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"
 
+      - name: API resource tests
+        run: dotnet test src/NzbDrone.Api.Test/Sonarr.Api.Test.csproj -c Debug --no-build --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"
+
+      - name: HTTP tests
+        run: dotnet test src/Sonarr.Http.Test/Sonarr.Http.Test.csproj -c Debug --no-build --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"
+
+      - name: Common cloud policy tests
+        run: dotnet test src/NzbDrone.Common.Test/Sonarr.Common.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture" --logger "console;verbosity=minimal"
+
       - name: Compression worker safety tests
         run: python3 docker/compression/test_worker.py
 
@@ -50,6 +59,8 @@ jobs:
 
       - run: yarn install --frozen-lockfile --network-timeout 600000
 
+      - run: yarn test:queue-details
+
       - run: yarn lint
 
       - run: yarn stylelint -f github
@@ -57,24 +68,3 @@ jobs:
       - run: yarn typecheck
 
       - run: yarn build
-
-  docker:
-    name: Build image
-    runs-on: ubuntu-latest
-    # Only on pull requests. A push to main is already built and published by the
-    # Docker workflow, and building it twice would just spend the runner minutes twice.
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-
-      # amd64 only, and no push: this is here so a pull request cannot break the
-      # image build without anyone noticing until release day.
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

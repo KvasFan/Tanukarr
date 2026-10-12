@@ -209,6 +209,10 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
                 .Setup(s => s.Map(It.IsAny<ParsedEpisodeInfo>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), null))
                 .Returns(remoteEpisode);
 
+            Mocker.GetMock<IParsingService>()
+                .Setup(s => s.Map(It.IsAny<ParsedEpisodeInfo>(), 5, It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 4 }))))
+                .Returns(remoteEpisode);
+
             var client = new DownloadClientDefinition()
             {
                 Id = 1,

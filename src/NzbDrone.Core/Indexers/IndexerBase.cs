@@ -73,6 +73,11 @@ namespace NzbDrone.Core.Indexers
 
         protected TSettings Settings => (TSettings)Definition.Settings;
 
+        public virtual Task<IList<ReleaseInfo>> Fetch(CompleteSeriesSearchCriteria searchCriteria)
+        {
+            return Task.FromResult<IList<ReleaseInfo>>(new List<ReleaseInfo>());
+        }
+
         public abstract Task<IList<ReleaseInfo>> FetchRecent();
         public abstract Task<IList<ReleaseInfo>> Fetch(SeasonSearchCriteria searchCriteria);
         public abstract Task<IList<ReleaseInfo>> Fetch(SingleEpisodeSearchCriteria searchCriteria);

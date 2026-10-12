@@ -9,6 +9,7 @@ import getQueryString, { QueryParams } from 'Utilities/Fetch/getQueryString';
 
 export interface QueryOptions<T> extends FetchJsonOptions<unknown> {
   queryParams?: QueryParams;
+  fetcher?: (options: FetchJsonOptions<unknown>) => Promise<Readonly<T>>;
   queryOptions?:
     | Omit<
         UndefinedInitialDataOptions<Readonly<T>, ApiError>,
@@ -19,7 +20,13 @@ export interface QueryOptions<T> extends FetchJsonOptions<unknown> {
 
 const useApiQuery = <T>(options: QueryOptions<T>) => {
   const { queryKey, requestOptions } = useMemo(() => {
-    const { path: path, queryOptions, queryParams, ...otherOptions } = options;
+    const {
+      path: path,
+      queryOptions,
+      queryParams,
+      fetcher,
+      ...otherOptions
+    } = options;
 
     return {
       queryKey: queryParams ? [path, queryParams] : [path],
@@ -41,7 +48,10 @@ const useApiQuery = <T>(options: QueryOptions<T>) => {
       ...options.queryOptions,
       queryKey,
       queryFn: async ({ signal }) =>
-        fetchJson<Readonly<T>, unknown>({ ...requestOptions, signal }),
+        (options.fetcher ?? fetchJson<Readonly<T>, unknown>)({
+          ...requestOptions,
+          signal,
+        }),
     }),
   };
 };
