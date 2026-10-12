@@ -20,11 +20,30 @@ export interface ProviderOptionsParams {
 }
 
 const importantFieldNames = ['baseUrl', 'apiPath', 'apiKey', 'authToken'];
+const libraryFieldNames = [
+  ...importantFieldNames,
+  'host',
+  'port',
+  'useSsl',
+  'urlBase',
+];
 
-// Generates a key array based on important provider data fields instead of the whole object.
-function getProviderDataKey(providerData: ProviderOptions) {
+// Generates a query key from provider fields that affect the available options.
+function getProviderDataKey(providerData: ProviderOptions, action: string) {
   if (!providerData || !providerData.fields) {
     return null;
+  }
+
+  if (action === 'libraries') {
+    return {
+      id: providerData.id?.value ?? null,
+      implementation: providerData.implementation?.value ?? null,
+      fields: libraryFieldNames.map((name) => ({
+        name,
+        value:
+          providerData.fields?.find((field) => field.name === name)?.value ?? null,
+      })),
+    };
   }
 
   const fields = providerData.fields
@@ -66,7 +85,7 @@ export default function useProviderOptions({
     {
       queryKey: [
         `/${provider}/action/${action}`,
-        getProviderDataKey(providerData),
+        getProviderDataKey(providerData, action),
       ],
       enabled: !!(provider && action && providerData),
       queryFn: async ({ signal }) => {
@@ -85,7 +104,7 @@ export default function useProviderOptions({
           signal,
         });
       },
-      placeholderData: keepPreviousData,
+      placeholderData: action === 'libraries' ? undefined : keepPreviousData,
     }
   );
 

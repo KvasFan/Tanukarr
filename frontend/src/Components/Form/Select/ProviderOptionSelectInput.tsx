@@ -27,6 +27,7 @@ function getSelectOptions(items: FieldSelectOption<unknown>[]) {
 
 export type ProviderActionType =
   | 'devices'
+  | 'libraries'
   | 'servers'
   | 'newznabCategories'
   | 'getProfiles'

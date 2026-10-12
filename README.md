@@ -96,6 +96,12 @@ scoped companion keys and per-show retained versions are described in
 [compression worker](docker/compression/README.md) has separate dependencies and
 filesystem requirements; it is not installed inside the main Sonarr image.
 
+**Jellyfin library refresh (development main)** — a dedicated Connect integration
+selects one library and refreshes it after imports, at configurable intervals
+(minimum 1 minute, default 60), or both. Idle intervals make no requests; pending
+imports survive restarts and failed requests are retried. See the
+[Jellyfin guide](docs/jellyfin.md). This addition follows the published 0.0.1 release.
+
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
 ## What's removed

@@ -18,6 +18,7 @@ using NzbDrone.Core.MediaFiles.Commands;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource.Imdb.Commands;
+using NzbDrone.Core.Notifications.Jellyfin;
 using NzbDrone.Core.Tv.Commands;
 
 namespace NzbDrone.Core.Jobs
@@ -78,6 +79,12 @@ namespace NzbDrone.Core.Jobs
                     {
                         Interval = 5,
                         TypeName = typeof(MessagingCleanupCommand).FullName
+                    },
+
+                    new ScheduledTask
+                    {
+                        Interval = 1,
+                        TypeName = typeof(ProcessPendingJellyfinRefreshCommand).FullName
                     },
 
                     new ScheduledTask

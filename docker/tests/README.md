@@ -5,6 +5,35 @@ is recorded in [CONTRIBUTORS.md](../../CONTRIBUTORS.md); the
 [documentation index](../../docs/README.md) links the build, integration and
 security reports.
 
+## Jellyfin integration test
+
+For development main's dedicated Jellyfin connection, run:
+
+```sh
+docker pull jellyfin/jellyfin:12.2
+python3 docker/tests/jellyfin.py --image sonarr-weeb:local \
+  --jellyfin-image jellyfin/jellyfin:12.2 --report jellyfin-report.json
+```
+
+This optional test starts disposable SonarrWeeb and Jellyfin containers on its
+own Docker network, with random loopback ports. It initializes an isolated
+Jellyfin administrator, creates two TV libraries with real-time monitoring
+disabled, and generates tiny videos using Jellyfin's packaged FFmpeg. It adds
+Cowboy Bebop through the public AniList provider without indexers or download
+clients, then imports only generated files. Internet access is needed for that
+metadata lookup; no private AniList account or existing media is used.
+
+Checks cover the Connect schema/dropdown/key masking, immediate and one-minute
+conditional ticks, import batching, restart persistence, combined mode, retry
+after Jellyfin is unavailable, stale-library rejection, and confirmation that
+the unselected library's generated episode remains unindexed. The test takes
+several minutes because it waits for real scheduled ticks and asynchronous scans.
+`--jellyfin-image` can select another version; only executed versions establish
+compatibility. The script removes only its own containers, network and temporary
+data, and its report contains no credentials. See the
+[feature guide](../../docs/jellyfin.md) and
+[verification report](../../docs/jellyfin-verification-2026-10-12.md).
+
 ## Startup smoke test
 
 Build the image, then verify its runtime using Python 3 and the Docker CLI:

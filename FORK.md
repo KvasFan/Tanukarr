@@ -255,6 +255,22 @@ host worker or imply hardware-encoder availability.
 
 ---
 
+## Jellyfin library refresh
+
+Development main adds a dedicated Jellyfin connection under Settings → Connect.
+It targets one selected library, with immediate imports, conditional periodic
+ticks (1 minute minimum, 60 minutes default), or both. Migration 243 stores
+per-connection import generations and separate immediate/tick acknowledgements,
+so failed requests and imports arriving during a request remain pending across
+restarts. API-key rotation retains work; target changes and disabling the
+connection clear stale work. Existing Emby / Jellyfin behavior is preserved.
+
+The refresh uses Jellyfin's selected-item endpoint, never its global-library
+refresh. Jellyfin queues scans asynchronously; accepting the request does not
+establish that the scan finished. See [Jellyfin refresh](docs/jellyfin.md) for
+configuration, trigger semantics, Docker networking and limitations. The
+immutable SonarrWeeb 0.0.1 release predates this addition.
+
 ## Notes for whoever works on this next
 
 - **The HTTP client deserializes with Newtonsoft, not System.Text.Json.**

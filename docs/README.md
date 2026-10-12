@@ -14,6 +14,7 @@ original content.
 | [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
 | [Library tools](library-tools.md) | Filters, pause, lists, retained versions, restore and companion keys |
+| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries on development main |
 | [Compression worker](../docker/compression/README.md) | Optional host worker, presets, dependencies and filesystem safeguards |
 | [Container checks](../docker/tests/README.md) | Disposable smoke, API/security and optional Chromium verification |
 | [Contributing](../CONTRIBUTING.md) | Build/test commands, English documentation and source/model attribution |
@@ -33,6 +34,7 @@ original content.
 | [Initial Docker verification](docker-validation-2026-10-12.md) | First executed Linux/WSL build, deployment and its retained historical export |
 | [Final security and functional verification](security-functional-validation-2026-10-12.md) | Tested image, full suite results, fixes, SBOM/scanners, remaining risks and limits |
 | [Documentation review](documentation-review-2026-10-12.md) | Tracked-file inventory, documentation checks and attribution methodology |
+| [Jellyfin verification](jellyfin-verification-2026-10-12.md) | Post-release Jellyfin integration, queue/security checks and disposable-server tests |
 
 The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later

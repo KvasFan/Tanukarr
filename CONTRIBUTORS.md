@@ -37,7 +37,8 @@ local commit makes their original author name unreachable from HEAD.
 - **Local OpenAI Codex assistant, based on GPT-6**: this integration,
   AniList lifecycle fixes, compatibility adaptations, test/runtime work,
   security hardening, the English documentation/contributor audit and
-  SonarrWeeb 0.0.1 release packaging/installation documentation.
+  SonarrWeeb 0.0.1 release packaging/installation documentation and the
+  subsequent dedicated Jellyfin refresh integration.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -46,7 +47,7 @@ local commit makes their original author name unreachable from HEAD.
 
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
-| Local integration, documentation and SonarrWeeb 0.0.1 packaging | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
+| Local integration, documentation, SonarrWeeb 0.0.1 packaging and subsequent Jellyfin refresh | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -86,6 +87,23 @@ Sonarr contributors.
 - [6c9d41960](https://github.com/Sonarr/Sonarr/commit/6c9d41960fb8f14c3f26944539702424140efc8e): Weblate; declared co-authors: Havok Dan, Ion Bazan, atomic, dmmc28, fordas. Multiple Translations updated by Weblate.
 - [72abb2885](https://github.com/Sonarr/Sonarr/commit/72abb2885a465d4b8481bd08b5096fbfa5d53bf3): Bogdan. Disable imported select if no eligible records found.
 - [59c22e859](https://github.com/Sonarr/Sonarr/commit/59c22e85993bb1120bfcf9fd1d6f509a510203df): Bogdan. Use default page size recommended by the indexer.
+
+### Jellyfin selected-library refresh and conditional periodic updates
+
+The existing Sonarr MediaBrowser integration supplied the notification and
+settings conventions. Its representative original commits are:
+
+- [daafb67fa](https://github.com/Sonarr/Sonarr/commit/daafb67fa7e3cc3e320037fc51a61485849b38ba): **Mark McDowall**, original MediaBrowser notifications.
+- [ecebe73c3](https://github.com/Sonarr/Sonarr/commit/ecebe73c333582a4651b66a2fa66369d8ffbc337): **hatharry**, Emby library-update correction.
+- [ad0dc01cf](https://github.com/Sonarr/Sonarr/commit/ad0dc01cf7ed16ccfa8260717111ad8a44675221): **Jendrik Weise**, matching series-path updates in Jellyfin/Emby.
+
+**Jellyfin contributors** maintain the official library-enumeration and
+selected-folder refresh APIs consulted for this work. No third-party Sonarr
+plugin or community implementation was copied. **OpenAI Codex, based on GPT-6**,
+implemented the dedicated connection, persistent queue, conditional scheduler,
+tests and English documentation locally. This work follows the immutable 0.0.1
+release. See the [feature guide](docs/jellyfin.md) and
+[verification report](docs/jellyfin-verification-2026-10-12.md).
 
 ### Provider abstraction, TMDB and episode groups, AniList/Jikan providers and native non-TVDB identities
 

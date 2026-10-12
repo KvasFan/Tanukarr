@@ -29,6 +29,7 @@ using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Notifications;
+using NzbDrone.Core.Notifications.Jellyfin;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Profiles;
@@ -61,6 +62,8 @@ namespace NzbDrone.Core.Datastore
 
             Mapper.Entity<Config>("Config").RegisterModel();
             Mapper.Entity<RetainedVersion>("RetainedVersions").RegisterModel();
+
+            Mapper.Entity<JellyfinRefreshState>("JellyfinRefreshStates").RegisterModel();
 
             Mapper.Entity<RootFolder>("RootFolders").RegisterModel()
                   .Ignore(r => r.Accessible)
