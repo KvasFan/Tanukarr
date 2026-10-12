@@ -318,13 +318,13 @@ namespace NzbDrone.Core.Tv
                             _logger.Error(e, "Couldn't refresh info for {0}", seriesLocal);
                         }
 
-                        UpdateTags(series);
+                        UpdateTags(seriesLocal);
                         RescanSeries(seriesLocal, false, trigger);
                     }
                     else
                     {
                         _logger.Info("Skipping refresh of series: {0}", seriesLocal.Title);
-                        UpdateTags(series);
+                        UpdateTags(seriesLocal);
                         RescanSeries(seriesLocal, false, trigger);
                     }
                 }
