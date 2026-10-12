@@ -174,7 +174,9 @@ async function main(input) {
       assert.equal(await page.getByText(selectedName, { exact: true }).count(), 2);
       assert.equal(await page.getByText(excludedName, { exact: true }).count(), 1);
       assert.equal(await page.locator('input[name="importCurrent"]').isChecked(), true);
-      await page.locator('input[name="excludeCurrent"]').check();
+      // Sonarr draws the clickable checkbox over its native input.
+      await page.locator('input[name="excludeCurrent"]').locator('..').click();
+      assert.equal(await page.locator('input[name="excludeCurrent"]').isChecked(), true);
       await page.locator('input[name="username"]').fill('isolated-user');
       const testResponse = page.waitForResponse((response) =>
         /\/api\/v[35]\/importlist\/test\/?$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST');

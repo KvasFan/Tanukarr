@@ -113,7 +113,8 @@ empty. Release-state filtering remains separate.
 
 Enter each complete custom-list name and press **Enter** to add it. Repeat for
 more names. Spaces, commas and other punctuation are part of the name, so
-`Seasonal, favorites` is one name, not two. Names are trimmed at their boundaries.
+`Seasonal, favorites` is one name, not two. The editor trims name boundaries;
+direct API array values retain their spelling, including boundary whitespace.
 
 An exact custom-list name takes precedence. A case-insensitive fallback is
 accepted only when it identifies a single list, so distinct names differing

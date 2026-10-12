@@ -152,8 +152,8 @@ external test dependencies and are not added to the application package.
 The Node helper
 reads disposable credentials from stdin and redacts them from reports. It checks
 login, navigation, provider attribution/links, native-series detail and lookup,
-complete search and AniList list settings. The native-series/complete-search
-scenario also checks custom-list inclusion/exclusion controls, literal names
+complete search and AniList list settings. The AniList editor scenario also
+checks custom-list inclusion/exclusion controls, literal names
 containing commas, all six explicit watching-state exclusions and the submitted
 settings payload. Its connection test intentionally fails local validation
 without OAuth credentials; cancelling the editor leaves saved lists unchanged.
@@ -187,7 +187,9 @@ build checks, not every available .NET suite. Current whole-suite and platform
 results are recorded in the
 [functional and security validation report](../../docs/security-functional-validation-2026-10-12.md)
 and the later
-[Jellyfin verification report](../../docs/jellyfin-verification-2026-10-12.md).
+[Jellyfin verification report](../../docs/jellyfin-verification-2026-10-12.md),
+followed by the
+[AniList filter verification report](../../docs/anilist-filters-verification-2026-10-13.md).
 
 An image that passes these checks has demonstrated startup, isolated API/UI
 behavior, permissions and persistence. The Jellyfin harness additionally verifies
