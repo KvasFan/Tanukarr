@@ -180,10 +180,14 @@ build. The native amd64 backend stage runs Core/API/HTTP tests excluding
 `IntegrationTest`, and the Common cloud-policy/log-sanitizer subset. These are
 build checks, not every available .NET suite. Current whole-suite and platform
 results are recorded in the
-[functional and security validation report](../../docs/security-functional-validation-2026-10-12.md).
+[functional and security validation report](../../docs/security-functional-validation-2026-10-12.md)
+and the later
+[Jellyfin verification report](../../docs/jellyfin-verification-2026-10-12.md).
 
 An image that passes these checks has demonstrated startup, isolated API/UI
-behavior, permissions and persistence. Real downloads/imports, private AniList
-OAuth synchronization, arbitrary decoder inputs, all Git history secrets and
-VAAPI hardware remain outside this harness. The local validation used Linux
-amd64; an arm64 build is not an arm64 runtime test.
+behavior, permissions and persistence. The Jellyfin harness additionally verifies
+real imports of generated video files. Downloads through indexers and download
+clients, imports of the user's existing media, private AniList OAuth
+synchronization, arbitrary decoder inputs, all Git history secrets and VAAPI
+hardware remain outside these tests. The local validation used Linux amd64;
+an arm64 build is not an arm64 runtime test.

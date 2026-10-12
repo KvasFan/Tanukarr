@@ -39,9 +39,9 @@ to another host. The refresh-state table does not contain the key.
 
 | Mode | Behavior |
 | --- | --- |
-| Each import | Submit a refresh after each eligible imported file. A failed request stays pending and is retried by the one-minute background task. |
-| Interval | At each configured tick, submit one refresh if eligible files have been imported since the previous successful tick. Multiple imports are batched. Idle ticks send no request. |
-| Each import and interval | Submit immediately and also keep those imports pending for the next periodic tick. An immediate success does not consume the periodic work. |
+| Every imported media file | Submit a refresh after each eligible imported file. A failed request stays pending and is retried by the one-minute background task. |
+| At intervals when imports are pending | At each configured tick, submit one refresh if eligible files have been imported since the previous successful tick. Multiple imports are batched. Idle ticks send no request. |
+| Every import and at intervals | Submit immediately and also keep those imports pending for the next periodic tick. An immediate success does not consume the periodic work. |
 
 The default is **Interval**, every **60 minutes**. The minimum interval is
 **1 minute**. For example, with a 60-minute interval, importing several episodes
