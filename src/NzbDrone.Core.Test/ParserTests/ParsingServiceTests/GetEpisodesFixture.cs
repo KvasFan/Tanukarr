@@ -510,6 +510,133 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
         }
 
         [Test]
+        public void should_lookup_every_season_in_a_multi_season_range()
+        {
+            int[] seasonNumbers = [1, 2, 3, 4];
+
+            GivenFullSeason();
+            _parsedEpisodeInfo.SeasonNumbers = seasonNumbers.ToList();
+
+            foreach (var seasonNumber in seasonNumbers)
+            {
+                var seasonEpisodes = new List<Episode>
+                {
+                    new Episode
+                    {
+                        SeriesId = _series.Id,
+                        SeasonNumber = seasonNumber,
+                        EpisodeNumber = 1
+                    }
+                };
+
+                Mocker.GetMock<IEpisodeService>()
+                    .Setup(s => s.GetEpisodesBySeason(_series.Id, seasonNumber))
+                    .Returns(seasonEpisodes);
+            }
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, false, null);
+
+            result.Select(e => e.SeasonNumber).Should().Equal(seasonNumbers);
+
+            foreach (var seasonNumber in seasonNumbers)
+            {
+                Mocker.GetMock<IEpisodeService>()
+                    .Verify(v => v.GetEpisodesBySeason(_series.Id, seasonNumber), Times.Once);
+            }
+        }
+
+        [Test]
+        public void should_map_only_stargate_endpoint_seasons_for_discrete_title()
+        {
+            _parsedEpisodeInfo = Parser.Parser.ParseTitle("Stargate SG 1 (1997) S01 S10 (1080p BluRay x265 10bit AC3 5.1 Celdra) [QxR]");
+            int[] seasonNumbers = [1, 10];
+
+            foreach (var seasonNumber in seasonNumbers)
+            {
+                var seasonSize = seasonNumber == 1 ? 22 : 20;
+                Mocker.GetMock<IEpisodeService>()
+                    .Setup(s => s.GetEpisodesBySeason(_series.Id, seasonNumber))
+                    .Returns(Enumerable.Range(1, seasonSize)
+                        .Select(episodeNumber => new Episode
+                        {
+                            SeriesId = _series.Id,
+                            SeasonNumber = seasonNumber,
+                            EpisodeNumber = episodeNumber
+                        })
+                        .ToList());
+            }
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, false, null);
+
+            result.Select(e => e.SeasonNumber).Distinct().Should().Equal(1, 10);
+            result.Should().HaveCount(42);
+        }
+
+        [Test]
+        public void should_map_all_stargate_seasons_for_continuous_title()
+        {
+            _parsedEpisodeInfo = Parser.Parser.ParseTitle("Stargate SG-1 (1997) S01-S10 (1080p BluRay x265 10bit AC3 5.1 Celdra) [QxR]");
+            var seasonSizes = new[] { 22, 22, 22, 22, 22, 22, 21, 21, 20, 20 };
+
+            foreach (var seasonNumber in Enumerable.Range(1, 10))
+            {
+                var seasonSize = seasonSizes[seasonNumber - 1];
+                Mocker.GetMock<IEpisodeService>()
+                    .Setup(s => s.GetEpisodesBySeason(_series.Id, seasonNumber))
+                    .Returns(Enumerable.Range(1, seasonSize)
+                        .Select(episodeNumber => new Episode
+                        {
+                            SeriesId = _series.Id,
+                            SeasonNumber = seasonNumber,
+                            EpisodeNumber = episodeNumber
+                        })
+                        .ToList());
+            }
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, false, null);
+
+            result.Select(e => e.SeasonNumber).Distinct().Should().Equal(Enumerable.Range(1, 10));
+            result.Should().HaveCount(214);
+        }
+
+        [Test]
+        public void should_apply_scene_mapping_to_each_season_in_a_multi_season_range()
+        {
+            GivenSceneNumberingSeries();
+            GivenFullSeason();
+            _parsedEpisodeInfo.SeasonNumbers = [1, 2, 3, 4];
+
+            Mocker.GetMock<ISceneMappingService>()
+                .Setup(s => s.FindSceneMapping(_parsedEpisodeInfo.SeriesTitle, It.IsAny<string>(), 2))
+                .Returns(new SceneMapping
+                {
+                    SceneSeasonNumber = 2,
+                    SeasonNumber = 5,
+                    SceneOrigin = "tvdb"
+                });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySceneSeason(_series.Id, 1))
+                .Returns(new List<Episode> { new Episode { Id = 101, SeasonNumber = 1, EpisodeNumber = 1 } });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySeason(_series.Id, 5))
+                .Returns(new List<Episode> { new Episode { Id = 501, SeasonNumber = 5, EpisodeNumber = 1 } });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySceneSeason(_series.Id, 3))
+                .Returns(new List<Episode> { new Episode { Id = 301, SeasonNumber = 3, EpisodeNumber = 1 } });
+
+            Mocker.GetMock<IEpisodeService>()
+                .Setup(s => s.GetEpisodesBySceneSeason(_series.Id, 4))
+                .Returns(new List<Episode> { new Episode { Id = 401, SeasonNumber = 4, EpisodeNumber = 1 } });
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, true, null);
+
+            result.Select(e => e.Id).Should().Equal(101, 501, 301, 401);
+        }
+
+        [Test]
         public void should_lookup_full_season_by_scene_season_number_if_series_uses_scene_numbering()
         {
             GivenSceneNumberingSeries();
@@ -533,7 +660,7 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
         {
             GivenFullSeason();
             _series.UseSceneNumbering = false;
-            _parsedEpisodeInfo.SeasonNumbers = new[] { 1, 2, 3 };
+            _parsedEpisodeInfo.SeasonNumbers = [1, 2, 3];
             Mocker.GetMock<IEpisodeService>().Setup(service => service.GetEpisodesBySeason(_series.Id, 3)).Returns(_episodes);
 
             var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, true, new SeasonSearchCriteria { Series = _series, SeasonNumber = 3, Episodes = _episodes });

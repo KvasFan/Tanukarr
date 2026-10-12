@@ -35,14 +35,25 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
             var jsonResponse = STJson.Deserialize<MediaPageResponse>(importListResponse.Content);
 
-            if (jsonResponse?.Data?.Page?.MediaList == null)
+            if (jsonResponse?.Errors?.Count > 0)
             {
-                pageInfo = null;
-                return result;
+                throw new ImportListException(importListResponse, "AniList returned GraphQL errors: {0}", string.Join("; ", jsonResponse.Errors.Select(e => e.Message)));
+            }
+
+            var page = jsonResponse?.Data?.Page;
+
+            if (page?.MediaList == null || page.PageInfo == null || page.PageInfo.CurrentPage < 1 || !page.PageInfo.HasNextPage.HasValue)
+            {
+                throw new ImportListException(importListResponse, "AniList returned an incomplete list response. The previous list will be retained.");
+            }
+
+            if (page.MediaList.Any(item => item?.Media == null || item.Media.Id <= 0))
+            {
+                throw new ImportListException(importListResponse, "AniList returned a list entry without a valid media ID. The previous list will be retained.");
             }
 
             // Anilist currently does not support filtering this at the query level, they will get filtered out here.
-            var filtered = jsonResponse.Data.Page.MediaList
+            var filtered = page.MediaList
                 .Where(x => ValidateMediaStatus(x.Media))
                 .Where(IsOnSelectedCustomList);
 
@@ -53,13 +64,15 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 var entry = new ImportListItemInfo
                 {
                     AniListId = media.Id,
-                    Title = media.Title.UserPreferred ?? media.Title.UserRomaji
+                    MalId = media.IdMal ?? 0,
+                    Year = media.StartDate?.Year ?? 0,
+                    Title = media.Title?.UserPreferred.IsNotNullOrWhiteSpace() == true ? media.Title.UserPreferred : media.Title?.UserRomaji
                 };
 
                 result.Add(entry);
             }
 
-            pageInfo = jsonResponse.Data.Page.PageInfo;
+            pageInfo = page.PageInfo;
             return result;
         }
 
@@ -80,11 +93,16 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 return false;
             }
 
-            // AniList reports every list the user has defined on every entry, so the flag
-            // rather than the key's presence decides membership. Names are matched
-            // case-insensitively because the list name is typed by hand into settings.
-            return item.CustomLists
-                       .Any(l => l.Value && l.Key.Equals(_settings.CustomList.Trim(), StringComparison.OrdinalIgnoreCase));
+            var name = _settings.CustomList.Trim();
+
+            if (item.CustomLists.TryGetValue(name, out var member))
+            {
+                return member;
+            }
+
+            // Keep manual entry forgiving without combining distinct lists that differ by case.
+            var matchingLists = item.CustomLists.Where(l => l.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+            return matchingLists.Count == 1 && matchingLists[0].Value;
         }
 
         private bool ValidateMediaStatus(MediaInfo media)

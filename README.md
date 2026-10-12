@@ -1,5 +1,10 @@
 # Sonarr Pro
 
+This local integration rebases Sonarr Pro onto Sonarr `v5-develop` at `698bb1dbb`
+and adds selected gaboy features plus AniList list fixes. See the
+[integration and validation report](docs/integration-2026-10-12.md).
+The included Compose file builds `sonarr-weeb:local` from this working tree.
+
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
 
 > **Unofficial.** Sonarr Pro is not affiliated with, endorsed by, or supported by the Sonarr project. Please don't raise Sonarr Pro problems on Sonarr's issue tracker, forums, or Discord — they can't help with code they didn't write. Report them [here](https://github.com/KakarottoCake/Sonarr-Pro/issues) instead.

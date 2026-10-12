@@ -11,6 +11,7 @@ using NzbDrone.Core.Languages;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Test.Framework;
+using NzbDrone.Test.Common;
 
 namespace NzbDrone.Core.Test.ImportListTests
 {
@@ -107,6 +108,43 @@ namespace NzbDrone.Core.Test.ImportListTests
 
             Mocker.GetMock<IImportListStatusService>()
                 .Verify(v => v.UpdateListSyncStatus(It.IsAny<int>(), It.IsAny<bool>()), Times.Never());
+        }
+
+        [Test]
+        public void should_preserve_distinct_anilist_entries_with_identical_titles()
+        {
+            var items = new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { AniListId = 1, Title = "Same title" },
+                new ImportListItemInfo { AniListId = 9253, Title = "Same title" }
+            };
+            var fetchResult = new ImportListFetchResult(items, false);
+            WithList(1, true, true, fetchResult);
+
+            Subject.Fetch().Series.Select(item => item.AniListId).Should().BeEquivalentTo(new[] { 1, 9253 });
+        }
+
+        [Test]
+        public void should_preserve_each_list_membership_for_the_same_anilist_entry()
+        {
+            WithList(1, true, true, new ImportListFetchResult(new[] { new ImportListItemInfo { AniListId = 21, Title = "One Piece" } }, false));
+            WithList(2, true, true, new ImportListFetchResult(new[] { new ImportListItemInfo { AniListId = 21, Title = "One Piece" } }, false));
+
+            Subject.Fetch().Series.Select(item => item.ImportListId).Should().BeEquivalentTo(new[] { 1, 2 });
+        }
+
+        [Test]
+        public void should_record_failure_when_a_provider_throws_before_returning_a_result()
+        {
+            var list = WithList(1, true, true, new ImportListFetchResult());
+            list.Setup(provider => provider.Fetch()).Throws(new InvalidOperationException("Authentication failed"));
+
+            Subject.Fetch().AnyFailure.Should().BeTrue();
+
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordFailure(1, TimeSpan.Zero), Times.Once());
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.UpdateListSyncStatus(It.IsAny<int>(), It.IsAny<bool>()), Times.Never());
+            Mocker.GetMock<IImportListItemService>().Verify(service => service.SyncSeriesForList(It.IsAny<List<ImportListItemInfo>>(), 1), Times.Never());
+            ExceptionVerification.ExpectedErrors(1);
         }
 
         [Test]

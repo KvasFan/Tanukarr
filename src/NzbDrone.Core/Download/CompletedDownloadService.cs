@@ -36,6 +36,7 @@ namespace NzbDrone.Core.Download
         private readonly IEpisodeService _episodeService;
         private readonly IMediaFileService _mediaFileService;
         private readonly IRejectedImportService _rejectedImportService;
+        private readonly IImportProgressService _importProgressService;
         private readonly Logger _logger;
 
         public CompletedDownloadService(IEventAggregator eventAggregator,
@@ -48,6 +49,7 @@ namespace NzbDrone.Core.Download
                                         IEpisodeService episodeService,
                                         IMediaFileService mediaFileService,
                                         IRejectedImportService rejectedImportService,
+                                        IImportProgressService importProgressService,
                                         Logger logger)
         {
             _eventAggregator = eventAggregator;
@@ -60,6 +62,7 @@ namespace NzbDrone.Core.Download
             _episodeService = episodeService;
             _mediaFileService = mediaFileService;
             _rejectedImportService = rejectedImportService;
+            _importProgressService = importProgressService;
             _logger = logger;
         }
 
@@ -152,6 +155,11 @@ namespace NzbDrone.Core.Download
 
             trackedDownload.State = TrackedDownloadState.Importing;
 
+            ObserveProgress(() => _importProgressService.BeginBatch(
+                trackedDownload.DownloadItem.DownloadClientInfo.Id,
+                trackedDownload.DownloadItem.DownloadId,
+                trackedDownload.RemoteEpisode.Episodes.Select(e => e.Id).Where(id => id > 0).Distinct().OrderBy(id => id)));
+
             var outputPath = trackedDownload.ImportItem.OutputPath.FullPath;
             var importResults = _downloadedEpisodesImportService.ProcessPath(outputPath,
                 ImportMode.Auto,
@@ -219,10 +227,14 @@ namespace NzbDrone.Core.Download
 
         public bool VerifyImport(TrackedDownload trackedDownload, List<ImportResult> importResults)
         {
-            var allEpisodesImported = importResults.Where(c => c.Result == ImportResultType.Imported)
-                                                   .SelectMany(c => c.ImportDecision.LocalEpisode.Episodes)
-                                                   .Count() >= Math.Max(1,
-                                          trackedDownload.RemoteEpisode.Episodes.Count);
+            var importedEpisodes = importResults.Where(c => c.Result == ImportResultType.Imported)
+                                                .SelectMany(c => c.ImportDecision.LocalEpisode.Episodes)
+                                                .ToList();
+            var expectedEpisodeIds = trackedDownload.RemoteEpisode.Episodes.Select(e => e.Id).Where(id => id > 0).ToHashSet();
+            var importedEpisodeIds = importedEpisodes.Select(e => e.Id).Where(id => id > 0).ToHashSet();
+            var allEpisodesImported = expectedEpisodeIds.Count > 0
+                ? expectedEpisodeIds.IsSubsetOf(importedEpisodeIds)
+                : importedEpisodes.Count >= Math.Max(1, trackedDownload.RemoteEpisode.Episodes.Count);
 
             var historyItems = _historyService.FindByDownloadId(trackedDownload.DownloadItem.DownloadId)
                 .OrderByDescending(h => h.Date)
@@ -306,6 +318,18 @@ namespace NzbDrone.Core.Download
                 var manualInteractionEvent = new ManualInteractionRequiredEvent(trackedDownload, releaseInfo);
 
                 _eventAggregator.PublishEvent(manualInteractionEvent);
+            }
+        }
+
+        private void ObserveProgress(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception e)
+            {
+                _logger.Debug(e, "Unable to update import progress");
             }
         }
 

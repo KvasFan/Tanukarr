@@ -73,6 +73,8 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
 
             SetAbsoluteNumbering(series, episodes);
             SetSeasons(series, episodes);
+            series.SeasonTypes[0].SeasonNumbers = series.Seasons.Select(s => s.SeasonNumber).ToList();
+            series.SeasonTypes[0].EpisodeCount = episodes.Count;
 
             return new Tuple<Series, List<Episode>>(series, episodes);
         }
@@ -203,6 +205,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             var series = new Series
             {
                 MetadataSource = MetadataSourceType.Tmdb,
+                SeasonType = SeasonType.Official,
                 ForeignId = resource.Id.ToString(),
                 TmdbId = resource.Id,
                 Title = resource.Name,
@@ -215,7 +218,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             };
 
             series.CleanTitle = Parser.Parser.CleanSeriesTitle(series.Title);
-            series.TitleSlug = resource.Id.ToString();
+            series.TitleSlug = $"tmdb-{resource.Id}";
 
             series.ImdbId = resource.ExternalIds?.ImdbId;
 
@@ -270,6 +273,14 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             series.Seasons = resource.Seasons?
                 .Select(s => new Season { SeasonNumber = s.SeasonNumber, Title = s.Name, Monitored = s.SeasonNumber > 0 })
                 .ToList() ?? new List<Season>();
+
+            series.SeasonTypes.Add(new SeasonType
+            {
+                Name = "Official",
+                Type = SeasonType.Official,
+                SeasonNumbers = series.Seasons.Select(s => s.SeasonNumber).ToList(),
+                EpisodeCount = resource.Seasons?.Sum(s => s.EpisodeCount) ?? 0
+            });
 
             return series;
         }

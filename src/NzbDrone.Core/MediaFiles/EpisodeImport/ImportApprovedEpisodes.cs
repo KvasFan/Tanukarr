@@ -31,6 +31,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
         private readonly IHistoryService _historyService;
         private readonly IEventAggregator _eventAggregator;
         private readonly IManageCommandQueue _commandQueueManager;
+        private readonly IImportProgressService _importProgressService;
         private readonly Logger _logger;
 
         public ImportApprovedEpisodes(IUpgradeMediaFiles episodeFileUpgrader,
@@ -41,6 +42,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                       IHistoryService historyService,
                                       IEventAggregator eventAggregator,
                                       IManageCommandQueue commandQueueManager,
+                                      IImportProgressService importProgressService,
                                       Logger logger)
         {
             _episodeFileUpgrader = episodeFileUpgrader;
@@ -51,11 +53,14 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
             _historyService = historyService;
             _eventAggregator = eventAggregator;
             _commandQueueManager = commandQueueManager;
+            _importProgressService = importProgressService;
             _logger = logger;
         }
 
         public List<ImportResult> Import(List<ImportDecision> decisions, bool newDownload, DownloadClientItem downloadClientItem = null, ImportMode importMode = ImportMode.Auto)
         {
+            ObserveProgress(() => _importProgressService.RegisterDecisions(downloadClientItem, decisions));
+
             var qualifiedImports = decisions
                 .Where(decision => decision.Approved)
                 .GroupBy(decision => decision.LocalEpisode.Series.Id)
@@ -80,9 +85,13 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                          .Intersect(localEpisode.Episodes.Select(e => e.Id))
                                          .Any())
                     {
-                        importResults.Add(new ImportResult(importDecision, "Episode has already been imported"));
+                        const string error = "Episode has already been imported";
+                        importResults.Add(new ImportResult(importDecision, error));
+                        ObserveProgress(() => _importProgressService.MarkFailed(downloadClientItem, localEpisode, error));
                         continue;
                     }
+
+                    ObserveProgress(() => _importProgressService.MarkImporting(downloadClientItem, localEpisode));
 
                     var episodeFile = localEpisode.ToEpisodeFile();
                     episodeFile.Size = _diskProvider.GetFileSize(localEpisode.Path);
@@ -174,32 +183,39 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                     }
 
                     _eventAggregator.PublishEvent(new EpisodeImportedEvent(localEpisode, episodeFile, oldFiles, newDownload, downloadClientItem));
+                    ObserveProgress(() => _importProgressService.MarkImported(downloadClientItem, localEpisode));
                 }
                 catch (RootFolderNotFoundException e)
                 {
+                    const string error = "Failed to import episode, Root folder missing.";
                     _logger.Warn(e, "Couldn't import episode " + localEpisode);
                     _eventAggregator.PublishEvent(new EpisodeImportFailedEvent(e, localEpisode, newDownload, downloadClientItem));
-
-                    importResults.Add(new ImportResult(importDecision, "Failed to import episode, Root folder missing."));
+                    importResults.Add(new ImportResult(importDecision, error));
+                    ObserveProgress(() => _importProgressService.MarkFailed(downloadClientItem, localEpisode, error));
                 }
                 catch (DestinationAlreadyExistsException e)
                 {
+                    const string error = "Failed to import episode, Destination already exists.";
                     _logger.Warn(e, "Couldn't import episode " + localEpisode);
-                    importResults.Add(new ImportResult(importDecision, "Failed to import episode, Destination already exists."));
+                    importResults.Add(new ImportResult(importDecision, error));
+                    ObserveProgress(() => _importProgressService.MarkFailed(downloadClientItem, localEpisode, error));
 
                     _commandQueueManager.Push(new RescanSeriesCommand(localEpisode.Series.Id));
                 }
                 catch (RecycleBinException e)
                 {
+                    const string error = "Failed to import episode, unable to move existing file to the Recycle Bin.";
                     _logger.Warn(e, "Couldn't import episode " + localEpisode);
                     _eventAggregator.PublishEvent(new EpisodeImportFailedEvent(e, localEpisode, newDownload, downloadClientItem));
-
-                    importResults.Add(new ImportResult(importDecision, "Failed to import episode, unable to move existing file to the Recycle Bin."));
+                    importResults.Add(new ImportResult(importDecision, error));
+                    ObserveProgress(() => _importProgressService.MarkFailed(downloadClientItem, localEpisode, error));
                 }
                 catch (Exception e)
                 {
+                    const string error = "Failed to import episode";
                     _logger.Warn(e, "Couldn't import episode " + localEpisode);
-                    importResults.Add(new ImportResult(importDecision, "Failed to import episode"));
+                    importResults.Add(new ImportResult(importDecision, error));
+                    ObserveProgress(() => _importProgressService.MarkFailed(downloadClientItem, localEpisode, error));
                 }
             }
 
@@ -208,6 +224,18 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                             .Select(d => new ImportResult(d, d.Rejections.Select(r => r.Message).ToArray())));
 
             return importResults;
+        }
+
+        private void ObserveProgress(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception e)
+            {
+                _logger.Debug(e, "Unable to update import progress");
+            }
         }
     }
 }

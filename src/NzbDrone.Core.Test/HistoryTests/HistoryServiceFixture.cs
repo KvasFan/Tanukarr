@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FizzWare.NBuilder;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Core.Download;
@@ -70,6 +71,48 @@ namespace NzbDrone.Core.Test.HistoryTests
 
             Mocker.GetMock<IHistoryRepository>()
                 .Verify(v => v.Insert(It.Is<EpisodeHistory>(h => h.SourceTitle == Path.GetFileNameWithoutExtension(localEpisode.Path))));
+        }
+
+        [Test]
+        public void should_record_grab_history_for_every_episode_in_a_multi_season_release()
+        {
+            var episodes = new List<Episode>
+            {
+                new Episode { Id = 101, SeriesId = 1, SeasonNumber = 1, EpisodeNumber = 1 },
+                new Episode { Id = 201, SeriesId = 1, SeasonNumber = 2, EpisodeNumber = 1 },
+                new Episode { Id = 301, SeriesId = 1, SeasonNumber = 3, EpisodeNumber = 1 },
+                new Episode { Id = 401, SeriesId = 1, SeasonNumber = 4, EpisodeNumber = 1 }
+            };
+            var remoteEpisode = new RemoteEpisode
+            {
+                Series = new Series { Id = 1 },
+                Episodes = episodes,
+                ParsedEpisodeInfo = Parser.Parser.ParseTitle("Example.Show.S01-S04.1080p.WEB-DL"),
+                Release = new ReleaseInfo
+                {
+                    Title = "Example.Show.S01-S04.1080p.WEB-DL",
+                    Indexer = "Test Indexer",
+                    PublishDate = System.DateTime.UtcNow
+                }
+            };
+            var inserted = new List<EpisodeHistory>();
+
+            Mocker.GetMock<IHistoryRepository>()
+                .Setup(r => r.Insert(It.IsAny<EpisodeHistory>()))
+                .Returns<EpisodeHistory>(history =>
+                {
+                    inserted.Add(history);
+                    return history;
+                });
+
+            Subject.Handle(new EpisodeGrabbedEvent(remoteEpisode) { DownloadId = "multi-season-download" });
+
+            var grabbedRelease = new GrabbedReleaseInfo(inserted);
+
+            remoteEpisode.ParsedEpisodeInfo.SeasonNumbers.Should().Equal(1, 2, 3, 4);
+            inserted.Should().HaveCount(4);
+            inserted.Select(history => history.EpisodeId).Should().Equal(101, 201, 301, 401);
+            grabbedRelease.EpisodeIds.Should().Equal(101, 201, 301, 401);
         }
     }
 }

@@ -22,6 +22,36 @@ export interface StatusMessage {
   messages: string[];
 }
 
+export type ImportProgressState =
+  | 'waiting'
+  | 'importing'
+  | 'imported'
+  | 'rejected'
+  | 'failed';
+
+export interface ImportProgressItem {
+  id: string;
+  episodeIds: number[];
+  seasonNumber?: number;
+  episodeNumbers: number[];
+  sourcePath?: string;
+  size: number;
+  state: ImportProgressState;
+  started?: string;
+  completed?: string;
+  errors: string[];
+}
+
+export interface ImportProgress {
+  totalEpisodes: number;
+  importedEpisodes: number;
+  importingEpisodes: number;
+  waitingEpisodes: number;
+  failedEpisodes: number;
+  rejectedEpisodes: number;
+  items: ImportProgressItem[];
+}
+
 interface Queue extends ModelBase {
   languages: Language[];
   quality: QualityModel;
@@ -49,6 +79,7 @@ interface Queue extends ModelBase {
   downloadClientHasPostImportCategory: boolean;
   isFullSeason: boolean;
   episodes?: Episode[];
+  importProgress?: ImportProgress;
 }
 
 export default Queue;

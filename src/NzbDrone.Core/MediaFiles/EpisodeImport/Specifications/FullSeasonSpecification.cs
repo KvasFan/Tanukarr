@@ -27,7 +27,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Specifications
                 // when grab history covers every mapped episode and its runtime supports that mapping.
                 var expectedRuntime = localEpisode.Episodes.Sum(episode => episode.Runtime > 0 ? episode.Runtime : localEpisode.Series.Runtime);
                 if (localEpisode.DownloadClientEpisodeInfo is { IsMultiSeason: true } &&
-                    localEpisode.FileEpisodeInfo.SeasonNumbers.Length == 1 &&
+                    localEpisode.FileEpisodeInfo.SeasonNumbers.Count == 1 &&
                     localEpisode.Episodes.Count > 1 &&
                     localEpisode.Episodes.Select(episode => episode.SeasonNumber).Distinct().Count() == 1 &&
                     localEpisode.Release?.EpisodeIds != null &&

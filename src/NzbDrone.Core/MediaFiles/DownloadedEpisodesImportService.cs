@@ -224,7 +224,7 @@ namespace NzbDrone.Core.MediaFiles
                 }
 
                 // A library file must belong to one season. Leave combined or ambiguous files in the download.
-                videoFiles = videoFiles.Where(file => Parser.Parser.ParsePath(file) is { SeasonNumbers.Length: 1 }).ToList();
+                videoFiles = videoFiles.Where(file => Parser.Parser.ParsePath(file) is { SeasonNumbers.Count: 1 }).ToList();
             }
 
             var decisions = _importDecisionMaker.GetImportDecisions(videoFiles.ToList(), series, downloadClientItem, downloadClientItemInfo, folderInfo, true);

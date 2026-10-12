@@ -13,6 +13,9 @@ namespace NzbDrone.Common.Cloud
         public SonarrCloudRequestBuilder()
         {
             Services = new HttpRequestBuilder("https://services.sonarr.tv/v1/")
+                {
+                    PostProcess = SonarrCloudRequestPolicy.EnsureAllowed
+                }
                 .CreateFactory();
 
             SkyHookTvdb = new HttpRequestBuilder("https://skyhook.sonarr.tv/v2/tvdb/{route}/")

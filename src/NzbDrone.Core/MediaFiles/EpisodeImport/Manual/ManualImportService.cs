@@ -118,13 +118,14 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Manual
             if (downloadId.IsNotNullOrWhiteSpace())
             {
                 var trackedDownload = _trackedDownloadService.Find(downloadId);
+                var importItem = trackedDownload?.ImportItem ?? trackedDownload?.DownloadItem;
 
-                if (trackedDownload?.ImportItem == null)
+                if (importItem == null || importItem.OutputPath.IsEmpty)
                 {
                     return new List<ManualImportItem>();
                 }
 
-                path = (trackedDownload.ImportItem ?? trackedDownload.DownloadItem).OutputPath.FullPath;
+                path = importItem.OutputPath.FullPath;
             }
 
             if (!_diskProvider.FolderExists(path))

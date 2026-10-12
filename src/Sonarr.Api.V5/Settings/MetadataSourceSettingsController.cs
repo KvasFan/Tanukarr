@@ -10,6 +10,7 @@ using Sonarr.Http.REST.Attributes;
 namespace Sonarr.Api.V5.Settings;
 
 [V5ApiController("settings/metadata")]
+[Route("api/v5/settings/metadatasource")]
 public class MetadataSourceSettingsController : SettingsController<MetadataSourceSettingsResource>
 {
     private readonly IConfigService _configService;
@@ -21,7 +22,7 @@ public class MetadataSourceSettingsController : SettingsController<MetadataSourc
 
         SharedValidator.RuleFor(c => c.PreferredMetadataLanguage).Custom((value, context) =>
         {
-            if (!Language.All.Any(o => o.Id == value))
+            if (value.HasValue && !Language.All.Any(o => o.Id == value.Value))
             {
                 context.AddFailure("Invalid Metadata Language value");
             }
@@ -42,7 +43,10 @@ public class MetadataSourceSettingsController : SettingsController<MetadataSourc
     [Produces("application/json")]
     public override Results<Accepted<MetadataSourceSettingsResource>, NotFound> SaveSettings([FromBody] MetadataSourceSettingsResource resource)
     {
-        _configService.PreferredMetadataLanguage = resource.PreferredMetadataLanguage;
+        if (resource.PreferredMetadataLanguage.HasValue)
+        {
+            _configService.PreferredMetadataLanguage = resource.PreferredMetadataLanguage.Value;
+        }
 
         if (resource.TmdbApiKey != MetadataSourceSettingsResource.Mask)
         {

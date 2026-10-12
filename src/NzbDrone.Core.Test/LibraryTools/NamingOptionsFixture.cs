@@ -44,5 +44,16 @@ namespace NzbDrone.Core.Test.LibraryTools
             var series = new Series { Id = 7, Seasons = new List<Season> { new Season { SeasonNumber = 2, Title = "Arc One" } } };
             Subject.GetSeasonFolder(series, 2, new NamingConfig { SeasonFolderFormat = format }).Should().Be(expected);
         }
+
+        [TestCase("{SeasonTitle:10}", "Alterna...")]
+        [TestCase("{SeasonTitle:-8}", "...eason")]
+        public void should_apply_title_formatting_to_a_custom_season_title(string format, string expected)
+        {
+            Mocker.GetMock<IProOptionsService>().Setup(s => s.ForSeries(7))
+                .Returns(new ProSeriesOptions { SeasonTitles = new Dictionary<int, string> { { 2, "Alternate Season" } } });
+            var series = new Series { Id = 7, Seasons = new List<Season> { new Season { SeasonNumber = 2, Title = "Official Title" } } };
+
+            Subject.GetSeasonFolder(series, 2, new NamingConfig { SeasonFolderFormat = format }).Should().Be(expected);
+        }
     }
 }

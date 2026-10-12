@@ -126,6 +126,11 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 // AniList entries are single-run anime, which is what SeriesTypes.Anime
                 // means to the rest of Sonarr: absolute numbering, anime release parsing.
                 SeriesType = SeriesTypes.Anime,
+                SeasonType = SeasonType.Official,
+                SeasonTypes = new List<SeasonType>
+                {
+                    new SeasonType { Name = "Official", Type = SeasonType.Official, SeasonNumbers = new List<int> { 1 }, EpisodeCount = media.Episodes ?? 0 }
+                },
                 Status = MapStatus(media.Status),
                 Genres = media.Genres ?? new List<string>(),
                 Runtime = media.Duration ?? 0,
@@ -143,7 +148,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
             }
 
             series.CleanTitle = Parser.Parser.CleanSeriesTitle(series.Title);
-            series.TitleSlug = media.Id.ToString();
+            series.TitleSlug = $"anilist-{media.Id}";
             series.SortTitle = SeriesTitleNormalizer.Normalize(series.Title, 0);
 
             // Almost all AniList content is Japanese; CountryOfOrigin is the best signal

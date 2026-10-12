@@ -27,7 +27,7 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
             var title = "TV.Series.S01-S03";
             var series = new Series { Id = 5 };
             var requested = new Episode { Id = 301, SeasonNumber = 3 };
-            var parsed = new ParsedEpisodeInfo { SeriesTitle = "TV Series", SeasonNumbers = new[] { 1, 2, 3 }, FullSeason = true };
+            var parsed = new ParsedEpisodeInfo { SeriesTitle = "TV Series", SeasonNumbers = [1, 2, 3], FullSeason = true };
             Mocker.GetMock<IHistoryService>().Setup(service => service.FindByDownloadId("pack")).Returns(new List<EpisodeHistory>
             {
                 new EpisodeHistory { EventType = EpisodeHistoryEventType.Grabbed, SeriesId = 5, EpisodeId = 301, SourceTitle = title }
@@ -112,6 +112,54 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
             trackedDownload.RemoteEpisode.Episodes.First().Id.Should().Be(4);
             trackedDownload.RemoteEpisode.ParsedEpisodeInfo.SeasonNumbers.Should().Equal(1);
             trackedDownload.RemoteEpisode.MappedSeasonNumber.Should().Be(1);
+        }
+
+        [Test]
+        public void should_restore_complete_multi_season_parse_and_episode_ids_from_grab_history()
+        {
+            var episodeIds = new[] { 101, 201, 301, 401 };
+            var histories = episodeIds.Select(id => new EpisodeHistory
+            {
+                DownloadId = "35238",
+                SourceTitle = "Example.Show.S01-S04.1080p.WEB-DL",
+                SeriesId = 5,
+                EpisodeId = id,
+                EventType = EpisodeHistoryEventType.Grabbed
+            }).ToList();
+
+            Mocker.GetMock<IHistoryService>()
+                .Setup(s => s.FindByDownloadId("35238"))
+                .Returns(histories);
+
+            Mocker.GetMock<IParsingService>()
+                .Setup(s => s.Map(It.Is<ParsedEpisodeInfo>(p => p.SeasonNumbers.SequenceEqual(new[] { 1, 2, 3, 4 })),
+                    5,
+                    It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(episodeIds))))
+                .Returns<ParsedEpisodeInfo, int, IEnumerable<int>>((parsed, seriesId, ids) => new RemoteEpisode
+                {
+                    Series = new Series { Id = seriesId },
+                    Episodes = ids.Select(id => new Episode { Id = id }).ToList(),
+                    ParsedEpisodeInfo = parsed,
+                    MappedSeasonNumber = parsed.SeasonNumber
+                });
+
+            var client = new DownloadClientDefinition { Id = 1, Protocol = DownloadProtocol.Torrent };
+            var item = new DownloadClientItem
+            {
+                Title = "The torrent release folder",
+                DownloadId = "35238",
+                DownloadClientInfo = new DownloadClientItemClientInfo
+                {
+                    Protocol = client.Protocol,
+                    Id = client.Id,
+                    Name = client.Name
+                }
+            };
+
+            var trackedDownload = Subject.TrackDownload(client, item);
+
+            trackedDownload.RemoteEpisode.ParsedEpisodeInfo.SeasonNumbers.Should().Equal(1, 2, 3, 4);
+            trackedDownload.RemoteEpisode.Episodes.Select(e => e.Id).Should().Equal(episodeIds);
         }
 
         [Test]

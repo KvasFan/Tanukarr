@@ -167,6 +167,11 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                         {
                             localEpisode.IndexerFlags = trackedDownload.RemoteEpisode.Release.IndexerFlags;
                         }
+
+                        if (manual == null)
+                        {
+                            ReconcileLegacyMultiSeasonGrabMembership(localEpisode, downloadClientItem, trackedDownload);
+                        }
                     }
 
                     _formatCalculator.UpdateEpisodeCustomFormats(localEpisode);
@@ -199,6 +204,58 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
             }
 
             return decision;
+        }
+
+        private void ReconcileLegacyMultiSeasonGrabMembership(LocalEpisode localEpisode, DownloadClientItem downloadClientItem, TrackedDownload trackedDownload)
+        {
+            var remoteEpisode = trackedDownload?.RemoteEpisode;
+            var parsedEpisodeInfo = remoteEpisode?.ParsedEpisodeInfo;
+            var historicalEpisodeIds = localEpisode.Release?.EpisodeIds?
+                .Where(id => id > 0)
+                .Distinct()
+                .ToHashSet();
+
+            if (historicalEpisodeIds == null ||
+                historicalEpisodeIds.Count == 0 ||
+                trackedDownload?.DownloadItem?.DownloadId != downloadClientItem.DownloadId ||
+                localEpisode.Series?.Id <= 0 ||
+                remoteEpisode?.Series?.Id != localEpisode.Series.Id ||
+                parsedEpisodeInfo is not { IsMultiSeason: true, FullSeason: true, IsPartialSeason: false } ||
+                parsedEpisodeInfo.SeasonNumbers.Count < 3 ||
+                remoteEpisode.Episodes.Empty())
+            {
+                return;
+            }
+
+            var seasonNumbers = parsedEpisodeInfo.SeasonNumbers.Distinct().OrderBy(season => season).ToArray();
+
+            if (seasonNumbers.Length < 3 ||
+                !seasonNumbers.SequenceEqual(Enumerable.Range(seasonNumbers[0], seasonNumbers[^1] - seasonNumbers[0] + 1)))
+            {
+                return;
+            }
+
+            var mappedEpisodeIds = remoteEpisode.Episodes
+                .Select(episode => episode.Id)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToHashSet();
+
+            if (historicalEpisodeIds.Count >= mappedEpisodeIds.Count ||
+                !historicalEpisodeIds.IsSubsetOf(mappedEpisodeIds))
+            {
+                return;
+            }
+
+            _logger.Debug("Reconciling {0} legacy grabbed episode IDs with {1} currently mapped multi-season episode IDs for download {2}",
+                historicalEpisodeIds.Count,
+                mappedEpisodeIds.Count,
+                downloadClientItem.DownloadId);
+
+            localEpisode.Release.EpisodeIds = localEpisode.Release.EpisodeIds
+                .Union(mappedEpisodeIds)
+                .Distinct()
+                .ToList();
         }
 
         private ImportRejection EvaluateSpec(IImportDecisionEngineSpecification spec, LocalEpisode localEpisode, DownloadClientItem downloadClientItem)

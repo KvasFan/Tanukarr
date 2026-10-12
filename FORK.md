@@ -9,9 +9,12 @@ does, because every new behaviour is either off by default or defaults to the
 path that already existed.
 
 Originally forked from upstream `v5-develop` at `7e627f6`.
-Synced through `da990630a` on 2026-10-04, including the Vite frontend and updated
-responsive UI. The upstream quality-rank migration is numbered 236 here to
-preserve the fork's existing migrations 233–235.
+Rebased through `698bb1dbb` on 2026-10-12. The upstream quality-rank migration
+remains numbered 236 here; the upstream import-list tag migration is numbered
+241 to preserve the fork's existing migrations 233–240. Migration 242 preserves
+provider identities in import-list exclusions. See the
+[integration report](docs/integration-2026-10-12.md) and
+[additional gaboy features](docs/gaboy-integration.md).
 
 ---
 

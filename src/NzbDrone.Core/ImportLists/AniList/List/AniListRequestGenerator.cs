@@ -31,7 +31,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             request.HttpRequest.Headers.ContentType = "application/json";
             request.HttpRequest.SetContent(AniListAPI.BuildQuery(AniListQuery.QueryList, new
             {
-                id = Settings.Username,
+                id = Settings.Username.Trim(),
                 statusType = BuildStatusFilter(),
                 page
             }));

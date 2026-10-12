@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using NzbDrone.Common.Cache;
 using NzbDrone.Core.ImportLists;
+using NzbDrone.Core.ImportLists.Exclusions;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Profiles.Qualities;
@@ -20,6 +21,7 @@ public class ImportListPreviewController : Controller
     private readonly IRootFolderService _roots;
     private readonly IQualityProfileService _profiles;
     private readonly ISearchForNewSeries _lookup;
+    private readonly IImportListExclusionService _exclusions;
     private readonly ICached<ListPreview> _cache;
 
     public ImportListPreviewController(IImportListFactory lists,
@@ -28,6 +30,7 @@ public class ImportListPreviewController : Controller
         IRootFolderService roots,
         IQualityProfileService profiles,
         ISearchForNewSeries lookup,
+        IImportListExclusionService exclusions,
         ICacheManager cache)
     {
         _lists = lists;
@@ -36,6 +39,7 @@ public class ImportListPreviewController : Controller
         _roots = roots;
         _profiles = profiles;
         _lookup = lookup;
+        _exclusions = exclusions;
         _cache = cache.GetCache<ListPreview>(GetType());
     }
 
@@ -52,14 +56,25 @@ public class ImportListPreviewController : Controller
         },
         TimeSpan.FromMinutes(10));
         var existing = _series.GetAllSeries();
+        var exclusions = _exclusions.All();
+        var definition = _lists.Get(id);
         return new
         {
             preview.Token, preview.Partial,
-            items = preview.Items.Select((item, index) => new
+            items = preview.Items.Select((item, index) =>
             {
-                key = index, item.Title, item.Year, item.TvdbId, item.TmdbId, item.AniListId, item.MalId, item.ImdbId,
-                alreadyAdded = existing.Any(s => Matches(s, item)),
-                supported = item.TvdbId > 0 || item.TmdbId > 0 || item.AniListId > 0 || item.MalId > 0 || !string.IsNullOrWhiteSpace(item.ImdbId)
+                var source = ImportListIdentity.GetSource(item);
+                var candidate = source.HasValue ? ImportListIdentity.CreateSeries(item, _lookup, definition.Language) : null;
+
+                return new
+                {
+                    key = index, item.Title, item.Year, item.TvdbId, item.TmdbId, item.AniListId, item.MalId, item.ImdbId,
+                    metadataSource = source?.ToString(),
+                    foreignId = candidate?.ForeignId,
+                    alreadyAdded = existing.Any(s => ImportListIdentity.Matches(s, item)),
+                    excluded = candidate != null && exclusions.Any(exclusion => ImportListIdentity.IsExcluded(exclusion, candidate)),
+                    supported = source.HasValue || !string.IsNullOrWhiteSpace(item.ImdbId)
+                };
             }).ToList()
         };
     }
@@ -76,6 +91,12 @@ public class ImportListPreviewController : Controller
     {
         _cache.ClearExpired();
         var preview = _cache.Find(id.ToString(CultureInfo.InvariantCulture));
+
+        if (preview?.Partial == true)
+        {
+            return BadRequest(new { message = "The list preview is incomplete. Refresh it after the provider succeeds before adding shows." });
+        }
+
         var root = _roots.All().FirstOrDefault(r => r.Id == request.RootFolderId);
         if (preview == null || preview.Token != request.Token || root == null || !_profiles.Exists(request.QualityProfileId) ||
             request.Keys == null || request.Keys.Count is < 1 or > 25 || request.Keys.Any(key => key < 0 || key >= preview.Items.Count))
@@ -84,19 +105,28 @@ public class ImportListPreviewController : Controller
         }
 
         var results = new List<object>();
+        var definition = _lists.Get(id);
+        var exclusions = _exclusions.All();
         foreach (var key in request.Keys.Distinct())
         {
             var item = preview.Items[key];
             try
             {
-                var existing = _series.GetAllSeries().FirstOrDefault(s => Matches(s, item));
+                var existing = _series.GetAllSeries().FirstOrDefault(s => ImportListIdentity.Matches(s, item));
                 if (existing != null)
                 {
                     results.Add(new { key, title = item.Title, seriesId = existing.Id, status = "Already added" });
                     continue;
                 }
 
-                var series = CreateSeries(item);
+                var series = ImportListIdentity.CreateSeries(item, _lookup, definition.Language);
+
+                if (exclusions.Any(exclusion => ImportListIdentity.IsExcluded(exclusion, series)))
+                {
+                    results.Add(new { key, title = item.Title, status = "Excluded from import lists" });
+                    continue;
+                }
+
                 series.RootFolderPath = root.Path;
                 series.QualityProfileId = request.QualityProfileId;
                 series.SeasonFolder = true;
@@ -113,48 +143,6 @@ public class ImportListPreviewController : Controller
 
         return Ok(results);
     }
-
-    private NzbDrone.Core.Tv.Series CreateSeries(ImportListItemInfo item)
-    {
-        var series = new NzbDrone.Core.Tv.Series { Title = item.Title };
-        if (item.TmdbId > 0)
-        {
-            series.MetadataSource = MetadataSourceType.Tmdb;
-            series.TmdbId = item.TmdbId;
-            series.ForeignId = item.TmdbId.ToString(CultureInfo.InvariantCulture);
-        }
-        else if (item.AniListId > 0)
-        {
-            series.MetadataSource = MetadataSourceType.AniList;
-            series.AniListIds.Add(item.AniListId);
-            series.ForeignId = item.AniListId.ToString(CultureInfo.InvariantCulture);
-        }
-        else if (item.MalId > 0)
-        {
-            series.MetadataSource = MetadataSourceType.MyAnimeList;
-            series.MalIds.Add(item.MalId);
-            series.ForeignId = item.MalId.ToString(CultureInfo.InvariantCulture);
-        }
-        else if (item.TvdbId > 0)
-        {
-            series.TvdbId = item.TvdbId;
-        }
-        else if (!string.IsNullOrWhiteSpace(item.ImdbId))
-        {
-            series = _lookup.SearchForNewSeriesByImdbId(item.ImdbId).FirstOrDefault() ?? throw new InvalidOperationException("No metadata match for this IMDb ID.");
-        }
-        else
-        {
-            throw new InvalidOperationException("This list item does not supply a supported show ID.");
-        }
-
-        return series;
-    }
-
-    private static bool Matches(NzbDrone.Core.Tv.Series series, ImportListItemInfo item) =>
-        (item.TvdbId > 0 && series.TvdbId == item.TvdbId) || (item.TmdbId > 0 && series.TmdbId == item.TmdbId) ||
-        (item.AniListId > 0 && series.AniListIds.Contains(item.AniListId)) || (item.MalId > 0 && series.MalIds.Contains(item.MalId)) ||
-        (!string.IsNullOrWhiteSpace(item.ImdbId) && series.ImdbId == item.ImdbId);
 }
 
 public class ListPreview

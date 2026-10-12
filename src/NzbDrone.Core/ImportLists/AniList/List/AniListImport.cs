@@ -46,6 +46,37 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             return new AniListParser(Settings);
         }
 
+        protected override bool IsValidItem(ImportListItemInfo listItem)
+        {
+            return listItem.AniListId > 0;
+        }
+
+        protected override IList<ImportListItemInfo> CleanupListItems(IEnumerable<ImportListItemInfo> releases)
+        {
+            var result = releases.DistinctBy(r => r.AniListId).ToList();
+
+            result.ForEach(item =>
+            {
+                item.ImportListId = Definition.Id;
+                item.ImportList = Definition.Name;
+            });
+
+            return result;
+        }
+
+        private static void ValidatePagination(ImportListResponse response, PageInfo pageInfo, int requestedPage)
+        {
+            if (pageInfo.CurrentPage != requestedPage)
+            {
+                throw new ImportListException(response, "AniList returned page {0} when page {1} was requested.", pageInfo.CurrentPage, requestedPage);
+            }
+
+            if (pageInfo.HasNextPage == true && requestedPage >= AniListAPI.MaxPages)
+            {
+                throw new ImportListException(response, "AniList's 5000-entry pagination limit was reached. Narrow the selected list statuses before syncing.");
+            }
+        }
+
         protected override ImportListFetchResult FetchItems(Func<IImportListRequestGenerator, ImportListPageableRequestChain> pageableRequestChainSelector, bool isRecent = false)
         {
             var releases = new List<ImportListItemInfo>();
@@ -71,11 +102,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                     // Fetch and parse the response
                     var response = FetchImportListResponse(currentRequest);
                     var page = parser.ParseResponse(response, out var pageInfo).ToList();
+                    ValidatePagination(response, pageInfo, pageIndex);
                     releases.AddRange(page.Where(IsValidItem));
 
-                    // Update page info
-                    hasNextPage = pageInfo.HasNextPage; // server reports there is another page
-                    pageIndex = pageInfo.CurrentPage + 1; // increment using the returned server index for the current page
+                    hasNextPage = pageInfo.HasNextPage == true;
+                    pageIndex++;
                 }
                 while (hasNextPage);
 
@@ -173,10 +204,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                     var currentRequest = generator.GetRequest(pageIndex);
                     var response = FetchImportListResponse(currentRequest);
                     var page = parser.ParseResponse(response, out var pageInfo).ToList();
+                    ValidatePagination(response, pageInfo, pageIndex);
 
                     // Continue testing additional pages if all results were filtered out by 'Media' filters and there are additional pages
-                    continueTesting = pageInfo.HasNextPage && page.Count == 0;
-                    pageIndex = pageInfo.CurrentPage + 1;
+                    continueTesting = pageInfo.HasNextPage == true && page.Count == 0;
+                    pageIndex++;
                     hasResults = page.Count > 0;
                 }
                 while (continueTesting);
@@ -191,6 +223,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             catch (RequestLimitReachedException)
             {
                 _logger.Warn("Request limit reached");
+                return new ValidationFailure(string.Empty, "AniList request limit reached. Retry the connection test later.");
             }
             catch (UnsupportedFeedException ex)
             {

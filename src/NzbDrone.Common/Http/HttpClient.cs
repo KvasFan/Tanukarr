@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.Cache;
+using NzbDrone.Common.Cloud;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http.Dispatchers;
@@ -144,6 +145,8 @@ namespace NzbDrone.Common.Http
             {
                 request = interceptor.PreRequest(request);
             }
+
+            SonarrCloudRequestPolicy.EnsureAllowed(request);
 
             if (request.RateLimit != TimeSpan.Zero)
             {

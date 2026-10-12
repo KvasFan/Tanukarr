@@ -1,10 +1,13 @@
 import React from 'react';
+import IconButton from 'Components/Link/IconButton';
 import TableRowCell from 'Components/Table/Cells/TableRowCell';
+import { icons } from 'Helpers/Props';
 import {
   QueueTrackedDownloadState,
   QueueTrackedDownloadStatus,
   StatusMessage,
 } from 'typings/Queue';
+import translate from 'Utilities/String/translate';
 import QueueStatus from './QueueStatus';
 import styles from './QueueStatusCell.module.css';
 
@@ -15,6 +18,9 @@ interface QueueStatusCellProps {
   trackedDownloadState?: QueueTrackedDownloadState;
   statusMessages?: StatusMessage[];
   errorMessage?: string;
+  hasImportProgress?: boolean;
+  isImportProgressExpanded?: boolean;
+  onImportProgressExpand?: () => void;
 }
 
 function QueueStatusCell(props: QueueStatusCellProps) {
@@ -25,6 +31,9 @@ function QueueStatusCell(props: QueueStatusCellProps) {
     trackedDownloadState = 'downloading',
     statusMessages,
     errorMessage,
+    hasImportProgress = false,
+    isImportProgressExpanded = false,
+    onImportProgressExpand,
   } = props;
 
   return (
@@ -38,6 +47,18 @@ function QueueStatusCell(props: QueueStatusCellProps) {
         errorMessage={errorMessage}
         position="right"
       />
+      {hasImportProgress ? (
+        <IconButton
+          name={isImportProgressExpanded ? icons.COLLAPSE : icons.EXPAND}
+          title={translate(
+            isImportProgressExpanded ? 'HideEpisodes' : 'ShowEpisodes'
+          )}
+          aria-label={translate(
+            isImportProgressExpanded ? 'HideEpisodes' : 'ShowEpisodes'
+          )}
+          onPress={onImportProgressExpand}
+        />
+      ) : null}
     </TableRowCell>
   );
 }

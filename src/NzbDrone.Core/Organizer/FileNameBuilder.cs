@@ -299,6 +299,12 @@ namespace NzbDrone.Core.Organizer
             }
 
             var title = series.Seasons.FirstOrDefault(s => s.SeasonNumber == seasonNumber)?.Title;
+            var seasonTitle = _proOptions.ForSeries(series.Id)?.SeasonTitles?.GetValueOrDefault(seasonNumber);
+            if (!string.IsNullOrWhiteSpace(seasonTitle))
+            {
+                title = seasonTitle;
+            }
+
             var tokenHandlers = new Dictionary<string, Func<TokenMatch, string>>(FileNameBuilderTokenEqualityComparer.Instance);
 
             AddSeriesTokens(tokenHandlers, series, series.Title);
@@ -307,8 +313,6 @@ namespace NzbDrone.Core.Organizer
             AddSeasonTitleToken(tokenHandlers, title);
 
             var format = seasonNumber == 0 ? namingConfig.SpecialsFolderFormat : namingConfig.SeasonFolderFormat;
-            var seasonTitle = _proOptions.ForSeries(series.Id)?.SeasonTitles?.GetValueOrDefault(seasonNumber);
-            tokenHandlers["{Season Title}"] = _ => !string.IsNullOrWhiteSpace(seasonTitle) ? seasonTitle : series.Seasons?.FirstOrDefault(s => s.SeasonNumber == seasonNumber)?.Title ?? string.Empty;
             if (Regex.IsMatch(format, @"\{season[ ._-]*year", RegexOptions.IgnoreCase))
             {
                 var firstAirDate = _episodes.GetEpisodesBySeason(series.Id, seasonNumber).Where(e => e.AirDateUtc.HasValue).OrderBy(e => e.AirDateUtc).FirstOrDefault()?.AirDateUtc;

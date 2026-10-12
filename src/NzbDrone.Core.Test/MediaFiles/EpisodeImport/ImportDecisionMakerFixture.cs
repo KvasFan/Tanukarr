@@ -5,10 +5,13 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Core.Download;
+using NzbDrone.Core.Download.TrackedDownloads;
+using NzbDrone.Core.History;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.MediaFiles.EpisodeImport.Aggregation;
+using NzbDrone.Core.MediaFiles.EpisodeImport.Specifications;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Profiles.Qualities;
 using NzbDrone.Core.Qualities;
@@ -94,6 +97,106 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
                   {
                       localEpisode.Episodes = _localEpisode.Episodes;
                   });
+        }
+
+        private List<Episode> GetMappedMultiSeasonEpisodes(int? seriesId = null)
+        {
+            return Enumerable.Range(1, 7)
+                .Select(season => new Episode
+                {
+                    Id = (season * 100) + 1,
+                    SeriesId = seriesId ?? _series.Id,
+                    SeasonNumber = season,
+                    EpisodeNumber = 1
+                })
+                .ToList();
+        }
+
+        private List<ImportDecision> GetLegacyMultiSeasonDecisions(ParsedEpisodeInfo trackedEpisodeInfo,
+                                                                   List<Episode> trackedEpisodes,
+                                                                   Series trackedSeries = null,
+                                                                   int[] historicalEpisodeIds = null,
+                                                                   string downloadId = "legacy-multi-season",
+                                                                   string trackedDownloadId = "legacy-multi-season",
+                                                                   bool includeRemoteEpisode = true,
+                                                                   int? overriddenMiddleEpisodeId = null,
+                                                                   bool includeTrackedDownload = true)
+        {
+            const string releaseTitle = "Example.Show.S01-S07.1080p.WEB-DL";
+            var episodes = GetMappedMultiSeasonEpisodes();
+            var videoFiles = episodes
+                .Select(episode => $@"C:\Test\Unsorted\Example.Show.S{episode.SeasonNumber:00}E01.mkv".AsOsAgnostic())
+                .ToList();
+            var grabbedHistories = (historicalEpisodeIds ?? new[] { 101, 701 })
+                .Select(episodeId => new EpisodeHistory
+                {
+                    EpisodeId = episodeId,
+                    EventType = EpisodeHistoryEventType.Grabbed,
+                    SourceTitle = releaseTitle
+                })
+                .ToList();
+            var downloadClientItem = new DownloadClientItem
+            {
+                DownloadId = downloadId,
+                Title = releaseTitle
+            };
+            var trackedDownload = new TrackedDownload
+            {
+                DownloadItem = new DownloadClientItem
+                {
+                    DownloadId = trackedDownloadId,
+                    Title = releaseTitle
+                },
+                RemoteEpisode = includeRemoteEpisode
+                    ? new RemoteEpisode
+                    {
+                        Series = trackedSeries ?? _series,
+                        ParsedEpisodeInfo = trackedEpisodeInfo,
+                        Episodes = trackedEpisodes
+                    }
+                    : null
+            };
+
+            GivenVideoFiles(videoFiles);
+
+            Mocker.GetMock<IAggregationService>()
+                .Setup(s => s.Augment(It.IsAny<LocalEpisode>(), downloadClientItem))
+                .Callback<LocalEpisode, DownloadClientItem>((localEpisode, _) =>
+                {
+                    var episode = episodes.Single(item => item.SeasonNumber == localEpisode.FileEpisodeInfo.SeasonNumber);
+
+                    if (overriddenMiddleEpisodeId.HasValue && localEpisode.FileEpisodeInfo.SeasonNumber == 4)
+                    {
+                        episode = new Episode
+                        {
+                            Id = overriddenMiddleEpisodeId.Value,
+                            SeriesId = _series.Id,
+                            SeasonNumber = 4,
+                            EpisodeNumber = 1
+                        };
+                    }
+
+                    localEpisode.Episodes = new List<Episode>
+                    {
+                        episode
+                    };
+                    localEpisode.Release = new GrabbedReleaseInfo(grabbedHistories);
+                    localEpisode.Quality = _quality;
+                    localEpisode.Languages = new List<Language> { Language.English };
+                });
+
+            Mocker.GetMock<ITrackedDownloadService>()
+                .Setup(s => s.Find(downloadId))
+                .Returns(includeTrackedDownload ? trackedDownload : null);
+
+            Mocker.SetConstant(new IImportDecisionEngineSpecification[]
+            {
+                Mocker.Resolve<MatchesGrabSpecification>()
+            }.AsEnumerable());
+
+            var parsedRelease = Parser.Parser.ParseTitle(releaseTitle);
+
+            return Subject.GetImportDecisions(videoFiles, _series, downloadClientItem, parsedRelease, parsedRelease, false, true);
         }
 
         [Test]
@@ -219,6 +322,179 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
             Subject.GetImportDecisions(_videoFiles, _series).Should().HaveCount(1);
 
             ExceptionVerification.ExpectedErrors(1);
+        }
+
+        [Test]
+        public void should_reconcile_legacy_multi_season_grab_membership_from_tracked_download()
+        {
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes);
+
+            decisions.Should().HaveCount(7);
+            decisions.SelectMany(decision => decision.Rejections)
+                .Should().NotContain(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+            decisions.Should().OnlyContain(decision => decision.Approved);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_for_single_season_release()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_for_individual_episode_release()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01E01.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_for_mismatched_series()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes(2);
+            var trackedSeries = Builder<Series>.CreateNew().With(series => series.Id = 2).Build();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes, trackedSeries);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_without_tracked_episodes()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, new List<Episode>());
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_without_tracked_remote_episode()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, new List<Episode>(), includeRemoteEpisode: false);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_without_tracked_download()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, new List<Episode>(), includeTrackedDownload: false);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_without_successful_tracked_parse()
+        {
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(null, trackedEpisodes);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_when_history_is_not_a_strict_subset()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes, historicalEpisodeIds: new[] { 101, 701, 999 });
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_keep_rejecting_file_episode_absent_from_reconciled_membership()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes, overriddenMiddleEpisodeId: 999);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 4)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_for_non_full_multi_season_release()
+        {
+            var parsedRelease = new ParsedEpisodeInfo
+            {
+                SeasonNumber = 1,
+                SeasonNumbers = [1, 2, 3, 4, 5, 6, 7],
+                FullSeason = false,
+                IsPartialSeason = true
+            };
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_discrete_multi_season_values_as_a_continuous_range()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01.S04.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_without_download_id()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes, downloadId: string.Empty);
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
+        }
+
+        [Test]
+        public void should_not_reconcile_legacy_membership_for_different_tracked_download_id()
+        {
+            var parsedRelease = Parser.Parser.ParseTitle("Example.Show.S01-S07.1080p.WEB-DL");
+            var trackedEpisodes = GetMappedMultiSeasonEpisodes();
+
+            var decisions = GetLegacyMultiSeasonDecisions(parsedRelease, trackedEpisodes, trackedDownloadId: "different-download");
+
+            decisions.Single(decision => decision.LocalEpisode.FileEpisodeInfo.SeasonNumber == 2)
+                .Rejections.Should().ContainSingle(rejection => rejection.Reason == ImportRejectionReason.EpisodeNotFoundInRelease);
         }
     }
 }

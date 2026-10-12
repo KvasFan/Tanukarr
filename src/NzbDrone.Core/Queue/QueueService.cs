@@ -5,6 +5,7 @@ using NzbDrone.Common.Crypto;
 using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles;
+using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Tv;
@@ -18,29 +19,43 @@ namespace NzbDrone.Core.Queue
         void Remove(int id);
     }
 
-    public class QueueService : IQueueService, IHandle<TrackedDownloadRefreshedEvent>
+    public class QueueService : IQueueService,
+                                IHandle<TrackedDownloadRefreshedEvent>,
+                                IHandle<ImportProgressUpdatedEvent>
     {
         private readonly IEventAggregator _eventAggregator;
+        private readonly IImportProgressService _importProgressService;
+        private static readonly object QueueLock = new();
         private static List<Queue> _queue = new();
 
-        public QueueService(IEventAggregator eventAggregator)
+        public QueueService(IEventAggregator eventAggregator, IImportProgressService importProgressService)
         {
             _eventAggregator = eventAggregator;
+            _importProgressService = importProgressService;
         }
 
         public List<Queue> GetQueue()
         {
-            return _queue;
+            lock (QueueLock)
+            {
+                return _queue.ToList();
+            }
         }
 
         public Queue Find(int id)
         {
-            return _queue.SingleOrDefault(q => q.Id == id);
+            lock (QueueLock)
+            {
+                return _queue.SingleOrDefault(q => q.Id == id);
+            }
         }
 
         public void Remove(int id)
         {
-            _queue.Remove(Find(id));
+            lock (QueueLock)
+            {
+                _queue.Remove(_queue.SingleOrDefault(q => q.Id == id));
+            }
         }
 
         private IEnumerable<Queue> MapQueue(TrackedDownload trackedDownload)
@@ -77,10 +92,12 @@ namespace NzbDrone.Core.Queue
                 DownloadId = trackedDownload.DownloadItem.DownloadId,
                 Protocol = trackedDownload.Protocol,
                 DownloadClient = trackedDownload.DownloadItem.DownloadClientInfo.Name,
+                DownloadClientId = trackedDownload.DownloadItem.DownloadClientInfo.Id,
                 Indexer = trackedDownload.Indexer,
                 OutputPath = trackedDownload.DownloadItem.OutputPath.ToString(),
                 Added = trackedDownload.Added,
-                DownloadClientHasPostImportCategory = trackedDownload.DownloadItem.DownloadClientInfo.HasPostImportCategory
+                DownloadClientHasPostImportCategory = trackedDownload.DownloadItem.DownloadClientInfo.HasPostImportCategory,
+                ImportProgress = _importProgressService.GetProgress(trackedDownload.DownloadItem.DownloadClientInfo.Id, trackedDownload.DownloadItem.DownloadId)
             };
 
             queue.Id = HashConverter.GetHashInt31($"trackedDownload-{trackedDownload.DownloadClient}-{trackedDownload.DownloadItem.DownloadId}");
@@ -95,13 +112,44 @@ namespace NzbDrone.Core.Queue
 
         public void Handle(TrackedDownloadRefreshedEvent message)
         {
-            _queue = message.TrackedDownloads
-                .Where(t => t.IsTrackable)
+            var trackableDownloads = message.TrackedDownloads.Where(t => t.IsTrackable).ToList();
+            _importProgressService.Prune(trackableDownloads.Select(t => new ImportProgressKey(t.DownloadItem.DownloadClientInfo.Id, t.DownloadItem.DownloadId)));
+
+            var queue = trackableDownloads
                 .OrderBy(c => c.DownloadItem.RemainingTime)
                 .SelectMany(MapQueue)
                 .ToList();
 
+            lock (QueueLock)
+            {
+                _queue = queue;
+            }
+
             _eventAggregator.PublishEvent(new QueueUpdatedEvent());
+        }
+
+        public void Handle(ImportProgressUpdatedEvent message)
+        {
+            var updated = false;
+
+            lock (QueueLock)
+            {
+                var queueItem = _queue.SingleOrDefault(q =>
+                    q.DownloadClientId == message.Key.DownloadClientId &&
+                    string.Equals(q.DownloadId, message.Key.DownloadId, StringComparison.OrdinalIgnoreCase));
+
+                if (queueItem != null)
+                {
+                    var progress = _importProgressService.GetProgress(message.Key.DownloadClientId, message.Key.DownloadId);
+                    _queue = _queue.Select(q => q.Id == queueItem.Id ? q.WithImportProgress(progress) : q).ToList();
+                    updated = true;
+                }
+            }
+
+            if (updated)
+            {
+                _eventAggregator.PublishEvent(new QueueUpdatedEvent());
+            }
         }
     }
 }

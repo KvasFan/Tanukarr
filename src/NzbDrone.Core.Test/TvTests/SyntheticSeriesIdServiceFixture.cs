@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Core.Test.Framework;
@@ -64,6 +67,61 @@ namespace NzbDrone.Core.Test.TvTests
             GivenExistingTvdbIds(0, 73255);
 
             Subject.AllocateTvdbId().Should().Be(-1);
+        }
+
+        [Test]
+        public void should_reserve_distinct_ids_before_the_library_is_updated()
+        {
+            GivenExistingTvdbIds();
+
+            var allocated = new[] { Subject.AllocateTvdbId(), Subject.AllocateTvdbId(), Subject.AllocateTvdbId() };
+
+            allocated.Should().Equal(-1, -2, -3);
+        }
+
+        [Test]
+        public void should_allocate_unique_ids_for_parallel_additions()
+        {
+            GivenExistingTvdbIds();
+            var subject = Subject;
+            var allocated = new int[100];
+
+            Parallel.For(0, allocated.Length, index => allocated[index] = subject.AllocateTvdbId());
+
+            allocated.Should().OnlyHaveUniqueItems();
+            allocated.Should().BeEquivalentTo(Enumerable.Range(1, 100).Select(id => -id));
+        }
+
+        [Test]
+        public void should_follow_a_lower_database_id_without_reusing_its_reservations()
+        {
+            GivenExistingTvdbIds(-1);
+            Subject.AllocateTvdbId().Should().Be(-2);
+
+            GivenExistingTvdbIds(-20);
+            Subject.AllocateTvdbId().Should().Be(-21);
+
+            GivenExistingTvdbIds(-3);
+            Subject.AllocateTvdbId().Should().Be(-22);
+        }
+
+        [Test]
+        public void should_keep_reserved_ids_when_the_library_becomes_empty()
+        {
+            GivenExistingTvdbIds(-1);
+            Subject.AllocateTvdbId().Should().Be(-2);
+
+            GivenExistingTvdbIds();
+
+            Subject.AllocateTvdbId().Should().Be(-3);
+        }
+
+        [Test]
+        public void should_fail_when_the_negative_id_range_is_exhausted()
+        {
+            GivenExistingTvdbIds(int.MinValue);
+
+            Assert.Throws<OverflowException>(() => Subject.AllocateTvdbId());
         }
     }
 }

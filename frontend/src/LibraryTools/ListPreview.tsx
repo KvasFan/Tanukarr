@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Button from 'Components/Link/Button';
 import useApiMutation from 'Helpers/Hooks/useApiMutation';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import useRootFolders from 'RootFolder/useRootFolders';
 import { useImportLists } from 'Settings/ImportLists/ImportLists/useImportLists';
+import getErrorMessage from 'Utilities/Object/getErrorMessage';
 import styles from './LibraryTools.module.css';
 
 interface PreviewItem {
@@ -12,12 +13,46 @@ interface PreviewItem {
   title: string;
   year: number;
   alreadyAdded: boolean;
+  excluded: boolean;
   supported: boolean;
+  metadataSource: string | null;
+  foreignId: string | null;
 }
 interface Preview {
   token: string;
   partial: boolean;
   items: PreviewItem[];
+}
+
+function getMetadataProviderName(source: string) {
+  switch (source.toLowerCase()) {
+    case 'tvdb':
+      return 'TheTVDB';
+    case 'tmdb':
+      return 'TMDB';
+    case 'anilist':
+      return 'AniList';
+    case 'myanimelist':
+      return 'MyAnimeList';
+    default:
+      return source;
+  }
+}
+
+function getPreviewItemStatus(item: PreviewItem) {
+  if (item.alreadyAdded) {
+    return 'Already in your library';
+  }
+
+  if (item.excluded) {
+    return 'Excluded from import lists';
+  }
+
+  if (!item.supported) {
+    return 'No supported show ID; add through Search instead';
+  }
+
+  return '';
 }
 
 export default function ListPreview() {
@@ -33,20 +68,26 @@ export default function ListPreview() {
     path: '/qualityprofile',
   });
   const [listId, setListId] = useState(0);
-  const [selected, setSelected] = useState<number[]>([]);
+  const [selection, setSelection] = useState({
+    token: '',
+    keys: [] as number[],
+  });
   const [folderId, setFolderId] = useState(0);
   const [profileId, setProfileId] = useState(0);
   const [monitored, setMonitored] = useState(false);
   const preview = useApiQuery<Preview>({
     path: `/librarytools/lists/${listId}`,
-    queryOptions: { enabled: listId > 0 },
+    queryOptions: {
+      enabled: listId > 0,
+      refetchOnWindowFocus: false,
+    },
   });
   const refresh = useApiMutation<void, undefined>({
     path: `/librarytools/lists/${listId}/preview`,
     method: 'DELETE',
     mutationOptions: {
       onSuccess: () => {
-        setSelected([]);
+        setSelection({ token: '', keys: [] });
         preview.refetch();
       },
     },
@@ -69,7 +110,7 @@ export default function ListPreview() {
     method: 'POST',
     mutationOptions: {
       onSuccess: () => {
-        setSelected([]);
+        setSelection({ token: '', keys: [] });
         preview.refetch();
         client.invalidateQueries({ queryKey: ['/series'] });
       },
@@ -87,30 +128,75 @@ export default function ListPreview() {
     0;
   const qualityProfileId =
     profileId || list?.qualityProfileId || profiles.data?.[0]?.id || 0;
+  const selected = useMemo(
+    () =>
+      selection.token === preview.data?.token
+        ? selection.keys.filter((key) =>
+            preview.data?.items.some(
+              (item) =>
+                item.key === key &&
+                item.supported &&
+                !item.alreadyAdded &&
+                !item.excluded
+            )
+          )
+        : [],
+    [preview.data, selection]
+  );
+  const isBusy = preview.isFetching || refresh.isPending || add.isPending;
   const error =
     preview.error ??
     add.error ??
     refresh.error ??
     profiles.error ??
-    lists.error;
+    lists.error ??
+    roots.error;
   const handleSelection = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) =>
-      setSelected(
-        event.currentTarget.checked
-          ? [...selected, Number(event.currentTarget.value)]
-          : selected.filter((key) => key !== Number(event.currentTarget.value))
-      ),
-    [selected, setSelected]
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!preview.data || preview.data.partial || isBusy) {
+        return;
+      }
+
+      const currentPreview = preview.data;
+      const token = currentPreview.token;
+      const key = Number(event.currentTarget.value);
+      const isChecked = event.currentTarget.checked;
+
+      setSelection((previous) => {
+        const keys =
+          previous.token === token
+            ? previous.keys.filter((selectedKey) =>
+                currentPreview.items.some(
+                  (item) =>
+                    item.key === selectedKey &&
+                    item.supported &&
+                    !item.alreadyAdded &&
+                    !item.excluded
+                )
+              )
+            : [];
+
+        return {
+          token,
+          keys: isChecked
+            ? Array.from(new Set([...keys, key])).slice(0, 25)
+            : keys.filter((selectedKey) => selectedKey !== key),
+        };
+      });
+    },
+    [isBusy, preview.data]
   );
   const handleChange1 = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
       setListId(Number(event.target.value));
-      setSelected([]);
+      setSelection({ token: '', keys: [] });
       setFolderId(0);
       setProfileId(0);
+      setMonitored(false);
       add.reset();
+      refresh.reset();
     },
-    [add, setFolderId, setListId, setProfileId, setSelected]
+    [add, refresh]
   );
   const handlePress2 = useCallback(() => refresh.mutate(undefined), [refresh]);
   const handleChange3 = useCallback(
@@ -128,18 +214,34 @@ export default function ListPreview() {
       setMonitored(event.target.checked),
     [setMonitored]
   );
-  const handlePress7 = useCallback(
-    () =>
-      preview.data &&
-      add.mutate({
-        token: preview.data.token,
-        keys: selected,
-        rootFolderId,
-        qualityProfileId,
-        monitored,
-      }),
-    [add, monitored, preview, qualityProfileId, rootFolderId, selected]
-  );
+  const handlePress7 = useCallback(() => {
+    if (
+      !preview.data ||
+      preview.data.partial ||
+      isBusy ||
+      !selected.length ||
+      !rootFolderId ||
+      !qualityProfileId
+    ) {
+      return;
+    }
+
+    add.mutate({
+      token: preview.data.token,
+      keys: selected,
+      rootFolderId,
+      qualityProfileId,
+      monitored,
+    });
+  }, [
+    add,
+    isBusy,
+    monitored,
+    preview.data,
+    qualityProfileId,
+    rootFolderId,
+    selected,
+  ]);
   return (
     <section>
       <h2>Preview import lists</h2>
@@ -148,18 +250,22 @@ export default function ListPreview() {
         lets you use it here. Preview and adding selected shows do not start
         downloads.
       </p>
+      <p>
+        Import lists choose which shows to add. The metadata provider shown for
+        each show supplies its series and episode information.
+      </p>
       <label className={styles.form}>
         List
         <select
           value={listId}
-          disabled={add.isPending}
+          disabled={refresh.isPending || add.isPending}
           onChange={handleChange1}
         >
           <option value={0}>Choose a list</option>
           {lists.data.map((item) => {
             return (
               <option key={item.id} value={item.id}>
-                {item.name}
+                {item.name} ({item.implementationName})
               </option>
             );
           })}
@@ -173,20 +279,31 @@ export default function ListPreview() {
           Refresh preview
         </Button>
       ) : null}
-      {error ? <p role="alert">{error.message}</p> : null}
+      {list ? <p>Import source: {list.implementationName}</p> : null}
+      {error ? (
+        <p role="alert">{getErrorMessage(error, error.message)}</p>
+      ) : null}
       {preview.isFetching ? <p role="status">Loading list…</p> : null}
       {preview.data ? (
         <>
           {preview.data.partial ? (
             <p role="alert">
-              The provider returned a partial list or an error. These entries
-              can still be reviewed; test the list in Settings to check access.
+              The list provider returned incomplete results or an error. Review
+              these entries, test the list in Settings, then refresh the
+              preview. Adding is available after a complete preview succeeds.
             </p>
+          ) : null}
+          {!preview.data.partial && preview.data.items.length === 0 ? (
+            <p role="status">No shows found in this list.</p>
           ) : null}
           <div className={styles.form}>
             <label>
               Library folder
-              <select value={rootFolderId} onChange={handleChange3}>
+              <select
+                value={rootFolderId}
+                disabled={add.isPending}
+                onChange={handleChange3}
+              >
                 {roots.data.map((root) => {
                   return (
                     <option key={root.id} value={root.id}>
@@ -198,7 +315,11 @@ export default function ListPreview() {
             </label>
             <label>
               Quality profile
-              <select value={qualityProfileId} onChange={handleChange4}>
+              <select
+                value={qualityProfileId}
+                disabled={add.isPending}
+                onChange={handleChange4}
+              >
                 {profiles.data?.map((profile) => {
                   return (
                     <option key={profile.id} value={profile.id}>
@@ -213,6 +334,7 @@ export default function ListPreview() {
             <input
               type="checkbox"
               checked={monitored}
+              disabled={add.isPending}
               onChange={handleChange5}
             />
             <span>Monitor added shows for future releases</span>
@@ -225,8 +347,10 @@ export default function ListPreview() {
                     type="checkbox"
                     checked={selected.includes(item.key)}
                     disabled={
-                      add.isPending ||
+                      isBusy ||
+                      preview.data.partial ||
                       item.alreadyAdded ||
+                      item.excluded ||
                       !item.supported ||
                       (!selected.includes(item.key) && selected.length >= 25)
                     }
@@ -236,12 +360,13 @@ export default function ListPreview() {
                   <span>
                     {item.title}
                     {item.year ? ` (${item.year})` : ''}
-                    <small>
-                      {item.alreadyAdded ? 'Already in your library' : ''}
-                      {item.supported
-                        ? ''
-                        : 'No supported show ID; add through Search instead'}
-                    </small>
+                    <small>{getPreviewItemStatus(item)}</small>
+                    {item.metadataSource ? (
+                      <small>
+                        Metadata: {getMetadataProviderName(item.metadataSource)}
+                        {item.foreignId ? ` · ID ${item.foreignId}` : ''}
+                      </small>
+                    ) : null}
                   </span>
                 </label>
               );
@@ -252,7 +377,8 @@ export default function ListPreview() {
             <Button
               isDisabled={
                 selected.length === 0 ||
-                add.isPending ||
+                isBusy ||
+                preview.data.partial ||
                 !rootFolderId ||
                 !qualityProfileId
               }

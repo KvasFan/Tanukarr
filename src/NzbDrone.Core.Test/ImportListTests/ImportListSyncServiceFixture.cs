@@ -105,7 +105,7 @@ namespace NzbDrone.Core.Test.ImportListTests
 
             Mocker.GetMock<ISeriesService>()
                 .Setup(v => v.GetAllSeries())
-                .Returns(_existingSeries);
+                .Returns(new List<Series>());
 
             Mocker.GetMock<ISearchForNewSeries>()
                   .Setup(v => v.SearchForNewSeries(It.IsAny<string>(), It.IsAny<Language>()))
@@ -168,8 +168,8 @@ namespace NzbDrone.Core.Test.ImportListTests
         private void WithExistingSeries()
         {
             Mocker.GetMock<ISeriesService>()
-                  .Setup(v => v.AllSeriesTvdbIds())
-                  .Returns(new Dictionary<int, int> { { 1, _list1Series.First().TvdbId } });
+                  .Setup(v => v.GetAllSeries())
+                  .Returns(new List<Series> { new Series { Id = 1, TvdbId = _list1Series.First().TvdbId } });
         }
 
         private void WithExcludedSeries()
@@ -223,6 +223,10 @@ namespace NzbDrone.Core.Test.ImportListTests
         private void WithExistingSeriesTagged(int tagId)
         {
             _existingSeries.ForEach(s => s.Tags = new HashSet<int> { tagId });
+
+            Mocker.GetMock<ISeriesService>()
+                  .Setup(service => service.GetAllSeries())
+                  .Returns(_existingSeries);
         }
 
         private void VerifyRemovedTag(int tagId, params int[] tvdbIds)
@@ -239,6 +243,13 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         private void WithCleanLevel(ListSyncLevelType cleanLevel, int? tagId = null)
         {
+            if (cleanLevel != ListSyncLevelType.Disabled)
+            {
+                Mocker.GetMock<ISeriesService>()
+                      .Setup(service => service.GetAllSeries())
+                      .Returns(_existingSeries);
+            }
+
             Mocker.GetMock<IConfigService>()
                   .SetupGet(v => v.ListSyncLevel)
                   .Returns(cleanLevel);
@@ -298,9 +309,6 @@ namespace NzbDrone.Core.Test.ImportListTests
             Subject.Execute(_commandAll);
 
             Mocker.GetMock<ISeriesService>()
-                  .Verify(v => v.GetAllSeries(), Times.Never());
-
-            Mocker.GetMock<ISeriesService>()
                   .Verify(v => v.UpdateSeries(It.IsAny<List<Series>>(), false), Times.Never());
         }
 
@@ -314,9 +322,6 @@ namespace NzbDrone.Core.Test.ImportListTests
             Subject.Execute(_commandAll);
 
             Mocker.GetMock<ISeriesService>()
-                  .Verify(v => v.GetAllSeries(), Times.Never());
-
-            Mocker.GetMock<ISeriesService>()
                   .Verify(v => v.UpdateSeries(new List<Series>(), false), Times.Never());
         }
 
@@ -328,9 +333,6 @@ namespace NzbDrone.Core.Test.ImportListTests
             WithCleanLevel(ListSyncLevelType.LogOnly);
 
             Subject.Execute(_commandAll);
-
-            Mocker.GetMock<ISeriesService>()
-                  .Verify(v => v.GetAllSeries(), Times.Once());
 
             Mocker.GetMock<ISeriesService>()
                   .Verify(v => v.DeleteSeries(It.IsAny<List<int>>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never());
@@ -348,9 +350,6 @@ namespace NzbDrone.Core.Test.ImportListTests
             var monitored = _existingSeries.Count(x => x.Monitored);
 
             Subject.Execute(_commandAll);
-
-            Mocker.GetMock<ISeriesService>()
-                  .Verify(v => v.GetAllSeries(), Times.Once());
 
             Mocker.GetMock<ISeriesService>()
                   .Verify(v => v.DeleteSeries(It.IsAny<List<int>>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never());
@@ -463,9 +462,6 @@ namespace NzbDrone.Core.Test.ImportListTests
 
             Subject.Execute(_commandAll);
 
-            Mocker.GetMock<ISeriesService>()
-                  .Verify(v => v.GetAllSeries(), Times.Once());
-
             VerifyDidAddTag(_existingSeries.Count, 1);
         }
 
@@ -477,9 +473,6 @@ namespace NzbDrone.Core.Test.ImportListTests
             WithCleanLevel(ListSyncLevelType.LogOnly);
 
             Subject.Execute(_commandAll);
-
-            Mocker.GetMock<ISeriesService>()
-                  .Verify(v => v.GetAllSeries(), Times.Never());
 
             Mocker.GetMock<ISeriesService>()
                   .Verify(v => v.UpdateSeries(It.IsAny<List<Series>>(), It.IsAny<bool>()), Times.Never());
@@ -678,8 +671,8 @@ namespace NzbDrone.Core.Test.ImportListTests
             _importListFetch.Series.ForEach(m => m.ImportListId = 1);
 
             Mocker.GetMock<ISeriesService>()
-                  .Setup(v => v.AllSeriesTvdbIds())
-                  .Returns(new Dictionary<int, int> { { 5, 81189 } });
+                  .Setup(v => v.GetAllSeries())
+                  .Returns(new List<Series> { new Series { Id = 5, TvdbId = 81189 } });
 
             Subject.Execute(_commandAll);
 
@@ -701,8 +694,8 @@ namespace NzbDrone.Core.Test.ImportListTests
             var existing = new Series { Id = 5, TvdbId = 81189 };
 
             Mocker.GetMock<ISeriesService>()
-                  .Setup(v => v.AllSeriesTvdbIds())
-                  .Returns(new Dictionary<int, int> { { 5, 81189 } });
+                  .Setup(v => v.GetAllSeries())
+                  .Returns(new List<Series> { new Series { Id = 5, TvdbId = 81189 } });
 
             Mocker.GetMock<ISeriesService>()
                   .Setup(v => v.GetSeries(It.IsAny<IEnumerable<int>>()))
@@ -785,6 +778,97 @@ namespace NzbDrone.Core.Test.ImportListTests
             Subject.Execute(_commandAll);
 
             VerifyNoTagsRemoved();
+        }
+
+        [Test]
+        public void should_add_distinct_anilist_entries_without_mapping_them_to_tvdb()
+        {
+            WithList(1, true);
+            _importListFetch.Series = new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { ImportListId = 1, AniListId = 1, Title = "Same title" },
+                new ImportListItemInfo { ImportListId = 1, AniListId = 9253, Title = "Same title" }
+            };
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>()
+                  .Verify(service => service.AddSeries(It.Is<List<Series>>(items => items.Count == 2 &&
+                      items.All(series => series.MetadataSource == MetadataSourceType.AniList && series.TvdbId == 0 && series.SeriesType == SeriesTypes.Anime) &&
+                      items.Select(series => series.ForeignId).SequenceEqual(new[] { "1", "9253" })),
+                      true),
+                      Times.Once());
+            Mocker.GetMock<ISearchForNewSeries>()
+                  .Verify(service => service.SearchForNewSeriesByAniListId(It.IsAny<int>(), It.IsAny<Language>()), Times.Never());
+        }
+
+        [Test]
+        public void should_combine_tags_when_the_same_anilist_entry_is_on_two_lists()
+        {
+            WithList(1, true);
+            WithList(2, true);
+            ((ImportListDefinition)_importLists[0].Definition).Tags.Add(10);
+            ((ImportListDefinition)_importLists[1].Definition).Tags.Add(20);
+            _importListFetch.Series = new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { ImportListId = 1, AniListId = 21 },
+                new ImportListItemInfo { ImportListId = 2, AniListId = 21 }
+            };
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>()
+                  .Verify(service => service.AddSeries(It.Is<List<Series>>(items => items.Count == 1 && items[0].Tags.SetEquals(new[] { 10, 20 })), true), Times.Once());
+            Assert.That(((ImportListDefinition)_importLists[0].Definition).Tags, Is.EquivalentTo(new[] { 10 }));
+        }
+
+        [Test]
+        public void should_tag_an_existing_native_anilist_series_without_adding_it_again()
+        {
+            WithList(1, true);
+            WithTagExisting(TagExistingType.Add, 10);
+            var existing = new Series { Id = 5, TvdbId = -7, MetadataSource = MetadataSourceType.AniList, ForeignId = "21" };
+            _importListFetch.Series = new List<ImportListItemInfo> { new ImportListItemInfo { ImportListId = 1, AniListId = 21 } };
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetAllSeries()).Returns(new List<Series> { existing });
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetSeries(It.IsAny<IEnumerable<int>>())).Returns(new List<Series> { existing });
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(items => items.Count == 0), true), Times.Once());
+            Mocker.GetMock<ISeriesService>().Verify(service => service.UpdateTags(It.Is<List<Series>>(items => items.Count == 1 && items[0].Tags.Contains(10))), Times.Once());
+        }
+
+        [Test]
+        public void should_honor_an_exclusion_for_a_deleted_native_anilist_entry()
+        {
+            WithList(1, true);
+            _importListFetch.Series = new List<ImportListItemInfo> { new ImportListItemInfo { ImportListId = 1, AniListId = 21 } };
+            Mocker.GetMock<IImportListExclusionService>().Setup(service => service.All()).Returns(new List<ImportListExclusion>
+            {
+                new ImportListExclusion { TvdbId = -7, MetadataSource = MetadataSourceType.AniList, ForeignId = "21" }
+            });
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(items => items.Count == 0), true), Times.Once());
+        }
+
+        [Test]
+        public void should_unmonitor_a_native_series_missing_from_lists_with_zero_tvdb_and_tmdb_ids()
+        {
+            WithList(1, true);
+            WithCleanLevel(ListSyncLevelType.KeepAndUnmonitor);
+            _importListFetch.Series.ForEach(item => item.ImportListId = 1);
+            var missing = new Series { Id = 5, TvdbId = -7, MetadataSource = MetadataSourceType.AniList, ForeignId = "21", Monitored = true };
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetAllSeries()).Returns(new List<Series> { missing });
+            Mocker.GetMock<IImportListItemService>().Setup(service => service.All()).Returns(new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { ImportListId = 1, AniListId = 9253 }
+            });
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<ISeriesService>().Verify(service => service.UpdateSeries(It.Is<List<Series>>(items => items.Count == 1 && items[0].Id == 5 && !items[0].Monitored), false), Times.Once());
         }
     }
 }

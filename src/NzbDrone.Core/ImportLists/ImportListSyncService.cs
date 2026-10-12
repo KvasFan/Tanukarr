@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NLog;
@@ -137,7 +138,7 @@ namespace NzbDrone.Core.ImportLists
             var listExclusions = _importListExclusionService.All();
             var importLists = _importListFactory.All();
 
-            var existingSeriesIds = _seriesService.AllSeriesTvdbIds();
+            var existingSeries = _seriesService.GetAllSeries();
 
             var existingSeriesToUpdate = new Dictionary<int, HashSet<int>>();
 
@@ -154,132 +155,60 @@ namespace NzbDrone.Core.ImportLists
                     continue;
                 }
 
-                // Map by IMDb ID if we have it
-                if (item.TvdbId <= 0 && item.ImdbId.IsNotNullOrWhiteSpace())
-                {
-                    var mappedSeries = _seriesSearchService.SearchForNewSeriesByImdbId(item.ImdbId, importList.Language)
-                        .FirstOrDefault();
+                var existing = existingSeries.FirstOrDefault(s => ImportListIdentity.Matches(s, item));
+                Series candidate;
 
-                    if (mappedSeries != null)
-                    {
-                        item.TvdbId = mappedSeries.TvdbId;
-                        item.Title = mappedSeries?.Title;
-                    }
+                try
+                {
+                    candidate = existing ?? ImportListIdentity.CreateSeries(item, _seriesSearchService, importList.Language);
                 }
-
-                // Map by TMDb ID if we have it
-                if (item.TvdbId <= 0 && item.TmdbId > 0)
+                catch (InvalidOperationException ex)
                 {
-                    var mappedSeries = _seriesSearchService.SearchForNewSeriesByTmdbId(item.TmdbId, importList.Language)
-                        .FirstOrDefault();
-
-                    if (mappedSeries != null)
-                    {
-                        item.TvdbId = mappedSeries.TvdbId;
-                        item.Title = mappedSeries?.Title;
-                    }
-                }
-
-                // Map by AniList ID if we have it
-                if (item.TvdbId <= 0 && item.AniListId > 0)
-                {
-                    var mappedSeries = _seriesSearchService.SearchForNewSeriesByAniListId(item.AniListId, importList.Language)
-                        .FirstOrDefault();
-
-                    if (mappedSeries == null)
-                    {
-                        _logger.Debug("Rejected, unable to find matching TVDB ID for Anilist ID: {0} [{1}]", item.AniListId, item.Title);
-
-                        continue;
-                    }
-
-                    item.TvdbId = mappedSeries.TvdbId;
-                    item.Title = mappedSeries.Title;
-                }
-
-                // Map by MyAniList ID if we have it
-                if (item.TvdbId <= 0 && item.MalId > 0)
-                {
-                    var mappedSeries = _seriesSearchService.SearchForNewSeriesByMyAnimeListId(item.MalId, importList.Language)
-                        .FirstOrDefault();
-
-                    if (mappedSeries == null)
-                    {
-                        _logger.Debug("Rejected, unable to find matching TVDB ID for MAL ID: {0} [{1}]", item.MalId, item.Title);
-
-                        continue;
-                    }
-
-                    item.TvdbId = mappedSeries.TvdbId;
-                    item.Title = mappedSeries.Title;
-                }
-
-                if (item.TvdbId == 0)
-                {
-                    _logger.Debug("[{0}] Rejected, unable to find TVDB ID", item.Title);
+                    _logger.Debug("[{0}] Rejected: {1}", item.Title, ex.Message);
                     continue;
                 }
 
-                // Check to see if series excluded
-                var excludedSeries = listExclusions.SingleOrDefault(s => s.TvdbId == item.TvdbId);
+                existing ??= existingSeries.FirstOrDefault(s => SameSeries(s, candidate));
 
-                if (excludedSeries != null)
+                if (listExclusions.Any(exclusion => ImportListIdentity.IsExcluded(exclusion, candidate)))
                 {
-                    _logger.Debug("{0} [{1}] Rejected due to list exclusion", item.TvdbId, item.Title);
+                    _logger.Debug("{0} [{1}] Rejected due to list exclusion", candidate.ForeignId, item.Title);
                     continue;
                 }
 
-                // Break if Series Exists in DB, if it exists, update the tags with the tags in the import list and move to the next item
-                var existingSeriesId = existingSeriesIds.FirstOrDefault(x => x.Value == item.TvdbId).Key;
-
-                if (existingSeriesId > 0)
+                if (existing != null)
                 {
-                    QueueTagsOnPendingSeries(importList, existingSeriesToUpdate, existingSeriesId);
-
-                    _logger.Debug("{0} [{1}] Rejected, series exists in database", item.TvdbId, item.Title);
+                    QueueTagsOnPendingSeries(importList, existingSeriesToUpdate, existing.Id);
+                    _logger.Debug("{0} [{1}] Rejected, series exists in database", candidate.ForeignId, item.Title);
                     continue;
                 }
 
-                // search the existing seriesToAdd queue to see if we already have the series queued to insert
-                var pendingSeries = seriesToAdd.FirstOrDefault(s => s.TvdbId == item.TvdbId);
+                var pendingSeries = seriesToAdd.FirstOrDefault(s => ImportListIdentity.Matches(s, item) || SameSeries(s, candidate));
 
-                // Append Series if not already in DB or already on add list
                 if (pendingSeries == null)
                 {
-                    // Add the series to `seriesToAdd`
-                    var monitored = importList.ShouldMonitor != MonitorTypes.None;
-
-                    seriesToAdd.Add(new Series
+                    candidate.Monitored = importList.ShouldMonitor != MonitorTypes.None;
+                    candidate.MonitorNewItems = importList.MonitorNewItems;
+                    candidate.RootFolderPath = importList.RootFolderPath;
+                    candidate.QualityProfileId = importList.QualityProfileId;
+                    candidate.SeriesType = candidate.MetadataSource is MetadataSourceType.AniList or MetadataSourceType.MyAnimeList
+                        ? SeriesTypes.Anime
+                        : importList.SeriesType;
+                    candidate.SeasonType = SeasonType.Official;
+                    candidate.Language = importList.Language;
+                    candidate.SeasonFolder = importList.SeasonFolder;
+                    candidate.Seasons = item.Seasons;
+                    candidate.Tags = new HashSet<int>(importList.Tags);
+                    candidate.AddOptions = new AddSeriesOptions
                     {
-                        TvdbId = item.TvdbId,
-                        Title = item.Title,
-                        Year = item.Year,
-                        Monitored = monitored,
-                        MonitorNewItems = importList.MonitorNewItems,
-                        RootFolderPath = importList.RootFolderPath,
-                        QualityProfileId = importList.QualityProfileId,
-                        SeriesType = importList.SeriesType,
-                        SeasonType = SeasonType.Official,
-                        Language = importList.Language,
-                        SeasonFolder = importList.SeasonFolder,
-                        Seasons = item.Seasons,
-                        Tags = importList.Tags,
-                        AddOptions = new AddSeriesOptions
-                        {
-                            SearchForMissingEpisodes = importList.SearchForMissingEpisodes,
-
-                            // If seasons are provided use them for syncing monitored status, otherwise use the list setting.
-                            Monitor = item.Seasons.Any() ? MonitorTypes.Skip : importList.ShouldMonitor
-                        }
-                    });
+                        SearchForMissingEpisodes = importList.SearchForMissingEpisodes,
+                        Monitor = item.Seasons.Any() ? MonitorTypes.Skip : importList.ShouldMonitor
+                    };
+                    seriesToAdd.Add(candidate);
                 }
                 else
                 {
-                    // Add the tags for the current import list to the existing queued series.
-                    foreach (var tag in importList.Tags)
-                    {
-                        pendingSeries.Tags.Add(tag);
-                    }
+                    pendingSeries.Tags.UnionWith(importList.Tags);
                 }
             }
 
@@ -287,6 +216,12 @@ namespace NzbDrone.Core.ImportLists
             UpdateTagsOnPendingSeries(existingSeriesToUpdate);
 
             _logger.ProgressInfo("Import List Sync Completed. Items found: {0}, Series added: {1}", items.Count, seriesToAdd.Count);
+        }
+
+        private static bool SameSeries(Series first, Series second)
+        {
+            return (first.TvdbId > 0 && second.TvdbId > 0 && first.TvdbId == second.TvdbId) ||
+                   (first.MetadataSource == second.MetadataSource && first.ForeignId.IsNotNullOrWhiteSpace() && first.ForeignId == second.ForeignId);
         }
 
         private void QueueTagsOnPendingSeries(ImportListDefinition importList, Dictionary<int, HashSet<int>> existingSeriesToUpdate, int existingSeriesId)
@@ -409,12 +344,7 @@ namespace NzbDrone.Core.ImportLists
 
         private static bool IsSeriesOnList(Series series, IEnumerable<ImportListItemInfo> listItems)
         {
-            return listItems.Any(l =>
-                l.TvdbId == series.TvdbId ||
-                (l.ImdbId.IsNotNullOrWhiteSpace() && series.ImdbId.IsNotNullOrWhiteSpace() && l.ImdbId == series.ImdbId) ||
-                l.TmdbId == series.TmdbId ||
-                series.MalIds.Contains(l.MalId) ||
-                series.AniListIds.Contains(l.AniListId));
+            return listItems.Any(item => ImportListIdentity.Matches(series, item));
         }
 
         public void Execute(ImportListSyncCommand message)

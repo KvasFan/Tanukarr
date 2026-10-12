@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29,6 +30,7 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
         private List<ImportDecision> _approvedDecisions;
 
         private DownloadClientItem _downloadClientItem;
+        private ImportProgressService _importProgressService;
 
         [SetUp]
         public void Setup()
@@ -74,8 +76,13 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
                 .Returns(new List<EpisodeHistory>());
 
             _downloadClientItem = Builder<DownloadClientItem>.CreateNew()
+                .With(d => d.DownloadId = "ABC123")
+                .With(d => d.DownloadClientInfo = new DownloadClientItemClientInfo { Id = 7 })
                 .With(d => d.OutputPath = new OsPath(outputPath))
                 .Build();
+
+            _importProgressService = new ImportProgressService(Mocker.GetMock<IEventAggregator>().Object);
+            Mocker.SetConstant<IImportProgressService>(_importProgressService);
         }
 
         private void GivenNewDownload()
@@ -385,6 +392,204 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
             Mocker.GetMock<IUpgradeMediaFiles>()
                   .Verify(v => v.UpgradeEpisodeFile(It.Is<EpisodeFile>(e => e.SceneName == firstDecision.LocalEpisode.SceneName), _approvedDecisions.First().LocalEpisode, false),
                       Times.Once());
+        }
+
+        [Test]
+        public void should_register_all_season_pack_decisions_before_importing_first_file()
+        {
+            var decisions = BuildDistinctDecisions(4);
+            _importProgressService.BeginBatch(7, "ABC123", decisions.SelectMany(d => d.LocalEpisode.Episodes).Select(e => e.Id));
+            var progressDuringFirstTransfer = default(ImportProgress);
+
+            Mocker.GetMock<IUpgradeMediaFiles>()
+                .Setup(s => s.UpgradeEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>(), It.IsAny<bool>()))
+                .Callback(() => progressDuringFirstTransfer ??= _importProgressService.GetProgress(7, "ABC123"))
+                .Returns(new EpisodeFileMoveResult());
+
+            Subject.Import(decisions, true, _downloadClientItem);
+
+            progressDuringFirstTransfer.Items.Should().HaveCount(4);
+            progressDuringFirstTransfer.Items.Should().ContainSingle(i => i.State == ImportProgressState.Importing);
+            progressDuringFirstTransfer.Items.Should().Contain(i => i.State == ImportProgressState.Waiting);
+        }
+
+        [Test]
+        public void should_import_every_season_in_an_explicit_multi_season_batch()
+        {
+            var decisions = Enumerable.Range(1, 4).Select(season => new ImportDecision(new LocalEpisode
+            {
+                Series = _approvedDecisions.First().LocalEpisode.Series,
+                Episodes = new List<Episode> { new Episode { Id = (season * 100) + 1, SeasonNumber = season, EpisodeNumber = 1 } },
+                Path = Path.Combine(_downloadClientItem.OutputPath.ToString(), $"Example Show S{season:00}E01.mkv"),
+                Size = 1000,
+                Quality = new QualityModel(Quality.Bluray720p),
+                ReleaseGroup = "DRONE",
+                FileEpisodeInfo = new ParsedEpisodeInfo()
+            })).ToList();
+            _importProgressService.BeginBatch(7, "ABC123", decisions.SelectMany(d => d.LocalEpisode.Episodes).Select(e => e.Id));
+
+            Subject.Import(decisions, true, _downloadClientItem);
+
+            var progress = _importProgressService.GetProgress(7, "ABC123");
+            progress.TotalEpisodes.Should().Be(4);
+            progress.ImportedEpisodes.Should().Be(4);
+            progress.Items.Should().OnlyContain(i => i.State == ImportProgressState.Imported);
+        }
+
+        [Test]
+        public void should_count_both_episodes_in_one_multi_episode_file()
+        {
+            var decision = new ImportDecision(new LocalEpisode
+            {
+                Series = _approvedDecisions.First().LocalEpisode.Series,
+                Episodes = new List<Episode>
+                {
+                    new Episode { Id = 101, SeasonNumber = 1, EpisodeNumber = 1 },
+                    new Episode { Id = 102, SeasonNumber = 1, EpisodeNumber = 2 }
+                },
+                Path = Path.Combine(_downloadClientItem.OutputPath.ToString(), "Example Show S01E01-E02.mkv"),
+                Size = 1000,
+                Quality = new QualityModel(Quality.Bluray720p),
+                ReleaseGroup = "DRONE",
+                FileEpisodeInfo = new ParsedEpisodeInfo()
+            });
+            _importProgressService.BeginBatch(7, "ABC123", new[] { 101, 102 });
+
+            Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem);
+
+            _importProgressService.GetProgress(7, "ABC123").ImportedEpisodes.Should().Be(2);
+        }
+
+        [Test]
+        public void should_mark_imported_only_after_success_event_path_completes()
+        {
+            var decision = BuildDistinctDecisions(1).Single();
+            _importProgressService.BeginBatch(7, "ABC123", new[] { decision.LocalEpisode.Episodes.Single().Id });
+            var stateDuringEvent = ImportProgressState.Waiting;
+
+            Mocker.GetMock<IEventAggregator>()
+                .Setup(e => e.PublishEvent(It.IsAny<EpisodeImportedEvent>()))
+                .Callback(() => stateDuringEvent = _importProgressService.GetProgress(7, "ABC123").Items.Single().State);
+
+            Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem);
+
+            stateDuringEvent.Should().Be(ImportProgressState.Importing);
+            _importProgressService.GetProgress(7, "ABC123").Items.Single().State.Should().Be(ImportProgressState.Imported);
+        }
+
+        [Test]
+        public void should_complete_replacement_progress_only_after_file_linkage_and_event()
+        {
+            var decision = BuildDistinctDecisions(1).Single();
+            _importProgressService.BeginBatch(7, "ABC123", new[] { decision.LocalEpisode.Episodes.Single().Id });
+            var stateDuringAdd = ImportProgressState.Waiting;
+            var oldFile = new EpisodeFile { Id = 99 };
+
+            Mocker.GetMock<IUpgradeMediaFiles>()
+                .Setup(s => s.UpgradeEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>(), It.IsAny<bool>()))
+                .Returns(new EpisodeFileMoveResult
+                {
+                    OldFiles = new List<DeletedEpisodeFile> { new DeletedEpisodeFile(oldFile, @"C:\Recycle\old.mkv") }
+                });
+            Mocker.GetMock<IMediaFileService>()
+                .Setup(s => s.Add(It.IsAny<EpisodeFile>()))
+                .Callback(() => stateDuringAdd = _importProgressService.GetProgress(7, "ABC123").Items.Single().State)
+                .Returns(new EpisodeFile());
+            Mocker.GetMock<IEventAggregator>()
+                .Setup(e => e.PublishEvent(It.IsAny<EpisodeImportedEvent>()))
+                .Callback(() => _importProgressService.GetProgress(7, "ABC123").Items.Single().State.Should().Be(ImportProgressState.Importing));
+
+            Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem);
+
+            stateDuringAdd.Should().Be(ImportProgressState.Importing);
+            _importProgressService.GetProgress(7, "ABC123").Items.Single().State.Should().Be(ImportProgressState.Imported);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_mark_destination_and_generic_import_failures_without_changing_result(bool destinationExists)
+        {
+            var decision = BuildDistinctDecisions(1).Single();
+            _importProgressService.BeginBatch(7, "ABC123", new[] { decision.LocalEpisode.Episodes.Single().Id });
+
+            Mocker.GetMock<IUpgradeMediaFiles>()
+                .Setup(s => s.UpgradeEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>(), It.IsAny<bool>()))
+                .Throws(destinationExists ? new DestinationAlreadyExistsException("Exists") : new IOException("Failed"));
+
+            var result = Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem).Single();
+
+            ExceptionVerification.ExpectedWarns(1);
+
+            result.Result.Should().Be(ImportResultType.Skipped);
+            _importProgressService.GetProgress(7, "ABC123").Items.Single().State.Should().Be(ImportProgressState.Failed);
+        }
+
+        [TestCase(typeof(RootFolderNotFoundException), "Failed to import episode, Root folder missing.")]
+        [TestCase(typeof(RecycleBinException), "Failed to import episode, unable to move existing file to the Recycle Bin.")]
+        public void should_track_event_based_import_failures_without_changing_result(Type exceptionType, string expectedError)
+        {
+            var decision = BuildDistinctDecisions(1).Single();
+            _importProgressService.BeginBatch(7, "ABC123", new[] { decision.LocalEpisode.Episodes.Single().Id });
+
+            var exception = (Exception)Activator.CreateInstance(exceptionType, "Failed");
+            Mocker.GetMock<IUpgradeMediaFiles>()
+                .Setup(s => s.UpgradeEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>(), It.IsAny<bool>()))
+                .Throws(exception);
+
+            var result = Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem).Single();
+
+            ExceptionVerification.ExpectedWarns(1);
+
+            result.Result.Should().Be(ImportResultType.Skipped);
+            result.Errors.Should().Contain(expectedError);
+            _importProgressService.GetProgress(7, "ABC123").Items.Single().State.Should().Be(ImportProgressState.Failed);
+        }
+
+        [Test]
+        public void should_ignore_progress_service_failures_and_preserve_successful_import()
+        {
+            var decision = BuildDistinctDecisions(1).Single();
+            var throwingProgress = new Mock<IImportProgressService>();
+            throwingProgress.Setup(s => s.RegisterDecisions(It.IsAny<DownloadClientItem>(), It.IsAny<IEnumerable<ImportDecision>>())).Throws(new InvalidOperationException("telemetry"));
+            throwingProgress.Setup(s => s.MarkImporting(It.IsAny<DownloadClientItem>(), It.IsAny<LocalEpisode>())).Throws(new InvalidOperationException("telemetry"));
+            throwingProgress.Setup(s => s.MarkImported(It.IsAny<DownloadClientItem>(), It.IsAny<LocalEpisode>())).Throws(new InvalidOperationException("telemetry"));
+            Mocker.SetConstant<IImportProgressService>(throwingProgress.Object);
+
+            var result = Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem).Single();
+
+            result.Result.Should().Be(ImportResultType.Imported);
+            Mocker.GetMock<IUpgradeMediaFiles>().Verify(s => s.UpgradeEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>(), It.IsAny<bool>()), Times.Once());
+        }
+
+        [Test]
+        public void should_track_rejected_decision_without_running_transfer()
+        {
+            var localEpisode = BuildDistinctDecisions(1).Single().LocalEpisode;
+            var decision = new ImportDecision(localEpisode, new ImportRejection(ImportRejectionReason.Unknown, "Rejected exactly"));
+            _importProgressService.BeginBatch(7, "ABC123", new[] { localEpisode.Episodes.Single().Id });
+
+            Subject.Import(new List<ImportDecision> { decision }, true, _downloadClientItem);
+
+            var item = _importProgressService.GetProgress(7, "ABC123").Items.Single();
+            item.State.Should().Be(ImportProgressState.Rejected);
+            item.Errors.Should().Equal("Rejected exactly");
+            Mocker.GetMock<IUpgradeMediaFiles>().Verify(s => s.UpgradeEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>(), It.IsAny<bool>()), Times.Never());
+        }
+
+        private List<ImportDecision> BuildDistinctDecisions(int count)
+        {
+            var series = _approvedDecisions.First().LocalEpisode.Series;
+
+            return Enumerable.Range(1, count).Select(number => new ImportDecision(new LocalEpisode
+            {
+                Series = series,
+                Episodes = new List<Episode> { new Episode { Id = number, SeasonNumber = 1, EpisodeNumber = number } },
+                Path = Path.Combine(_downloadClientItem.OutputPath.ToString(), $"Example Show S01E{number:00}.mkv"),
+                Size = 1000,
+                Quality = new QualityModel(Quality.Bluray720p),
+                ReleaseGroup = "DRONE",
+                FileEpisodeInfo = new ParsedEpisodeInfo()
+            })).ToList();
         }
     }
 }

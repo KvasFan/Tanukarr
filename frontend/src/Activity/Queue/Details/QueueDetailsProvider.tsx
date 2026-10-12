@@ -52,6 +52,16 @@ export function useQueueItemForEpisode(episodeId: number) {
   }, [episodeId, queue]);
 }
 
+export function useImportProgressForEpisode(episodeId: number) {
+  const queueItem = useQueueItemForEpisode(episodeId);
+
+  return useMemo(() => {
+    return queueItem?.importProgress?.items.find((item) =>
+      item.episodeIds.includes(episodeId)
+    );
+  }, [episodeId, queueItem]);
+}
+
 export function useIsDownloadingEpisodes(episodeIds: number[]) {
   const queue = useContext(QueueDetailsContext);
 

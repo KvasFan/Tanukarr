@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using NLog;
 
@@ -29,6 +30,7 @@ namespace NzbDrone.Core.Tv
         private readonly ISeriesService _seriesService;
         private readonly Logger _logger;
         private readonly object _lock = new object();
+        private int _lastAllocatedTvdbId;
 
         public SyntheticSeriesIdService(ISeriesService seriesService, Logger logger)
         {
@@ -38,14 +40,14 @@ namespace NzbDrone.Core.Tv
 
         public int AllocateTvdbId()
         {
-            // Serialised because the next id is derived from the current minimum, so two
-            // concurrent adds would otherwise be handed the same value and collide on the
-            // unique index.
+            // Reserve ids before insertion: bulk additions prepare several series before
+            // writing any of them, and concurrent additions share this service instance.
             lock (_lock)
             {
                 var existing = _seriesService.AllSeriesTvdbIds().Values;
-                var lowest = existing.Any() ? existing.Min() : 0;
-                var allocated = lowest < 0 ? lowest - 1 : -1;
+                var lowest = Math.Min(_lastAllocatedTvdbId, existing.Any() ? existing.Min() : 0);
+                var allocated = checked(lowest - 1);
+                _lastAllocatedTvdbId = allocated;
 
                 _logger.Debug("Allocated synthetic TVDB id {0} for a series with no TheTVDB entry", allocated);
 

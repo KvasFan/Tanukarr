@@ -48,7 +48,6 @@ namespace NzbDrone.Core.Parser.Model
             EpisodeNumbers = Array.Empty<int>();
             AbsoluteEpisodeNumbers = Array.Empty<int>();
             SpecialAbsoluteEpisodeNumbers = Array.Empty<decimal>();
-            SeasonNumbers = Array.Empty<int>();
             Languages = new List<Language>();
         }
 

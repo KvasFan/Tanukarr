@@ -211,6 +211,35 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport.Specifications
             Subject.IsSatisfiedBy(_localEpisode, null).Accepted.Should().BeTrue();
         }
 
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        public void should_accept_each_file_in_a_complete_multi_season_folder(int seasonNumber)
+        {
+            var folderInfo = Parser.Parser.ParseTitle("Example.Show.S01-S04.1080p.WEB-DL");
+            var fileInfo = Parser.Parser.ParseTitle($"Example Show S{seasonNumber:00}E01.mkv");
+            var folderEpisodes = Enumerable.Range(1, 4)
+                .Select(season => new Episode { Id = (season * 100) + 1, SeasonNumber = season, EpisodeNumber = 1 })
+                .ToList();
+            var fileEpisode = folderEpisodes.Single(e => e.SeasonNumber == seasonNumber);
+
+            _localEpisode.Path = $@"C:\Test\Unsorted\Example.Show.S01-S04.1080p.WEB-DL\Example Show S{seasonNumber:00}E01.mkv".AsOsAgnostic();
+            _localEpisode.FolderEpisodeInfo = folderInfo;
+            _localEpisode.FileEpisodeInfo = fileInfo;
+
+            Mocker.GetMock<IParsingService>()
+                .Setup(s => s.GetEpisodes(folderInfo, It.IsAny<Series>(), true, null))
+                .Returns(folderEpisodes);
+
+            Mocker.GetMock<IParsingService>()
+                .Setup(s => s.GetEpisodes(fileInfo, It.IsAny<Series>(), true, null))
+                .Returns(new List<Episode> { fileEpisode });
+
+            folderInfo.SeasonNumbers.Should().Equal(1, 2, 3, 4);
+            Subject.IsSatisfiedBy(_localEpisode, null).Accepted.Should().BeTrue();
+        }
+
         [Test]
         public void should_be_accepted_if_both_file_and_folder_info_map_to_same_special()
         {

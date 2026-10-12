@@ -5,6 +5,7 @@ using NUnit.Framework;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.AniList.List;
+using NzbDrone.Core.ImportLists.Exceptions;
 using NzbDrone.Core.Test.Framework;
 
 namespace NzbDrone.Core.Test.ImportListTests
@@ -104,6 +105,76 @@ namespace NzbDrone.Core.Test.ImportListTests
             var json = Json.Replace(@"""customLists"": { ""Seasonal"": true, ""Rewatch"": false },", string.Empty);
 
             ParserWithCustomList("Seasonal").ParseResponse(Response(json)).Should().BeEmpty();
+        }
+
+        [Test]
+        public void should_use_the_romaji_title_when_the_preferred_title_is_missing()
+        {
+            var json = Json.Replace(@"""userPreferred"": ""Cowboy Bebop""", @"""userPreferred"": null");
+
+            ParserWithCustomList("Seasonal").ParseResponse(Response(json)).Single().Title.Should().Be("Cowboy Bebop");
+        }
+
+        [Test]
+        public void should_keep_anilist_and_mal_ids_in_separate_namespaces()
+        {
+            var json = Json.Replace(@"""id"": 1,", @"""id"": 1, ""idMal"": 42,");
+            var item = ParserWithCustomList("Seasonal").ParseResponse(Response(json)).Single();
+
+            item.AniListId.Should().Be(1);
+            item.MalId.Should().Be(42);
+            item.TvdbId.Should().Be(0);
+        }
+
+        [Test]
+        public void should_not_combine_custom_lists_that_differ_only_by_case()
+        {
+            var json = Json.Replace(@"""Seasonal"": true,", @"""Seasonal"": true, ""seasonal"": false,");
+
+            ParserWithCustomList("Seasonal").ParseResponse(Response(json)).Should().ContainSingle();
+            ParserWithCustomList("seasonal").ParseResponse(Response(json)).Should().BeEmpty();
+            ParserWithCustomList("SEASONAL").ParseResponse(Response(json)).Should().BeEmpty();
+        }
+
+        [Test]
+        public void should_distinguish_completed_watching_status_from_finished_release_status()
+        {
+            var parser = new AniListParser(new AniListSettings
+            {
+                CustomList = "Seasonal",
+                ImportCompleted = true,
+                ImportFinished = false,
+                ImportReleasing = true
+            });
+
+            parser.ParseResponse(Response(Json)).Should().BeEmpty();
+            parser.ParseResponse(Response(Json.Replace(@"""status"": ""FINISHED""", @"""status"": ""RELEASING"""))).Should().ContainSingle();
+        }
+
+        [TestCase(@"{""data"": null, ""errors"": [{""message"": ""Private user""}]}")]
+        [TestCase(@"{""data"": {""Page"": null}}")]
+        [TestCase(@"{""data"": {""Page"": {""mediaList"": []}}}")]
+        [TestCase(@"{""data"": {""Page"": {""pageInfo"": {""currentPage"": 1}, ""mediaList"": []}}}")]
+        public void should_fail_instead_of_treating_an_incomplete_response_as_an_empty_list(string json)
+        {
+            Assert.Throws<ImportListException>(() => ParserWithCustomList(null).ParseResponse(Response(json)));
+        }
+
+        [Test]
+        public void should_reject_partial_data_with_graphql_errors()
+        {
+            var json = Json.Replace(@"""data"":", @"""errors"": [{""message"": ""Forbidden""}], ""data"":");
+
+            Assert.Throws<ImportListException>(() => ParserWithCustomList(null).ParseResponse(Response(json)));
+        }
+
+        [Test]
+        public void should_accept_an_empty_complete_list()
+        {
+            const string json = @"{""data"": {""Page"": {""pageInfo"": {""currentPage"": 1, ""hasNextPage"": false}, ""mediaList"": []}}}";
+
+            ParserWithCustomList(null).ParseResponse(Response(json), out var pageInfo).Should().BeEmpty();
+            pageInfo.HasNextPage.Should().BeFalse();
         }
     }
 }

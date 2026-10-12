@@ -86,6 +86,12 @@ namespace NzbDrone.Core.ImportLists
                          }
                          catch (Exception e)
                          {
+                             lock (result)
+                             {
+                                 result.AnyFailure = true;
+                             }
+
+                             _importListStatusService.RecordFailure(importListLocal.Definition.Id);
                              _logger.Error(e, "Error during Import List Sync of {0} ({1})", importList.Name, importListLocal.Definition.Name);
                          }
                      }).LogExceptions();
@@ -95,7 +101,7 @@ namespace NzbDrone.Core.ImportLists
 
             Task.WaitAll(taskList.ToArray());
 
-            result.Series = result.Series.DistinctBy(r => new { r.TvdbId, r.ImdbId, r.Title }).ToList();
+            result.Series = result.Series.DistinctBy(r => new { r.ImportListId, r.TvdbId, r.ImdbId, r.TmdbId, r.AniListId, r.MalId, r.Title }).ToList();
 
             _logger.Debug("Found {0} total reports from {1} lists", result.Series.Count, importLists.Count);
 
@@ -145,6 +151,12 @@ namespace NzbDrone.Core.ImportLists
                 }
                 catch (Exception e)
                 {
+                    lock (result)
+                    {
+                        result.AnyFailure = true;
+                    }
+
+                    _importListStatusService.RecordFailure(importListLocal.Definition.Id);
                     _logger.Error(e, "Error during Import List Sync of {0} ({1})", importList.Name, importListLocal.Definition.Name);
                 }
             }).LogExceptions();

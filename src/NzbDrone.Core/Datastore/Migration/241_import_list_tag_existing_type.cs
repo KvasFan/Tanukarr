@@ -3,7 +3,7 @@ using NzbDrone.Core.Datastore.Migration.Framework;
 
 namespace NzbDrone.Core.Datastore.Migration
 {
-    [Migration(236)]
+    [Migration(241)]
     public class import_list_tag_existing_type : NzbDroneMigrationBase
     {
         protected override void MainDbUpgrade()

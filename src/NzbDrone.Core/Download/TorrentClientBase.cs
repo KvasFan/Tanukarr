@@ -81,6 +81,23 @@ namespace NzbDrone.Core.Download
                 magnetUrl = torrentInfo.MagnetUrl;
             }
 
+            var fakeReleaseProtectionEnabled = _configService.EnableFakeReleaseProtection;
+
+            if (fakeReleaseProtectionEnabled)
+            {
+                EnsureReleaseTitleIsNotFake(remoteEpisode);
+
+                if (torrentUrl.IsNotNullOrWhiteSpace())
+                {
+                    return await DownloadFromWebUrl(remoteEpisode, indexer, torrentUrl, magnetUrl);
+                }
+
+                if (magnetUrl.IsNotNullOrWhiteSpace())
+                {
+                    _logger.Warn("Release '{0}' has no inspectable torrent URL; fake-release content inspection was not performed", remoteEpisode.Release.Title);
+                }
+            }
+
             if (PreferTorrentFile)
             {
                 if (torrentUrl.IsNotNullOrWhiteSpace())
@@ -144,7 +161,7 @@ namespace NzbDrone.Core.Download
             return null;
         }
 
-        private async Task<string> DownloadFromWebUrl(RemoteEpisode remoteEpisode, IIndexer indexer, string torrentUrl)
+        private async Task<string> DownloadFromWebUrl(RemoteEpisode remoteEpisode, IIndexer indexer, string torrentUrl, string fallbackMagnetUrl = null)
         {
             byte[] torrentFile = null;
 
@@ -171,12 +188,17 @@ namespace NzbDrone.Core.Download
                     {
                         if (locationHeader.StartsWith("magnet:"))
                         {
+                            if (_configService.EnableFakeReleaseProtection)
+                            {
+                                _logger.Warn("Torrent URL for '{0}' redirected to a magnet; fake-release content inspection was not performed", remoteEpisode.Release.Title);
+                            }
+
                             return DownloadFromMagnetUrl(remoteEpisode, indexer, locationHeader);
                         }
 
                         request.Url += new HttpUri(locationHeader);
 
-                        return await DownloadFromWebUrl(remoteEpisode, indexer, request.Url.ToString());
+                        return await DownloadFromWebUrl(remoteEpisode, indexer, request.Url.ToString(), fallbackMagnetUrl);
                     }
 
                     throw new WebException("Remote website tried to redirect without providing a location.");
@@ -191,7 +213,7 @@ namespace NzbDrone.Core.Download
                 if (ex.Response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone)
                 {
                     _logger.Error(ex, "Downloading torrent file for episode '{0}' failed since it no longer exists ({1})", remoteEpisode.Release.Title, torrentUrl);
-                    throw new ReleaseUnavailableException(remoteEpisode.Release, "Downloading torrent failed", ex);
+                    return await FallbackToMagnetOrThrow(remoteEpisode, indexer, fallbackMagnetUrl, new ReleaseUnavailableException(remoteEpisode.Release, "Downloading torrent failed", ex));
                 }
 
                 if ((int)ex.Response.StatusCode == 429)
@@ -203,13 +225,13 @@ namespace NzbDrone.Core.Download
                     _logger.Error(ex, "Downloading torrent file for episode '{0}' failed ({1})", remoteEpisode.Release.Title, torrentUrl);
                 }
 
-                throw new ReleaseDownloadException(remoteEpisode.Release, "Downloading torrent failed", ex);
+                return await FallbackToMagnetOrThrow(remoteEpisode, indexer, fallbackMagnetUrl, new ReleaseDownloadException(remoteEpisode.Release, "Downloading torrent failed", ex));
             }
             catch (WebException ex)
             {
                 _logger.Error(ex, "Downloading torrent file for episode '{0}' failed ({1})", remoteEpisode.Release.Title, torrentUrl);
 
-                throw new ReleaseDownloadException(remoteEpisode.Release, "Downloading torrent failed", ex);
+                return await FallbackToMagnetOrThrow(remoteEpisode, indexer, fallbackMagnetUrl, new ReleaseDownloadException(remoteEpisode.Release, "Downloading torrent failed", ex));
             }
 
             var filename = string.Format("{0}.torrent", FileNameBuilder.CleanFileName(remoteEpisode.Release.Title));
@@ -230,6 +252,17 @@ namespace NzbDrone.Core.Download
             }
 
             return actualHash;
+        }
+
+        private Task<string> FallbackToMagnetOrThrow(RemoteEpisode remoteEpisode, IIndexer indexer, string magnetUrl, Exception exception)
+        {
+            if (magnetUrl.IsNullOrWhiteSpace())
+            {
+                throw exception;
+            }
+
+            _logger.Warn(exception, "Unable to inspect torrent for '{0}', falling back to uninspectable magnet route", remoteEpisode.Release.Title);
+            return Task.FromResult(DownloadFromMagnetUrl(remoteEpisode, indexer, magnetUrl));
         }
 
         private string DownloadFromMagnetUrl(RemoteEpisode remoteEpisode, IIndexer indexer, string magnetUrl)
@@ -282,7 +315,13 @@ namespace NzbDrone.Core.Download
                 // The hash was already read from this file, so a failure here is unexpected.
                 // Inspection is a safety net, not a gate: let the grab proceed rather than
                 // blocking a release because we could not read its file list.
-                _logger.Debug(ex, "Unable to read contents of torrent for '{0}', skipping fake release inspection", remoteEpisode.Release.Title);
+                _logger.Warn(ex, "Unable to read contents of torrent for '{0}', fake-release inspection failed open", remoteEpisode.Release.Title);
+                return;
+            }
+
+            if (contents?.Files == null || contents.Files.Empty())
+            {
+                _logger.Warn("Torrent contents for '{0}' were empty; fake-release inspection was not performed", remoteEpisode.Release.Title);
                 return;
             }
 
@@ -300,6 +339,19 @@ namespace NzbDrone.Core.Download
                     detection.Reason,
                     string.Format("Release rejected as fake: {0}", detection.Message));
             }
+        }
+
+        private void EnsureReleaseTitleIsNotFake(RemoteEpisode remoteEpisode)
+        {
+            if (!FakeReleaseInspector.IsDangerousReleaseTitle(remoteEpisode.Release.Title))
+            {
+                return;
+            }
+
+            throw new FakeReleaseException(
+                remoteEpisode.Release,
+                FakeReleaseRejectionReason.ExecutablePayload,
+                "Release title ends with a dangerous executable or script extension");
         }
 
         private void EnsureTorrentDoesNotContainRejectedFiles(RemoteEpisode remoteEpisode, IIndexer indexer, byte[] torrentFile)

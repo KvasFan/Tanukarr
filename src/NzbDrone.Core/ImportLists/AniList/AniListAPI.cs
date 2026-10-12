@@ -13,14 +13,16 @@ namespace NzbDrone.Core.ImportLists.AniList
 
     public static class AniListAPI
     {
+        public const int PageSize = 50;
+        public const int MaxPages = 5000 / PageSize;
+
         // The maximum items anilist will return is 50 per request.
         // Therefore, pagination must be used to retrieve the full list.
         private const string QueryList = @"
-            query ($id: String, $statusType: [MediaListStatus], $page: Int) {
-                Page(page: $page) {
+            query ($id: String!, $statusType: [MediaListStatus!]!, $page: Int!) {
+                Page(page: $page, perPage: 50) {
                     pageInfo {
                         currentPage
-                        lastPage
                         hasNextPage
                     }
                     mediaList(userName: $id, type: ANIME, status_in: $statusType) {
@@ -29,6 +31,7 @@ namespace NzbDrone.Core.ImportLists.AniList
                         customLists
                         media {
                             id
+                            idMal
                             format
                             title {
                                 userPreferred
@@ -80,19 +83,22 @@ namespace NzbDrone.Core.ImportLists.AniList
 
         public int LastPage { get; set; }
 
-        public bool HasNextPage { get; set; }
+        public bool? HasNextPage { get; set; }
     }
 
     public class MediaTitles
     {
         public string UserPreferred { get; set; }
 
+        [JsonPropertyName("romaji")]
         public string UserRomaji { get; set; }
     }
 
     public class MediaInfo
     {
         public int Id { get; set; }
+
+        public int? IdMal { get; set; }
 
         public string Status { get; set; }
 
@@ -140,6 +146,13 @@ namespace NzbDrone.Core.ImportLists.AniList
     public class MediaPageResponse
     {
         public MediaPageData Data { get; set; }
+
+        public List<MediaPageError> Errors { get; set; }
+    }
+
+    public class MediaPageError
+    {
+        public string Message { get; set; }
     }
 
     public class YMDBlock

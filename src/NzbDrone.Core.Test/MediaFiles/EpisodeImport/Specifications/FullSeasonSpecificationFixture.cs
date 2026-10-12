@@ -87,7 +87,7 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport.Specifications
         private void GivenWholeSeasonInMultiSeasonPack()
         {
             _localEpisode.FileEpisodeInfo = new ParsedEpisodeInfo { FullSeason = true, SeasonNumber = 3 };
-            _localEpisode.DownloadClientEpisodeInfo = new ParsedEpisodeInfo { FullSeason = true, SeasonNumbers = new[] { 1, 2, 3 } };
+            _localEpisode.DownloadClientEpisodeInfo = new ParsedEpisodeInfo { FullSeason = true, SeasonNumbers = [1, 2, 3] };
             _localEpisode.Episodes = Enumerable.Range(1, 5).Select(id => new Episode { Id = id, SeasonNumber = 3, EpisodeNumber = id, Runtime = 12 }).ToList();
             _localEpisode.MediaInfo = new MediaInfoModel { RunTime = TimeSpan.FromMinutes(60) };
             _localEpisode.Release = new GrabbedReleaseInfo(new List<EpisodeHistory>

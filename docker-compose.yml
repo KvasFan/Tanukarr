@@ -1,6 +1,8 @@
 services:
   sonarr-pro:
-    image: ghcr.io/kakarottocake/sonarr-pro:latest
+    image: sonarr-weeb:local
+    build:
+      context: .
     container_name: sonarr-pro
     restart: unless-stopped
 

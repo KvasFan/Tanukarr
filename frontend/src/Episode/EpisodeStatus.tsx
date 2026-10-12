@@ -1,5 +1,8 @@
 import React from 'react';
-import { useQueueItemForEpisode } from 'Activity/Queue/Details/QueueDetailsProvider';
+import {
+  useImportProgressForEpisode,
+  useQueueItemForEpisode,
+} from 'Activity/Queue/Details/QueueDetailsProvider';
 import QueueDetails from 'Activity/Queue/QueueDetails';
 import Icon from 'Components/Icon';
 import ProgressBar from 'Components/ProgressBar';
@@ -11,6 +14,41 @@ import isBefore from 'Utilities/Date/isBefore';
 import translate from 'Utilities/String/translate';
 import EpisodeQuality from './EpisodeQuality';
 import styles from './EpisodeStatus.module.css';
+
+function getImportProgressState(
+  state: 'waiting' | 'importing' | 'rejected' | 'failed'
+) {
+  switch (state) {
+    case 'importing':
+      return {
+        label: translate('Importing'),
+        icon: icons.DOWNLOADING,
+        kind: kinds.PRIMARY,
+        spinning: true,
+      } as const;
+    case 'waiting':
+      return {
+        label: translate('WaitingToImport'),
+        icon: icons.PENDING,
+        kind: kinds.DEFAULT,
+        spinning: false,
+      } as const;
+    case 'rejected':
+      return {
+        label: translate('InteractiveSearchRejected'),
+        icon: icons.DANGER,
+        kind: kinds.WARNING,
+        spinning: false,
+      } as const;
+    default:
+      return {
+        label: translate('Failed'),
+        icon: icons.DANGER,
+        kind: kinds.DANGER,
+        spinning: false,
+      } as const;
+  }
+}
 
 interface EpisodeStatusProps {
   episodeId: number;
@@ -25,15 +63,41 @@ function EpisodeStatus({
 }: EpisodeStatusProps) {
   const episode = useEpisode(episodeId, episodeEntity);
   const queueItem = useQueueItemForEpisode(episodeId);
+  const importProgressItem = useImportProgressForEpisode(episodeId);
   const episodeFile = useEpisodeFile(episodeFileId);
 
   const { airDateUtc, grabbed, monitored } = episode || {};
   const hasEpisodeFile = !!episodeFile;
-  const isQueued = !!queueItem;
+  const isQueued = !!queueItem && importProgressItem?.state !== 'imported';
   const hasAired = isBefore(airDateUtc);
 
   if (!episode) {
     return null;
+  }
+
+  if (importProgressItem && importProgressItem.state !== 'imported') {
+    const state = importProgressItem.state;
+    const { label, icon, kind, spinning } = getImportProgressState(state);
+
+    return (
+      <StatusIndicator
+        className={styles.center}
+        label={label}
+        title={importProgressItem.errors.join('; ') || label}
+      >
+        <Icon name={icon} kind={kind} isSpinning={spinning} />
+      </StatusIndicator>
+    );
+  }
+
+  if (importProgressItem?.state === 'imported' && !hasEpisodeFile) {
+    const label = translate('Imported');
+
+    return (
+      <StatusIndicator className={styles.center} label={label} title={label}>
+        <Icon name={icons.CHECK} kind={kinds.SUCCESS} />
+      </StatusIndicator>
+    );
   }
 
   if (isQueued) {

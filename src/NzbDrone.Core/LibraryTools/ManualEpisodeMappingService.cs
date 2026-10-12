@@ -77,7 +77,7 @@ namespace NzbDrone.Core.LibraryTools
                 // A single source season may be remapped to a single chosen season.
                 // Multi-season bundles keep their explicit season boundaries.
                 var targetSeasons = selected.Select(e => e.SeasonNumber).Distinct().ToList();
-                var remapSeason = releaseInfo?.SeasonNumbers.Length == 1 && targetSeasons.Count == 1 && fileInfo.SeasonNumber == releaseInfo.SeasonNumber;
+                var remapSeason = releaseInfo?.SeasonNumbers.Count == 1 && targetSeasons.Count == 1 && fileInfo.SeasonNumber == releaseInfo.SeasonNumber;
                 result.Episodes = selected.Where(e => (remapSeason || e.SeasonNumber == fileInfo.SeasonNumber) && fileInfo.EpisodeNumbers.Contains(e.EpisodeNumber)).ToList();
                 if (result.Episodes.Count != fileInfo.EpisodeNumbers.Distinct().Count())
                 {

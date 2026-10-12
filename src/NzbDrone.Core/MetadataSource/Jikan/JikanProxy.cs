@@ -192,6 +192,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 Title = anime.TitleEnglish.IsNotNullOrWhiteSpace() ? anime.TitleEnglish : anime.Title,
                 Overview = anime.Synopsis,
                 SeriesType = SeriesTypes.Anime,
+                SeasonType = SeasonType.Official,
+                SeasonTypes = new List<SeasonType>
+                {
+                    new SeasonType { Name = "Official", Type = SeasonType.Official, SeasonNumbers = new List<int> { 1 }, EpisodeCount = anime.Episodes ?? 0 }
+                },
                 Status = MapStatus(anime.Status),
                 Genres = anime.Genres?.Select(g => g.Name).ToList() ?? new List<string>(),
                 Runtime = ParseDuration(anime.Duration),
@@ -204,7 +209,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
             };
 
             series.CleanTitle = Parser.Parser.CleanSeriesTitle(series.Title);
-            series.TitleSlug = anime.MalId.ToString();
+            series.TitleSlug = $"mal-{anime.MalId}";
             series.SortTitle = SeriesTitleNormalizer.Normalize(series.Title, 0);
 
             if (anime.Aired?.From != null)

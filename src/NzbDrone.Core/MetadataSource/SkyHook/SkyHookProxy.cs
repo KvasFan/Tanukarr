@@ -43,7 +43,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(Series series)
         {
-            return GetSeriesInfo(series.TvdbId, series.Language, series.SeasonType);
+            return GetSeriesInfo(series.TvdbId, series.Language ?? Language.English, series.SeasonType.IsNullOrWhiteSpace() ? SeasonType.Official : series.SeasonType);
         }
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(int tvdbSeriesId, Language language, string seasonType)
