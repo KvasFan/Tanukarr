@@ -18,7 +18,10 @@ local commit makes their original author name unreachable from HEAD.
 
 - **Sonarr contributors**, including the original NzbDrone work of Mark
   McDowall, Keivan Beigi and Taloth Saldono: the core application and upstream
-  maintenance. The integrated history contains `v5-develop@59c22e859`.
+  maintenance. The integrated history contains `develop@57816c149`, including
+  the earlier `v5-develop@59c22e859` checkpoint. Mark McDowall authored the five
+  final upstream commits: `bf00a7710`, `fc6736733`, `3c8b8573d`, `6d607b09a` and
+  `57816c149`. The fork retains its own AI contribution policy and release CI.
 - **Private Contributor**: exact name retained in Kakarotto source history
   for the original provider/ordering, matching, packs, lists and filter work.
 - **KakarottoCake**: fork maintenance and search, torrent reuse, requested

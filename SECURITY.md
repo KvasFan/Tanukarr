@@ -17,7 +17,7 @@ the artifact being distributed. Source Kakarotto, gaboy or ikatun images can
 contain different code and require reports to their own maintainers.
 
 For a defect confirmed to affect upstream Sonarr, follow the
-[upstream security policy](https://github.com/Sonarr/Sonarr/blob/v5-develop/SECURITY.md).
+[upstream security policy](https://github.com/Sonarr/Sonarr/blob/develop/SECURITY.md).
 Upstream maintainers do not support fork-only behavior. This fork does not promise
 a response deadline or patch delivery on their behalf.
 

@@ -166,13 +166,16 @@ class ContainerSmoke:
             checked += 1
         self.check(f"UI HTML and {checked} compiled JavaScript asset(s)")
 
+    def ui_initialization(self):
+        return self.api("/initialize.json")
+
     def check_runtime(self):
         status = self.api("/api/v5/system/status")
         require(status.get("isLinux") and status.get("isDocker"), "API does not report a Linux Docker runtime")
         require(status.get("appData") == "/config", "Application data is not in the mounted /config directory")
         require(status.get("version") and status.get("migrationVersion"), "Status lacks build/database information")
         release_version = (Path(__file__).resolve().parents[2] / "VERSION").read_text(encoding="utf-8").strip()
-        for resource in (status, self.api("/api/v3/system/status"), self.api("/initialize.json")):
+        for resource in (status, self.api("/api/v3/system/status"), self.ui_initialization()):
             require(resource.get("productName") == "SonarrWeeb", "Runtime does not identify the SonarrWeeb product")
             require(resource.get("productVersion") == release_version, "Runtime product version disagrees with VERSION")
             require(resource.get("version") == status["version"], "Internal version differs across API and frontend initialization")

@@ -69,6 +69,12 @@ class FunctionalSecurity(ContainerSmoke):
             raise SmokeFailure(f"{method} {path.split('?')[0]} returned HTTP {status}: {detail}")
         return json.loads(body)
 
+    def ui_initialization(self):
+        status, headers, body = self.raw("/initialize.json", api_key=False, cookie=True)
+        require(status == 200 and "json" in headers.get("Content-Type", "").lower(),
+                "Authenticated Forms session did not receive frontend initialization JSON")
+        return json.loads(body)
+
     def run_check(self, name, callback):
         try:
             callback()
@@ -118,6 +124,10 @@ class FunctionalSecurity(ContainerSmoke):
             require(self.raw(path)[0] == 200, f"Valid API key failed for {path}")
         require(self.raw("/", api_key=False)[0] in (302, 401), "Anonymous UI access was not challenged")
         require(self.raw("/login", api_key=False)[0] == 200, "Public login page unavailable")
+        for api_key in (False, True):
+            status, _, body = self.raw("/initialize.json", api_key=api_key)
+            require(status in (302, 401, 403), "Frontend initialization allowed access without a Forms session")
+            require(self.api_key.encode() not in body, "Denied frontend initialization exposed the API key")
         settings = self.json_api("/api/v5/settings/general")
         require(settings["authenticationRequired"] == "enabled", "Authentication bypass enabled unexpectedly")
         settings.update(username=self.username, password=self.password, passwordConfirmation=self.password)

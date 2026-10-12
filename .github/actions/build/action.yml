@@ -21,7 +21,7 @@ runs:
   using: "composite"
   steps:
     - name: Cache nuget packages
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.*.props') }}
@@ -29,23 +29,41 @@ runs:
           ${{ runner.os }}-nuget-
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v6
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
 
     - name: Setup NuGet registry source
       shell: bash
       if: ${{ startsWith(inputs.runtime, 'freebsd') }}
+      env:
+        REGISTRY_USER: ${{ github.repository_owner }}
+        REGISTRY_TOKEN: ${{ github.token }}
       run:
-        dotnet nuget add source --configfile src/NuGet.Config --name gh-openur https://nuget.pkg.github.com/openur/index.json --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
+        dotnet nuget add source --configfile src/NuGet.Config --name gh-openur https://nuget.pkg.github.com/openur/index.json --username "$REGISTRY_USER" --password "$REGISTRY_TOKEN" --store-password-in-clear-text
 
     - name: Setup Environment Variables
       id: variables
       shell: bash
+      env:
+        SONARR_VERSION: ${{ inputs.version }}
+        BRANCH: ${{ inputs.branch }}
+        FRAMEWORK: ${{ inputs.framework }}
+        RUNTIME: ${{ inputs.runtime }}
       run: |
+        set -euo pipefail
+        for name in SONARR_VERSION BRANCH FRAMEWORK RUNTIME; do
+          value="${!name}"
+          case "$value" in
+            *$'\n'*|*$'\r'*) printf 'Invalid multiline input: %s\n' "$name" >&2; exit 1 ;;
+          esac
+        done
+        [[ -z "$SONARR_VERSION" || "$SONARR_VERSION" =~ ^[0-9]+(\.[0-9]+){2,3}$ ]]
+        git check-ref-format --branch "$BRANCH" >/dev/null
+        [[ "$FRAMEWORK" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]
+        [[ "$RUNTIME" =~ ^[a-z0-9]+(-[a-z0-9]+)+$ ]]
         DOTNET_VERSION=$(jq -r '.sdk.version' global.json)
 
-        echo "SDK_PATH=${{ env.DOTNET_ROOT }}/sdk/${DOTNET_VERSION}" >> "$GITHUB_ENV"
-        echo "SONARR_VERSION=${{ inputs.version }}" >> "$GITHUB_ENV"
-        echo "BRANCH=${{ inputs.branch }}" >> "$GITHUB_ENV"
+        printf 'SDK_PATH=%s/sdk/%s\nSONARR_VERSION=%s\nBRANCH=%s\nFRAMEWORK=%s\nRUNTIME=%s\n' \
+          "$DOTNET_ROOT" "$DOTNET_VERSION" "$SONARR_VERSION" "$BRANCH" "$FRAMEWORK" "$RUNTIME" >> "$GITHUB_ENV"
 
     - name: Enable Extra Platforms In SDK
       if: ${{ inputs.runtime == 'freebsd-x64' }}
@@ -69,15 +87,17 @@ runs:
       run: |
         if [ "$SONARR_VERSION" != "" ]; then
           echo "Updating version info to: $SONARR_VERSION"
+          xml_branch=$(printf '%s' "$BRANCH" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+          sed_branch=$(printf '%s' "$xml_branch" | sed 's/[\\&/]/\\&/g')
           sed -i'' -e "s/<AssemblyVersion>[0-9.*]\+<\/AssemblyVersion>/<AssemblyVersion>$SONARR_VERSION<\/AssemblyVersion>/g" src/Directory.Build.props
-          sed -i'' -e "s/<AssemblyConfiguration>[\$()A-Za-z-]\+<\/AssemblyConfiguration>/<AssemblyConfiguration>${BRANCH}<\/AssemblyConfiguration>/g" src/Directory.Build.props
+          sed -i'' -e "s/<AssemblyConfiguration>[\$()A-Za-z-]\+<\/AssemblyConfiguration>/<AssemblyConfiguration>${sed_branch}<\/AssemblyConfiguration>/g" src/Directory.Build.props
           sed -i'' -e "s/<string>10.0.0.0<\/string>/<string>$SONARR_VERSION<\/string>/g" distribution/macOS/Sonarr.app/Contents/Info.plist
         fi
 
     - name: Build Backend
       shell: bash
       run: |
-        runtime="${{ inputs.runtime }}"
+        runtime="$RUNTIME"
         platform=Windows
         slnFile=src/Sonarr.sln
         targetingWindows=false
@@ -96,13 +116,13 @@ runs:
 
         echo "Building Sonarr for $runtime, Platform: $platform"
 
-        dotnet msbuild -restore $slnFile -p:SelfContained=true -p:Configuration=Release -p:Platform=$platform -p:RuntimeIdentifiers=$runtime -p:EnableWindowsTargeting=true -t:PublishAllRids
+        dotnet msbuild -restore "$slnFile" -p:SelfContained=true -p:Configuration=Release -p:Platform="$platform" -p:RuntimeIdentifiers="$runtime" -p:EnableWindowsTargeting=true -t:PublishAllRids
 
     - name: Package
       shell: bash
       run: |
-        framework="${{ inputs.framework }}"
-        runtime="${{ inputs.runtime }}"
+        framework="$FRAMEWORK"
+        runtime="$RUNTIME"
 
         IFS='-' read -ra SPLIT <<< "$runtime"
 
@@ -177,8 +197,8 @@ runs:
       if: ${{ inputs.package_tests }}
       shell: bash
       run: |
-        framework="${{ inputs.framework }}"
-        runtime="${{ inputs.runtime }}"
+        framework="$FRAMEWORK"
+        runtime="$RUNTIME"
 
         cp scripts/test.sh "_tests/$framework/$runtime/publish"
 
@@ -192,7 +212,7 @@ runs:
         runtime: ${{ inputs.runtime }}
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: build-${{ inputs.runtime }}
         path: _artifacts/**/*

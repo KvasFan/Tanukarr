@@ -29,18 +29,23 @@ runs:
   using: 'composite'
   steps:
     - name: Setup .NET
-      uses: actions/setup-dotnet@v6
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
 
     - name: Setup Postgres
       if: ${{ inputs.use_postgres }}
-      uses: ikalnytskyi/action-setup-postgres@v8
+      uses: ikalnytskyi/action-setup-postgres@c4dda34aae1c821e3a771b68b73b13af3198a7ee # v8
       with:
         postgres-version: ${{ inputs.postgres-version }}
 
     - name: Setup Test Variables
       shell: bash
+      env:
+        RESULTS_NAME: ${{ inputs.integration_tests && 'integation-' || 'unit-' }}${{ inputs.artifact }}${{ inputs.use_postgres && '-postgres' }}${{ inputs.use_postgres && inputs.postgres-version && inputs.postgres-version }}
       run: |
-        echo "RESULTS_NAME=${{ inputs.integration_tests && 'integation-' || 'unit-' }}${{ inputs.artifact }}${{ inputs.use_postgres && '-postgres' }}${{ inputs.use_postgres && inputs.postgres-version && inputs.postgres-version }}" >> "$GITHUB_ENV"
+        set -euo pipefail
+        name_pattern='^[A-Za-z0-9][A-Za-z0-9._ -]*$'
+        [[ "$RESULTS_NAME" =~ $name_pattern ]]
+        printf 'RESULTS_NAME=%s\n' "$RESULTS_NAME" >> "$GITHUB_ENV"
 
     - name: Setup Postgres Environment Variables
       if: ${{ inputs.use_postgres }}
@@ -52,14 +57,14 @@ runs:
         echo "Sonarr__Postgres__Password=postgres" >> "$GITHUB_ENV"
 
     - name: Download Artifact
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         name: ${{ inputs.artifact }}
         path: _tests
 
     - name: Download Binary Artifact
       if: ${{ inputs.integration_tests }}
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         name: ${{ inputs.binary_artifact }}
         path: _output
@@ -67,7 +72,17 @@ runs:
     - name: Set up binary artifact
       if: ${{ inputs.binary_path != '' }}
       shell: bash
-      run: mv ./_output/${{inputs.binary_path}} _tests/bin
+      env:
+        BINARY_PATH: ${{ inputs.binary_path }}
+      run: |
+        set -euo pipefail
+        case "$BINARY_PATH" in
+          ''|/*|\\*|*\\*|..|../*|*/../*|*/..|*$'\n'*|*$'\r'*)
+            printf 'Invalid binary artifact path\n' >&2
+            exit 1
+            ;;
+        esac
+        mv -- "./_output/$BINARY_PATH" _tests/bin
 
     - name: Make executable
       if: startsWith(inputs.os, 'windows') != true
@@ -81,11 +96,18 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: dotnet test ./_tests/Sonarr.*.Test.dll --filter "${{ inputs.filter }}" --logger "trx;LogFileName=${{ env.RESULTS_NAME }}.trx" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
+      env:
+        TEST_FILTER: ${{ inputs.filter }}
+      run: |
+        set -euo pipefail
+        case "$TEST_FILTER" in
+          *$'\n'*|*$'\r'*) printf 'Invalid multiline test filter\n' >&2; exit 1 ;;
+        esac
+        dotnet test ./_tests/Sonarr.*.Test.dll --filter "$TEST_FILTER" --logger "trx;LogFileName=$RESULTS_NAME.trx" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
 
     - name: Upload Test Results
       if: ${{ !cancelled() }}
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: results-${{ env.RESULTS_NAME }}
         path: TestResults/*.trx

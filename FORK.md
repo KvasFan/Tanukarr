@@ -17,9 +17,10 @@ provider identities in import-list exclusions. See the
 [integration report](docs/integration-2026-10-12.md) and
 [additional gaboy features](docs/gaboy-integration.md) and
 [ikatun features and validation](docs/ikatun-integration-2026-10-12.md).
-The integrated history also contains upstream commits through `59c22e859`,
-including the subsequent translation, imported-select and indexer-page-size
-changes. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
+The integrated history also contains the `59c22e859` translation,
+imported-select and indexer-page-size checkpoint, followed by the final
+`develop@57816c149` snapshot with development HTML-loading and API documentation
+updates. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
 maintainers and source-declared AI co-authors. Local adaptation and hardening
 were performed with OpenAI Codex based on GPT-6.
 

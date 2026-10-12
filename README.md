@@ -1,7 +1,7 @@
 # SonarrWeeb
 
-**Release 0.0.1** brings together Sonarr `v5-develop` through `59c22e859` (the
-initial integration checkpoint used `698bb1dbb`), Kakarotto features, compatible
+**Release 0.0.1** brings together Sonarr `develop` through `57816c149` (earlier
+integration checkpoints used `698bb1dbb` and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source and release assets from

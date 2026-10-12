@@ -34,9 +34,9 @@ original content.
 | [Final security and functional verification](security-functional-validation-2026-10-12.md) | Tested image, full suite results, fixes, SBOM/scanners, remaining risks and limits |
 | [Documentation review](documentation-review-2026-10-12.md) | Tracked-file inventory, documentation checks and attribution methodology |
 
-The recorded application contains upstream Sonarr through `59c22e859`. The
+The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later
-upstream commits already present in the integrated Git history are identified
+upstream checkpoints, including `59c22e859`, already present in Git are identified
 in the contributor register. A recorded snapshot is not a continuously updated
 upstream-version promise.
 

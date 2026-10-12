@@ -1,11 +1,11 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Sonarr",
-    "description": "Sonarr API docs - The v5 API docs apply to Sonarr v5 only.",
+    "title": "SonarrWeeb",
+    "description": "SonarrWeeb v5 API documentation. Product release versions are reported separately from the inherited Sonarr core and API versions.",
     "license": {
       "name": "GPL-3.0",
-      "url": "https://github.com/Sonarr/Sonarr/blob/develop/LICENSE"
+      "url": "https://github.com/KvasExert/SonarrWeeb/blob/main/LICENSE.md"
     },
     "version": "5.0.0"
   },
@@ -2730,6 +2730,45 @@
         }
       }
     },
+    "/api/v5/series/ordering": {
+      "get": {
+        "tags": [
+          "EpisodeOrdering"
+        ],
+        "parameters": [
+          {
+            "name": "tmdbId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "imdbId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpisodeOrderingResource"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/filesystem": {
       "get": {
         "tags": [
@@ -3839,6 +3878,94 @@
         }
       }
     },
+    "/api/v5/librarytools/lists/{id}": {
+      "get": {
+        "tags": [
+          "ImportListPreview"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/lists/{id}/preview": {
+      "delete": {
+        "tags": [
+          "ImportListPreview"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/lists/{id}/add": {
+      "post": {
+        "tags": [
+          "ImportListPreview"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListAddRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListAddRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListAddRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v5/settings/importlist": {
       "get": {
         "tags": [
@@ -4442,6 +4569,307 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/recycle": {
+      "get": {
+        "tags": [
+          "LibraryArchive"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/recycle/restore": {
+      "post": {
+        "tags": [
+          "LibraryArchive"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecycleRestoreRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecycleRestoreRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecycleRestoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/series/{id}/versions": {
+      "get": {
+        "tags": [
+          "LibraryArchive"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/series/{id}/versions/{versionId}/activate": {
+      "post": {
+        "tags": [
+          "LibraryArchive"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools": {
+      "get": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProOptions"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProOptions"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/series/{id}": {
+      "get": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProSeriesOptions"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProSeriesOptions"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProSeriesOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/searches": {
+      "get": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/storage": {
+      "get": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/audit": {
+      "post": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/keys": {
+      "get": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanionKeyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanionKeyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanionKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/librarytools/keys/{id}": {
+      "delete": {
+        "tags": [
+          "LibraryTools"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -5150,25 +5578,6 @@
         }
       }
     },
-    "/api/v5/settings/metadata": {
-      "get": {
-        "tags": [
-          "MetadataSourceSettings"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MetadataSourceSettingsResource"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/settings/metadata/{id}": {
       "put": {
         "tags": [
@@ -5237,6 +5646,116 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v5/settings/metadatasource/{id}": {
+      "put": {
+        "tags": [
+          "MetadataSourceSettings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetadataSourceSettingsResource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSourceSettingsResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "MetadataSourceSettings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSourceSettingsResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v5/settings/metadata": {
+      "get": {
+        "tags": [
+          "MetadataSourceSettings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSourceSettingsResource"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/settings/metadatasource": {
+      "get": {
+        "tags": [
+          "MetadataSourceSettings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSourceSettingsResource"
+                }
+              }
+            }
           }
         }
       }
@@ -6411,6 +6930,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "completeSeries",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -7229,6 +7756,102 @@
         }
       }
     },
+    "/api/v5/series/compression/capabilities": {
+      "get": {
+        "tags": [
+          "SeriesCompression"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/series/{id}/compression": {
+      "get": {
+        "tags": [
+          "SeriesCompression"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SeriesCompression"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeriesCompressionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeriesCompressionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeriesCompressionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SeriesCompression"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v5/series/editor": {
       "put": {
         "tags": [
@@ -7373,6 +7996,13 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "metadataSource",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MetadataSourceType"
             }
           }
         ],
@@ -8718,6 +9348,24 @@
         ],
         "type": "string"
       },
+      "CompanionKeyRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "nullable": true
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "ConnectionResource": {
         "type": "object",
         "properties": {
@@ -9214,6 +9862,10 @@
           },
           "autoRedownloadFailedFromInteractiveSearch": {
             "type": "boolean"
+          },
+          "stalledTorrentTimeout": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -9425,6 +10077,38 @@
           "downloadIgnored"
         ],
         "type": "string"
+      },
+      "EpisodeOrderingResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "episodeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seasonCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isAbsolute": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
       },
       "EpisodeResource": {
         "type": "object",
@@ -9683,7 +10367,8 @@
         "enum": [
           "none",
           "localAirDate",
-          "utcAirDate"
+          "utcAirDate",
+          "preserveOriginal"
         ],
         "type": "string"
       },
@@ -9773,6 +10458,24 @@
         "properties": {
           "type": {
             "$ref": "#/components/schemas/FileSystemEntityType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FormatScoreResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -9956,6 +10659,8 @@
         "enum": [
           "allowedHostsNotConfigured",
           "appDataLocation",
+          "backupStale",
+          "databaseIntegrity",
           "downloadClientCheckNoneAvailable",
           "downloadClientCheckUnableToCommunicate",
           "downloadClientRemovesCompletedDownloads",
@@ -10252,6 +10957,13 @@
           "title": {
             "type": "string",
             "nullable": true
+          },
+          "metadataSource": {
+            "$ref": "#/components/schemas/MetadataSourceType"
+          },
+          "foreignId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10411,7 +11123,114 @@
           "trakt",
           "simkl",
           "other",
-          "advanced"
+          "advanced",
+          "tmdb"
+        ],
+        "type": "string"
+      },
+      "ImportProgressItemResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "episodeIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "seasonNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "episodeNumbers": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "sourcePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ImportProgressState"
+          },
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completed": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportProgressResource": {
+        "type": "object",
+        "properties": {
+          "totalEpisodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "importedEpisodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "importingEpisodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waitingEpisodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failedEpisodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejectedEpisodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportProgressItemResource"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportProgressState": {
+        "enum": [
+          "waiting",
+          "importing",
+          "imported",
+          "rejected",
+          "failed"
         ],
         "type": "string"
       },
@@ -10453,7 +11272,9 @@
           "notRevisionUpgrade",
           "notCustomFormatUpgrade",
           "notCustomFormatUpgradeAfterRename",
-          "multiSeason"
+          "multiSeason",
+          "unmonitoredEpisode",
+          "ambiguousNumbering"
         ],
         "type": "string"
       },
@@ -10647,6 +11468,12 @@
           "rssSyncInterval": {
             "type": "integer",
             "format": "int32"
+          },
+          "enableFakeReleaseProtection": {
+            "type": "boolean"
+          },
+          "enableMultiSeasonReleases": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10680,6 +11507,35 @@
             "type": "string",
             "nullable": true,
             "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListAddRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "nullable": true
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "rootFolderId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "qualityProfileId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "monitored": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -11212,6 +12068,9 @@
           "skipFreeSpaceCheckWhenImporting": {
             "type": "boolean"
           },
+          "skipUnmonitoredEpisodesFromPacks": {
+            "type": "boolean"
+          },
           "minimumFreeSpaceWhenImporting": {
             "type": "integer",
             "format": "int32",
@@ -11320,10 +12179,27 @@
           },
           "preferredMetadataLanguage": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
+          },
+          "tmdbApiKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "tmdbApiKeyConfigured": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
+      },
+      "MetadataSourceType": {
+        "enum": [
+          "tvdb",
+          "tmdb",
+          "aniList",
+          "myAnimeList"
+        ],
+        "type": "string"
       },
       "MissingSubresource": {
         "enum": [
@@ -11604,6 +12480,9 @@
           "fullSeason": {
             "type": "boolean"
           },
+          "isCompleteSeries": {
+            "type": "boolean"
+          },
           "isPartialSeason": {
             "type": "boolean"
           },
@@ -11756,6 +12635,52 @@
           "userName"
         ],
         "type": "string"
+      },
+      "ProOptions": {
+        "type": "object",
+        "properties": {
+          "automationPaused": {
+            "type": "boolean"
+          },
+          "hardlinkOnly": {
+            "type": "boolean"
+          },
+          "matchExternalIds": {
+            "type": "boolean"
+          },
+          "preferAnimeSeasonPacks": {
+            "type": "boolean"
+          },
+          "series": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProSeriesOptions"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProSeriesOptions": {
+        "type": "object",
+        "properties": {
+          "keepVersions": {
+            "type": "boolean"
+          },
+          "automaticRenaming": {
+            "type": "string",
+            "nullable": true
+          },
+          "seasonTitles": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ProblemDetails": {
         "type": "object",
@@ -12114,6 +13039,25 @@
             },
             "nullable": true
           },
+          "episodeIdsBySeason": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "nullable": true
+          },
+          "episodeIdsWithFiles": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
           "series": {
             "$ref": "#/components/schemas/SeriesResource"
           },
@@ -12220,6 +13164,9 @@
           },
           "isFullSeason": {
             "type": "boolean"
+          },
+          "importProgress": {
+            "$ref": "#/components/schemas/ImportProgressResource"
           }
         },
         "additionalProperties": false
@@ -12322,6 +13269,24 @@
           "value": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RecycleRestoreRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "nullable": true
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seasonNumber": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -12764,6 +13729,13 @@
             "type": "integer",
             "format": "int32"
           },
+          "formatScores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormatScoreResource"
+            },
+            "nullable": true
+          },
           "sceneMapping": {
             "$ref": "#/components/schemas/AlternateTitleResource"
           }
@@ -12912,6 +13884,9 @@
       "SearchInfoResource": {
         "type": "object",
         "properties": {
+          "completeSeries": {
+            "type": "boolean"
+          },
           "seriesId": {
             "type": "integer",
             "format": "int32",
@@ -13112,6 +14087,20 @@
         },
         "additionalProperties": false
       },
+      "SeriesCompressionRequest": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "nullable": true
+          },
+          "minSizeMb": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "SeriesEditorResource": {
         "type": "object",
         "properties": {
@@ -13294,6 +14283,10 @@
             "type": "string",
             "nullable": true
           },
+          "pendingPath": {
+            "type": "string",
+            "nullable": true
+          },
           "qualityProfileId": {
             "type": "integer",
             "format": "int32"
@@ -13346,6 +14339,17 @@
               "type": "integer",
               "format": "int32"
             },
+            "nullable": true
+          },
+          "metadataSource": {
+            "$ref": "#/components/schemas/MetadataSourceType"
+          },
+          "foreignId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderingId": {
+            "type": "string",
             "nullable": true
           },
           "firstAired": {
@@ -13709,6 +14713,8 @@
           "packageAuthor",
           "packageUpdateMechanismMessage",
           "packageVersion",
+          "productName",
+          "productVersion",
           "runtimeName",
           "runtimeVersion",
           "startupPath",
@@ -13718,6 +14724,14 @@
         "type": "object",
         "properties": {
           "appName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productVersion": {
             "type": "string",
             "nullable": true
           },
@@ -14364,6 +15378,9 @@
       "name": "EpisodeFile"
     },
     {
+      "name": "EpisodeOrdering"
+    },
+    {
       "name": "FileSystem"
     },
     {
@@ -14382,6 +15399,9 @@
       "name": "ImportListExclusion"
     },
     {
+      "name": "ImportListPreview"
+    },
+    {
       "name": "ImportListSettings"
     },
     {
@@ -14395,6 +15415,12 @@
     },
     {
       "name": "Language"
+    },
+    {
+      "name": "LibraryArchive"
+    },
+    {
+      "name": "LibraryTools"
     },
     {
       "name": "Localization"
@@ -14476,6 +15502,9 @@
     },
     {
       "name": "Series"
+    },
+    {
+      "name": "SeriesCompression"
     },
     {
       "name": "SeriesEditor"
