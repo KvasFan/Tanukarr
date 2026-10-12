@@ -9,6 +9,8 @@ These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb)
 and read the [release notes for 0.1.0](docs/releases/0.1.0.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExert/SonarrWeeb/releases).
+The [0.1.0 verification report](docs/releases/0.1.0-verification.md) records the
+published image, checks, remaining findings and local deployment.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
 See the [documentation index](docs/README.md),

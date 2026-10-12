@@ -11,6 +11,7 @@ original content.
 | [Project README](../README.md) | SonarrWeeb features, release links, Docker quick start and toolchain |
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
 | [SonarrWeeb 0.1.0](releases/0.1.0.md) | Current release scope, Jellyfin and AniList additions, upgrade guidance and verification limits |
+| [0.1.0 release verification](releases/0.1.0-verification.md) | Published source/image identity, executed release checks, fresh scan and deployment |
 | [SonarrWeeb 0.0.1](releases/0.0.1.md) | Initial release scope, download assets, core/API version compatibility and known limits |
 | [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
