@@ -315,14 +315,14 @@ namespace NzbDrone.Core.Configuration
         {
             get
             {
-                var instanceName = _appOptions.InstanceName ?? GetValue("InstanceName", BuildInfo.AppName);
+                var instanceName = _appOptions.InstanceName ?? GetValue("InstanceName", BuildInfo.ProductName);
 
                 if (instanceName.StartsWith(BuildInfo.AppName) || instanceName.EndsWith(BuildInfo.AppName))
                 {
                     return instanceName;
                 }
 
-                return BuildInfo.AppName;
+                return BuildInfo.ProductName;
             }
         }
 

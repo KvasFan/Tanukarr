@@ -14,6 +14,8 @@ function About() {
 
   const {
     version,
+    productName,
+    productVersion,
     packageVersion,
     packageAuthor,
     isNetCore,
@@ -35,7 +37,12 @@ function About() {
   return (
     <FieldSet legend={translate('About')}>
       <DescriptionList className={styles.descriptionList}>
-        <DescriptionListItem title={translate('Version')} data={version} />
+        <DescriptionListItem
+          title={translate('Version')}
+          data={`${productName} ${productVersion}`}
+        />
+
+        <DescriptionListItem title="Sonarr build" data={version} />
 
         {packageVersion && (
           <DescriptionListItem

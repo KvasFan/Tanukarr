@@ -2,16 +2,19 @@
 
 ## Reporting the affected build
 
-Sonarr Pro and this local integration are independent of upstream Sonarr. Report
-fork vulnerabilities to the maintainer distributing the affected commit or image.
-Where that repository enables GitHub private vulnerability reporting, use its
-**Security -> Report a vulnerability** form. Otherwise, contact its maintainer
-privately before publishing exploit details or credentials. The original fork is
-[KakarottoCake/Sonarr-Pro](https://github.com/KakarottoCake/Sonarr-Pro).
+SonarrWeeb is independent of upstream Sonarr and the credited Sonarr Pro forks.
+Report SonarrWeeb vulnerabilities to the maintainer of
+[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb).
+Private vulnerability reporting is enabled for this repository. Use
+**Security -> Report a vulnerability**, or the
+[private reporting form](https://github.com/KvasExert/SonarrWeeb/security/advisories/new),
+before publishing exploit details or credentials.
 
-This local integration has not been published to a registry or remote repository
-by this work. Identify its Git commit and image digest rather than assuming public
-Kakarotto, gaboy or ikatun images contain the same code.
+Release 0.0.1 is identified by Git tag `v0.0.1` and the GHCR image
+`ghcr.io/kvasexert/sonarrweeb:0.0.1`. Identify the exact Git commit and image digest
+in reports. The [release notes](docs/releases/0.0.1.md) and release manifest record
+the artifact being distributed. Source Kakarotto, gaboy or ikatun images can
+contain different code and require reports to their own maintainers.
 
 For a defect confirmed to affect upstream Sonarr, follow the
 [upstream security policy](https://github.com/Sonarr/Sonarr/blob/v5-develop/SECURITY.md).
@@ -21,6 +24,7 @@ a response deadline or patch delivery on their behalf.
 ## Useful details
 
 - Commit, image digest, runtime version and operating system.
+- SonarrWeeb release version, reported separately from the inherited core version.
 - Affected feature/provider and required permissions or configuration.
 - Minimal reproduction with disposable files and a local fixture service.
 - Expected/observed behavior, impact and sanitized logs.
@@ -35,7 +39,9 @@ or a real media library without authorization.
 The [October 12 security and functional report](docs/security-functional-validation-2026-10-12.md)
 records confirmed fixes, tested image identity, tool versions and residual
 dependency/legacy-migration findings. Its SBOM and scans describe that build, not
-future releases. Excluded ImageSharp attack paths do not mean the library was
+future releases. The [0.0.1 release notes](docs/releases/0.0.1.md) describe the
+release packaging and its own published verification artifacts. Excluded
+ImageSharp attack paths do not mean the library was
 patched; build-only braces and unpatched Ubuntu advisories remain recorded.
 
 The container initializes volume ownership as root and runs Sonarr through gosu

@@ -69,18 +69,22 @@
 
   <!-- Set the Product and Version info for our own projects -->
   <PropertyGroup Condition="'$(SonarrProject)'=='true'">
-    <Product>Sonarr Pro</Product>
-    <Company>Sonarr Pro</Company>
+    <Product>SonarrWeeb</Product>
+    <Company>SonarrWeeb contributors</Company>
     <!-- Upstream's copyright stays: this is a GPLv3 fork of their work, not a replacement for it. -->
     <Copyright>Copyright 2014-$([System.DateTime]::Now.ToString('yyyy')) sonarr.tv and the Sonarr Pro contributors (GNU General Public v3)</Copyright>
     
-    <!-- Should be replaced by CI -->
+    <!-- Preserve Sonarr's internal version for runtime and upgrade compatibility. -->
     <AssemblyVersion>10.0.0.*</AssemblyVersion>
+    <!-- The independently versioned fork is published using the root VERSION file. -->
+    <Version>$([System.IO.File]::ReadAllText('$(SonarrRootDir)VERSION').Trim())</Version>
+    <InformationalVersion>$(Version)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AssemblyConfiguration>$(Configuration)-dev</AssemblyConfiguration>
     <NeutralLanguage>en</NeutralLanguage>
 
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 
     <Deterministic Condition="$(AssemblyVersion.EndsWith('*'))">False</Deterministic>

@@ -60,6 +60,8 @@ namespace Sonarr.Api.V3.System
             return new SystemResource
             {
                 AppName = BuildInfo.AppName,
+                ProductName = BuildInfo.ProductName,
+                ProductVersion = BuildInfo.ProductVersion,
                 InstanceName = _configFileProvider.InstanceName,
                 Version = BuildInfo.Version.ToString(),
                 BuildTime = BuildInfo.BuildDateTime,

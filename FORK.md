@@ -1,6 +1,6 @@
 # What this fork changes
 
-The reasoning behind each of Sonarr Pro's changes, and the trade-offs they carry.
+The reasoning behind SonarrWeeb's integrated changes, and the trade-offs they carry.
 [README.md](README.md) covers what the features are and how to install; this file
 covers why they work the way they do.
 
@@ -22,6 +22,12 @@ including the subsequent translation, imported-select and indexer-page-size
 changes. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
 maintainers and source-declared AI co-authors. Local adaptation and hardening
 were performed with OpenAI Codex based on GPT-6.
+
+SonarrWeeb 0.0.1 is the independently named release of this integration, building
+on the credited Sonarr Pro source forks. Its product version is separate from
+Sonarr's inherited internal core/API version. See the
+[Docker installation guide](docs/docker-installation.md) for the published-image
+configuration and [release notes](docs/releases/0.0.1.md) for packaging scope.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the

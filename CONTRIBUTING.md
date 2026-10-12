@@ -1,4 +1,4 @@
-# Contributing to Sonarr Pro
+# Contributing to SonarrWeeb
 
 Contributions, including AI-assisted work, are welcome. Describe the problem,
 the resulting behavior and the verification you performed. Preserve the authors
@@ -83,8 +83,25 @@ public AniList checks; it does not use a private account or start a real downloa
 
 CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tests,
 generated-video worker tests and frontend checks. The Docker workflow builds amd64
-and runs both container scripts; release tags also request arm64. A CI pass does
-not imply that every online or platform suite ran.
+and runs both container scripts. SonarrWeeb 0.0.1 publishes Linux amd64; configured
+support for another architecture is not an executed test or a published artifact.
+A CI pass does not imply that every online or platform suite ran.
+
+## Release and installation documentation
+
+The public project is
+[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb). Release **0.0.1** uses
+Git tag `v0.0.1` and container tag `ghcr.io/kvasexert/sonarrweeb:0.0.1`.
+The [Docker installation guide](docs/docker-installation.md) contains complete
+Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
+release-image archive fallback. Maintain that guide and
+[release notes](docs/releases/0.0.1.md) when changing the published deployment.
+
+Keep the SonarrWeeb product release version separate from the inherited Sonarr
+core/API compatibility version. Preserve the GPL license, corresponding source
+and original feature authors in every distribution. A release requires executed
+build/container checks and an identified image digest; creating a Git tag or
+writing a workflow alone does not verify the published image.
 
 ## Documentation and attribution
 
@@ -110,11 +127,12 @@ is excluded, or apply an old report's results to an untested new build.
 
 ## Reports and suggestions
 
-Report fork issues to the repository distributing the affected build. The original
-[Sonarr Pro tracker](https://github.com/KakarottoCake/Sonarr-Pro/issues) accepts
-general fork reports, but this local integration is not a published image from
-that repository. Include the commit/image digest, runtime version, provider,
-series/release involved, expected behavior and sanitized logs.
+Report SonarrWeeb issues to
+[this project's tracker](https://github.com/KvasExert/SonarrWeeb/issues). Include the
+SonarrWeeb release version, commit/image digest, internal runtime version,
+provider, series/release involved, expected behavior and sanitized logs. The
+original [Sonarr Pro repository](https://github.com/KakarottoCake/Sonarr-Pro) is a
+credited source fork; its releases do not identify this project's builds.
 
 Use [SECURITY.md](SECURITY.md) for security reports. Contact upstream only when the
 behavior also affects upstream Sonarr. This fork makes no response-time promise

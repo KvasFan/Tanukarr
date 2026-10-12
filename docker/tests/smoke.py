@@ -36,6 +36,8 @@ class ContainerSmoke:
         self.api_key = secrets.token_hex(16)
         self.metadata_key = secrets.token_hex(16)
         self.results = []
+        self.image_id = None
+        self.runtime_metadata = {}
         # These requests must remain local even when the host configures a proxy.
         self.http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -97,6 +99,7 @@ class ContainerSmoke:
 
     def start(self):
         self.docker("info", "--format", "{{.OSType}}")
+        self.image_id = self.docker("image", "inspect", "--format", "{{.Id}}", self.args.image)
         require(
             self.docker("image", "inspect", "--format", "{{.Os}}", self.args.image) == "linux",
             "The smoke test requires an already built Linux image",
@@ -168,6 +171,16 @@ class ContainerSmoke:
         require(status.get("isLinux") and status.get("isDocker"), "API does not report a Linux Docker runtime")
         require(status.get("appData") == "/config", "Application data is not in the mounted /config directory")
         require(status.get("version") and status.get("migrationVersion"), "Status lacks build/database information")
+        release_version = (Path(__file__).resolve().parents[2] / "VERSION").read_text(encoding="utf-8").strip()
+        for resource in (status, self.api("/api/v3/system/status"), self.api("/initialize.json")):
+            require(resource.get("productName") == "SonarrWeeb", "Runtime does not identify the SonarrWeeb product")
+            require(resource.get("productVersion") == release_version, "Runtime product version disagrees with VERSION")
+            require(resource.get("version") == status["version"], "Internal version differs across API and frontend initialization")
+        require(status.get("appName") == "Sonarr", "The compatible internal application name changed")
+        self.runtime_metadata = {key: status[key] for key in (
+            "appName", "productName", "productVersion", "version", "runtimeVersion", "migrationVersion"
+        ) if key in status}
+        self.check("SonarrWeeb release metadata agrees across v3/v5 APIs and frontend initialization")
         queue = self.api("/api/v5/queue")
         require(queue.get("totalRecords") == 0 and queue.get("records") == [], "Isolated queue was not empty")
         require(self.api("/api/v5/series") == [], "Isolated configuration contains existing series")
@@ -317,6 +330,8 @@ def main():
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps({
                 "image": args.image,
+                "imageId": smoke.image_id,
+                "runtime": smoke.runtime_metadata,
                 "passed": error is None,
                 "checks": smoke.results,
                 "error": error,

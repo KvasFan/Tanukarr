@@ -5,6 +5,8 @@ interface Window {
     apiKey: string;
     apiRoot: string;
     instanceName: string;
+    productName: string;
+    productVersion: string;
     theme: string;
     urlBase: string;
     version: string;

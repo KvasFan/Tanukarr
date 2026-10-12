@@ -8,6 +8,8 @@ namespace Sonarr.Api.V5.System;
 public class SystemResource
 {
     public required string AppName { get; set; }
+    public required string ProductName { get; set; }
+    public required string ProductVersion { get; set; }
     public required string InstanceName { get; set; }
     public required string Version { get; set; }
     public DateTime BuildTime { get; set; }

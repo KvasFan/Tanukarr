@@ -1,4 +1,4 @@
-name: Docker
+name: Docker and Release
 
 on:
   push:
@@ -6,102 +6,164 @@ on:
       - main
     tags:
       - "v*"
-  # Pull requests build and smoke-test locally without registry credentials.
+  # Pull requests build and run isolated checks without registry credentials.
   pull_request:
   workflow_dispatch:
 
 concurrency:
   group: docker-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
   publish:
-    name: Build and publish image
+    name: Verify and publish linux/amd64
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     permissions:
       contents: read
       packages: write
 
+    outputs:
+      version: ${{ steps.image.outputs.version }}
+      artifact: ${{ steps.image.outputs.artifact }}
+
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-
-      # arm64 is built under emulation on an amd64 runner, which turns a .NET compile
-      # into a very long one. Releases get both architectures because plenty of people
-      # run this on a Pi or an arm NAS; the rolling "edge" tag gets amd64 only, so that
-      # an ordinary push to main does not spend an hour in QEMU.
-      - name: Choose platforms
-        id: platforms
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "list=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
-          else
-            echo "list=linux/amd64" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Log in to GitHub Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      # ghcr.io requires a lowercase path, and the owner name is not necessarily lowercase.
-      - name: Resolve image name
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Resolve image and release version
         id: image
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          image="ghcr.io/${REPOSITORY,,}"
+          version="$(tr -d '\r\n' < VERSION)"
+          if [[ "$REF_TYPE" == tag ]]; then
+            version="${REF_NAME#v}"
+            [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+            [[ "$version" == "$(tr -d '\r\n' < VERSION)" ]] || exit 1
+          fi
+          echo "name=$image" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "artifact=SonarrWeeb-$version-release" >> "$GITHUB_OUTPUT"
+          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
-      - name: Derive tags
+      - name: Derive image tags
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ steps.image.outputs.name }}
-          # "latest" tracks the newest release tag, never an untagged main build, so that
-          # a "docker pull ...:latest" cannot land on an unreleased commit.
+          # latest always selects a tested release, while edge selects main.
           tags: |
             type=sha,format=long,prefix=sha-
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
 
-      # Build amd64 into the local daemon first and prove the thing actually starts.
-      # A successful image build says nothing about whether the app runs: a missing
-      # native dependency or a bad entrypoint only shows up at runtime, and without
-      # this the first person to find out would be whoever pulled the release.
-      - name: Build for smoke test
-        uses: docker/build-push-action@v6
+      - name: Build image with frontend and backend checks
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           platforms: linux/amd64
           push: false
           load: true
-          tags: sonarr-pro:smoketest
+          tags: sonarrweeb:verified
+          build-args: |
+            SONARRWEEB_VERSION=${{ steps.image.outputs.version }}
+            SONARRWEEB_SOURCE=https://github.com/${{ github.repository }}
+            SONARRWEEB_REVISION=${{ github.sha }}
+            SONARRWEEB_CREATED=${{ steps.image.outputs.created }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Smoke test
+      - name: Container smoke checks
         run: |
-          python3 docker/tests/smoke.py --image sonarr-pro:smoketest \
-            --report "${RUNNER_TEMP}/sonarr-container-smoke.json"
+          python3 docker/tests/smoke.py --image sonarrweeb:verified \
+            --report "${RUNNER_TEMP}/sonarrweeb-smoke.json"
 
       - name: Isolated authentication and functional checks
         run: |
-          python3 docker/tests/functional-security.py --image sonarr-pro:smoketest \
-            --report "${RUNNER_TEMP}/sonarr-functional-security.json"
+          python3 docker/tests/functional-security.py --image sonarrweeb:verified \
+            --report "${RUNNER_TEMP}/sonarrweeb-functional-security.json"
 
-      - name: Build and push
-        if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
+      - name: Upload verification reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          context: .
-          platforms: ${{ steps.platforms.outputs.list }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          name: sonarrweeb-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/sonarrweeb-smoke.json
+            ${{ runner.temp }}/sonarrweeb-functional-security.json
+          if-no-files-found: ignore
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Publish the exact tested image; no second rebuild can change its contents.
+      - name: Push verified image
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            [[ -n "$tag" ]] || continue
+            docker tag sonarrweeb:verified "$tag"
+            docker push "$tag"
+          done <<< "$IMAGE_TAGS"
+
+      - name: Generate CycloneDX SBOM for release image
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          image: sonarrweeb:verified
+          format: cyclonedx-json
+          output-file: ${{ runner.temp }}/sonarrweeb-sbom.cdx.json
+          syft-version: v1.54.1
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Package verified release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          VERSION: ${{ steps.image.outputs.version }}
+          IMAGE: ${{ steps.image.outputs.name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 docker/release/package.py \
+            --version "$VERSION" --repository "$REPOSITORY" --image "$IMAGE:$VERSION" \
+            --sbom "${RUNNER_TEMP}/sonarrweeb-sbom.cdx.json" \
+            --smoke-report "${RUNNER_TEMP}/sonarrweeb-smoke.json" \
+            --functional-report "${RUNNER_TEMP}/sonarrweeb-functional-security.json" \
+            --output "${RUNNER_TEMP}/sonarrweeb-release"
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.image.outputs.artifact }}
+          path: ${{ runner.temp }}/sonarrweeb-release/*
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: publish
+    permissions:
+      actions: read
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.publish.outputs.version }}
+      artifact: ${{ needs.publish.outputs.artifact }}

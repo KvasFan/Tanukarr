@@ -8,7 +8,10 @@ original content.
 
 | Document | Purpose |
 | --- | --- |
-| [Project README](../README.md) | Features, local Docker/Compose setup, updates and toolchain |
+| [Project README](../README.md) | SonarrWeeb features, release links, Docker quick start and toolchain |
+| [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
+| [SonarrWeeb 0.0.1](releases/0.0.1.md) | Release scope, download assets, core/API version compatibility and known limits |
+| [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
 | [Library tools](library-tools.md) | Filters, pause, lists, retained versions, restore and companion keys |
 | [Compression worker](../docker/compression/README.md) | Optional host worker, presets, dependencies and filesystem safeguards |
@@ -38,9 +41,11 @@ in the contributor register. A recorded snapshot is not a continuously updated
 upstream-version promise.
 
 The verified local image is `sonarr-weeb:local` on Linux amd64, with its digest,
-export checksum and runtime version in the final validation report. Documentation
-updates do not rebuild or redeploy that image. Publishing workflow configuration
-and arm64 support are distinct from executed local tests and registry publication.
+export checksum and runtime version in the final validation report. This is the
+historical security-validation checkpoint. The SonarrWeeb 0.0.1 release uses
+`ghcr.io/kvasexert/sonarrweeb:0.0.1` and a release manifest with its own artifact
+identity. Earlier test results do not imply every suite was repeated for release
+packaging. Only Linux amd64 is included in the initial release.
 
 Validation artifacts are ignored local files under `_artifacts/security-2026-10-12`
 and the host paths recorded in the reports. They are not included in a normal Git

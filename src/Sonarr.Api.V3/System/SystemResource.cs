@@ -9,6 +9,8 @@ namespace Sonarr.Api.V3.System
     public class SystemResource
     {
         public string AppName { get; set; }
+        public string ProductName { get; set; }
+        public string ProductVersion { get; set; }
         public string InstanceName { get; set; }
         public string Version { get; set; }
         public DateTime BuildTime { get; set; }

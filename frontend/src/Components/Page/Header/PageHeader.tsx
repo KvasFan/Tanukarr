@@ -53,7 +53,7 @@ function PageHeader() {
             src={`${window.Sonarr.urlBase}/Content/Images/logo.svg`}
             alt=""
           />
-          <span className={styles.brandName}>Sonarr</span>
+          <span className={styles.brandName}>{window.Sonarr.productName}</span>
         </Link>
       </div>
 

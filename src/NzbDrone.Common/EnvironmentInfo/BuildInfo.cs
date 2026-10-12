@@ -15,6 +15,9 @@ namespace NzbDrone.Common.EnvironmentInfo
 
             var attributes = assembly.GetCustomAttributes(true);
 
+            ProductName = attributes.OfType<AssemblyProductAttribute>().FirstOrDefault()?.Product ?? AppName;
+            ProductVersion = attributes.OfType<AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? Version.ToString();
+
             Branch = "unknown";
 
             var config = attributes.OfType<AssemblyConfigurationAttribute>().FirstOrDefault();
@@ -27,6 +30,9 @@ namespace NzbDrone.Common.EnvironmentInfo
         }
 
         public static string AppName { get; } = "Sonarr";
+
+        public static string ProductName { get; }
+        public static string ProductVersion { get; }
 
         public static Version Version { get; }
         public static string Branch { get; }

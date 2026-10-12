@@ -1,12 +1,12 @@
 # Contributors and feature provenance
 
-This register credits the upstream application, original fork implementations,
+This SonarrWeeb register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have
 authored every feature in their repository. AI credit records tool/model provenance
 without assigning legal authorship or replacing the original human notices.
 
 The Git identity snapshot is `ca91432162730c25bf5d524df70204006ce7281d`
-(October 12, 2026), before this documentation-only update. It contains 12,039
+(October 12, 2026), before the original documentation-review checkpoint. It contains 12,039
 reachable commits, 393 author display names, 380 co-author display names and
 748 distinct names in their union. These are recorded identities, including
 aliases, bots and translation accounts, not a count of unique people. No
@@ -33,7 +33,8 @@ local commit makes their original author name unreachable from HEAD.
   source commits declare Claude Opus 5.5 as co-author.
 - **Local OpenAI Codex assistant, based on GPT-6**: this integration,
   AniList lifecycle fixes, compatibility adaptations, test/runtime work,
-  security hardening and the English documentation/contributor audit.
+  security hardening, the English documentation/contributor audit and
+  SonarrWeeb 0.0.1 release packaging/installation documentation.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -42,7 +43,7 @@ local commit makes their original author name unreachable from HEAD.
 
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
-| Current local integration and documentation | OpenAI Codex, based on GPT-6 | Explicit identity of the current coding session; no more specific variant is established |
+| Local integration, documentation and SonarrWeeb 0.0.1 packaging | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -51,6 +52,20 @@ local commit makes their original author name unreachable from HEAD.
 Historical labels differ between README prose and commit trailers. Both are
 retained rather than silently replaced. Source-declared labels do not
 independently verify that a particular runtime model executed those sessions.
+
+## SonarrWeeb release identity
+
+The integrated project is distributed as **SonarrWeeb 0.0.1**, with Git tag
+`v0.0.1`, under the GitHub profile
+[KvasExert](https://github.com/KvasExert/SonarrWeeb). The publishing account
+maintains this release; it is not credited as the original author of inherited
+features. Naming, version metadata, installation YAML, workflow and release
+packaging are local adaptation work; original feature authors and their source
+commits remain credited below. Release publication does not transfer credit
+for inherited features to the publishing account. The
+[release notes](docs/releases/0.0.1.md) and
+[installation guide](docs/docker-installation.md) link the public source and
+distribution, while the Git log records release changes and preserved trailers.
 
 ## Feature-to-contributor register
 

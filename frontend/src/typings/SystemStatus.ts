@@ -1,6 +1,8 @@
 interface SystemStatus {
   appData: string;
   appName: string;
+  productName: string;
+  productVersion: string;
   authentication: string;
   branch: string;
   buildTime: string;

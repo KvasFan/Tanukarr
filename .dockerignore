@@ -41,4 +41,12 @@ media/
 docs/
 distribution/
 docker/tests/
+docker/release/
 docker-compose.yml
+AGENTS.md
+CONTRIBUTING.md
+CONTRIBUTORS.md
+COPYRIGHT.md
+FORK.md
+README.md
+SECURITY.md

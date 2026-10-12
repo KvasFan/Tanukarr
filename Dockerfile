@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Sonarr Pro
+# SonarrWeeb
 #
 # Three stages: the React UI, the .NET backend, then a runtime image holding only
 # the published output. Building the UI separately means a backend-only change does
@@ -58,8 +58,9 @@ RUN set -eux; \
     mkdir -p /app; \
     cp -r "_output/net10.0/${RID}/publish/." /app/
 
-# The native amd64 build verifies the same published backend. Releases also build
-# arm64 under emulation; the tests have already run on amd64 for that commit.
+# The native amd64 build verifies the same published backend. The initial
+# SonarrWeeb release publishes amd64 only; other targets require their own runtime
+# verification before they can be advertised as supported release images.
 # Integration tests require configured external services and run separately.
 # NuGet distributes ffprobe with mode 644. Disk-access tests execute the binary
 # from their own output directory before /app is made executable.
@@ -71,7 +72,7 @@ RUN set -eux; \
           --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"; \
       done; \
       dotnet test _tests/net10.0/linux-x64/Sonarr.Common.Test.dll \
-        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture" --logger "console;verbosity=minimal"; \
+        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture|FullyQualifiedName~BuildInfoFixture" --logger "console;verbosity=minimal"; \
     fi
 
 # The UI is built separately and is not produced by the .NET build.
@@ -92,6 +93,11 @@ RUN set -eux; \
 # Runtime
 # ---------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS runtime
+
+ARG SONARRWEEB_VERSION=0.0.1
+ARG SONARRWEEB_SOURCE=https://github.com/KvasExert/SonarrWeeb
+ARG SONARRWEEB_REVISION
+ARG SONARRWEEB_CREATED
 
 # runtime-deps already carries what a self-contained .NET app needs to start —
 # ICU for globalization, ca-certificates for outbound HTTPS, tzdata — so only the
@@ -130,7 +136,10 @@ ENV XDG_CONFIG_HOME=/config \
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/app/Sonarr", "-nobrowser", "-data=/config"]
 
-LABEL org.opencontainers.image.title="Sonarr Pro" \
+LABEL org.opencontainers.image.title="SonarrWeeb" \
       org.opencontainers.image.description="A fork of Sonarr with TMDB, IMDb, AniList and MyAnimeList metadata, selectable episode orderings, absolute numbering, multi-season packs and fake release filtering." \
-      org.opencontainers.image.source="https://github.com/KakarottoCake/Sonarr-Pro" \
+      org.opencontainers.image.source="${SONARRWEEB_SOURCE}" \
+      org.opencontainers.image.version="${SONARRWEEB_VERSION}" \
+      org.opencontainers.image.revision="${SONARRWEEB_REVISION}" \
+      org.opencontainers.image.created="${SONARRWEEB_CREATED}" \
       org.opencontainers.image.licenses="GPL-3.0-only"

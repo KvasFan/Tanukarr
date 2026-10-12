@@ -60,6 +60,8 @@ public class SystemController : Controller
         return TypedResults.Ok(new SystemResource
         {
             AppName = BuildInfo.AppName,
+            ProductName = BuildInfo.ProductName,
+            ProductVersion = BuildInfo.ProductVersion,
             InstanceName = _configFileProvider.InstanceName,
             Version = BuildInfo.Version.ToString(),
             BuildTime = BuildInfo.BuildDateTime,

@@ -1,21 +1,27 @@
-# Sonarr Pro
+# SonarrWeeb
 
-This local integration includes Sonarr `v5-develop` through `59c22e859` (the
+**Release 0.0.1** brings together Sonarr `v5-develop` through `59c22e859` (the
 initial integration checkpoint used `698bb1dbb`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
+Get the source and release assets from
+[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb) and
+[release v0.0.1](https://github.com/KvasExert/SonarrWeeb/releases/tag/v0.0.1).
+The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
+complete Compose YAML, configuration, permissions, authentication and updates.
 See the [documentation index](docs/README.md),
 [integration report](docs/integration-2026-10-12.md)
 and the [ikatun feature and validation report](docs/ikatun-integration-2026-10-12.md).
-The included Compose file builds `sonarr-weeb:local` from this working tree.
 The [security and functional report](docs/security-functional-validation-2026-10-12.md)
-records the final verified Linux amd64 image, test results, remaining findings and
-local Windows/WSL deployment. The [initial Docker report](docs/docker-validation-2026-10-12.md)
-preserves the earlier packaging checkpoint.
+records the earlier verified Linux amd64 image, test results, remaining findings
+and local Windows/WSL deployment. Dated reports retain their tested source and
+image identities; they do not claim that later release packaging reran every
+suite. The [initial Docker report](docs/docker-validation-2026-10-12.md) preserves
+the first packaging checkpoint.
 
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
 
-> **Unofficial.** Sonarr Pro is not affiliated with, endorsed by, or supported by the Sonarr project. Please don't raise Sonarr Pro problems on Sonarr's issue tracker, forums, or Discord — they can't help with code they didn't write. Report them [here](https://github.com/KakarottoCake/Sonarr-Pro/issues) instead.
+> **Unofficial.** SonarrWeeb is not affiliated with, endorsed by, or supported by the Sonarr project. Report SonarrWeeb problems in [this repository](https://github.com/KvasExert/SonarrWeeb/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
 
 ## Contributors and AI attribution
 
@@ -46,7 +52,7 @@ upstream legal notices. This fork accepts AI contributions under its own
 
 Sonarr resolves every series through TheTVDB. That works well for weekly Western television and poorly for everything else — a 1,100-episode anime becomes twenty-odd invented seasons, a recut that TheTVDB folds into its parent can't be added at all, and an `S01-S05` pack is rejected outright.
 
-Sonarr Pro keeps everything upstream does and adds a way around each of those.
+SonarrWeeb retains the upstream application and adds ways to handle those cases.
 
 ## What's added
 
@@ -94,7 +100,7 @@ Full detail, including the reasoning and the trade-offs behind each, is in [FORK
 
 ## What's removed
 
-Sonarr Pro doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
+SonarrWeeb doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
 
 ## A word on Usenet
 
@@ -108,98 +114,108 @@ been validated for this integration.
 
 ## Getting started
 
-You need [Docker](https://docs.docker.com/get-docker/). That's the only prerequisite.
+You need [Docker](https://docs.docker.com/get-docker/) with Linux containers and
+Docker Compose. The [installation guide](docs/docker-installation.md) contains
+the complete YAML and named-volume/bind-mount alternatives.
 
 ### Quick start
 
 ```bash
-docker build -t sonarr-weeb:local .
-docker run -d --name sonarr-pro -p 127.0.0.1:6970:8989 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v sonarr-pro-config:/config -v /path/to/media:/media --restart unless-stopped sonarr-weeb:local
+docker pull ghcr.io/kvasexert/sonarrweeb:0.0.1
+docker run -d --name sonarrweeb \
+  -p 127.0.0.1:6970:8989 \
+  -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
+  -v sonarrweeb-config:/config -v /path/to/media:/media \
+  --restart unless-stopped ghcr.io/kvasexert/sonarrweeb:0.0.1
 ```
 
-Then open **http://localhost:6970**. Upstream Sonarr can keep using port 8989.
+Replace `/path/to/media` with your actual writable media/download parent and
+adjust PUID/PGID to the host user's IDs. Then open **http://localhost:6970** and
+configure authentication. Upstream Sonarr can keep using host port 8989.
 
 ### Or with Compose
 
-From this repository, create the empty local media directory and run:
+Save the standalone `compose.yaml` from the
+[installation guide](docs/docker-installation.md#docker-compose-named-configuration-volume)
+and run:
 
 ```bash
-mkdir -p media
-docker compose up -d --build
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
-Compose also defaults to port 6970; set `SONARR_PRO_PORT` to change it. Keep this
-Compose project and its `/config` directory separate from upstream Sonarr. To start
-with an empty library, copy only download client settings, root folders and remote
-path mappings, and give each instance its own download category.
+The example maps `127.0.0.1:6970` to container port 8989. Keep this Compose project
+and `/config` separate from other Sonarr instances, and give each instance its
+own download category. A public GitHub repository and a public GHCR package are
+separate settings; see the guide if the registry denies the pull.
 
 ### Updating
 
 ```bash
-docker compose build && docker compose up -d
+docker compose pull
+docker compose up -d
 ```
 
-Without Compose, rebuild `sonarr-weeb:local` from the updated checkout and recreate
-the container using the same mounts and environment. If you use a published image
-from another repository, pull its chosen tag instead. Restarting an existing
-container keeps its old image, even after a build or pull.
-
-Compose binds to `127.0.0.1` and uses `./config` plus `./media` by default. Set
-`SONARR_PRO_MEDIA_PATH` to the media/download parent you want to mount, and
-`SONARR_PRO_CONFIG_PATH` for a separate configuration directory. Use
-`SONARR_PRO_PUID` / `SONARR_PRO_PGID` for the host user's IDs and ensure the media
-directory is writable by that user. `SONARR_PRO_BIND_ADDRESS=0.0.0.0` allows
-connections from other hosts; `SONARR_PRO_TZ` selects the container timezone.
-
-Verify a built image with `python docker/tests/smoke.py --image sonarr-weeb:local`.
-The [container smoke test](docker/tests/README.md) checks UI, API, native media
-probe, permissions and persistence using disposable data.
-
-On this Windows workstation, Docker Engine runs in the dedicated WSL distribution
-`SonarrWeebBuild`. The [WSL launcher](docker/start-wsl.ps1) reuses a hidden keepalive
-session and starts Compose; it expects an already configured WSL Docker Engine:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docker\start-wsl.ps1
-```
-
-Add `-Build` to rebuild first. Docker Desktop is an alternative environment; the
-launcher does not install WSL or Docker and is not required on other hosts.
-
-The included Compose file builds this local integration. Public Kakarotto images
-do not include these local changes.
-
-Your database and settings live in the `/config` volume and survive the upgrade. There's no in-app updater to wait on and nothing to reinstall.
+Back up `/config` consistently first and change the image tag or digest in your
+YAML to the desired release. Recreating the container uses the new image while
+retaining the configuration volume. Restarting alone keeps the old image.
+Database migrations may require a pre-update backup to roll back. See
+[version pins and updates](docs/docker-installation.md#version-pins-and-updates).
 
 ### Settings that matter
 
 | Variable | Default | What it does |
 |---|---|---|
-| `PUID` / `PGID` | `1000` | The user files are written as. Run `id` on the host and use those numbers, or downloads arrive owned by root and you won't be able to edit them. |
+| `PUID` / `PGID` | `1000` | UID/GID used by the application. Match the host's media owner/group and grant access to mounted directories. |
 | `TZ` | `Etc/UTC` | Timezone, so scheduled tasks and log timestamps match your clock. |
 | `UMASK` | `002` | File creation mask. Compose reads `SONARR_PRO_UMASK`; the entrypoint also accepts legacy `UMASK_SET` when `UMASK` is omitted. |
 
-Mount your download client's completed folder and your library under a **single** `/media` parent. If they're separate mounts, every import becomes a full file copy instead of an instant move.
+Mount completed downloads and the library under a single `/media` parent on the
+same underlying filesystem. That arrangement allows hardlinks and efficient
+moves when the filesystem and permissions support them. Matching container paths
+also avoids unnecessary Remote Path Mappings.
 
 ### Publishing workflow tags
 
-These tags describe the configured publishing workflow in the repository that
-runs it. No registry image was published by this local integration; its tested
-image is `sonarr-weeb:local`.
+The release image path is `ghcr.io/kvasexert/sonarrweeb`. Check the
+[package page](https://github.com/users/KvasExert/packages/container/package/sonarrweeb)
+and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `latest` | The newest release. Use this one. |
+| `0.0.1` | This specific SonarrWeeb release; recommended for the initial installation. |
+| `latest` | The newest published release; it can change when a later version is released. |
 | `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |
-| `sha-<full commit>` | Immutable build of one commit from the publishing repository. |
-| `1.2.3` | A specific release version; the workflow removes the Git tag's `v` prefix. |
+| `sha-<full commit>` | Build tag identifying one source commit; use a digest to pin the exact image. |
 
-The release workflow requests `linux/amd64` and `linux/arm64`. Local build/runtime
-verification covered `linux/amd64`; arm64 execution was not tested here.
+The inherited release workflow can build `linux/amd64` and `linux/arm64`. Published
+architecture availability and executed validation belong to each release's notes;
+earlier local runtime verification covered `linux/amd64`.
 
 ### Coming from Sonarr
 
-The config directory layout is unchanged, so pointing Sonarr Pro's `/config` at a copy of an existing Sonarr config works. **Copy it, don't move it** — the database is migrated on first start and isn't readable by upstream Sonarr afterwards. Keep the original until you're satisfied.
+Stop the source instance for a consistent backup and **copy** its configuration
+into a separate SonarrWeeb configuration location. Never share a live `/config`
+between instances. First-start migrations can make the copy incompatible with
+upstream Sonarr; keep the original backup and check your client/library settings.
+
+### Building locally
+
+The checked-in `docker-compose.yml` builds `sonarr-weeb:local` from this working
+tree with a separate local configuration directory. Its `SONARR_PRO_*` variables
+remain for compatibility with existing local deployments:
+
+```sh
+mkdir -p media
+docker compose up -d --build
+```
+
+That command builds source instead of pulling GHCR. See
+[building from the GitHub source](docs/docker-installation.md#building-from-the-github-source)
+and [container checks](docker/tests/README.md). The optional
+[Windows/WSL launcher](docker/start-wsl.ps1) expects an already configured
+`SonarrWeebBuild` distribution and Docker Engine; Docker Desktop is an alternative.
 
 ---
 
@@ -226,7 +242,7 @@ What's asked instead:
 - Run the solution build, relevant backend tests and all frontend checks listed
   in [CONTRIBUTING.md](CONTRIBUTING.md). Document skipped or unavailable checks.
 
-Suggestions and bug reports are equally welcome — [open an issue](https://github.com/KakarottoCake/Sonarr-Pro/issues).
+Suggestions and bug reports are welcome — [open a SonarrWeeb issue](https://github.com/KvasExert/SonarrWeeb/issues).
 
 ### Building locally
 
@@ -251,6 +267,9 @@ the old webpack `--env production` argument is no longer supported.
 
 [GPL-3.0](LICENSE.md), the same as upstream Sonarr.
 
-Sonarr Pro is a derivative work of [Sonarr](https://github.com/Sonarr/Sonarr), copyright the Sonarr contributors, whose copyright notices are retained. Credit for the several hundred thousand lines this is built on belongs to them; the changes listed above are the only part that's new here.
+SonarrWeeb is a derivative work of [Sonarr](https://github.com/Sonarr/Sonarr) and the
+credited Sonarr Pro forks. The Sonarr contributors' copyright notices are retained.
+Credit for the upstream application belongs to its contributors; the feature and
+integration credits identify the adapted and added work.
 The [contributor register](CONTRIBUTORS.md) preserves the additional fork and
 integration credits; third-party components retain their own notices and licenses.

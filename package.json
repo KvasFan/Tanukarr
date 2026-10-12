@@ -1,7 +1,7 @@
 {
-  "name": "sonarr",
-  "version": "4.0.0",
-  "description": "Sonarr is a PVR for Usenet and BitTorrent users",
+  "name": "sonarrweeb",
+  "version": "0.0.1",
+  "description": "SonarrWeeb is an anime-focused Sonarr fork for Usenet and BitTorrent users",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -16,7 +16,7 @@
     "lint-fix": "yarn lint --fix",
     "stylelint": "stylelint \"frontend/**/*.css\" --config frontend/.stylelintrc"
   },
-  "repository": "https://github.com/Sonarr/Sonarr",
+  "repository": "https://github.com/KvasExert/SonarrWeeb.git",
   "author": "Team Sonarr",
   "license": "GPL-3.0",
   "readmeFilename": "readme.md",
