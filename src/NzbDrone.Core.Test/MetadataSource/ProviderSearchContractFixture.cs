@@ -3,9 +3,9 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Http;
+using NzbDrone.Core.AniList;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MetadataSource.AniList;
-using NzbDrone.Core.MetadataSource.AniList.Resource;
 using NzbDrone.Core.MetadataSource.Jikan;
 using NzbDrone.Core.MetadataSource.Jikan.Resource;
 using NzbDrone.Core.MetadataSource.Tmdb;
@@ -28,9 +28,11 @@ namespace NzbDrone.Core.Test.MetadataSource
         public void should_keep_provider_ids_distinct_and_offer_an_official_season_type()
         {
             Mocker.GetMock<IConfigService>().SetupGet(c => c.TmdbApiKey).Returns("test-key");
-            Mocker.GetMock<IHttpClient>()
-                .Setup(c => c.Post<AniListSearchResponse>(It.IsAny<HttpRequest>()))
-                .Returns((HttpRequest request) => Response<AniListSearchResponse>(request,
+            Mocker.GetMock<IAniListRequestService>()
+                .Setup(c => c.Execute(It.IsAny<HttpRequest>()))
+                .Returns((HttpRequest request) => new HttpResponse(
+                    request,
+                    new HttpHeader(),
                     "{\"data\":{\"Page\":{\"media\":[{\"id\":1,\"title\":{\"english\":\"Test\"},\"episodes\":12}]}}}"));
             Mocker.GetMock<IHttpClient>()
                 .Setup(c => c.Get<JikanSearchResponse>(It.IsAny<HttpRequest>()))

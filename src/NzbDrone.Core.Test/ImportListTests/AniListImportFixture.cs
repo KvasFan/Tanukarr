@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
+using NzbDrone.Core.AniList;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.AniList.List;
 using NzbDrone.Core.Test.Framework;
@@ -22,6 +24,10 @@ namespace NzbDrone.Core.Test.ImportListTests
         [SetUp]
         public void Setup()
         {
+            Mocker.GetMock<IAniListRequestService>()
+                  .Setup(service => service.Execute(It.IsAny<HttpRequest>()))
+                  .Returns((HttpRequest request) => Mocker.GetMock<IHttpClient>().Object.Execute(request));
+
             _subject = Mocker.Resolve<AniListImport>();
             _subject.Definition = new ImportListDefinition
             {
@@ -90,6 +96,73 @@ namespace NzbDrone.Core.Test.ImportListTests
             var settings = (AniListSettings)_subject.Definition.Settings;
             settings.IncludedCustomLists = new[] { "Seasonal" };
             settings.ExcludedCustomLists = new[] { "Excluded" };
+        }
+
+        private void GivenRateLimit(int seconds)
+        {
+            Mocker.GetMock<IAniListRequestService>()
+                  .Setup(service => service.Execute(It.IsAny<HttpRequest>()))
+                  .Returns((HttpRequest request) => throw new TooManyRequestsException(
+                      request,
+                      new HttpResponse(
+                          request,
+                          new HttpHeader { { "Retry-After", seconds.ToString() } },
+                          Encoding.UTF8.GetBytes(@"{""errors"":[{""message"":""Too Many Requests."",""status"":429}]}"),
+                          HttpStatusCode.TooManyRequests)));
+        }
+
+        [Test]
+        public void should_route_all_list_pages_through_the_shared_anilist_request_service()
+        {
+            GivenResponses(Page(1, true, true, 1), Page(2, false, true, 9253));
+
+            _subject.Fetch().AnyFailure.Should().BeFalse();
+
+            Mocker.GetMock<IAniListRequestService>()
+                  .Verify(
+                      service => service.Execute(It.Is<HttpRequest>(request =>
+                      request.Url.Host == "graphql.anilist.co" &&
+                      request.Headers["Authorization"].ToString() == "Bearer test-access-token" &&
+                      request.RateLimit >= TimeSpan.FromSeconds(2))),
+                      Times.Exactly(2));
+        }
+
+        [Test]
+        public void connection_test_should_use_the_shared_anilist_request_service()
+        {
+            GivenResponses(Page(1, false, true, 1));
+
+            _subject.Test().IsValid.Should().BeTrue();
+
+            Mocker.GetMock<IAniListRequestService>()
+                  .Verify(service => service.Execute(It.IsAny<HttpRequest>()), Times.Once());
+        }
+
+        [Test]
+        public void should_record_the_shared_cooldown_when_list_fetch_exhausts_rate_limit_retries()
+        {
+            GivenRateLimit(180);
+
+            var result = _subject.Fetch();
+
+            result.AnyFailure.Should().BeTrue();
+            result.Series.Should().BeEmpty();
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(10), Times.Never());
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordFailure(10, TimeSpan.FromSeconds(180)), Times.Once());
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [TestCase(180, "in at least 180 seconds")]
+        [TestCase(0, "later")]
+        public void connection_test_should_report_a_rate_limit_without_response_body_or_credentials(int seconds, string retryMessage)
+        {
+            GivenRateLimit(seconds);
+
+            var failure = _subject.Test().Errors.Should().ContainSingle().Which;
+
+            failure.ErrorMessage.Should().Contain("AniList request limit reached").And.Contain(retryMessage);
+            failure.ErrorMessage.Should().NotContain("Bearer").And.NotContain("test-access-token").And.NotContain("errors");
+            ExceptionVerification.ExpectedWarns(1);
         }
 
         [Test]

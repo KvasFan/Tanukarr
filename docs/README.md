@@ -38,6 +38,7 @@ original content.
 | [Documentation review](documentation-review-2026-10-12.md) | Tracked-file inventory, documentation checks and attribution methodology |
 | [Jellyfin verification](jellyfin-verification-2026-10-12.md) | Post-release Jellyfin integration, queue/security checks and disposable-server tests |
 | [AniList filter verification](anilist-filters-verification-2026-10-13.md) | Post-release inclusion/exclusion precedence, pagination, compatible settings and UI checks |
+| [AniList request-limit verification](anilist-rate-limit-verification-2026-10-13.md) | Post-0.1.0 custom-list sync failure, shared request pacing, cooldown and bounded recovery |
 
 Version 0.1.0 includes the selected-library Jellyfin connection and AniList
 multiple-list inclusion/exclusion controls. Its release notes describe the

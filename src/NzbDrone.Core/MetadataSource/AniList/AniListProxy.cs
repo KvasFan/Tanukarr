@@ -8,6 +8,7 @@ using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
+using NzbDrone.Core.AniList;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
@@ -27,19 +28,19 @@ namespace NzbDrone.Core.MetadataSource.AniList
     /// </summary>
     public class AniListProxy : IMetadataProvider
     {
-        // AniList allows 90 requests per minute. Long series need several schedule pages,
-        // so the page count is capped to keep one refresh well inside that.
+        // Long series need several schedule pages. Keep the work per refresh bounded;
+        // the shared request service enforces AniList's current rate limits.
         private const int MaxAiringSchedulePages = 20;
 
         // AniList descriptions carry a little HTML even with asHtml: false.
         private static readonly Regex HtmlTagRegex = new Regex(@"<[^>]+>", RegexOptions.Compiled);
 
-        private readonly IHttpClient _httpClient;
+        private readonly IAniListRequestService _aniListRequestService;
         private readonly Logger _logger;
 
-        public AniListProxy(IHttpClient httpClient, Logger logger)
+        public AniListProxy(IAniListRequestService aniListRequestService, Logger logger)
         {
-            _httpClient = httpClient;
+            _aniListRequestService = aniListRequestService;
             _logger = logger;
         }
 
@@ -236,18 +237,13 @@ namespace NzbDrone.Core.MetadataSource.AniList
             request.SuppressHttpError = true;
             request.SetContent(Json.ToJson(new { query, variables }));
 
-            var response = _httpClient.Post<T>(request);
+            var response = new HttpResponse<T>(_aniListRequestService.Execute(request));
 
             if (response.HasHttpError)
             {
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     throw new SeriesNotFoundException(0, "Series not found on AniList");
-                }
-
-                if (response.StatusCode == HttpStatusCode.TooManyRequests)
-                {
-                    _logger.Warn("AniList rate limit reached, backing off");
                 }
 
                 throw new HttpException(request, response);

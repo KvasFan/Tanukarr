@@ -146,6 +146,30 @@ for the checks actually executed for these controls. The API distinctions above
 follow AniList's [MediaList reference](https://docs.anilist.co/reference/object/medialist)
 and [list-query guide](https://docs.anilist.co/guide/graphql/queries/media-list).
 
+#### AniList request limits and custom-list failures
+
+If the log says `Found ... reports from AniList List` and then fails with
+`429:TooManyRequests` inside `AniListProxy.GetSeriesInfo`, the custom list was
+read successfully. The failure occurred while fetching the anime metadata needed
+to add those entries. Testing a list while its sync is running consumes the same
+AniList request allowance.
+
+The post-0.1.0 source correction shares request pacing and cooldown between list
+pages, connection tests, searches and metadata refreshes. It spaces requests at
+least 2.1 seconds apart, observes AniList's retry/reset headers and retries a
+temporary HTTP 429 at most three total attempts. A prolonged cooldown or repeated
+failure remains an explicit error rather than a successful empty import.
+Initial synchronization of a large list can therefore take several minutes.
+The limit is shared within one application instance; another application using
+the same public IP can still exhaust AniList's server allowance.
+
+The immutable `v0.1.0` release predates this correction. Use a build containing
+the fix; repeated presses of **Test** or **Refresh** do not bypass the server
+cooldown. A request-limit error alone does not indicate an invalid custom-list
+name or a need to replace OAuth credentials. See the
+[request-limit verification report](anilist-rate-limit-verification-2026-10-13.md)
+and AniList's [official rate-limit documentation](https://github.com/AniList/docs/blob/master/docs/guide/rate-limiting.md).
+
 ### Custom-format groups
 
 Custom-format conditions with alternative group zero retain the existing shared

@@ -154,6 +154,15 @@ model declarations remain unchanged. See the
 [configuration guide](docs/library-tools.md#anilist-lists) and
 [verification checkpoint](docs/anilist-filters-verification-2026-10-13.md).
 
+The subsequent custom-list synchronization request-limit correction also used
+**OpenAI Codex, based on GPT-6**. It adds a shared AniList request budget,
+server-directed cooldown and bounded HTTP 429 recovery across list and metadata
+operations. Original AniList import and metadata-provider authors remain credited
+above. The design follows **AniList contributors'** official request-limit
+documentation and reuses Sonarr's existing rate-limit service. See the
+[request-limit verification checkpoint](docs/anilist-rate-limit-verification-2026-10-13.md)
+for the reported failure, reproduction and executed checks.
+
 ### IMDb orderings, bounded dataset import and Jikan fallback
 
 Private Contributor (source history); KakarottoCake (fork maintainer).

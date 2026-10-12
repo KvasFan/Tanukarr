@@ -6,6 +6,7 @@ using FluentValidation.Results;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
+using NzbDrone.Core.AniList;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Http.CloudFlare;
 using NzbDrone.Core.ImportLists.Exceptions;
@@ -19,8 +20,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 {
     internal class AniListImport : AniListImportBase<AniListSettings>
     {
+        private readonly IAniListRequestService _aniListRequestService;
+
         public AniListImport(IImportListRepository netImportRepository,
                     IHttpClient httpClient,
+                    IAniListRequestService aniListRequestService,
                     IImportListStatusService importListStatusService,
                     IConfigService configService,
                     IParsingService parsingService,
@@ -28,6 +32,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                     Logger logger)
         : base(netImportRepository, httpClient, importListStatusService, configService, parsingService, localizationService, logger)
         {
+            _aniListRequestService = aniListRequestService;
         }
 
         public override string Name => _localizationService.GetLocalizedString("TypeOfList", new Dictionary<string, object> { { "typeOfList", "AniList" } });
@@ -44,6 +49,18 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         public override AniListParser GetParser()
         {
             return new AniListParser(Settings);
+        }
+
+        protected override ImportListResponse FetchImportListResponse(ImportListRequest request)
+        {
+            _logger.Debug("Downloading Feed " + request.HttpRequest.ToString(false));
+
+            if (request.HttpRequest.RateLimit < RateLimit)
+            {
+                request.HttpRequest.RateLimit = RateLimit;
+            }
+
+            return new ImportListResponse(request, _aniListRequestService.Execute(request.HttpRequest));
         }
 
         protected override bool IsValidItem(ImportListItemInfo listItem)
@@ -140,7 +157,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             }
             catch (TooManyRequestsException ex)
             {
-                if (ex.RetryAfter != TimeSpan.Zero)
+                if (ex.RetryAfter > TimeSpan.Zero)
                 {
                     _importListStatusService.RecordFailure(Definition.Id, ex.RetryAfter);
                 }
@@ -229,6 +246,16 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                             "No results were returned from your import list, please check your settings and the log for details.")
                         { IsWarning = true };
                 }
+            }
+            catch (TooManyRequestsException ex)
+            {
+                _logger.Warn("AniList request limit reached while testing the import list");
+
+                var retryMessage = ex.RetryAfter > TimeSpan.Zero
+                    ? $" Retry the connection test in at least {Math.Ceiling(ex.RetryAfter.TotalSeconds)} seconds."
+                    : " Retry the connection test later.";
+
+                return new ValidationFailure(string.Empty, "AniList request limit reached." + retryMessage);
             }
             catch (RequestLimitReachedException)
             {
