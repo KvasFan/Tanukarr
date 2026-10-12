@@ -111,6 +111,10 @@ COPY --chmod=0755 docker/entrypoint.sh /entrypoint.sh
 # and a pointer to the corresponding source.
 COPY --chmod=0644 LICENSE.md /app/LICENSE.md
 
+# Static assets copied from a Windows workspace can retain DrvFs write bits.
+# Keep all shipped application files immutable to the unprivileged app user.
+RUN chmod -R go-w /app
+
 # /config holds the database, config.xml and logs. Everything else is media.
 VOLUME ["/config"]
 EXPOSE 8989
