@@ -8,15 +8,20 @@ current source; see [Docker installation](docker-installation.md).
 
 ## Configure the connection
 
-1. In Jellyfin, open **Dashboard → API Keys** and create a key for SonarrWeeb.
-2. Open SonarrWeeb at `http://localhost:6970`, then **Settings → Connect → + →
+1. In Jellyfin, make sure the library contains media and has completed an initial
+   library scan. A newly created empty library can lack an indexed physical
+   folder; Jellyfin can then accept a selected refresh without scanning anything.
+   SonarrWeeb checks this condition during Test and before each refresh, and
+   retains pending imports until the library has been initialized in Jellyfin.
+2. In Jellyfin, open **Dashboard → API Keys** and create a key for SonarrWeeb.
+3. Open SonarrWeeb at `http://localhost:6970`, then **Settings → Connect → + →
    Jellyfin**.
-3. Enter the Jellyfin **Host**, **Port**, optional **Use SSL** and **URL Base**,
+4. Enter the Jellyfin **Host**, **Port**, optional **Use SSL** and **URL Base**,
    and the **API Key**. Host is a hostname or IP address without a scheme or path;
    the default port is `8096`. Use the URL base when Jellyfin is served under a
    reverse-proxy path such as `/jellyfin`.
-4. Load the **Library** dropdown and select exactly one Jellyfin library.
-5. Choose **Refresh Mode** and **Refresh Interval**, then enable **On Import**
+5. Load the **Library** dropdown and select exactly one Jellyfin library.
+6. Choose **Refresh Mode** and **Refresh Interval**, then enable **On Import**
    and optionally **On Upgrade**. Use tags to restrict which SonarrWeeb series
    trigger this connection. Click **Test**, then **Save**.
 
@@ -44,7 +49,10 @@ during that hour produces one refresh at the next tick. An hour with no imports
 produces none. Timing is approximate: SonarrWeeb checks scheduled tasks every
 30 seconds, and an already running scan or server load can delay completion.
 
-The interval begins when the connection is enabled or its target changes. Pending
+The interval begins when the connection is enabled, its target changes, or its
+refresh mode changes. Changing only the interval length keeps the current tick
+origin. Switching modes preserves failed work and avoids replaying imports
+already acknowledged by the previous mode. Pending
 work and the last tick are stored in SonarrWeeb's database and survive a restart.
 Rotating the API key preserves pending work. Selecting a different server or
 library clears work associated with the previous target. Disabling the import
@@ -60,8 +68,9 @@ trigger. This connection does not download media or synchronize watch status.
 ## Selected-library refresh
 
 The connection enumerates libraries through `GET /Library/VirtualFolders` and
-stores the selected `ItemId`. Each refresh checks that the library still exists,
-then submits:
+stores the selected `ItemId`. Each refresh checks that the library still exists
+and that its configured physical folders are present in the selected library's
+folder listing, then submits:
 
 ```http
 POST /Items/{libraryId}/Refresh?metadataRefreshMode=FullRefresh&imageRefreshMode=Default&replaceAllMetadata=false&replaceAllImages=false

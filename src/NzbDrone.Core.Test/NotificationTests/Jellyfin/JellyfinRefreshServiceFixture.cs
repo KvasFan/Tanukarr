@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using NzbDrone.Common.Http;
 using NzbDrone.Core.Notifications;
 using NzbDrone.Core.Notifications.Jellyfin;
 using NzbDrone.Core.Test.Framework;
@@ -194,6 +196,53 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
 
             State.TickGeneration.Should().Be(1);
             Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.RefreshLibrary(_settings), Times.Exactly(2));
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public void should_keep_cold_library_imports_pending_until_a_later_initialized_refresh_succeeds()
+        {
+            var initialized = false;
+            Mocker.GetMock<IHttpClient>()
+                .Setup(client => client.Get<List<JellyfinLibrary>>(It.IsAny<HttpRequest>()))
+                .Returns((HttpRequest request) => new HttpResponse<List<JellyfinLibrary>>(new HttpResponse(
+                    request,
+                    new HttpHeader(),
+                    "[{\"Name\":\"Anime\",\"ItemId\":\"" + _settings.LibraryId + "\",\"Locations\":[\"/media/Anime\"]}]")));
+            Mocker.GetMock<IHttpClient>()
+                .Setup(client => client.Get<JellyfinItems>(It.IsAny<HttpRequest>()))
+                .Returns((HttpRequest request) => new HttpResponse<JellyfinItems>(new HttpResponse(
+                    request,
+                    new HttpHeader(),
+                    initialized
+                        ? "{\"Items\":[{\"Id\":\"af7440e699464d958939fd71fe016d91\",\"Path\":\"/media/Anime\",\"Type\":\"Folder\"}],\"TotalRecordCount\":1}"
+                        : "{\"Items\":[],\"TotalRecordCount\":0}")));
+            Mocker.GetMock<IHttpClient>()
+                .Setup(client => client.Post(It.IsAny<HttpRequest>()))
+                .Returns((HttpRequest request) => new HttpResponse(request, new HttpHeader(), string.Empty, HttpStatusCode.NoContent));
+            _subject = new JellyfinRefreshService(
+                _repository,
+                Mocker.GetMock<INotificationRepository>().Object,
+                new JellyfinProxy(Mocker.GetMock<IHttpClient>().Object),
+                Mocker.GetMock<IJellyfinRefreshClock>().Object,
+                TestLogger);
+            _subject.OnImport(_definition);
+            _subject.OnImport(_definition);
+            AdvanceMinutes(60);
+
+            _subject.ProcessPending();
+
+            State.ImportedGeneration.Should().Be(2);
+            State.ImmediateGeneration.Should().Be(0);
+            State.TickGeneration.Should().Be(0);
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Post(It.IsAny<HttpRequest>()), Times.Never());
+            initialized = true;
+            AdvanceMinutes(1);
+            _subject.ProcessPending();
+
+            State.ImportedGeneration.Should().Be(2);
+            State.TickGeneration.Should().Be(2);
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Post(It.IsAny<HttpRequest>()), Times.Once());
             ExceptionVerification.ExpectedWarns(1);
         }
 

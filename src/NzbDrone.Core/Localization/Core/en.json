@@ -1569,7 +1569,7 @@
   "NotificationsJellyfinSettingsEachImportAndInterval": "Every import and at intervals",
   "NotificationsJellyfinSettingsInterval": "At intervals when imports are pending",
   "NotificationsJellyfinSettingsLibrary": "Library",
-  "NotificationsJellyfinSettingsLibraryHelpText": "Select the one Jellyfin library to scan. Other libraries are never refreshed by this connection.",
+  "NotificationsJellyfinSettingsLibraryHelpText": "Select the one Jellyfin library to scan. Initialize all its physical folders with a scan in Jellyfin after they contain media. Other libraries are never refreshed by this connection; uninitialized folders leave imports pending.",
   "NotificationsJellyfinSettingsRefreshInterval": "Refresh Interval",
   "NotificationsJellyfinSettingsRefreshIntervalHelpText": "Minutes between interval ticks (minimum 1, default 60). A tick sends a refresh only when media has been imported since the previous successful interval refresh. Failed requests remain pending.",
   "NotificationsJellyfinSettingsRefreshMode": "Refresh Mode",

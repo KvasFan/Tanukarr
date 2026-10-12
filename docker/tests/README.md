@@ -18,21 +18,42 @@ python3 docker/tests/jellyfin.py --image sonarr-weeb:local \
 This optional test starts disposable SonarrWeeb and Jellyfin containers on its
 own Docker network, with random loopback ports. It initializes an isolated
 Jellyfin administrator, creates two TV libraries with real-time monitoring
-disabled, and generates tiny videos using Jellyfin's packaged FFmpeg. It adds
+disabled, generates baseline videos using Jellyfin's packaged FFmpeg, and runs
+an initial setup scan to initialize both physical library folders. That initial
+scan belongs only to the disposable test setup. The connection subsequently
+refreshes only its selected library. The test adds
 Cowboy Bebop through the public AniList provider without indexers or download
 clients, then imports only generated files. Internet access is needed for that
 metadata lookup; no private AniList account or existing media is used.
 
 Checks cover the Connect schema/dropdown/key masking, immediate and one-minute
 conditional ticks, import batching, restart persistence, combined mode, retry
-after Jellyfin is unavailable, stale-library rejection, and confirmation that
-the unselected library's generated episode remains unindexed. The test takes
+after Jellyfin is unavailable, stale/uninitialized-library rejection, and
+confirmation that a newly generated episode in the unselected library remains
+unindexed while its existing baseline remains available. The test takes
 several minutes because it waits for real scheduled ticks and asynchronous scans.
 `--jellyfin-image` can select another version; only executed versions establish
 compatibility. The script removes only its own containers, network and temporary
-data, and its report contains no credentials. See the
+data, and its report contains no credentials. `--keep` preserves only those
+resources for failure inspection and prints their locations without credentials.
+See the
 [feature guide](../../docs/jellyfin.md) and
 [verification report](../../docs/jellyfin-verification-2026-10-12.md).
+
+For optional Chromium checks of the actual Connect editor, supply an external
+Node executable and Playwright installation:
+
+```sh
+python3 docker/tests/jellyfin.py --image sonarr-weeb:local --browser-only \
+  --browser-node /path/to/node --playwright-module /path/to/node_modules/playwright \
+  --report jellyfin-browser-report.json
+```
+
+The browser verifies all three modes, both library choices, credential masking,
+and clearing/refetching options after host changes. It cancels the editor and
+checks that no saved connection changed. Omit `--browser-only` to run generated
+imports as well. Browser screenshots hide credential inputs; credentials are
+passed to Node through stdin, never command-line arguments.
 
 ## Startup smoke test
 

@@ -37,17 +37,7 @@ namespace NzbDrone.Core.Notifications.Jellyfin
 
             try
             {
-                var libraryId = Guid.Parse(Settings.LibraryId);
-                var libraries = _proxy.GetLibraries(Settings);
-
-                if (!libraries.Any(c => Guid.TryParse(c.ItemId, out var itemId) && itemId == libraryId))
-                {
-                    return new ValidationResult(new[]
-                    {
-                        new ValidationFailure("LibraryId", "The selected Jellyfin library no longer exists or is not accessible. Select a library again.")
-                    });
-                }
-
+                _proxy.TestLibrary(Settings);
                 return new ValidationResult();
             }
             catch (JellyfinException exception)

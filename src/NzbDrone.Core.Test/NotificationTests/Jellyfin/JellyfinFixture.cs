@@ -70,7 +70,7 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
         {
             Subject.Test().IsValid.Should().BeTrue();
 
-            Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.GetLibraries(_settings), Times.Once());
+            Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.TestLibrary(_settings), Times.Once());
             Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.RefreshLibrary(It.IsAny<JellyfinSettings>()), Times.Never());
             Mocker.GetMock<IJellyfinRefreshService>().Verify(service => service.OnImport(It.IsAny<NotificationDefinition>()), Times.Never());
         }
@@ -78,7 +78,7 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
         [Test]
         public void should_fail_the_connection_test_for_a_deleted_library()
         {
-            Mocker.GetMock<IJellyfinProxy>().Setup(proxy => proxy.GetLibraries(_settings)).Returns(new List<JellyfinLibrary>());
+            Mocker.GetMock<IJellyfinProxy>().Setup(proxy => proxy.TestLibrary(_settings)).Throws(new JellyfinException("LibraryId", "The selected library is unavailable."));
 
             Subject.Test().Errors.Should().Contain(error => error.PropertyName == "LibraryId");
 
@@ -89,7 +89,7 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
         public void should_report_the_sanitized_api_key_error_as_a_validation_failure()
         {
             Mocker.GetMock<IJellyfinProxy>()
-                .Setup(proxy => proxy.GetLibraries(_settings))
+                .Setup(proxy => proxy.TestLibrary(_settings))
                 .Throws(new JellyfinException("ApiKey", "Jellyfin rejected the API key."));
 
             Subject.Test().Errors.Should().ContainSingle().Which.PropertyName.Should().Be("ApiKey");
@@ -102,7 +102,20 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
 
             Subject.Test().IsValid.Should().BeFalse();
 
-            Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.GetLibraries(It.IsAny<JellyfinSettings>()), Times.Never());
+            Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.TestLibrary(It.IsAny<JellyfinSettings>()), Times.Never());
+        }
+
+        [Test]
+        public void should_reject_an_uninitialized_library_without_marking_imports_as_refreshed()
+        {
+            Mocker.GetMock<IJellyfinProxy>()
+                .Setup(proxy => proxy.TestLibrary(_settings))
+                .Throws(new JellyfinException("LibraryId", "Initialize the library in Jellyfin before enabling refresh."));
+
+            Subject.Test().Errors.Should().ContainSingle().Which.PropertyName.Should().Be("LibraryId");
+
+            Mocker.GetMock<IJellyfinProxy>().Verify(proxy => proxy.RefreshLibrary(It.IsAny<JellyfinSettings>()), Times.Never());
+            Mocker.GetMock<IJellyfinRefreshService>().Verify(service => service.OnImport(It.IsAny<NotificationDefinition>()), Times.Never());
         }
 
         [Test]

@@ -32,10 +32,19 @@ to import-complete events that would duplicate per-file notifications.
 ## Executed checks
 
 The complete Windows Debug solution compiled with zero warnings and errors.
-All **102 focused Jellyfin cases** passed, covering validation, actual Newtonsoft
+All **124 focused Jellyfin cases** passed, covering validation, actual Newtonsoft
 HTTP responses, selected endpoints, authentication, redirects, status handling,
 SQLite state, concurrency, retry, restart persistence, mode changes, actual
 notification dispatch, tags/upgrades, and one-minute task registration.
+
+An executed Jellyfin 12.2 cold-library experiment confirmed that an empty library
+can have no indexed physical folder, accept HTTP 204, and scan nothing. The
+connection now checks every selected-library location through a paginated,
+scoped folder listing. Uninitialized folders produce a validation error and
+retain imports; the application does not request a global scan or change
+Jellyfin configuration to work around this server behavior. A proxy/SQLite
+regression test verifies zero POSTs/acknowledgments while cold and successful
+delivery after initialization.
 
 Additional full-suite, container and real Jellyfin checks are being completed
 for this checkpoint. Their results will be recorded here after execution; the

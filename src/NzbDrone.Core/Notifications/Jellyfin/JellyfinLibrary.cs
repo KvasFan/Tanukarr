@@ -12,5 +12,8 @@ namespace NzbDrone.Core.Notifications.Jellyfin
 
         [JsonProperty("CollectionType")]
         public string CollectionType { get; set; }
+
+        [JsonProperty("Locations")]
+        public string[] Locations { get; set; }
     }
 }
