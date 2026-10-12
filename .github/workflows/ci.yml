@@ -46,7 +46,7 @@ jobs:
         run: dotnet test src/Sonarr.Http.Test/Sonarr.Http.Test.csproj -c Debug --no-build --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"
 
       - name: Common security regression tests
-        run: dotnet test src/NzbDrone.Common.Test/Sonarr.Common.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture|FullyQualifiedName~BuildInfoFixture" --logger "console;verbosity=minimal"
+        run: dotnet test src/NzbDrone.Common.Test/Sonarr.Common.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture|FullyQualifiedName~BuildInfoFixture|FullyQualifiedName~HttpResponseLoggingFixture|FullyQualifiedName~HttpClientSuppressedLoggingFixture" --logger "console;verbosity=minimal"
 
       - name: Install FFmpeg for generated media tests
         run: |

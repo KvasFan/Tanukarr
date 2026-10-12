@@ -72,7 +72,7 @@ RUN set -eux; \
           --filter "TestCategory!=IntegrationTest" --logger "console;verbosity=minimal"; \
       done; \
       dotnet test _tests/net10.0/linux-x64/Sonarr.Common.Test.dll \
-        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture|FullyQualifiedName~BuildInfoFixture" --logger "console;verbosity=minimal"; \
+        --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture|FullyQualifiedName~BuildInfoFixture|FullyQualifiedName~HttpResponseLoggingFixture|FullyQualifiedName~HttpClientSuppressedLoggingFixture" --logger "console;verbosity=minimal"; \
     fi
 
 # The UI is built separately and is not produced by the .NET build.
