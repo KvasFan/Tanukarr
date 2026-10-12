@@ -1,8 +1,11 @@
 # Library tools
 
-The additions preserve existing quality profiles, custom-format scores, series
-paths, download clients and compression presets. New automation and import
-restrictions start disabled.
+Library tools provide optional search, import, storage and access controls.
+The automation pause, hardlink-only imports, external-ID checks and anime-pack
+preference start disabled. Retaining replaced versions is enabled per show.
+For feature provenance and contributor credits, see
+[CONTRIBUTORS.md](../CONTRIBUTORS.md); the [documentation index](README.md)
+links the integration and validation reports.
 
 | What you want to do | Where to find it |
 | --- | --- |
@@ -25,6 +28,10 @@ restrictions start disabled.
 | Search missing episodes in Calendar's displayed dates | Calendar's missing-episode search button |
 
 ## Imports and existing files
+
+**Pause automation** stops new automatic searches, RSS grabs and import-list
+additions. Manual searches and imports, current downloads and compression
+continue. Resume from the banner or the same setting.
 
 Original release titles and pack sizes remain attached to imported files, so
 compression cannot turn a large release into a preferred small-pack release.
@@ -62,16 +69,78 @@ Token directly. Account lists also require the account ID in advanced settings.
 Trakt smart lists use the existing Trakt connection; MDBList needs its list URL
 and API key. New providers require configuration before use.
 
-List previews distinguish existing shows. Selected additions use the chosen root
-folder and quality profile, are unmonitored by default, and do not initiate a
-missing-episode search. Up to 25 shows can be added per selection.
+List previews identify the metadata provider, existing shows and import-list
+exclusions. Selected additions use the chosen registered root folder and quality
+profile, are unmonitored by default, and do not initiate missing-episode or
+cutoff-unmet searches. Up to 25 shows can be added per selection. A preview expires
+after ten minutes; refresh it before adding shows if it expires. Incomplete
+provider results cannot be used to add shows.
+
+### AniList lists
+
+Configure AniList under **Settings → Import Lists**, authenticate with AniList
+and enter the target username. These filters describe different things and are
+combined:
+
+| Setting | What it selects |
+| --- | --- |
+| Import List Status | Your membership status: Watching, Planning, Completed, Dropped, Paused or Repeating |
+| Import Media Release Status | The anime's release status: Finished, Releasing, Not Yet Released, Cancelled or Hiatus |
+| Custom List | Membership in one named custom list owned by the selected user; leave blank to use all matching entries |
+
+Choose at least one membership status and one release status. Watching and
+Planning, together with Finished and Releasing, are the defaults. For example,
+**Completed** does not mean the anime has finished airing: choose **Finished**
+as well if that is required. A named custom list further restricts those matches;
+it does not replace either status filter.
+
+Custom-list names are trimmed. An exact name takes precedence; a
+case-insensitive match is accepted only when it identifies a single list, so
+distinct names differing only in case are not merged. A missing membership flag
+does not count as membership. Pagination or GraphQL failures retain the previous
+successful list rather than treating the response as an empty list.
+
+AniList imports, previews, duplicate checks and exclusions use the native
+`(metadataSource, foreignId)` identity. The AniList media ID and optional
+MyAnimeList ID stay separate. AniList titles are not silently reassigned to a
+TVDB parent show. A negative compatibility `tvdbId` on a native series is an
+internal placeholder, not a real TVDB identifier.
+
+Private-account OAuth synchronization requires your own credentials. The public
+lookup and isolated browser checks described in the validation report do not
+verify that private-account workflow.
+
+### Custom-format groups
 
 Custom-format conditions with alternative group zero retain the existing shared
 logic. Positive groups are alternatives: shared conditions AND (group 1 OR group
 2 …). Conditions within each group retain their existing required/optional
 behavior. Episode-title exclusion is opt-in.
 
-Companion keys expose only the documented library-read endpoints, optionally
-with permission to add shows. They cannot edit or delete existing shows, read
-settings or logs, run commands or start compression. Copy the token when created;
-only its hash is stored. The existing master API key retains full access.
+### Companion keys
+
+Create a key under **System → Library tools → Companion app keys**. Choose a name,
+**Read library** or **Read library and add shows**, and an expiry of 1–365 days.
+The default expiry is 90 days; at most 50 keys can be stored. Copy the token when
+created: it is shown once, and only its SHA-256 hash is stored. Revoke it from the
+same panel when it is no longer needed.
+
+The allowlist applies to both `/api/v3` and `/api/v5`:
+
+| Permission | Allowed requests |
+| --- | --- |
+| Read library | `GET` for `series`, `episode`, `episodefile`, `calendar`, `tag`, `rootfolder` and `qualityprofile`, including supported positive numeric resource IDs |
+| Read library and add shows | The same reads, plus `POST /api/v3/series` or `POST /api/v5/series` |
+
+Adding a show with a companion key requires a registered `rootFolderPath` and
+Sonarr's generated series folder. Omit `path`; leave
+`addOptions.searchForMissingEpisodes` and
+`addOptions.searchForCutoffUnmetEpisodes` false or absent. Custom paths and
+automatic search requests are rejected before the show is added.
+
+Companion keys cannot edit or delete existing shows, read settings or logs, use
+lookup subroutes, run commands or start compression. Use the `X-Api-Key` request
+header to send a key. The existing master API key retains full access.
+
+The latest executed checks and their limits are recorded in the
+[functional and security validation report](security-functional-validation-2026-10-12.md).

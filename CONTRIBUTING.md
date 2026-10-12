@@ -1,52 +1,121 @@
 # Contributing to Sonarr Pro
 
-Contributions are welcome, including AI-assisted ones. There's no CLA and no
-template to fill in.
+Contributions, including AI-assisted work, are welcome. Describe the problem,
+the resulting behavior and the verification you performed. Preserve the authors
+and co-authors of adapted work. The [contributor register](CONTRIBUTORS.md) records
+feature provenance, source commits and AI attribution.
 
-## Pull requests
+## Before changing code
 
-- **Explain the reasoning, not just the change.** A PR that says what broke and
-  why this is the right fix is worth several that only say what changed.
-- **Say what you actually verified.** "Tests pass, ran it against a real library"
-  and "compiles, untested" are both fine answers. Claiming the first while
-  meaning the second is not.
-- **Prefer changes that stay mergeable with upstream.** This is a fork of an
-  actively developed project, and every unnecessary divergence makes pulling in
-  upstream fixes harder. If a bug turns out to be upstream's rather than this
-  fork's, it's usually better to report it there than to patch around it here.
+Read [AGENTS.md](AGENTS.md), [FORK.md](FORK.md) and the relevant
+[feature guide](docs/README.md). Compare affected files with the recorded upstream
+base before attributing a problem to the fork. Prefer changes maintainable alongside
+upstream; report shared defects through the appropriate project.
 
-AI-assisted work doesn't need to be disguised. `Co-Authored-By` trailers are
-accurate attribution and are welcome. See [AGENTS.md](AGENTS.md) if you're an
-agent working in this repository.
+Preserve native provider identities, explicit manual import choices, existing
+library data and configured download clients. Use disposable fixtures for tests;
+real-library downloads, moves or deletion require authorization.
 
-## Before opening a PR
+## Tools and build
 
-```bash
+Use .NET SDK **10.0.401** from [global.json](global.json), Node.js **24**, Yarn
+Classic **1.22**, Python 3, and Docker Engine with Linux containers. FFmpeg and
+FFprobe are needed for generated-media worker integration tests.
+
+Build the solution so SolutionDir supplies the shared StyleCop configuration:
+
+```sh
 dotnet build src/Sonarr.sln -c Debug
+yarn install --frozen-lockfile
+yarn test:queue-details
 yarn lint
+yarn stylelint
+yarn typecheck
+yarn build
 ```
 
-CI runs both, plus the Core test suite and a Docker image build.
+`yarn build` creates the Vite production bundle; the obsolete webpack
+`--env production` flag is not supported. Do not build while tests use the same
+output directory. On Linux, prepare the packaged test probe:
 
-Build the **solution**, not individual project files — `Directory.Build.props`
-loads `stylecop.json` through `$(SolutionDir)`, which is only defined for a
-solution build. Building a bare `.csproj` produces hundreds of spurious StyleCop
-errors on code that is perfectly fine.
+```sh
+chmod +x _tests/net10.0/ffprobe
+```
 
-The frontend needs `yarn build --env production`. Without that flag webpack emits
-eval-source-map output and the UI loads as a blank page with no error in the
-console.
+## Backend tests
 
-## Bug reports and suggestions
+Run tests after a solution build, using `--no-build`. For example:
 
-[Open an issue](https://github.com/KakarottoCake/Sonarr-Pro/issues). Suggestions
-are as welcome as bug reports.
+```sh
+dotnet test src/NzbDrone.Core.Test/Sonarr.Core.Test.csproj -c Debug --no-build --filter "TestCategory!=IntegrationTest"
+dotnet test src/NzbDrone.Api.Test/Sonarr.Api.Test.csproj -c Debug --no-build
+dotnet test src/Sonarr.Http.Test/Sonarr.Http.Test.csproj -c Debug --no-build
+dotnet test src/NzbDrone.Common.Test/Sonarr.Common.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~SonarrCloudRequestPolicyFixture|FullyQualifiedName~CleanseLogMessageFixture"
+```
 
-Please don't raise Sonarr Pro problems on Sonarr's issue tracker, forums, or
-Discord — they can't help with code they didn't write, and it costs their
-volunteers time.
+Other projects cover Common, Host, Update, Libraries, Windows, Mono, Integration
+and Automation. Removing Core's category filter runs its online integration tests;
+Common also contains online HTTP tests. Record unavailable services, ignored cases
+and platform exclusions separately from failures. The Integration project starts
+instances with temporary configuration and allocated ports. Review PostgreSQL
+environment settings before running database tests so they use an owned server.
 
-For bugs, the useful things to include are what you expected, what happened, and
-the relevant lines from System → Logs. If it involves a specific series or
-release, naming it helps more than anything else; most of the interesting bugs in
-this fork have been specific to one title's metadata.
+Automation needs Chrome and a matching ChromeDriver. The project-pinned driver can
+differ from the installed browser; the October 12 run supplied an external matching
+ChromeDriver 154. Browser tests use their own instances. Optional Playwright checks
+are described in the [container test guide](docker/tests/README.md).
+
+## Compression and container tests
+
+```sh
+python3 docker/compression/test_worker.py
+SONARR_COMPRESSION_INTEGRATION=1 python3 docker/compression/test_worker.py
+docker build -t sonarr-weeb:local .
+python3 docker/tests/smoke.py --image sonarr-weeb:local --report smoke-report.json
+python3 docker/tests/functional-security.py --image sonarr-weeb:local --report functional-security-report.json
+```
+
+The second worker command requires FFmpeg/FFprobe and uses generated videos.
+In PowerShell, set `$env:SONARR_COMPRESSION_INTEGRATION = '1'` before invoking
+Python. Hardware VAAPI availability is separate from software-encoding coverage.
+Container tests create disposable configuration and media. `--anilist` enables
+public AniList checks; it does not use a private account or start a real download.
+
+CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tests,
+generated-video worker tests and frontend checks. The Docker workflow builds amd64
+and runs both container scripts; release tags also request arm64. A CI pass does
+not imply that every online or platform suite ran.
+
+## Documentation and attribution
+
+Write repository documentation in English. Preserve proper names, quoted titles,
+licenses and localization data. Update the [documentation index](docs/README.md)
+and feature guide when behavior changes; keep dated reports as historical evidence.
+
+For adapted features, name the source repository, original commit, authors and
+co-authors, then describe local changes. Fork ownership and commit authorship are
+different roles. Preserve Co-Authored-By trailers and update
+[CONTRIBUTORS.md](CONTRIBUTORS.md) when rebase or consolidation obscures source
+authorship.
+
+For AI work, record the provider, tool and model identifier when known from the
+session or source declaration. If a model was not recorded, say so; do not infer
+it from a Codex or Claude display name. Historical model labels preserve
+attribution and do not establish which runtime model executed a session.
+
+State what was verified: **compiled only**, **tests passed**, or **observed against
+an authorized real library**. Include commands, failures/skips and limitations.
+Do not describe an unpatched dependency as fixed because its known attack path
+is excluded, or apply an old report's results to an untested new build.
+
+## Reports and suggestions
+
+Report fork issues to the repository distributing the affected build. The original
+[Sonarr Pro tracker](https://github.com/KakarottoCake/Sonarr-Pro/issues) accepts
+general fork reports, but this local integration is not a published image from
+that repository. Include the commit/image digest, runtime version, provider,
+series/release involved, expected behavior and sanitized logs.
+
+Use [SECURITY.md](SECURITY.md) for security reports. Contact upstream only when the
+behavior also affects upstream Sonarr. This fork makes no response-time promise
+on behalf of upstream maintainers.

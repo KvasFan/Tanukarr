@@ -17,6 +17,16 @@ provider identities in import-list exclusions. See the
 [integration report](docs/integration-2026-10-12.md) and
 [additional gaboy features](docs/gaboy-integration.md) and
 [ikatun features and validation](docs/ikatun-integration-2026-10-12.md).
+The integrated history also contains upstream commits through `59c22e859`,
+including the subsequent translation, imported-select and indexer-page-size
+changes. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
+maintainers and source-declared AI co-authors. Local adaptation and hardening
+were performed with OpenAI Codex based on GPT-6.
+
+Use the [documentation index](docs/README.md) for current guides and dated
+validation checkpoints. This file describes design; it does not replace the
+tested-image and remaining-finding details in the
+[security report](docs/security-functional-validation-2026-10-12.md).
 
 ---
 
@@ -28,7 +38,7 @@ Three things need doing before the new features do anything.
    <https://www.themoviedb.org/settings/api>. Without it, TMDB metadata and
    episode groups are silently unavailable; everything else works.
 2. **IMDb index** — System → Tasks → Refresh Imdb Dataset, run once. Downloads
-   ~52MB and builds a ~45MB local index; until then IMDb ordering does not
+   the published episode dataset and builds a local index; sizes vary. Until then IMDb ordering does not
    appear in the dropdown. After that it refreshes itself monthly. The scheduled
    run deliberately does nothing until the index exists, so the download only
    ever happens because someone asked for it.
@@ -98,8 +108,8 @@ another. When a series has more than one, a dropdown appears on the add dialog.
 
 The one that motivates this: **TMDB group type 2 is "Absolute"** — one
 continuous run with no seasons, which is how long-running anime is released and
-discussed. Selecting it for One Piece gives season 1 with episodes 1 to 1181,
-rather than twenty-four seasons. Every other ordering TMDB publishes appears in
+discussed. Selecting it produces a continuous season 1; exact counts depend on
+the provider catalogue and chosen group. Every other ordering TMDB publishes appears in
 the same list, so DVD order, story arcs and streaming-service orders come along
 at no extra cost.
 
@@ -110,8 +120,8 @@ means there are no episode files linked yet and nothing to rename. To change it,
 remove the series and add it again.
 
 Episodes an ordering does not mention keep their original numbering rather than
-being dropped, so nothing already matched to a file is lost. For One Piece that
-is 39 specials, kept in season 0.
+being dropped, so nothing already matched to a file is lost. Specials remain in
+season 0 when the selected group omits them.
 
 ---
 
@@ -199,10 +209,42 @@ is genuinely numbered that way, as One Piece is.
 
 ## Import lists
 
-AniList import lists can be restricted to one of your own custom lists, rather
-than the standard Planning and Watching lists which cover everything you have
-ever added. Leave the field blank for the previous behaviour.
-(Sonarr/Sonarr#6772)
+AniList imports target a user's account list through the configured authenticated
+import-list connection. Public catalogue lookup needs no account; saving an
+AniList import list requires the OAuth fields validated by the importer.
+Private-account synchronization was not exercised in the recorded local tests.
+The membership statuses
+Watching, Planning, Completed, Dropped, Paused and Repeating describe the user's
+relationship to an anime. Media statuses Finished, Releasing, Not Yet Released,
+Cancelled and Hiatus describe the anime's release state. A named custom list is
+a third, separate condition. Configured membership, media and custom-list filters
+apply together; a custom list does not override the other selections. At least
+one membership status and one media status must be selected. Leave the custom
+list field blank to omit that additional condition.
+
+Imported AniList entries keep `(AniList, ForeignId)` as their identity. Import,
+preview, deduplication, exclusions and cleanup do not replace a separate anime
+with a related TVDB parent or use an ambiguous synthetic TVDB number as ownership.
+Failed or partial retrieval does not authorize destructive list cleanup. Search
+cards and details link to the owning provider, not a negative TVDB placeholder.
+See [Library tools](docs/library-tools.md) for configuration and the
+[integration report](docs/integration-2026-10-12.md) for migration and tests.
+The original custom-list design references
+[Sonarr #6772](https://github.com/Sonarr/Sonarr/issues/6772).
+
+## Library tools and permission boundaries
+
+[Library tools](docs/library-tools.md) documents automation pause, diagnostic
+searches, import previews, retained versions, guarded restore and companion keys.
+Companion `add-series` requests select a registered root and use the generated
+series folder. They cannot supply a custom path or trigger searches through add
+options. The administrator's master key retains its existing behavior.
+
+The optional [compression worker](docker/compression/README.md) operates on
+registered files and rechecks their association and identity before replacement.
+Probe, encoding and output validation restrict input protocols and demuxers.
+The main Docker image contains network-disabled ffprobe; it does not install the
+host worker or imply hardware-encoder availability.
 
 ---
 

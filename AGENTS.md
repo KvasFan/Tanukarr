@@ -65,4 +65,18 @@ an unused `using` left behind after deleting code will fail the build.
 - **Nothing may contact `services.sonarr.tv` or `sentry.sonarr.tv`.** Those are
   deliberately disabled; see the commit that removed them for why.
 
-More context on the fork's design decisions is in [FORK.md](FORK.md).
+## Documentation and attribution
+
+Write repository documentation in English. Preserve proper names, release-title
+fixtures, localization data and verbatim legal notices. Keep dated verification
+reports scoped to their original checkpoints, and link newer evidence rather
+than inventing results for a newer build.
+
+Preserve source authors and Co-Authored-By trailers when adapting features.
+Update [CONTRIBUTORS.md](CONTRIBUTORS.md) with original commits and the actual AI
+tool/model identity when known. A Codex/Claude Git display name alone does not
+establish an exact model. The October 12, 2026 local integration identifies
+OpenAI Codex based on GPT-6; inherited model labels remain source declarations.
+
+Use [CONTRIBUTING.md](CONTRIBUTING.md) for complete checks, [FORK.md](FORK.md) for
+design decisions, and [docs/README.md](docs/README.md) for the documentation index.

@@ -1,12 +1,21 @@
-# Approved upstream additions
+# Approved upstream additions: historical ledger
 
-Approved on 2026-10-06. Preserve the existing library, quality preferences,
-metadata providers, torrent reuse, multi-season import, compression worker,
-mobile controls and path picker. Add settings with compatible defaults and
-provide understandable controls; do not start downloads, move media or delete
-files merely to validate a feature.
+This ledger records the feature set approved on 2026-10-06. Its requirements were
+to preserve the existing library, quality preferences, metadata providers,
+torrent reuse, multi-season import, compression worker, mobile controls and path
+picker, and to add settings with compatible defaults. Validation was required to
+avoid starting downloads, moving media or deleting files in an existing library.
 
-Implementation baseline: `5a756d49f4a630a37355f0fa77665c9185eaf548`.
+Historical implementation baseline:
+`5a756d49f4a630a37355f0fa77665c9185eaf548` (2026-10-06,
+`Use H.264 for software compression presets`). This is a feature-adoption record,
+not the current upstream base or proof that an upstream pull request was merged
+unchanged. The issue/PR numbers below are the original review references.
+
+See [Library tools](library-tools.md) for current controls,
+[CONTRIBUTORS.md](../CONTRIBUTORS.md) for source projects, contributors and AI
+attribution, and the [documentation index](README.md) for later integration
+reports.
 
 ## Delivery checklist
 
@@ -31,39 +40,28 @@ Implementation baseline: `5a756d49f4a630a37355f0fa77665c9185eaf548`.
 - [x] Original file dates retained on upgrades (#8838).
 - [x] Flexible format logic and episode-title exclusions (#7806, #7456).
 - [x] Pause/resume automation (#1194).
-- [x] Companion-app keys with limited permissions (#7549; approved in linked review).
+- [x] Companion-app keys with limited permissions (#7549).
 - [x] Multiple retained episode versions (#4551).
 
-## Validation and deployment
+## Current validation and deployment evidence
 
-- [x] Whole-solution build and relevant backend tests.
-- [x] Frontend typecheck, lint, CSS lint and production build.
-- [x] Compression safety tests on Linux (worker unchanged; generated-video test not repeated).
-- [x] Mobile and desktop UI verification.
-Deployment uses a consistent stopped-app SQLite backup, an isolated startup and
-key-permission smoke check, a digest-pinned image, and library/settings
-fingerprints. Its verified outcome is recorded privately on the host in
-`deployment.json` and the timestamped backup receipt.
+The [2026-10-12 functional and security report](security-functional-validation-2026-10-12.md)
+supersedes the older test counts and environment failures recorded in this file.
+It records all eleven Windows .NET suites, the applicable Linux suites, frontend
+checks, generated-video worker tests, isolated API/browser checks, security
+findings, fixes and remaining limits. It identifies the exact tested code,
+runtime image and export checksum. Follow the commands in
+[Container verification](../docker/tests/README.md) to repeat isolated checks.
 
-Upstream PR code is adapted and reviewed against this fork, rather than assumed
-to work unchanged. Historical investigation is saved outside the repository in
-`../_ops/sonarr-upstream-review.md` and `../_ops/sonarr-upstream-index.md`.
+The current validation used disposable databases and generated media. It did not
+use a real library, a configured download client, private AniList credentials or
+VAAPI hardware. The former October 6 notes referred to private deployment
+receipts and `../_ops/` review files that are not present in this checkout; those
+claims are not presented as repeatable evidence for the current deployment.
 
-### Test evidence
-
-- Whole-solution Debug build: zero warnings and errors.
-- Offline Core suite: 5,625 passed, 17 skipped; final targeted run including
-  provider fixes: 118 passed.
-- Cache tests: 18 passed.
-- Linux compression worker: 25 passed, one optional generated-video test skipped.
-- Frontend typecheck, ESLint, CSS lint and Vite production build passed.
-- Isolated browser checks: 390-pixel phone and 1280-pixel desktop layouts;
-  native path picker, combined filters, list selection and pause banner.
-- Real-library SQLite migration rehearsal: 167 shows and 5,288 episode-file
-  records preserved; 224 exact source-release contexts recovered.
-
-The broader Common suite had three environment failures on this Windows host:
-certificate-store import, system Python discovery and unwritable ProgramData.
-The modified cache tests passed separately. Online metadata integration tests
-are classified and excluded from the offline suite. New list providers have
-literal-JSON parser tests; account credentials are required for live use.
+The October 12 local Docker deployment preserved its existing configuration and
+media mounts. The [Docker validation report](docker-validation-2026-10-12.md)
+describes the earlier deployment stage; use the security report for the final
+image after hardening. Changes adapted from upstream are reviewed against this
+fork's provider identities and import rules rather than assumed to work
+unchanged.

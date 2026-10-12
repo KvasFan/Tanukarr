@@ -9,6 +9,13 @@ The additional changes live on the investigation branch. The first six commits,
 through `79ef6d2b17fe9dc985527f3062b0fa05363535a7`, are adapted here to the
 current upstream APIs and the newer Kakarotto library behavior.
 
+Matt Flowers / **gaboy498-byte** authored these additional commits. They build
+on **KakarottoCake's Sonarr Pro** and the **upstream Sonarr contributors**.
+Local adaptation and regression validation were performed with **OpenAI Codex
+(GPT-6)**. See [contributor credits](../CONTRIBUTORS.md) for the full provenance,
+including recorded historical AI attribution, and the
+[documentation index](README.md) for related implementation and test reports.
+
 ## Multi-season downloads
 
 - An explicit range such as `S01-S10` includes every intervening season.
@@ -23,7 +30,7 @@ current upstream APIs and the newer Kakarotto library behavior.
   of the mapped IDs. It requires the same download and series. Partial packs,
   discrete season selections and saved manual episode choices are excluded.
 
-The current tracker reconstructs selected downloads from their recorded grabbed
+The tracker reconstructs selected downloads from their recorded grabbed
 episode IDs. Reconciliation does not broaden that selection or recover every
 unselected season of an old pack automatically. If legacy history omitted wanted
 episodes, select them explicitly through interactive import.
@@ -54,13 +61,15 @@ available magnet remains a fallback and the skipped inspection is logged.
 
 The investigation branch's final two commits, which retrieve magnet metadata,
 are not adopted. They require `MonoTorrent 3.0.2-sonarrsecurity.1.rev0002`, which
-is absent from the public NuGet feed. Official MonoTorrent 3.0.2 does not expose
-the required metadata-size limit or per-torrent settings overload. Using it as
-a drop-in replacement would discard those safeguards. This integration retains
-the existing official dependency and clearly reports magnets whose contents
-were not inspected.
+was absent from the public NuGet feed at integration time. Official MonoTorrent
+3.0.2 does not expose the required metadata-size limit or per-torrent settings
+overload. Using it as a drop-in replacement would discard those safeguards.
+This integration retains the existing official dependency and reports magnets
+whose contents were not inspected.
 
-## Provenance
+## Commit provenance
+
+All six adapted commits below were authored by Matt Flowers / gaboy498-byte.
 
 | Commit | Adapted change |
 | --- | --- |
@@ -71,6 +80,9 @@ were not inspected.
 | `0d48e2e` | Multi-season size regression tests |
 | `79ef6d2` | Fake-release submission routes and title checks |
 
-Validation is recorded in the integration report. Live download, media movement
-and an existing production library are not used merely to validate these
-changes.
+Validation at the integration checkpoint is recorded in the
+[first integration report](integration-2026-10-12.md). Later
+[ikatun integration](ikatun-integration-2026-10-12.md) and
+[functional/security validation](security-functional-validation-2026-10-12.md)
+cover the combined behavior. These checks used test fixtures and isolated
+instances, without live downloads, media moves or an existing production library.
