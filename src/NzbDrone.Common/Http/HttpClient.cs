@@ -99,7 +99,7 @@ namespace NzbDrone.Common.Http
                 while (response.HasHttpRedirect);
             }
 
-            if (response.HasHttpRedirect && !RuntimeInfo.IsProduction)
+            if (response.HasHttpRedirect && !RuntimeInfo.IsProduction && request.LogHttpError)
             {
                 _logger.Error("Server requested a redirect to [{0}] while in developer mode. Update the request URL to avoid this redirect.", response.Headers["Location"]);
             }

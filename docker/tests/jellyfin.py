@@ -207,6 +207,7 @@ class JellyfinIntegration(ContainerSmoke):
         require(self.count("Anime") == 1, "Interval mode refreshed before its tick")
         before = self.state()
         self.docker("restart", self.container)
+        self.refresh_binding()
         self.wait_ready()
         require(self.state()["ImportedGeneration"] == before["ImportedGeneration"], "Pending imports lost at restart")
         self.until(lambda: self.count("Anime") == 3, "One-minute tick failed after restart", 120)
@@ -234,6 +235,8 @@ class JellyfinIntegration(ContainerSmoke):
             "languages": [{"id": 1, "name": "English"}]}]})
         require(self.state()["ImportedGeneration"] > self.state()["ImmediateGeneration"], "Failure discarded pending refresh")
         self.docker("start", self.jellyfin)
+        port = self.docker("port", self.jellyfin, "8096/tcp").rsplit(":", 1)[1]
+        self.jellyfin_url = "http://127.0.0.1:" + port
         def restarted():
             try:
                 return self.json_request(self.jellyfin_url, "/System/Info/Public")[0] == 200

@@ -41,7 +41,8 @@ function getProviderDataKey(providerData: ProviderOptions, action: string) {
       fields: libraryFieldNames.map((name) => ({
         name,
         value:
-          providerData.fields?.find((field) => field.name === name)?.value ?? null,
+          providerData.fields?.find((field) => field.name === name)?.value ??
+          null,
       })),
     };
   }
