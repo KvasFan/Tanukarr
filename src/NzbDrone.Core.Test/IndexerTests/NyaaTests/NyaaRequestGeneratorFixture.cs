@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -143,6 +144,58 @@ namespace NzbDrone.Core.Test.IndexerTests.NyaaTests
             pages.Should().HaveCount(2);
             pages.Should().Contain(p => p.Contains("term=Naruto+s03"));
             pages.Should().Contain(p => p.Contains("term=Naruto+Shippuuden") && !p.Contains("s03"));
+        }
+
+        [TestCase("Panty & Stocking with Garterbelt")]
+        [TestCase("C#")]
+        [TestCase("Rosario + Vampire")]
+        [TestCase("Boku no Hero 100%")]
+        [TestCase("進撃の巨人")]
+        [TestCase("Title&filter=0#fragment")]
+        public void should_encode_search_title_without_changing_existing_parameters(string sceneTitle)
+        {
+            Subject.Settings.AdditionalParameters = "&cats=1_2&filter=0&u=SubsPlease";
+            _animeSearchCriteria.SceneTitles = new List<string> { sceneTitle };
+
+            var requests = Subject.GetSearchRequests(_animeSearchCriteria)
+                .GetTier(0).Select(t => t.First()).ToList();
+
+            requests.Should().HaveCount(2);
+
+            for (var i = 0; i < requests.Count; i++)
+            {
+                var request = requests[i];
+                var query = ReadQueryParameters(request.Url.Query);
+
+                request.Url.Fragment.Should().BeEmpty();
+                query.Should().HaveCount(5);
+                query["page"].Should().Be("rss");
+                query["cats"].Should().Be("1_2");
+                query["filter"].Should().Be("0");
+                query["u"].Should().Be("SubsPlease");
+                query["term"].Should().Be(sceneTitle + (i == 0 ? " 9" : " 09"));
+            }
+        }
+
+        [Test]
+        public void should_preserve_cleaned_special_episode_word_separators()
+        {
+            var criteria = new SpecialEpisodeSearchCriteria
+            {
+                EpisodeQueryTitles = new[] { "Naruto+Shippuuden Special+Episode" }
+            };
+
+            var request = Subject.GetSearchRequests(criteria).GetTier(0).First().First();
+
+            ReadQueryParameters(request.Url.Query)["term"].Should().Be("Naruto Shippuuden Special Episode");
+            request.Url.Fragment.Should().BeEmpty();
+        }
+
+        private static Dictionary<string, string> ReadQueryParameters(string query)
+        {
+            return query.Split('&').Select(parameter => parameter.Split('=', 2))
+                .ToDictionary(parameter => Uri.UnescapeDataString(parameter[0]),
+                              parameter => Uri.UnescapeDataString(parameter[1].Replace('+', ' ')));
         }
     }
 }

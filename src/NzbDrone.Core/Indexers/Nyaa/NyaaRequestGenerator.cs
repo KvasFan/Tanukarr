@@ -112,7 +112,8 @@ namespace NzbDrone.Core.Indexers.Nyaa
 
             foreach (var queryTitle in searchCriteria.EpisodeQueryTitles)
             {
-                pageableRequests.Add(GetPagedRequests(PrepareQuery(queryTitle)));
+                // Special episode query titles use '+' separators from GetCleanSceneTitle.
+                pageableRequests.Add(GetPagedRequests(PrepareQuery(queryTitle.Replace('+', ' '))));
             }
 
             return pageableRequests;
@@ -132,7 +133,7 @@ namespace NzbDrone.Core.Indexers.Nyaa
 
         private string PrepareQuery(string query)
         {
-            return query.Replace(' ', '+');
+            return Uri.EscapeDataString(query).Replace("%20", "+");
         }
     }
 }

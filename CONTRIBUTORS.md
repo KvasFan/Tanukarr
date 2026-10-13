@@ -163,6 +163,20 @@ documentation and reuses Sonarr's existing rate-limit service. See the
 [request-limit verification checkpoint](docs/anilist-rate-limit-verification-2026-10-13.md)
 for the reported failure, reproduction and executed checks.
 
+### Nyaa RSS search and reserved-title query encoding
+
+**MythJuha** introduced the original torrent clients/indexers, including the
+Nyaa query construction, in upstream commit
+[67cd5703a](https://github.com/Sonarr/Sonarr/commit/67cd5703a1f259531e353869f5b2596fe76a2523).
+Subsequent upstream Nyaa work remains attributed to its Git authors, including
+**Taloth Saldono**, **Jonza**, **ilike2burnthing** and **ttran913**.
+**Nyaa contributors** maintain the RSS parameter handling consulted during this
+verification. **OpenAI Codex, based on GPT-6**, added the local reserved-character
+encoding correction, regression tests and English verification documentation.
+The defect was present in the integrated upstream snapshot, rather than caused
+by the AniList request-limit correction. See the
+[Nyaa verification checkpoint](docs/nyaa-verification-2026-10-13.md).
+
 ### IMDb orderings, bounded dataset import and Jikan fallback
 
 Private Contributor (source history); KakarottoCake (fork maintainer).

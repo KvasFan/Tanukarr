@@ -62,6 +62,29 @@ status. Existing destination files are never overwritten by recycle-bin
 restore. Wait for compression on that show to finish before restoring or
 switching versions. Compression itself does not create recycle-bin copies.
 
+## Nyaa searches
+
+Add the native **Nyaa** indexer under **Settings → Indexers** and set its website
+URL to `https://nyaa.si`. Enable interactive search to use the release-search
+window. Anime series use absolute episode-number searches, including both `9`
+and `09` for single-digit episodes. **Anime Standard Format Search** adds
+`SxxExx` searches and permits season searches when no season-specific title alias
+exists. Complete-series searches can query the series title without that option.
+
+The default additional parameters are `&cats=1_0&filter=1`. Nyaa still accepts
+these legacy names, alongside modern `c`, `f` and `q` parameters. Avoid a fixed
+`q` or `term` in Additional Parameters when Sonarr should supply each search
+title: a fixed query can override the generated term. The post-0.1.0 source
+correction escapes reserved title characters such as `&`, `#` and literal `+`
+while preserving configured category/filter values and special-episode word
+separators. The immutable 0.1.0 release predates this correction.
+
+An HTTP/RSS connection test and a release search only retrieve metadata.
+Acquisition remains a separate operation. Search results can be present but
+rejected by the quality profile, seed requirement, episode matching or other
+configured rules. See the [Nyaa verification report](nyaa-verification-2026-10-13.md)
+for the queries and checks actually executed.
+
 ## Lists, rules and keys
 
 TMDB account, discovery, list and person providers use a TMDB API Read Access
