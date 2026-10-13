@@ -204,13 +204,33 @@ instead of missing membership. No further live retries were made. Thus the
 forwarded full-list check passed, while the final unproxied full-list check was
 incomplete because of external throttling; these outcomes are reported separately.
 
+## GitHub runner ownership checkpoint
+
+[Docker run 38387596048](https://github.com/KvasExert/Tanukarr/actions/runs/38387596048)
+passed 12 smoke, 16 functional/security and 21 grouping checks, then stopped on
+the Nyaa fixture's SQLite seed: the UID 1001 host runner could not write the
+config/database owned by app UID 1000. Image publication stopped at that gate.
+This was a test-fixture ownership failure, not a production behavior change.
+
+The corrected shared fixture helper passed actual UID/GID 1001 reruns of all
+9 Nyaa and 13 multi-season pack checks. It temporarily returns only the verified,
+stopped fixture config to the host runner; restart restores the app, config and
+database to UID 1000 without widening directory permissions. Nine mocked
+ownership-preflight guard cases and ten controlled cleanup/error cases also
+passed. These changes affect test helpers/scripts only.
+
+The GitHub rerun is **pending** at this checkpoint. The successful local
+cross-UID checks do not establish that the hosted rerun or publication passed.
+
 ## Security scope and remaining limitations
 
 The local Compose instance at `http://localhost:6970` was upgraded after a
 consistent private configuration backup. The first upgrade migrated schema
 243→247 while preserving all 88 existing catalogue entries, their IDs and
 registered paths, authentication, provider IDs and existing naming/media
-preferences. The corrected final image was then deployed with the same checks.
+preferences at that first checkpoint. The corrected final redeployment at
+10:51:59 UTC preserved its own then-current snapshot: **0 entries before and
+after**. These are separate deployment receipts.
 No list sync, acquisition or automatic media relocation was initiated by this
 deployment. The user's two named examples were not found in this local set;
 their layout was verified using public AniList previews and generated fixtures.

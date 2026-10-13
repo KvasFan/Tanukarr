@@ -87,6 +87,7 @@ class Verification(module.FunctionalSecurity):
         self.json_api("/api/v5/rootfolder", "POST", {"path": "/media"})
         quality = self.json_api("/api/v5/qualityprofile")[0]["id"]
         self.docker("stop", self.container)
+        self.prepare_config_for_host_sqlite()
         title = "Weeb & Alpha #1 + Plus" if self.args.fixture else self.args.title
         with sqlite3.connect(self.root / "config" / "sonarr.db") as db:
             self.insert(db, "Series", dict(Id=1, TvdbId=-1, Title=title, TitleSlug="isolated-nyaa-fixture", CleanTitle=re.sub(r"[^a-z0-9]", "", title.lower()),
@@ -106,6 +107,7 @@ class Verification(module.FunctionalSecurity):
         self.docker("start", self.container)
         self.refresh_binding()
         self.wait_ready()
+        self.verify_app_ownership_after_host_seed()
         require(self.json_api("/api/v5/series/1")["title"] == title, "Synthetic anime fixture unreadable")
         require(self.json_api("/api/v5/episode/1")["absoluteEpisodeNumber"] == 1, "Synthetic absolute episode number lost")
         self.check("synthetic AniList-owned anime/episode seeded with scheduled tasks deferred")
@@ -273,6 +275,7 @@ def main():
             "imageId": audit.image_id, "sourceRevision": getattr(audit, "image_labels", {}).get("org.opencontainers.image.revision"),
             "fixture": args.fixture, "title": args.title if not args.fixture else "Reserved-character fixture",
             "nativeEpisodeCount": args.episode_count, "nativeSeasonCount": 1, "catalogueAliases": args.alias,
+            "fixtureConfigOwnership": audit.fixture_config_ownership,
             "passed": error is None, "error": error, "httpError": audit.last_error_response, "checks": audit.results,
             "runtime": audit.runtime_metadata, "searches": audit.searches, "rssRequestUrls": audit.request_urls,
             "fixtureRequests": audit.fixture_requests, "encoding": getattr(audit, "encoding", None),

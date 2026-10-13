@@ -143,6 +143,18 @@ its tiny import videos. The pack/RSS checks need Python 3 and Docker but do not
 generate videos. Dependency installation and image pulls still require their
 package registries; the statement about local fixtures concerns provider data.
 
+The Nyaa and multi-season pack fixtures seed only their own stopped SQLite
+database. On POSIX hosts, the runner's UID/GID may differ from the app's
+`1000:1000`, as on GitHub's UID 1001 runner. A shared helper validates the
+temporary root, fixture container label/ID, stopped state and exact config bind,
+then uses a network-disabled, disposable process from that same app image to
+return only the owned config directory to the host runner for seeding. It does
+not widen permissions or change another deployment. Restart restores the app,
+config and database to UID 1000; receipts record both ownership transitions.
+Both fixtures passed their full 9/13 checks in actual UID/GID 1001 subprocesses,
+including restart and cleanup. This portability check is separate from proving
+a live metadata import or acquiring media.
+
 ## Jellyfin integration test
 
 For development main's dedicated Jellyfin connection, run:

@@ -139,6 +139,7 @@ class SeriesPacks(module.FunctionalSecurity):
         self.json_api("/api/v5/rootfolder", "POST", {"path": "/media"})
         quality = self.json_api("/api/v5/qualityprofile")[0]["id"]
         self.docker("stop", self.container)
+        self.prepare_config_for_host_sqlite()
         with sqlite3.connect(self.root / "config" / "sonarr.db") as db:
             self.insert(db, "Series", dict(
                 Id=1, TvdbId=900001, Title=TITLE, TitleSlug="isolated-native-pack-fixture",
@@ -161,6 +162,7 @@ class SeriesPacks(module.FunctionalSecurity):
         self.docker("start", self.container)
         self.refresh_binding()
         self.wait_ready()
+        self.verify_app_ownership_after_host_seed()
         series = self.json_api("/api/v5/series/1")
         require(series["seriesType"] == "standard" and series["metadataSource"] == "tvdb",
                 "Fixture does not represent a native multi-season TV catalogue owner")
@@ -339,6 +341,7 @@ def main():
             "mockImage": args.mock_image, "mockImageId": audit.mock_image_id, "runtime": audit.runtime_metadata,
             "passed": error is None, "error": error, "checks": audit.results, "searches": audit.searches,
             "nativeEpisodeIdentities": audit.native_episodes, "fixtureRequests": records,
+            "fixtureConfigOwnership": audit.fixture_config_ownership,
             "scope": {"syntheticNativeTvSeries": True, "nativeSeasons": [1, 2, 3], "nativeEpisodeCount": 6,
                       "localRssOnly": True, "liveNyaaTested": False, "aniListUsed": False,
                       "acquisitionTested": False, "realLibraryTested": False, "mainConfigurationAccessed": False,

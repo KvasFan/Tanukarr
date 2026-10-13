@@ -38,6 +38,7 @@ class ContainerSmoke:
         self.results = []
         self.image_id = None
         self.runtime_metadata = {}
+        self.fixture_config_ownership = []
         # These requests must remain local even when the host configures a proxy.
         self.http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -79,6 +80,59 @@ class ContainerSmoke:
 
     def running(self):
         return self.docker("inspect", "--format", "{{.State.Running}}", self.container) == "true"
+
+    def prepare_config_for_host_sqlite(self):
+        """Re-own only this stopped fixture's config for a POSIX host seed operation."""
+        if os.name != "posix":
+            return
+        require(self.root is not None and self.container is not None, "An owned fixture is required before seeding SQLite")
+        root = self.root.resolve()
+        expected_parent = Path(tempfile.gettempdir()).resolve()
+        require(self.root == root and root.parent == expected_parent and root.name.startswith("sonarr-container-smoke-"),
+                "Refusing ownership changes outside the fixture's temporary root")
+        config = root / "config"
+        require(config.is_dir() and not config.is_symlink(), "The owned config must be a real directory")
+        details = json.loads(self.docker("inspect", self.container))[0]
+        labels = details["Config"].get("Labels", {}) or {}
+        require(details["Id"] == self.container and
+                any(labels.get(key) == "true" for key in ("sonarr.smoke-test", "sonarr.security-test")),
+                "Refusing ownership changes for a container without the fixture label")
+        require(not details["State"]["Running"] and details["State"]["Status"] == "exited",
+                "Stop this fixture's application before seeding SQLite")
+        mounts = [mount for mount in details["Mounts"] if mount["Destination"] == "/config"]
+        require(len(mounts) == 1 and mounts[0]["Type"] == "bind" and mounts[0]["RW"] and
+                Path(mounts[0]["Source"]).resolve() == config,
+                "The stopped container's config mount does not match the owned fixture")
+        before = config.stat()
+        database = config / "sonarr.db"
+        database_uid = database.stat().st_uid if database.exists() else None
+        owner = f"{os.getuid()}:{os.getgid()}"
+        self.docker(
+            "run", "--rm", "--network", "none", "--user", "0:0",
+            "--label", "sonarr.fixture-ownership-test=true", "--entrypoint", "/bin/chown",
+            "--mount", f"type=bind,source={config},target=/config", details["Image"],
+            "-R", "--no-dereference", owner, "/config")
+        after = config.stat()
+        require(after.st_uid == os.getuid() and after.st_gid == os.getgid(), "Config ownership did not return to the host runner")
+        require((before.st_mode & 0o7777) == (after.st_mode & 0o7777), "Config preparation unexpectedly broadened permissions")
+        self.fixture_config_ownership.append({
+            "hostUid": os.getuid(), "hostGid": os.getgid(), "beforeConfigUid": before.st_uid,
+            "beforeDatabaseUid": database_uid, "hostSeedConfigUid": after.st_uid,
+            "hostSeedDatabaseUid": database.stat().st_uid if database.exists() else None,
+            "permissionsUnchanged": True, "ownedMountVerified": True, "stoppedContainerVerified": True,
+        })
+
+    def verify_app_ownership_after_host_seed(self):
+        if not self.fixture_config_ownership:
+            return
+        status = self.docker("exec", self.container, "cat", "/proc/1/status")
+        app_uid = int(next(line for line in status.splitlines() if line.startswith("Uid:")).split()[1])
+        config_uid = (self.root / "config").stat().st_uid
+        database_uid = (self.root / "config" / "sonarr.db").stat().st_uid
+        require(app_uid == 1000 and config_uid == 1000 and database_uid == 1000,
+                "Restart did not restore the fixture app/config/database to PUID 1000")
+        self.fixture_config_ownership[-1].update(appUidAfterRestart=app_uid, configUidAfterRestart=config_uid,
+                                                 databaseUidAfterRestart=database_uid)
 
     def wait_ready(self):
         deadline = time.monotonic() + self.args.timeout
