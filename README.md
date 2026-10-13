@@ -1,15 +1,19 @@
-# SonarrWeeb
+# Tanukarr
 
-**SonarrWeeb 0.1.0** adds selected-library Jellyfin refresh and AniList custom-list
-inclusion/exclusion controls to the initial 0.0.1 integration. It retains Sonarr
+<img src="frontend/src/Content/Images/logo.svg" alt="Tanukarr Tanuki logo" width="160" />
+
+**Tanukarr 1.0.0** is the renamed continuation of **SonarrWeeb**. It includes
+selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
+shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
+search encoding for titles containing reserved characters. It retains Sonarr
 `develop` through `57816c149` (earlier integration checkpoints used `698bb1dbb`
 and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
-Get the source from [KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb)
-and read the [release notes for 0.1.0](docs/releases/0.1.0.md). Published versions
-and assets are listed on the [GitHub releases page](https://github.com/KvasExert/SonarrWeeb/releases).
-The [0.1.0 verification report](docs/releases/0.1.0-verification.md) records the
+Get the source from [KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr)
+and read the [release notes for 1.0.0](docs/releases/1.0.0.md). Published versions
+and assets are listed on the [GitHub releases page](https://github.com/KvasExert/Tanukarr/releases).
+The [1.0.0 verification report](docs/releases/1.0.0-verification.md) records the
 published image, checks, remaining findings and local deployment.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
@@ -25,7 +29,7 @@ the first packaging checkpoint.
 
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
 
-> **Unofficial.** SonarrWeeb is not affiliated with, endorsed by, or supported by the Sonarr project. Report SonarrWeeb problems in [this repository](https://github.com/KvasExert/SonarrWeeb/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
+> **Unofficial.** Tanukarr is not affiliated with, endorsed by, or supported by the Sonarr project. Report Tanukarr problems in [this repository](https://github.com/KvasExert/Tanukarr/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
 
 ## Contributors and AI attribution
 
@@ -56,7 +60,7 @@ upstream legal notices. This fork accepts AI contributions under its own
 
 Sonarr resolves every series through TheTVDB. That works well for weekly Western television and poorly for everything else — a 1,100-episode anime becomes twenty-odd invented seasons, a recut that TheTVDB folds into its parent can't be added at all, and an `S01-S05` pack is rejected outright.
 
-SonarrWeeb retains the upstream application and adds ways to handle those cases.
+Tanukarr retains the upstream application and adds ways to handle those cases.
 
 ## What's added
 
@@ -85,7 +89,7 @@ for scope, dry-run usage and validation.
 **Anime-aware search matching** — `2nd Season`, `S2`, `Part 2` and `II` all read as "season 2"; accents and articles are stripped; scoring uses Jaro-Winkler rather than upstream's single-character tolerance. Release-to-series matching also compares against every title a provider knows, so a release using a series' English title still matches when it's stored under the romaji one.
 
 **AniList custom lists** — target your own custom lists alongside Planning and
-Watching. Version 0.1.0 supports multiple included lists, excluded lists and
+Watching. Tanukarr 1.0.0 supports multiple included lists, excluded lists and
 explicit exclusions for all six list-membership states. Matching any included
 list is sufficient; exclusions take precedence even when an anime is Watching.
 ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
@@ -110,13 +114,14 @@ selects one library and refreshes it after imports, at configurable intervals
 imports survive restarts and failed requests are retried. See the
 [Jellyfin guide](docs/jellyfin.md). New libraries must first complete an initial
 scan in Jellyfin; pending imports are retained until every configured folder is
-indexed. This connection is included in 0.1.0 and was added after 0.0.1.
+indexed. This connection was introduced in SonarrWeeb 0.1.0 and is retained in
+Tanukarr 1.0.0.
 
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
 ## What's removed
 
-SonarrWeeb doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
+Tanukarr doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
 
 ## A word on Usenet
 
@@ -137,12 +142,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexert/sonarrweeb:0.1.0
-docker run -d --name sonarrweeb \
+docker pull ghcr.io/kvasexert/tanukarr:1.0.0
+docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
-  -v sonarrweeb-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexert/sonarrweeb:0.1.0
+  -v tanukarr-config:/config -v /path/to/media:/media \
+  --restart unless-stopped ghcr.io/kvasexert/tanukarr:1.0.0
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -187,7 +192,7 @@ Database migrations may require a pre-update backup to roll back. See
 |---|---|---|
 | `PUID` / `PGID` | `1000` | UID/GID used by the application. Match the host's media owner/group and grant access to mounted directories. |
 | `TZ` | `Etc/UTC` | Timezone, so scheduled tasks and log timestamps match your clock. |
-| `UMASK` | `002` | File creation mask. Compose reads `SONARR_PRO_UMASK`; the entrypoint also accepts legacy `UMASK_SET` when `UMASK` is omitted. |
+| `UMASK` | `002` | File creation mask. Compose resolves `TANUKARR_UMASK`, then legacy `SONARRWEEB_UMASK` / `SONARR_PRO_UMASK`; the entrypoint also accepts legacy `UMASK_SET` when `UMASK` is omitted. |
 
 Mount completed downloads and the library under a single `/media` parent on the
 same underlying filesystem. That arrangement allows hardlinks and efficient
@@ -196,14 +201,13 @@ also avoids unnecessary Remote Path Mappings.
 
 ### Publishing workflow tags
 
-The release image path is `ghcr.io/kvasexert/sonarrweeb`. Check the
-[package page](https://github.com/users/KvasExert/packages/container/package/sonarrweeb)
+The release image path is `ghcr.io/kvasexert/tanukarr`. Check the
+[package page](https://github.com/users/KvasExert/packages/container/package/tanukarr)
 and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `0.1.0` | This release, including Jellyfin refresh and AniList inclusion/exclusion controls; use after publication completes. |
-| `0.0.1` | The initial release; it predates these Jellyfin and AniList controls. |
+| `1.0.0` | Tanukarr branding, Jellyfin refresh, AniList include/exclude controls and request-limit recovery, and corrected Nyaa query encoding; use after publication completes. |
 | `latest` | The newest published release; it can change when a later version is released. |
 | `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |
 | `sha-<full commit>` | Build tag identifying one source commit; use a digest to pin the exact image. |
@@ -212,18 +216,32 @@ The inherited release workflow can build `linux/amd64` and `linux/arm64`. Publis
 architecture availability and executed validation belong to each release's notes;
 earlier local runtime verification covered `linux/amd64`.
 
+Historical SonarrWeeb 0.0.1 and 0.1.0 assets keep their original image namespace
+`ghcr.io/kvasexert/sonarrweeb`, filenames and immutable tags. The stable 0.1.0
+image predates the AniList request-limit and Nyaa encoding fixes.
+
 ### Coming from Sonarr
 
 Stop the source instance for a consistent backup and **copy** its configuration
-into a separate SonarrWeeb configuration location. Never share a live `/config`
+into a separate Tanukarr configuration location. Never share a live `/config`
 between instances. First-start migrations can make the copy incompatible with
 upstream Sonarr; keep the original backup and check your client/library settings.
 
+Existing SonarrWeeb users should change the image while preserving their original
+configuration mount and Compose project/volume identity. A new `tanukarr-config`
+volume starts an empty instance; the project rename does not move existing data.
+Tanukarr preserves Sonarr's core assembly names, `config.xml`, `sonarr.db` and
+container port 8989. **API v3 and v5 remain supported; v4 is not implemented.**
+See [compatibility and backups](docs/compatibility-and-backups.md) for migration,
+tested ZIP restore behavior and the outstanding raw-XML restore limitation.
+
 ### Building locally
 
-The checked-in `docker-compose.yml` builds `sonarr-weeb:local` from this working
-tree with a separate local configuration directory. Its `SONARR_PRO_*` variables
-remain for compatibility with existing local deployments:
+The checked-in `docker-compose.yml` builds `tanukarr:local` from this working
+tree with a separate local configuration directory. `TANUKARR_*` variables take
+precedence over legacy `SONARRWEEB_*` and `SONARR_PRO_*` values, including config
+and media paths. The service/container name `sonarr-pro` and existing mounts are
+retained for compatibility with local deployments:
 
 ```sh
 mkdir -p media
@@ -261,7 +279,7 @@ What's asked instead:
 - Run the solution build, relevant backend tests and all frontend checks listed
   in [CONTRIBUTING.md](CONTRIBUTING.md). Document skipped or unavailable checks.
 
-Suggestions and bug reports are welcome — [open a SonarrWeeb issue](https://github.com/KvasExert/SonarrWeeb/issues).
+Suggestions and bug reports are welcome — [open a Tanukarr issue](https://github.com/KvasExert/Tanukarr/issues).
 
 ### Building locally
 
@@ -286,9 +304,13 @@ the old webpack `--env production` argument is no longer supported.
 
 [GPL-3.0](LICENSE.md), the same as upstream Sonarr.
 
-SonarrWeeb is a derivative work of [Sonarr](https://github.com/Sonarr/Sonarr) and the
+Tanukarr is a derivative work of [Sonarr](https://github.com/Sonarr/Sonarr) and the
 credited Sonarr Pro forks. The Sonarr contributors' copyright notices are retained.
 Credit for the upstream application belongs to its contributors; the feature and
-integration credits identify the adapted and added work.
+integration credits identify the adapted and added work. Tanuki branding uses the
+user-supplied `Tanuki_Logo.zip` artwork; its artist and license were not identified
+in this session. The archive is preserved in
+[resources/branding](resources/branding/Tanuki_Logo.zip), with the reproducible
+[asset helper](docker/branding/update-assets.ps1).
 The [contributor register](CONTRIBUTORS.md) preserves the additional fork and
 integration credits; third-party components retain their own notices and licenses.

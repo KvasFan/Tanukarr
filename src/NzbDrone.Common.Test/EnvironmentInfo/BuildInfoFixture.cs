@@ -24,7 +24,7 @@ namespace NzbDrone.Common.Test.EnvironmentInfo
         public void should_expose_fork_product_metadata_separately_from_sonarr_version()
         {
             BuildInfo.AppName.Should().Be("Sonarr");
-            BuildInfo.ProductName.Should().Be("SonarrWeeb");
+            BuildInfo.ProductName.Should().Be("Tanukarr");
             BuildInfo.ProductVersion.Should().MatchRegex(@"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$");
             BuildInfo.Version.Major.Should().Be(10);
         }

@@ -1,6 +1,6 @@
 # What this fork changes
 
-The reasoning behind SonarrWeeb's integrated changes, and the trade-offs they carry.
+The reasoning behind Tanukarr's integrated changes, and the trade-offs they carry.
 [README.md](README.md) covers what the features are and how to install; this file
 covers why they work the way they do.
 
@@ -24,12 +24,15 @@ updates. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
 maintainers and source-declared AI co-authors. Local adaptation and hardening
 were performed with OpenAI Codex based on GPT-6.
 
-SonarrWeeb 0.1.0 is the current independently named release of this integration,
-building on the credited Sonarr Pro source forks and the original 0.0.1 release.
+Tanukarr 1.0.0 is the renamed continuation of SonarrWeeb 0.0.1 and 0.1.0,
+building on the credited Sonarr Pro source forks. The rename changes product
+branding, logos, repository and distribution names while retaining Sonarr's
+core assemblies, configuration/database filenames, migration history and API
+routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [release notes](docs/releases/0.1.0.md) for packaging scope.
+configuration and [release notes](docs/releases/1.0.0.md) for packaging scope.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -229,7 +232,7 @@ is a third, separate condition. At least one membership state and one media
 release state must be enabled. A named custom list does not override either
 state selection.
 
-SonarrWeeb 0.1.0 supports multiple included
+Tanukarr 1.0.0 supports multiple included
 and excluded custom lists, plus explicit exclusion checkboxes for all six
 watching states. Included names form an OR condition, including the retained
 legacy `CustomList` name. Empty inclusion controls omit that condition.
@@ -262,6 +265,20 @@ See [Library tools](docs/library-tools.md) for configuration and the
 The original custom-list design references
 [Sonarr #6772](https://github.com/Sonarr/Sonarr/issues/6772).
 
+Tanukarr 1.0.0 also shares AniList request pacing and server-directed cooldown
+between import pages, tests, searches and metadata lookups. Temporary HTTP 429
+responses use bounded retries and sanitized errors; a prolonged cooldown keeps
+the previous cached list. This request policy is shared within one instance,
+not between separate applications using the same public IP. See the
+[request-limit checkpoint](docs/anilist-rate-limit-verification-2026-10-13.md).
+
+Nyaa title queries now encode reserved characters before adding them to the
+query string, preserving literal `&`, `#` and `+` in the title and configured
+filter/category fields. Special-episode word separators remain compatible with
+existing cleaned search titles. The inherited unescaped-query defect and
+metadata-only runtime checks are recorded in the
+[Nyaa checkpoint](docs/nyaa-verification-2026-10-13.md).
+
 ## Library tools and permission boundaries
 
 [Library tools](docs/library-tools.md) documents automation pause, diagnostic
@@ -280,7 +297,7 @@ host worker or imply hardware-encoder availability.
 
 ## Jellyfin library refresh
 
-SonarrWeeb 0.1.0 includes a dedicated Jellyfin connection under Settings → Connect.
+Tanukarr 1.0.0 includes a dedicated Jellyfin connection under Settings → Connect.
 It targets one selected library, with immediate imports, conditional periodic
 ticks (1 minute minimum, 60 minutes default), or both. Migration 243 stores
 per-connection import generations and separate immediate/tick acknowledgements,

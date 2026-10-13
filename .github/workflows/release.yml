@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       version:
-        description: Validated SonarrWeeb semantic version without the v prefix
+        description: Validated Tanukarr semantic version without the v prefix
         required: true
         type: string
       artifact:
@@ -25,10 +25,10 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ inputs.artifact }}
-          path: ${{ runner.temp }}/sonarrweeb-release
+          path: ${{ runner.temp }}/tanukarr-release
 
       - name: Verify downloaded asset checksums
-        working-directory: ${{ runner.temp }}/sonarrweeb-release
+        working-directory: ${{ runner.temp }}/tanukarr-release
         run: sha256sum --check SHA256SUMS
 
       - name: Publish release with tested assets
@@ -36,16 +36,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_VERSION: ${{ inputs.version }}
-          ASSET_PATH: ${{ runner.temp }}/sonarrweeb-release
+          ASSET_PATH: ${{ runner.temp }}/tanukarr-release
         run: |
           tag="v$RELEASE_VERSION"
           notes="docs/releases/$RELEASE_VERSION.md"
           test -f "$notes"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" "$ASSET_PATH"/* --clobber
-            gh release edit "$tag" --title "SonarrWeeb $RELEASE_VERSION" \
+            gh release edit "$tag" --title "Tanukarr $RELEASE_VERSION" \
               --notes-file "$notes" --draft=false
           else
             gh release create "$tag" "$ASSET_PATH"/* --verify-tag \
-              --title "SonarrWeeb $RELEASE_VERSION" --notes-file "$notes"
+              --title "Tanukarr $RELEASE_VERSION" --notes-file "$notes"
           fi

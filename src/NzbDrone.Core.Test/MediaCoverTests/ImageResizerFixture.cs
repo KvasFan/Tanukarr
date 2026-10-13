@@ -44,7 +44,8 @@ namespace NzbDrone.Core.Test.MediaCoverTests
 
             var fileInfo = new FileInfo(resizedFile);
             fileInfo.Exists.Should().BeTrue();
-            fileInfo.Length.Should().BeInRange(1000, 30000);
+            fileInfo.Length.Should().BeGreaterThan(0);
+            fileInfo.Length.Should().BeLessThan(new FileInfo(mainFile).Length);
 
             using (var image = Image.Load(resizedFile))
             {

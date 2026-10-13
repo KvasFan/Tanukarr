@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Common.EnvironmentInfo;
@@ -64,6 +65,20 @@ namespace NzbDrone.Core.Test.Localization
             var localizedString = Subject.GetLocalizedString("badString");
 
             localizedString.Should().Be("badString");
+        }
+
+        [Test]
+        public void should_use_product_name_for_the_default_app_name_token()
+        {
+            Subject.GetLocalizedString("AppUpdated").Should().Be(BuildInfo.ProductName + " Updated");
+        }
+
+        [Test]
+        public void should_preserve_an_explicit_app_name_token()
+        {
+            var tokens = new Dictionary<string, object> { { "appName", "Custom instance" } };
+
+            Subject.GetLocalizedString("AppUpdated", tokens).Should().Be("Custom instance Updated");
         }
 
         [Test]

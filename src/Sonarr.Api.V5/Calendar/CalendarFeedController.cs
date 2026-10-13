@@ -5,6 +5,7 @@ using Ical.Net.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Tags;
 using NzbDrone.Core.Tv;
@@ -42,10 +43,10 @@ public class CalendarFeedController : Controller
         var allSeries = _seriesService.GetAllSeries();
         var calendar = new Ical.Net.Calendar
         {
-            ProductId = "-//sonarr.tv//Sonarr//EN"
+            ProductId = "-//github.com/KvasExert/Tanukarr//Tanukarr//EN"
         };
 
-        var calendarName = "Sonarr TV Schedule";
+        var calendarName = BuildInfo.ProductName + " TV Schedule";
         calendar.AddProperty(new CalendarProperty("NAME", calendarName));
         calendar.AddProperty(new CalendarProperty("X-WR-CALNAME", calendarName));
 

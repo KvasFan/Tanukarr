@@ -1,5 +1,7 @@
 # AniList request-limit correction verification
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This October 13, 2026 checkpoint covers a correction after the immutable
 SonarrWeeb `v0.1.0` release. That published release remains unchanged.
 

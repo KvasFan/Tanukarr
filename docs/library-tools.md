@@ -73,11 +73,11 @@ exists. Complete-series searches can query the series title without that option.
 
 The default additional parameters are `&cats=1_0&filter=1`. Nyaa still accepts
 these legacy names, alongside modern `c`, `f` and `q` parameters. Avoid a fixed
-`q` or `term` in Additional Parameters when Sonarr should supply each search
-title: a fixed query can override the generated term. The post-0.1.0 source
-correction escapes reserved title characters such as `&`, `#` and literal `+`
+`q` or `term` in Additional Parameters when Tanukarr should supply each search
+title: a fixed query can override the generated term. Tanukarr 1.0.0 includes the
+correction that escapes reserved title characters such as `&`, `#` and literal `+`
 while preserving configured category/filter values and special-episode word
-separators. The immutable 0.1.0 release predates this correction.
+separators. The immutable SonarrWeeb 0.1.0 release predates this correction.
 
 An HTTP/RSS connection test and a release search only retrieve metadata.
 Acquisition remains a separate operation. Search results can be present but
@@ -103,7 +103,8 @@ provider results cannot be used to add shows.
 
 Configure AniList under **Settings → Import Lists**, authenticate with AniList
 and enter the target username. The multiple-list inclusion and exclusion controls
-are included in **0.1.0**; the immutable 0.0.1 release predates them. These filters
+are included in **Tanukarr 1.0.0** and were introduced in SonarrWeeb 0.1.0;
+the immutable SonarrWeeb 0.0.1 release predates them. These filters
 describe different things and are combined:
 
 | Setting | What it selects |
@@ -177,7 +178,7 @@ read successfully. The failure occurred while fetching the anime metadata needed
 to add those entries. Testing a list while its sync is running consumes the same
 AniList request allowance.
 
-The post-0.1.0 source correction shares request pacing and cooldown between list
+Tanukarr 1.0.0 shares request pacing and cooldown between list
 pages, connection tests, searches and metadata refreshes. It spaces requests at
 least 2.1 seconds apart, observes AniList's retry/reset headers and retries a
 temporary HTTP 429 at most three total attempts. A prolonged cooldown or repeated
@@ -186,8 +187,9 @@ Initial synchronization of a large list can therefore take several minutes.
 The limit is shared within one application instance; another application using
 the same public IP can still exhaust AniList's server allowance.
 
-The immutable `v0.1.0` release predates this correction. Use a build containing
-the fix; repeated presses of **Test** or **Refresh** do not bypass the server
+The immutable SonarrWeeb `v0.1.0` release predates this correction. Use Tanukarr
+1.0.0 or another build containing the fix; repeated presses of **Test** or
+**Refresh** do not bypass the server
 cooldown. A request-limit error alone does not indicate an invalid custom-list
 name or a need to replace OAuth credentials. See the
 [request-limit verification report](anilist-rate-limit-verification-2026-10-13.md)

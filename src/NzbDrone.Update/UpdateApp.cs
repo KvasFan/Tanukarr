@@ -34,7 +34,7 @@ namespace NzbDrone.Update
                 var startupArgument = new StartupContext(args);
                 NzbDroneLogger.Register(startupArgument, true, true);
 
-                Logger.Info("Starting Sonarr Update Client");
+                Logger.Info("Starting Tanukarr Update Client");
 
                 var container = new Container(rules => rules.WithNzbDroneRules())
                     .AutoAddServices(new List<string> { "Sonarr.Update" })

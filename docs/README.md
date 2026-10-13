@@ -8,15 +8,18 @@ original content.
 
 | Document | Purpose |
 | --- | --- |
-| [Project README](../README.md) | SonarrWeeb features, release links, Docker quick start and toolchain |
+| [Project README](../README.md) | Tanukarr features, release links, Docker quick start and toolchain |
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
-| [SonarrWeeb 0.1.0](releases/0.1.0.md) | Current release scope, Jellyfin and AniList additions, upgrade guidance and verification limits |
-| [0.1.0 release verification](releases/0.1.0-verification.md) | Published source/image identity, executed release checks, fresh scan and deployment |
+| [Tanukarr 1.0.0](releases/1.0.0.md) | Rename, Tanuki artwork, retained features, upgrade guidance and release limits |
+| [1.0.0 release verification](releases/1.0.0-verification.md) | Executed checks, exact source/image identity, remaining findings and publication |
+| [Compatibility and backups](compatibility-and-backups.md) | v3/v5 APIs, preserved core/configuration names, safe migration and backup/restore limits |
+| [SonarrWeeb 0.1.0](releases/0.1.0.md) | Historical Jellyfin/AniList release scope and upgrade guidance |
+| [0.1.0 release verification](releases/0.1.0-verification.md) | Historical published source/image identity, executed checks, scan and deployment |
 | [SonarrWeeb 0.0.1](releases/0.0.1.md) | Initial release scope, download assets, core/API version compatibility and known limits |
 | [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
 | [Library tools](library-tools.md) | Filters, pause, lists, retained versions, restore and companion keys |
-| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries in 0.1.0 |
+| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries retained in 1.0.0 |
 | [Compression worker](../docker/compression/README.md) | Optional host worker, presets, dependencies and filesystem safeguards |
 | [Container checks](../docker/tests/README.md) | Disposable smoke, API/security and optional Chromium verification |
 | [Contributing](../CONTRIBUTING.md) | Build/test commands, English documentation and source/model attribution |
@@ -41,8 +44,10 @@ original content.
 | [AniList request-limit verification](anilist-rate-limit-verification-2026-10-13.md) | Post-0.1.0 custom-list sync failure, shared request pacing, cooldown and bounded recovery |
 | [Nyaa verification](nyaa-verification-2026-10-13.md) | Native RSS searches, reserved-title encoding and search-only container verification |
 
-Version 0.1.0 includes the selected-library Jellyfin connection and AniList
-multiple-list inclusion/exclusion controls. Its release notes describe the
+Tanukarr 1.0.0 continues SonarrWeeb under a new name and supplied Tanuki branding.
+It includes the selected-library Jellyfin connection, AniList multiple-list
+inclusion/exclusion and shared request-limit recovery, and corrected Nyaa query
+encoding. Its release notes describe the
 verification performed for the version change; the linked feature reports retain
 their original source/image identities and executed checks.
 

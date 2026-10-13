@@ -69,8 +69,8 @@
 
   <!-- Set the Product and Version info for our own projects -->
   <PropertyGroup Condition="'$(SonarrProject)'=='true'">
-    <Product>SonarrWeeb</Product>
-    <Company>SonarrWeeb contributors</Company>
+    <Product>Tanukarr</Product>
+    <Company>Tanukarr contributors</Company>
     <!-- Upstream's copyright stays: this is a GPLv3 fork of their work, not a replacement for it. -->
     <Copyright>Copyright 2014-$([System.DateTime]::Now.ToString('yyyy')) sonarr.tv and the Sonarr Pro contributors (GNU General Public v3)</Copyright>
     

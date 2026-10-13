@@ -73,10 +73,10 @@ function PageHeader() {
           className={styles.donate}
           iconClassName={styles.donateIcon}
           name={icons.HEART}
-          aria-label={translate('Donate')}
+          aria-label={`${translate('Donate')} - Sonarr`}
           to="https://sonarr.tv/donate.html"
           size={14}
-          title={translate('Donate')}
+          title={`${translate('Donate')} - Sonarr`}
         />
 
         <PageHeaderToolsMenu />

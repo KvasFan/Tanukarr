@@ -317,12 +317,14 @@ namespace NzbDrone.Core.Configuration
             {
                 var instanceName = _appOptions.InstanceName ?? GetValue("InstanceName", BuildInfo.ProductName);
 
-                if (instanceName.StartsWith(BuildInfo.AppName) || instanceName.EndsWith(BuildInfo.AppName))
+                if (string.IsNullOrWhiteSpace(instanceName) ||
+                    instanceName.Equals("SonarrWeeb", StringComparison.Ordinal) ||
+                    instanceName.Equals("Sonarr Pro", StringComparison.Ordinal))
                 {
-                    return instanceName;
+                    return BuildInfo.ProductName;
                 }
 
-                return BuildInfo.ProductName;
+                return instanceName;
             }
         }
 
@@ -476,12 +478,12 @@ namespace NzbDrone.Core.Configuration
 
                         if (contents.IsNullOrWhiteSpace())
                         {
-                            throw new InvalidConfigFileException($"{_configFile} is empty. Please delete the config file and Sonarr will recreate it.");
+                            throw new InvalidConfigFileException($"{_configFile} is empty. Please delete the config file and Tanukarr will recreate it.");
                         }
 
                         if (contents.All(char.IsControl))
                         {
-                            throw new InvalidConfigFileException($"{_configFile} is corrupt. Please delete the config file and Sonarr will recreate it.");
+                            throw new InvalidConfigFileException($"{_configFile} is corrupt. Please delete the config file and Tanukarr will recreate it.");
                         }
 
                         var xDoc = XDocument.Parse(_diskProvider.ReadAllText(_configFile));
@@ -489,7 +491,7 @@ namespace NzbDrone.Core.Configuration
 
                         if (config.Count != 1)
                         {
-                            throw new InvalidConfigFileException($"{_configFile} is invalid. Please delete the config file and Sonarr will recreate it.");
+                            throw new InvalidConfigFileException($"{_configFile} is invalid. Please delete the config file and Tanukarr will recreate it.");
                         }
 
                         return xDoc;
@@ -503,7 +505,7 @@ namespace NzbDrone.Core.Configuration
             }
             catch (XmlException ex)
             {
-                throw new InvalidConfigFileException($"{_configFile} is corrupt is invalid. Please delete the config file and Sonarr will recreate it.", ex);
+                throw new InvalidConfigFileException($"{_configFile} is corrupt is invalid. Please delete the config file and Tanukarr will recreate it.", ex);
             }
         }
 

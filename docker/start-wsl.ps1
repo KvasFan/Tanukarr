@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^[A-Za-z0-9_.-]+$')]
-    [string]$Distribution = 'SonarrWeebBuild',
+    [string]$Distribution = $(if ($env:TANUKARR_WSL_DISTRIBUTION) { $env:TANUKARR_WSL_DISTRIBUTION } else { 'SonarrWeebBuild' }),
     [switch]$Build
 )
 

@@ -1,6 +1,6 @@
 # Contributors and feature provenance
 
-This SonarrWeeb register credits the upstream application, original fork implementations,
+This Tanukarr register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have
 authored every feature in their repository. AI credit records tool/model provenance
 without assigning legal authorship or replacing the original human notices.
@@ -39,7 +39,8 @@ local commit makes their original author name unreachable from HEAD.
   security hardening, the English documentation/contributor audit and
   SonarrWeeb 0.0.1 and 0.1.0 release packaging/installation documentation and the
   subsequent dedicated Jellyfin refresh integration and AniList multiple-list
-  inclusion/exclusion controls.
+  inclusion/exclusion controls, AniList HTTP 429 recovery, Nyaa query encoding
+  and Tanukarr 1.0.0 branding, packaging and documentation.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -48,7 +49,7 @@ local commit makes their original author name unreachable from HEAD.
 
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
-| Local integration, documentation, SonarrWeeb 0.0.1 and 0.1.0 packaging, Jellyfin refresh and AniList inclusion/exclusion controls | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
+| Local integration, SonarrWeeb 0.0.1/0.1.0 and Tanukarr 1.0.0 packaging/documentation, Jellyfin refresh, AniList controls and request-limit recovery, Nyaa query encoding and Tanuki asset integration | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -58,24 +59,60 @@ Historical labels differ between README prose and commit trailers. Both are
 retained rather than silently replaced. Source-declared labels do not
 independently verify that a particular runtime model executed those sessions.
 
-## SonarrWeeb release identity
+## Tanukarr release identity
 
-The current integrated project is distributed as **SonarrWeeb 0.1.0**, with Git tag
-`v0.1.0`, under the GitHub profile
-[KvasExert](https://github.com/KvasExert/SonarrWeeb). The publishing account
+The current integrated project is distributed as **Tanukarr 1.0.0**, with Git tag
+`v1.0.0`, under the GitHub profile
+[KvasExert](https://github.com/KvasExert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/0.1.0.md) and
+[release notes](docs/releases/1.0.0.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
-The original [0.0.1 release](docs/releases/0.0.1.md) and its immutable tag retain
-their own source and verification history. Version 0.1.0 includes the subsequent
-Jellyfin and AniList controls without reassigning their original contributor
-credits. The product version remains separate from Sonarr's internal core/API
-compatibility version.
+The original SonarrWeeb [0.0.1](docs/releases/0.0.1.md) and
+[0.1.0](docs/releases/0.1.0.md) releases and their immutable tags retain their own
+source, image filenames and verification history. Tanukarr 1.0.0 includes the
+subsequent AniList request-limit and Nyaa encoding fixes without reassigning any
+original contributor credits. The product version remains separate from
+Sonarr's internal core/API compatibility version.
+
+The imported Sonarr Pro history included an annotated `v1.0.0` tag pointing to
+`fba499868213510c086a2791b6318192f6111c0d` (tag object
+`088a119cb0ef0bc66f957ecb0916f845ef1b335e`). That earlier source release is not
+Tanukarr 1.0.0. Its original tag object/annotation is retained under
+`legacy/sonarr-pro/v1.0.0`; the new Tanukarr `v1.0.0` identifies the independently
+verified Tanukarr release source. Original tag authorship and legal notices are
+preserved.
+
+### Tanuki artwork and branding
+
+The project owner supplied the **`Tanuki_Logo.zip`** archive for Tanukarr's logo
+and icon assets, preserved in [resources/branding](resources/branding/Tanuki_Logo.zip).
+Credit for the original artwork belongs to its creator; an artist identity or
+license was not identified in this session, so neither is
+invented here. The user requested its use in this project. **OpenAI Codex,
+based on GPT-6**, integrated the supplied artwork into the project assets and
+updated the branding and release documentation. The reproducible asset helper
+is [docker/branding/update-assets.ps1](docker/branding/update-assets.ps1).
+PNG/SVG originals and derived favicon, ICO, ICNS, tile, poster/error and installer
+images replace the previous artwork. The archive's white 96-pixel outline still
+contained the upstream symbol; that asset was replaced with a white mask derived
+from the supplied Tanuki image. Existing `Logo/Sonarr.svg` and
+`sonarr-simple.svg` filenames remain for compatibility, with Tanuki content.
+This credits integration work,
+not authorship of the supplied artwork. The original Sonarr copyright/license
+notices remain unchanged.
+
+For macOS ICNS format research, **mmaietta**'s
+[electron-builder-binaries commit 40acc0b8](https://github.com/electron-userland/electron-builder-binaries/commit/40acc0b8ad6886b99d9878fd00ff475cce2ee4e3)
+documents the small 16/32-pixel `ic04`/`ic05` straight-ARGB representation and
+larger PNG frames. The local PowerShell asset helper implements the format
+independently; no library implementation was copied or new dependency added.
+Local checks decode the generated channels and compare their bytes with the
+supplied artwork. Actual macOS Finder/AppKit rendering was not executed here.
 
 ## Feature-to-contributor register
 

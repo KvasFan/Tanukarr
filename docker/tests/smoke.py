@@ -176,14 +176,14 @@ class ContainerSmoke:
         require(status.get("version") and status.get("migrationVersion"), "Status lacks build/database information")
         release_version = (Path(__file__).resolve().parents[2] / "VERSION").read_text(encoding="utf-8").strip()
         for resource in (status, self.api("/api/v3/system/status"), self.ui_initialization()):
-            require(resource.get("productName") == "SonarrWeeb", "Runtime does not identify the SonarrWeeb product")
+            require(resource.get("productName") == "Tanukarr", "Runtime does not identify the Tanukarr product")
             require(resource.get("productVersion") == release_version, "Runtime product version disagrees with VERSION")
             require(resource.get("version") == status["version"], "Internal version differs across API and frontend initialization")
         require(status.get("appName") == "Sonarr", "The compatible internal application name changed")
         self.runtime_metadata = {key: status[key] for key in (
             "appName", "productName", "productVersion", "version", "runtimeVersion", "migrationVersion"
         ) if key in status}
-        self.check("SonarrWeeb release metadata agrees across v3/v5 APIs and frontend initialization")
+        self.check("Tanukarr release metadata agrees across v3/v5 APIs and frontend initialization")
         queue = self.api("/api/v5/queue")
         require(queue.get("totalRecords") == 0 and queue.get("records") == [], "Isolated queue was not empty")
         require(self.api("/api/v5/series") == [], "Isolated configuration contains existing series")
@@ -308,7 +308,7 @@ test -s /config/sonarr.db
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image", default="sonarr-weeb:local", help="already built Linux image (default: %(default)s)")
+    parser.add_argument("--image", default="tanukarr:local", help="already built Linux image (default: %(default)s)")
     parser.add_argument("--docker", default="docker", help="Docker executable or absolute path")
     parser.add_argument("--timeout", type=int, default=180, help="startup/restart readiness timeout in seconds")
     parser.add_argument("--anilist", action="store_true", help="also perform one live AniList lookup (requires Internet)")

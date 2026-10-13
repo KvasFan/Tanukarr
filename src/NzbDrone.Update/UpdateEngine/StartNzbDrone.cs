@@ -31,7 +31,7 @@ namespace NzbDrone.Update.UpdateEngine
 
         public void Start(AppType appType, string installationFolder)
         {
-            _logger.Info("Starting Sonarr");
+            _logger.Info("Starting Tanukarr");
             if (appType == AppType.Service)
             {
                 try
@@ -40,7 +40,7 @@ namespace NzbDrone.Update.UpdateEngine
                 }
                 catch (InvalidOperationException e)
                 {
-                    _logger.Warn("Couldn't start Sonarr Service (Most likely due to permission issues). falling back to console.", e);
+                    _logger.Warn("Couldn't start Tanukarr Service (Most likely due to permission issues). falling back to console.", e);
                     StartConsole(installationFolder);
                 }
             }
@@ -56,7 +56,7 @@ namespace NzbDrone.Update.UpdateEngine
 
         private void StartService()
         {
-            _logger.Info("Starting Sonarr service");
+            _logger.Info("Starting Tanukarr service");
             _serviceProvider.Start(ServiceProvider.SERVICE_NAME);
         }
 

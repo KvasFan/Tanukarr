@@ -510,7 +510,7 @@ class FunctionalSecurity(ContainerSmoke):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image", default="sonarr-weeb:local")
+    parser.add_argument("--image", default="tanukarr:local")
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--anilist", action="store_true")

@@ -93,7 +93,7 @@ namespace NzbDrone.Core.Jobs
                         TypeName = typeof(ClearExpiredCacheCommand).FullName
                     },
 
-                    // No scheduled update check: Sonarr Pro updates with "docker pull", and the
+                    // No scheduled update check: Tanukarr updates with "docker pull", and the
                     // upstream update service only knows about upstream Sonarr builds.
 
                     new ScheduledTask

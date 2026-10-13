@@ -1,11 +1,11 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "SonarrWeeb",
-    "description": "SonarrWeeb v5 API documentation. Product release versions are reported separately from the inherited Sonarr core and API versions.",
+    "title": "Tanukarr",
+    "description": "Tanukarr v5 API documentation. Product release versions are reported separately from the inherited Sonarr core and API versions.",
     "license": {
       "name": "GPL-3.0",
-      "url": "https://github.com/KvasExert/SonarrWeeb/blob/main/LICENSE.md"
+      "url": "https://github.com/KvasExert/Tanukarr/blob/main/LICENSE.md"
     },
     "version": "5.0.0"
   },

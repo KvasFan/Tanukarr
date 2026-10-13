@@ -37,8 +37,8 @@ class JellyfinIntegration(ContainerSmoke):
         headers = {"Content-Type": "application/json"}
         if base == self.jellyfin_url:
             headers["Authorization"] = (
-                'MediaBrowser Client="SonarrWeeb integration test", Device="Generated fixture", '
-                f'DeviceId="sonarrweeb-isolated-audit", Version="{PRODUCT_VERSION}"'
+                'MediaBrowser Client="Tanukarr integration test", Device="Generated fixture", '
+                f'DeviceId="tanukarr-isolated-audit", Version="{PRODUCT_VERSION}"'
             )
         if token:
             if base == self.jellyfin_url:
@@ -106,9 +106,9 @@ class JellyfinIntegration(ContainerSmoke):
         self.jf("/Startup/Complete", "POST")
         auth = self.jf("/Users/AuthenticateByName", "POST", {"Username": "isolated-jellyfin-audit", "Pw": self.jellyfin_password})
         self.jellyfin_token = auth["AccessToken"]
-        self.jf("/Auth/Keys?app=SonarrWeeb-isolated-test", "POST")
+        self.jf("/Auth/Keys?app=Tanukarr-isolated-test", "POST")
         self.jellyfin_token = next(key["AccessToken"] for key in self.jf("/Auth/Keys")["Items"]
-                                   if key["AppName"] == "SonarrWeeb-isolated-test")
+                                   if key["AppName"] == "Tanukarr-isolated-test")
         for name in ("Anime", "Untouched"):
             folder = self.root / "media" / name
             folder.mkdir()
@@ -334,7 +334,7 @@ class JellyfinIntegration(ContainerSmoke):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image", required=True, help="Already built SonarrWeeb image")
+    parser.add_argument("--image", required=True, help="Already built Tanukarr image")
     parser.add_argument("--jellyfin-image", default="jellyfin/jellyfin:12.2")
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--timeout", type=int, default=180)

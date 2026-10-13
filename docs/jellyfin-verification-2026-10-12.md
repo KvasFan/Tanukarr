@@ -1,5 +1,7 @@
 # Jellyfin integration verification — October 12, 2026
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This report covers the dedicated Jellyfin connection added to development main
 after the immutable SonarrWeeb 0.0.1 release. It extends the existing upstream
 Emby / Jellyfin integration without changing that connection. Configuration and
@@ -11,7 +13,7 @@ in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
 Verification started on October 12 and finished on October 13, 2026 in
 Europe/Rome; all final receipts are dated October 12 in UTC. The tested source is
-[`2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExert/SonarrWeeb/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91).
+[`2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExert/Tanukarr/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91).
 Subsequent documentation-only commits do not change this implementation.
 
 The local Linux amd64 image used for the complete runtime checks was
@@ -26,8 +28,8 @@ anonymously using a fresh Docker configuration, checked with the actual Jellyfin
 settings UI, and deployed to the existing local instance. The immutable
 `v0.0.1` release and its stable image remain unchanged and predate this feature.
 
-The [CI run](https://github.com/KvasExert/SonarrWeeb/actions/runs/38312658105)
-and [Docker publishing run](https://github.com/KvasExert/SonarrWeeb/actions/runs/38312658464)
+The [CI run](https://github.com/KvasExert/Tanukarr/actions/runs/38312658105)
+and [Docker publishing run](https://github.com/KvasExert/Tanukarr/actions/runs/38312658464)
 both completed successfully for this source revision. The publishing workflow
 runs its container checks against the image before pushing it.
 

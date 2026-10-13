@@ -111,11 +111,11 @@ namespace NzbDrone.Host
                 {
                     Version = "3.0.0",
                     Title = BuildInfo.ProductName,
-                    Description = "SonarrWeeb v3 API documentation. Compatible legacy Sonarr routes and fork-specific resources are described here. The product release version is reported separately from the internal Sonarr version.",
+                    Description = "Tanukarr v3 API documentation. Compatible legacy Sonarr routes and fork-specific resources are described here. The product release version is reported separately from the internal Sonarr version.",
                     License = new OpenApiLicense
                     {
                         Name = "GPL-3.0",
-                        Url = new Uri("https://github.com/KvasExert/SonarrWeeb/blob/main/LICENSE.md")
+                        Url = new Uri("https://github.com/KvasExert/Tanukarr/blob/main/LICENSE.md")
                     }
                 });
 
@@ -123,11 +123,11 @@ namespace NzbDrone.Host
                 {
                     Version = "5.0.0",
                     Title = BuildInfo.ProductName,
-                    Description = "SonarrWeeb v5 API documentation. Product release versions are reported separately from the inherited Sonarr core and API versions.",
+                    Description = "Tanukarr v5 API documentation. Product release versions are reported separately from the inherited Sonarr core and API versions.",
                     License = new OpenApiLicense
                     {
                         Name = "GPL-3.0",
-                        Url = new Uri("https://github.com/KvasExert/SonarrWeeb/blob/main/LICENSE.md")
+                        Url = new Uri("https://github.com/KvasExert/Tanukarr/blob/main/LICENSE.md")
                     }
                 });
 

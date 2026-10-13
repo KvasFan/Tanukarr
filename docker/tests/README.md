@@ -11,11 +11,11 @@ For development main's dedicated Jellyfin connection, run:
 
 ```sh
 docker pull jellyfin/jellyfin:12.2
-python3 docker/tests/jellyfin.py --image sonarr-weeb:local \
+python3 docker/tests/jellyfin.py --image tanukarr:local \
   --jellyfin-image jellyfin/jellyfin:12.2 --report jellyfin-report.json
 ```
 
-This optional test starts disposable SonarrWeeb and Jellyfin containers on its
+This optional test starts disposable Tanukarr and Jellyfin containers on its
 own Docker network, with random loopback ports. It initializes an isolated
 Jellyfin administrator, creates two TV libraries with real-time monitoring
 disabled, generates baseline videos using Jellyfin's packaged FFmpeg, and runs
@@ -44,7 +44,7 @@ For optional Chromium checks of the actual Connect editor, supply an external
 Node executable and Playwright installation:
 
 ```sh
-python3 docker/tests/jellyfin.py --image sonarr-weeb:local --browser-only \
+python3 docker/tests/jellyfin.py --image tanukarr:local --browser-only \
   --browser-node /path/to/node --playwright-module /path/to/node_modules/playwright \
   --report jellyfin-browser-report.json
 ```
@@ -60,8 +60,8 @@ passed to Node through stdin, never command-line arguments.
 Build the image, then verify its runtime using Python 3 and the Docker CLI:
 
 ```sh
-docker build --progress=plain -t sonarr-weeb:local .
-python docker/tests/smoke.py --image sonarr-weeb:local --report smoke-report.json
+docker build --progress=plain -t tanukarr:local .
+python docker/tests/smoke.py --image tanukarr:local --report smoke-report.json
 ```
 
 The script needs Python 3 and a running Docker Engine configured for Linux
@@ -107,7 +107,7 @@ current validation.
 Run the isolated authentication, permissions, validation and persistence checks:
 
 ```sh
-python3 docker/tests/functional-security.py --image sonarr-weeb:local \
+python3 docker/tests/functional-security.py --image tanukarr:local \
   --report functional-security-report.json
 ```
 
@@ -120,7 +120,7 @@ the series database or schedule acquisition commands. The checks distinguish
 membership status, anime airing status and custom lists.
 
 ```sh
-python3 docker/tests/functional-security.py --image sonarr-weeb:local --anilist \
+python3 docker/tests/functional-security.py --image tanukarr:local --anilist \
   --report functional-security-live-report.json
 ```
 
@@ -140,7 +140,7 @@ are required together. For example, on a Linux host with Node/npm installed:
 ```sh
 npm install --prefix /tmp/sonarr-ui-audit playwright@1.64.0
 /tmp/sonarr-ui-audit/node_modules/.bin/playwright install chromium
-python3 docker/tests/functional-security.py --image sonarr-weeb:local --anilist \
+python3 docker/tests/functional-security.py --image tanukarr:local --anilist \
   --browser-node "$(command -v node)" \
   --playwright-module /tmp/sonarr-ui-audit/node_modules/playwright \
   --report /tmp/sonarr-ui-audit/reports/functional-security.json
@@ -190,6 +190,10 @@ and the later
 [Jellyfin verification report](../../docs/jellyfin-verification-2026-10-12.md),
 followed by the
 [AniList filter verification report](../../docs/anilist-filters-verification-2026-10-13.md).
+
+The [Tanukarr 1.0.0 verification report](../../docs/releases/1.0.0-verification.md)
+records checks executed for the renamed image. The earlier SonarrWeeb image names,
+versions and test counts in dated reports remain historical evidence.
 
 An image that passes these checks has demonstrated startup, isolated API/UI
 behavior, permissions and persistence. The Jellyfin harness additionally verifies

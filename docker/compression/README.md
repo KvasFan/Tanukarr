@@ -1,10 +1,10 @@
 # Per-show compression worker
 
-Sonarr exposes authenticated compression controls on each series page. The
+Tanukarr exposes authenticated compression controls on each series page. The
 optional worker runs as the media owner on a Linux host, using host-installed
-FFmpeg and ffprobe. It is a separate service; the Sonarr runtime image does not
+FFmpeg and ffprobe. It is a separate service; the Tanukarr runtime image does not
 include or start this worker. A private Unix socket carries control requests
-from Sonarr. The worker opens no TCP listener and accepts no SSH credential,
+from Tanukarr. The worker opens no TCP listener and accepts no SSH credential,
 shell command or Docker socket.
 
 See the [documentation index](../../docs/README.md) for feature guides and
@@ -14,8 +14,8 @@ See the [documentation index](../../docs/README.md) for feature guides and
 
 Install Python 3, FFmpeg, ffprobe and the `nice`/`ionice` utilities on the Linux
 host. Software modes require FFmpeg's `libx264` encoder. Set up the worker as the
-same unprivileged media UID/GID used by Sonarr, with access to the registered
-media files. Paths returned by Sonarr must also identify the same files on the
+same unprivileged media UID/GID used by Tanukarr, with access to the registered
+media files. Paths returned by Tanukarr must also identify the same files on the
 host: mount media at matching absolute paths or arrange equivalent host paths.
 The worker checks that a file lies inside its registered series folder and one
 configured media root.
@@ -24,9 +24,9 @@ Example worker configuration (keep outside the public repository):
 
 ```json
 {
-  "socket": "/home/media/sonarr-pro/compression-shared/worker.sock",
-  "stateDirectory": "/home/media/sonarr-pro/compression-state",
-  "sonarrConfig": "/home/media/sonarr-pro/config/config.xml",
+  "socket": "/home/media/tanukarr/compression-shared/worker.sock",
+  "stateDirectory": "/home/media/tanukarr/compression-state",
+  "sonarrConfig": "/home/media/tanukarr/config/config.xml",
   "sonarrUrl": "http://127.0.0.1:6970",
   "mediaRoots": ["/mnt/media", "/mnt/media2"],
   "scriptIndex": "/home/media/.ghost_index"
@@ -34,17 +34,17 @@ Example worker configuration (keep outside the public repository):
 ```
 
 Run `python3 worker.py --config /path/to/worker-config.json` as an unprivileged
-media user. Mount `compression-shared` into Sonarr at `/compression` so the
+media user. Mount `compression-shared` into Tanukarr at `/compression` so the
 default container-side socket is `/compression/worker.sock`. The socket is mode
-`0660`; its parent directory must permit traversal by Sonarr's media UID/GID.
+`0660`; its parent directory must permit traversal by Tanukarr's media UID/GID.
 Optionally set `SONARR_COMPRESSION_SOCKET` to another container-side socket path.
 Keep that directory private to these services: filesystem permissions are the
 worker socket's access control.
 
 `sonarrConfig` is a host-readable `config.xml` containing the master API key, and
-`sonarrUrl` must reach the corresponding Sonarr instance from the worker. The
+`sonarrUrl` must reach the corresponding Tanukarr instance from the worker. The
 worker reads registered files and requests rescans through `/api/v5`. Protect
-the JSON configuration, Sonarr configuration and worker state from other users.
+the JSON configuration, Tanukarr configuration and worker state from other users.
 Do not put their credentials or contents in a public repository.
 
 Use a systemd service with `KillMode=control-group`, `UMask=0007`,
@@ -79,11 +79,11 @@ network resources. Unsupported extensions are skipped before probing. Output mus
 save at least 2%. Validation checks the expected video codec, resolution,
 duration, stream types, non-video codecs, languages, dispositions and chapter
 count; the video and audio must decode successfully before an atomic
-replacement. The source and its live Sonarr association are
+replacement. The source and its live Tanukarr association are
 rechecked at replacement. File mode, owner/group and modification time are
 preserved. Hard-linked torrent originals are preserved.
 Cancellation keeps the active original; completed encodes remain. Completion
-requests a Sonarr rescan to refresh file sizes and codec information.
+requests a Tanukarr rescan to refresh file sizes and codec information.
 
 ## Verification and limits
 
@@ -111,4 +111,4 @@ records 29 passing worker tests with generated media. It did not test a real
 library or VAAPI hardware. The demuxer/protocol restrictions address the
 confirmed playlist network-access issue; they do not establish that FFmpeg has
 no other vulnerabilities or constitute fuzzing of native decoders. Maintain the
-host's FFmpeg packages as well as the Sonarr image.
+host's FFmpeg packages as well as the Tanukarr image.

@@ -44,7 +44,7 @@ namespace NzbDrone.Common.Instrumentation
                 RegisterDebugger();
             }
 
-            // Sonarr Pro does not register Sentry. Upstream ships crash reports to
+            // Tanukarr does not register Sentry. Upstream ships crash reports to
             // sentry.sonarr.tv, and stack traces from a fork's modified code would land in the
             // Sonarr team's triage queue describing bugs that are not theirs and that they cannot
             // act on. Crashes are recorded in the local log files instead.

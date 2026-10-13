@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using FluentValidation;
 using FluentValidation.Validators;
+using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
 
@@ -106,7 +107,9 @@ namespace NzbDrone.Core.Validation
         public static IRuleBuilderOptions<T, string> StartsOrEndsWithSonarr<T>(this IRuleBuilder<T, string> ruleBuilder)
         {
             ruleBuilder.SetValidator(new NotEmptyValidator(null));
-            return ruleBuilder.SetValidator(new RegularExpressionValidator("^Sonarr|Sonarr$")).WithMessage("Must start or end with Sonarr");
+            var productName = Regex.Escape(BuildInfo.ProductName);
+            return ruleBuilder.SetValidator(new RegularExpressionValidator($"^(?:{productName}|Sonarr)|(?:{productName}|Sonarr)$"))
+                              .WithMessage($"Must start or end with {BuildInfo.ProductName} or Sonarr");
         }
     }
 }

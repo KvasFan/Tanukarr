@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# SonarrWeeb writes to /config and to whatever media folders are mounted. If it ran as
+# Tanukarr writes to /config and to whatever media folders are mounted. If it ran as
 # root it would create files the host user cannot edit or delete, which is the usual
 # cause of "permission denied" reports after a container is removed. So the app runs as
 # a normal user whose ids are set to match the host's, the way the other *arr images do.
@@ -28,10 +28,10 @@ if [ "$(id -u)" = "0" ]; then
     mkdir -p /config
     chown -R "$PUID:$PGID" /config 2>/dev/null || true
 
-    echo "SonarrWeeb starting as ${PUID}:${PGID}"
+    echo "Tanukarr starting as ${PUID}:${PGID}"
     exec gosu "$PUID:$PGID" "$@"
 fi
 
 # Already running as a non-root user, e.g. "docker run --user". Nothing to drop.
-echo "SonarrWeeb starting as $(id -u):$(id -g)"
+echo "Tanukarr starting as $(id -u):$(id -g)"
 exec "$@"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package verified SonarrWeeb image, source, deployment YAML and evidence."""
+"""Package verified Tanukarr image, source, deployment YAML and evidence."""
 
 import argparse
 from datetime import datetime, timezone
@@ -42,23 +42,23 @@ def digest(path):
 
 
 def compose(image):
-    return """# SonarrWeeb release deployment. Docker Compose v2 is required.
+    return """# Tanukarr release deployment. Docker Compose v2 is required.
 # Keep config and media directories on storage owned by PUID/PGID.
 services:
-  sonarrweeb:
+  tanukarr:
     image: IMAGE_REFERENCE
-    container_name: sonarrweeb
+    container_name: tanukarr
     restart: unless-stopped
     ports:
-      - "${SONARRWEEB_BIND_ADDRESS:-127.0.0.1}:${SONARRWEEB_PORT:-6970}:8989"
+      - "${TANUKARR_BIND_ADDRESS:-${SONARRWEEB_BIND_ADDRESS:-${SONARR_PRO_BIND_ADDRESS:-127.0.0.1}}}:${TANUKARR_PORT:-${SONARRWEEB_PORT:-${SONARR_PRO_PORT:-6970}}}:8989"
     environment:
-      PUID: "${SONARRWEEB_PUID:-1000}"
-      PGID: "${SONARRWEEB_PGID:-1000}"
-      UMASK: "${SONARRWEEB_UMASK:-002}"
-      TZ: "${SONARRWEEB_TZ:-Etc/UTC}"
+      PUID: "${TANUKARR_PUID:-${SONARRWEEB_PUID:-${SONARR_PRO_PUID:-1000}}}"
+      PGID: "${TANUKARR_PGID:-${SONARRWEEB_PGID:-${SONARR_PRO_PGID:-1000}}}"
+      UMASK: "${TANUKARR_UMASK:-${SONARRWEEB_UMASK:-${SONARR_PRO_UMASK:-002}}}"
+      TZ: "${TANUKARR_TZ:-${SONARRWEEB_TZ:-${SONARR_PRO_TZ:-Etc/UTC}}}"
     volumes:
-      - "${SONARRWEEB_CONFIG_PATH:-./config}:/config"
-      - "${SONARRWEEB_MEDIA_PATH:-./media}:/media"
+      - "${TANUKARR_CONFIG_PATH:-${SONARRWEEB_CONFIG_PATH:-${SONARR_PRO_CONFIG_PATH:-./config}}}:/config"
+      - "${TANUKARR_MEDIA_PATH:-${SONARRWEEB_MEDIA_PATH:-${SONARR_PRO_MEDIA_PATH:-./media}}}:/media"
 """.replace("IMAGE_REFERENCE", image)
 
 
@@ -113,8 +113,8 @@ def verify_archive(path, expected_image, image):
 
 def package(args):
     require(bool(re.fullmatch(r"\d+\.\d+\.\d+", args.version)), "Version must be MAJOR.MINOR.PATCH")
-    require(bool(re.fullmatch(r"[A-Za-z0-9-]+/SonarrWeeb", args.repository)),
-            "Repository must identify OWNER/SonarrWeeb")
+    require(bool(re.fullmatch(r"[A-Za-z0-9-]+/Tanukarr", args.repository)),
+            "Repository must identify OWNER/Tanukarr")
     expected_image = f"ghcr.io/{args.repository.lower()}:{args.version}"
     require(args.image == expected_image, f"Expected release image {expected_image}")
     root = Path(__file__).resolve().parents[2]
@@ -129,7 +129,7 @@ def package(args):
     require(image["Os"] == "linux" and image["Architecture"] == "amd64",
             "This release has only been validated on linux/amd64")
     labels = image.get("Config", {}).get("Labels", {}) or {}
-    require(labels.get("org.opencontainers.image.title") == "SonarrWeeb", "Image title is not SonarrWeeb")
+    require(labels.get("org.opencontainers.image.title") == "Tanukarr", "Image title is not Tanukarr")
     require(labels.get("org.opencontainers.image.version") == args.version, "Image version label mismatch")
     require(labels.get("org.opencontainers.image.revision") == revision,
             "Image revision does not match the committed source being packaged")
@@ -156,8 +156,8 @@ def package(args):
     require(not output.exists() or (output.is_dir() and not any(output.iterdir())),
             "Output must be a new or empty directory; existing release files will not be overwritten")
     output.parent.mkdir(parents=True, exist_ok=True)
-    stem = f"SonarrWeeb-{args.version}"
-    with tempfile.TemporaryDirectory(prefix="sonarrweeb-release-", dir=output.parent) as temporary:
+    stem = f"Tanukarr-{args.version}"
+    with tempfile.TemporaryDirectory(prefix="tanukarr-release-", dir=output.parent) as temporary:
         staging = Path(temporary)
         image_tar = staging / "image.tar"
         run(args.docker, "save", "--output", str(image_tar), args.image)
@@ -175,7 +175,7 @@ def package(args):
         shutil.copyfile(args.functional_report, staging / "functional-security.json")
         (staging / "compose.yaml").write_text(compose(args.image), encoding="utf-8", newline="\n")
         metadata = {
-            "project": "SonarrWeeb", "version": args.version,
+            "project": "Tanukarr", "version": args.version,
             "repository": f"https://github.com/{args.repository}", "sourceCommit": revision,
             "image": args.image, "imageId": image["Id"],
             "runtime": smoke["runtime"],
@@ -195,15 +195,15 @@ def package(args):
         output.mkdir(exist_ok=True)
         for path in staging.iterdir():
             shutil.move(str(path), output / path.name)
-    print(f"Packaged SonarrWeeb {args.version}: {output}")
+    print(f"Packaged Tanukarr {args.version}: {output}")
     print(f"Verified image: {image['Id']}; corresponding source: {revision}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
-    parser.add_argument("--repository", required=True, help="GitHub OWNER/SonarrWeeb")
-    parser.add_argument("--image", required=True, help="locally available ghcr.io/owner/sonarrweeb:version")
+    parser.add_argument("--repository", required=True, help="GitHub OWNER/Tanukarr")
+    parser.add_argument("--image", required=True, help="locally available ghcr.io/owner/tanukarr:version")
     parser.add_argument("--sbom", required=True, type=Path)
     parser.add_argument("--smoke-report", required=True, type=Path)
     parser.add_argument("--functional-report", required=True, type=Path)

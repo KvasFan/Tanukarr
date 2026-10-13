@@ -86,7 +86,7 @@ namespace NzbDrone.Update.UpdateEngine
         public void Start(string installationFolder, int processId)
         {
             _logger.Info("Installation Folder: {0}", installationFolder);
-            _logger.Info("Updating Sonarr from version {0} to version {1}", _detectExistingVersion.GetExistingVersion(installationFolder), BuildInfo.Version);
+            _logger.Info("Updating Tanukarr from version {0} to version {1}", _detectExistingVersion.GetExistingVersion(installationFolder), BuildInfo.Version);
 
             Verify(installationFolder, processId);
 
@@ -115,7 +115,7 @@ namespace NzbDrone.Update.UpdateEngine
                 {
                     if (_processProvider.Exists(ProcessProvider.SONARR_CONSOLE_PROCESS_NAME) || _processProvider.Exists(ProcessProvider.SONARR_PROCESS_NAME))
                     {
-                        _logger.Error("Sonarr was restarted prematurely by external process.");
+                        _logger.Error("Tanukarr was restarted prematurely by external process.");
                         return;
                     }
                 }
@@ -157,7 +157,7 @@ namespace NzbDrone.Update.UpdateEngine
 
                         if (_processProvider.Exists(ProcessProvider.SONARR_PROCESS_NAME))
                         {
-                            _logger.Info("Sonarr was restarted by external process.");
+                            _logger.Info("Tanukarr was restarted by external process.");
                             break;
                         }
                     }

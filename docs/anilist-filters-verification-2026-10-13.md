@@ -1,5 +1,7 @@
 # AniList inclusion and exclusion verification - October 13, 2026
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This checkpoint covers the multiple custom-list inclusion/exclusion controls
 and explicit watching-state exclusions added to development main after release
 0.0.1. The immutable release remains unchanged. Configuration is described in
@@ -10,7 +12,7 @@ credited in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 ## Source and images
 
 The application source verified here is
-[`2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExert/SonarrWeeb/commit/2f0dcbc653481091028300dd377843c4cb1a075b).
+[`2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExert/Tanukarr/commit/2f0dcbc653481091028300dd377843c4cb1a075b).
 The later browser-selector correction and documentation updates do not alter
 the application's filtering or frontend behavior. Verification finished on
 October 13 in Europe/Rome; the final deployment receipt is October 12 in UTC.
@@ -30,8 +32,8 @@ a fresh Docker configuration succeeded. The published image was tested and
 deployed by digest. The immutable `v0.0.1` release remains unchanged and predates
 these filters; development main and `edge` contain them.
 
-Both the [CI run](https://github.com/KvasExert/SonarrWeeb/actions/runs/38316134346)
-and [Docker publishing run](https://github.com/KvasExert/SonarrWeeb/actions/runs/38316134695)
+Both the [CI run](https://github.com/KvasExert/Tanukarr/actions/runs/38316134346)
+and [Docker publishing run](https://github.com/KvasExert/Tanukarr/actions/runs/38316134695)
 completed successfully. The publishing workflow verifies its image before
 pushing it.
 

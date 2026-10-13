@@ -1,5 +1,7 @@
 # Initial verified Docker build and deployment — October 12, 2026
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This historical report records the first actual Docker build and deployment,
 at `130831c3b15ebca879d78fe30904b5840b3d6a3d`. The image and deployment after the
 security corrections are documented in

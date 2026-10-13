@@ -51,7 +51,7 @@ jobs:
           fi
           echo "name=$image" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "artifact=SonarrWeeb-$version-release" >> "$GITHUB_OUTPUT"
+          echo "artifact=Tanukarr-$version-release" >> "$GITHUB_OUTPUT"
           echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Derive image tags
@@ -73,33 +73,33 @@ jobs:
           platforms: linux/amd64
           push: false
           load: true
-          tags: sonarrweeb:verified
+          tags: tanukarr:verified
           build-args: |
-            SONARRWEEB_VERSION=${{ steps.image.outputs.version }}
-            SONARRWEEB_SOURCE=https://github.com/${{ github.repository }}
-            SONARRWEEB_REVISION=${{ github.sha }}
-            SONARRWEEB_CREATED=${{ steps.image.outputs.created }}
+            TANUKARR_VERSION=${{ steps.image.outputs.version }}
+            TANUKARR_SOURCE=https://github.com/${{ github.repository }}
+            TANUKARR_REVISION=${{ github.sha }}
+            TANUKARR_CREATED=${{ steps.image.outputs.created }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Container smoke checks
         run: |
-          python3 docker/tests/smoke.py --image sonarrweeb:verified \
-            --report "${RUNNER_TEMP}/sonarrweeb-smoke.json"
+          python3 docker/tests/smoke.py --image tanukarr:verified \
+            --report "${RUNNER_TEMP}/tanukarr-smoke.json"
 
       - name: Isolated authentication and functional checks
         run: |
-          python3 docker/tests/functional-security.py --image sonarrweeb:verified \
-            --report "${RUNNER_TEMP}/sonarrweeb-functional-security.json"
+          python3 docker/tests/functional-security.py --image tanukarr:verified \
+            --report "${RUNNER_TEMP}/tanukarr-functional-security.json"
 
       - name: Upload verification reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: sonarrweeb-verification-${{ github.run_id }}
+          name: tanukarr-verification-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/sonarrweeb-smoke.json
-            ${{ runner.temp }}/sonarrweeb-functional-security.json
+            ${{ runner.temp }}/tanukarr-smoke.json
+            ${{ runner.temp }}/tanukarr-functional-security.json
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry
@@ -118,7 +118,7 @@ jobs:
         run: |
           while IFS= read -r tag; do
             [[ -n "$tag" ]] || continue
-            docker tag sonarrweeb:verified "$tag"
+            docker tag tanukarr:verified "$tag"
             docker push "$tag"
           done <<< "$IMAGE_TAGS"
 
@@ -126,9 +126,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
-          image: sonarrweeb:verified
+          image: tanukarr:verified
           format: cyclonedx-json
-          output-file: ${{ runner.temp }}/sonarrweeb-sbom.cdx.json
+          output-file: ${{ runner.temp }}/tanukarr-sbom.cdx.json
           syft-version: v1.54.1
           upload-artifact: false
           upload-release-assets: false
@@ -142,17 +142,17 @@ jobs:
         run: |
           python3 docker/release/package.py \
             --version "$VERSION" --repository "$REPOSITORY" --image "$IMAGE:$VERSION" \
-            --sbom "${RUNNER_TEMP}/sonarrweeb-sbom.cdx.json" \
-            --smoke-report "${RUNNER_TEMP}/sonarrweeb-smoke.json" \
-            --functional-report "${RUNNER_TEMP}/sonarrweeb-functional-security.json" \
-            --output "${RUNNER_TEMP}/sonarrweeb-release"
+            --sbom "${RUNNER_TEMP}/tanukarr-sbom.cdx.json" \
+            --smoke-report "${RUNNER_TEMP}/tanukarr-smoke.json" \
+            --functional-report "${RUNNER_TEMP}/tanukarr-functional-security.json" \
+            --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.image.outputs.artifact }}
-          path: ${{ runner.temp }}/sonarrweeb-release/*
+          path: ${{ runner.temp }}/tanukarr-release/*
           if-no-files-found: error
           retention-days: 30
 

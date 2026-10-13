@@ -10,7 +10,7 @@ namespace NzbDrone.Core.Update
     }
 
     /// <summary>
-    /// Sonarr Pro is distributed as a Docker image and updated with "docker pull", so there is
+    /// Tanukarr is distributed as a Docker image and updated with "docker pull", so there is
     /// no in-app updater to feed.
     ///
     /// Upstream asks services.sonarr.tv which build to install next. A fork must not do that: the

@@ -1,5 +1,7 @@
 # Approved upstream additions: historical ledger
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This ledger records the feature set approved on 2026-10-06. Its requirements were
 to preserve the existing library, quality preferences, metadata providers,
 torrent reuse, multi-season import, compression worker, mobile controls and path

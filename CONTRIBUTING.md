@@ -1,4 +1,4 @@
-# Contributing to SonarrWeeb
+# Contributing to Tanukarr
 
 Contributions, including AI-assisted work, are welcome. Describe the problem,
 the resulting behavior and the verification you performed. Preserve the authors
@@ -70,9 +70,9 @@ are described in the [container test guide](docker/tests/README.md).
 ```sh
 python3 docker/compression/test_worker.py
 SONARR_COMPRESSION_INTEGRATION=1 python3 docker/compression/test_worker.py
-docker build -t sonarr-weeb:local .
-python3 docker/tests/smoke.py --image sonarr-weeb:local --report smoke-report.json
-python3 docker/tests/functional-security.py --image sonarr-weeb:local --report functional-security-report.json
+docker build -t tanukarr:local .
+python3 docker/tests/smoke.py --image tanukarr:local --report smoke-report.json
+python3 docker/tests/functional-security.py --image tanukarr:local --report functional-security-report.json
 ```
 
 The second worker command requires FFmpeg/FFprobe and uses generated videos.
@@ -83,27 +83,35 @@ public AniList checks; it does not use a private account or start a real downloa
 
 CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tests,
 generated-video worker tests and frontend checks. The Docker workflow builds amd64
-and runs both container scripts. SonarrWeeb 0.1.0 publishes Linux amd64; configured
+and runs both container scripts. Published architectures and actually executed
+runtime checks are recorded in the release verification report; configured
 support for another architecture is not an executed test or a published artifact.
 A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
 The public project is
-[KvasExert/SonarrWeeb](https://github.com/KvasExert/SonarrWeeb). Release **0.1.0** uses
-Git tag `v0.1.0` and container tag `ghcr.io/kvasexert/sonarrweeb:0.1.0`.
+[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). Release **1.0.0** uses
+Git tag `v1.0.0` and container tag `ghcr.io/kvasexert/tanukarr:1.0.0`.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/0.1.0.md) when changing the published deployment.
+[release notes](docs/releases/1.0.0.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 
-Keep the SonarrWeeb product release version separate from the inherited Sonarr
+Keep the Tanukarr product release version separate from the inherited Sonarr
 core/API compatibility version. Preserve the GPL license, corresponding source
 and original feature authors in every distribution. A release requires executed
 build/container checks and an identified image digest; creating a Git tag or
 writing a workflow alone does not verify the published image.
+
+Tanukarr was previously named SonarrWeeb. Preserve historical release artifact
+names and dated evidence. The rename does not authorize changes to Sonarr's
+assembly names, database/configuration paths, migration IDs or v3/v5 API routes.
+Keep original authorship, copyright and GPL notices in source and image assets.
+When changing Tanuki logo assets, retain the supplied artwork's recorded
+provenance and document any artist/license information actually provided.
 
 ## Documentation and attribution
 
@@ -129,9 +137,9 @@ is excluded, or apply an old report's results to an untested new build.
 
 ## Reports and suggestions
 
-Report SonarrWeeb issues to
-[this project's tracker](https://github.com/KvasExert/SonarrWeeb/issues). Include the
-SonarrWeeb release version, commit/image digest, internal runtime version,
+Report Tanukarr issues to
+[this project's tracker](https://github.com/KvasExert/Tanukarr/issues). Include the
+Tanukarr release version, commit/image digest, internal runtime version,
 provider, series/release involved, expected behavior and sanitized logs. The
 original [Sonarr Pro repository](https://github.com/KakarottoCake/Sonarr-Pro) is a
 credited source fork; its releases do not identify this project's builds.

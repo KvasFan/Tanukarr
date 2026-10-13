@@ -3,7 +3,7 @@ using NzbDrone.Core.Localization;
 namespace NzbDrone.Core.HealthCheck
 {
     /// <summary>
-    /// Disabled in Sonarr Pro.
+    /// Disabled in Tanukarr.
     ///
     /// Upstream sends version, OS, architecture and branch to services.sonarr.tv and renders
     /// whatever message comes back as a health warning. A fork's version string describes a build

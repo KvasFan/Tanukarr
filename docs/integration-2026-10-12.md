@@ -1,5 +1,7 @@
 # Sonarr Pro integration — October 12, 2026
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This historical report records the first Kakarotto/gaboy integration on
 `integration/sonarr-latest-anilist`. Sonarr Pro was rebased onto the latest commit
 of Sonarr's default branch available during that work, `v5-develop@698bb1dbb`.

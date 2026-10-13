@@ -49,7 +49,9 @@ namespace NzbDrone.Host
         {
             try
             {
-                Logger.Info("Starting Sonarr - {0} - Version {1}",
+                Logger.Info("Starting {0} {1} - {2} - Sonarr core version {3}",
+                            BuildInfo.ProductName,
+                            BuildInfo.ProductVersion,
                             Environment.ProcessPath,
                             Assembly.GetExecutingAssembly().GetName().Version);
 
@@ -67,7 +69,7 @@ namespace NzbDrone.Host
 
                 RunHostUntilShutdown(args, startupContext, appMode, trayCallback);
 
-                Logger.Info("Sonarr has shut down completely");
+                Logger.Info("{0} has shut down completely", BuildInfo.ProductName);
             }
             catch (InvalidConfigFileException ex)
             {
@@ -277,7 +279,7 @@ namespace NzbDrone.Host
             {
                 Logger.Error(ex, ex.Message);
 
-                throw new InvalidConfigFileException($"{configPath} is corrupt or invalid. Please delete the config file and Sonarr will recreate it.", ex);
+                throw new InvalidConfigFileException($"{configPath} is corrupt or invalid. Please delete the config file and Tanukarr will recreate it.", ex);
             }
         }
 

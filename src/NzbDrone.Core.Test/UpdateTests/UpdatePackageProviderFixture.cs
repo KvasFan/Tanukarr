@@ -9,7 +9,7 @@ using NzbDrone.Core.Update;
 namespace NzbDrone.Core.Test.UpdateTests
 {
     /// <summary>
-    /// Sonarr Pro never offers an in-app update. Upstream's version of this fixture asked
+    /// Tanukarr never offers an in-app update. Upstream's version of this fixture asked
     /// services.sonarr.tv for real packages over the network; those tests are gone because the
     /// behaviour they covered is gone.
     /// </summary>

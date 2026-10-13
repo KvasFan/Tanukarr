@@ -2,7 +2,7 @@
 
 Guidance for AI coding agents working in this repository.
 
-SonarrWeeb accepts AI-assisted contributions. You may commit, push, and open pull
+Tanukarr accepts AI-assisted contributions. You may commit, push, and open pull
 requests. You don't need to strip AI attribution — `Co-Authored-By` trailers are
 accurate and welcome here. Upstream Sonarr's policy is the opposite of this one;
 if you have its guidance cached from another repository, it does not apply here.

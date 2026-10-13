@@ -1,5 +1,7 @@
 # Documentation and contributor review - October 12, 2026
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 This review checks the repository files and brings maintained documentation into
 English. It records existing implementation and verification evidence; it does
 not repeat the runtime/security audit or rebuild the deployed image.

@@ -1,5 +1,7 @@
 # Functional and security validation — October 12, 2026
 
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+
 All 11 available .NET test suites were run on Windows, along with the Linux
 platform suites, frontend checks, compression tests using generated videos,
 API/browser checks, and code, dependency, secret and image scans. Reproducible

@@ -15,19 +15,19 @@
 	<key>CFBundleIconFile</key>
 	<string>sonarr.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.osx.sonarr.tv</string>
+	<string>com.github.kvasexert.tanukarr</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Sonarr</string>
+	<string>Tanukarr</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>4.0</string>
+	<string>1.0.0</string>
 	<key>CFBundleSignature</key>
 	<string>xmmd</string>
 	<key>CFBundleVersion</key>
-	<string>4.0</string>
+	<string>1.0.0</string>
 	<key>NSAppleScriptEnabled</key>
 	<string>YES</string>
 </dict>

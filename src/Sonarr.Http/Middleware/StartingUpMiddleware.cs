@@ -9,7 +9,7 @@ namespace Sonarr.Http.Middleware
 {
     public class StartingUpMiddleware
     {
-        private const string MESSAGE = "Sonarr is starting up, please try again later";
+        private static readonly string MESSAGE = BuildInfo.ProductName + " is starting up, please try again later";
         private readonly RequestDelegate _next;
         private readonly IRuntimeInfo _runtimeInfo;
 
