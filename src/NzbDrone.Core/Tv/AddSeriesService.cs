@@ -140,7 +140,7 @@ namespace NzbDrone.Core.Tv
                 }
             }
 
-            return _seriesService.AddSeries(seriesToAdd);
+            return _seriesService.AddSeries(seriesToAdd, ignoreErrors);
         }
 
         private Series AddSkyhookData(Series newSeries)

@@ -1,8 +1,10 @@
 # Tanukarr
 
-<img src="frontend/src/Content/Images/logo.svg" alt="Tanukarr Tanuki logo" width="160" />
+<p align="center">
+  <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
+</p>
 
-**Tanukarr 1.0.0** manages **TV series and anime** in one Sonarr-derived application.
+**Tanukarr 1.0.1** manages **TV series and anime** in one Sonarr-derived application.
 It is the renamed continuation of **SonarrWeeb** and includes
 selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
 shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
@@ -12,17 +14,19 @@ and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr)
-and read the [release notes for 1.0.0](docs/releases/1.0.0.md). Published versions
+and read the [release notes for 1.0.1](docs/releases/1.0.1.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExert/Tanukarr/releases).
-The [1.0.0 verification report](docs/releases/1.0.0-verification.md) records the
-published image, checks, remaining findings and local deployment.
+The [1.0.1 verification report](docs/releases/1.0.1-verification.md) records this
+release's checks, publication status and remaining findings. The historical
+[1.0.0 report](docs/releases/1.0.0-verification.md) retains its original evidence.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
-Post-release `main` adds [anime season and movie groups](docs/anime-season-groups.md):
+Version 1.0.1 includes [series, anime and movie groups](docs/anime-season-groups.md):
 official prequel/sequel discovery, manual overrides and one anime presentation
 with configurable season, story-arc and movie folders for newly generated paths.
-It also adds native season-pack search and clearer AniList list settings. Use a build containing
-that feature; the immutable 1.0.0 release images retain their original scope.
+It also includes native season-pack search, clearer AniList list settings and
+the covered-library React correction. The immutable 1.0.0 release images retain
+their original scope.
 See the [documentation index](docs/README.md),
 [integration report](docs/integration-2026-10-12.md)
 and the [ikatun feature and validation report](docs/ikatun-integration-2026-10-12.md).
@@ -101,7 +105,7 @@ from one catalogue can be added from another configured provider when that
 provider lists it. Choose the entry that represents your TV series, anime,
 special or recut; coverage and episode detail vary between catalogues.
 
-**Anime season and movie groups (post-1.0.0 main)** — AniList/MyAnimeList entries can use
+**Series, anime and movie groups** — AniList/MyAnimeList entries can use
 official linear prequel/sequel relations, manual season/movie assignments or
 Disabled mode. Related members appear together in library views. Newly
 generated paths use configurable season, strict story-arc or movie leaves under
@@ -123,7 +127,7 @@ manual episode choices remain available. Queue coverage follows each episode's
 actual season. See the [ikatun integration report](docs/ikatun-integration-2026-10-12.md)
 for scope, dry-run usage and validation.
 
-**Interactive season packs (post-1.0.0 main)** — search pack-only results from a
+**Interactive season packs** — search pack-only results from a
 native season or grouped season panel. The request uses that member's native
 series ID and season number, while the usual interactive search retains episode
 results. Searching does not acquire a release.
@@ -139,18 +143,18 @@ by the owning provider, including English and romaji names for anime; matching
 still follows the configured series and episode numbering.
 
 **AniList custom lists** — target your own custom lists alongside Planning and
-Watching. Tanukarr 1.0.0 supports multiple included lists, excluded lists and
+Watching. Tanukarr supports multiple included lists, excluded lists and
 explicit exclusions for all six list-membership states. Matching any included
 list is sufficient; exclusions take precedence even when an anime is Watching.
 ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
 
-Post-release `main` adds grouped AniList settings and **Load custom lists** name
+Version 1.0.1 includes grouped AniList settings and **Load custom lists** name
 autocomplete while preserving manual names and OAuth. A typed-array membership
 fallback accepts explicit valid flags when AniList's normal map is unavailable;
 unknown membership retains the previous list. Loading names or testing unsaved
 settings does not save or sync the connection.
 
-The post-release development reliability update adds progress-preserving metadata
+Version 1.0.1 includes progress-preserving metadata
 imports, eligible saved-list retries on the normal five-minute task and bounded
 public metadata/relation reuse. It retains the existing exclusion safeguards;
 the immutable 1.0.0 release remains unchanged. See the
@@ -179,7 +183,7 @@ imports survive restarts and failed requests are retried. See the
 [Jellyfin guide](docs/jellyfin.md). New libraries must first complete an initial
 scan in Jellyfin; pending imports are retained until every configured folder is
 indexed. This connection was introduced in SonarrWeeb 0.1.0 and is retained in
-Tanukarr 1.0.0.
+Tanukarr 1.0.1.
 
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
@@ -206,12 +210,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexert/tanukarr:1.0.0
+docker pull ghcr.io/kvasexert/tanukarr:1.0.1
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexert/tanukarr:1.0.0
+  --restart unless-stopped ghcr.io/kvasexert/tanukarr:1.0.1
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -271,7 +275,8 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `1.0.0` | Tanukarr branding, Jellyfin refresh, AniList include/exclude controls and request-limit recovery, and corrected Nyaa query encoding; use after publication completes. |
+| `1.0.1` | Series/anime/movie groups, season-pack searches, clearer AniList controls, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; use after publication completes. |
+| `1.0.0` | Historical first Tanukarr release with Jellyfin refresh, AniList include/exclude controls and request-limit recovery, and corrected Nyaa query encoding. |
 | `latest` | The newest published release; it can change when a later version is released. |
 | `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |
 | `sha-<full commit>` | Build tag identifying one source commit; use a digest to pin the exact image. |

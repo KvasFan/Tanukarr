@@ -1,6 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Linq;
+using FluentValidation;
+using FluentValidation.Results;
 using NLog;
+using Npgsql;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.AutoTagging;
 using NzbDrone.Core.Lifecycle;
@@ -19,6 +24,7 @@ namespace NzbDrone.Core.Tv
         List<Series> GetSeries(IEnumerable<int> seriesIds);
         Series AddSeries(Series newSeries);
         List<Series> AddSeries(List<Series> newSeries);
+        List<Series> AddSeries(List<Series> newSeries, bool ignoreErrors);
         Series FindByTvdbId(int tvdbId);
         Series FindByTvRageId(int tvRageId);
         Series FindByImdbId(string imdbId);
@@ -51,6 +57,7 @@ namespace NzbDrone.Core.Tv
         private readonly IAutoTaggingService _autoTaggingService;
         private readonly IManageCommandQueue _commandQueueManager;
         private readonly Logger _logger;
+        private readonly object _addSeriesLock = new object();
 
         public SeriesService(ISeriesRepository seriesRepository,
                              IEventAggregator eventAggregator,
@@ -81,7 +88,11 @@ namespace NzbDrone.Core.Tv
 
         public Series AddSeries(Series newSeries)
         {
-            _seriesRepository.Insert(newSeries);
+            lock (_addSeriesLock)
+            {
+                InsertSeries(newSeries);
+            }
+
             _eventAggregator.PublishEvent(new SeriesAddedEvent(GetSeries(newSeries.Id)));
 
             return newSeries;
@@ -89,10 +100,133 @@ namespace NzbDrone.Core.Tv
 
         public List<Series> AddSeries(List<Series> newSeries)
         {
-            _seriesRepository.InsertMany(newSeries);
-            _eventAggregator.PublishEvent(new SeriesImportedEvent(newSeries.Select(s => s.Id).ToList()));
+            return AddSeries(newSeries, false);
+        }
 
-            return newSeries;
+        public List<Series> AddSeries(List<Series> newSeries, bool ignoreErrors)
+        {
+            var added = new List<Series>();
+            try
+            {
+                lock (_addSeriesLock)
+                {
+                    InsertSeries(newSeries, ignoreErrors, added);
+                }
+            }
+            finally
+            {
+                // Conflict recovery commits individual rows. Even if a later row
+                // raises an unrelated error, those committed members need refreshes.
+                if (added.Count > 0)
+                {
+                    _eventAggregator.PublishEvent(new SeriesImportedEvent(added.Select(s => s.Id).ToList()));
+                }
+            }
+
+            return added;
+        }
+
+        private void InsertSeries(Series newSeries)
+        {
+            AnimeGroupingValidator.ValidateSlot(newSeries, _seriesRepository.All());
+            try
+            {
+                _seriesRepository.Insert(newSeries);
+            }
+            catch (Exception ex) when (TryGetGroupSlotFailure(ex, out var failure))
+            {
+                throw new ValidationException(new[] { failure });
+            }
+        }
+
+        private void InsertSeries(List<Series> newSeries, bool ignoreErrors, List<Series> added)
+        {
+            // Metadata acquisition can take minutes. Recheck the library immediately
+            // before writing, including members prepared in this same batch.
+            var existing = (_seriesRepository.All() ?? Enumerable.Empty<Series>()).ToList();
+            var prepared = new List<Series>();
+            foreach (var series in newSeries)
+            {
+                try
+                {
+                    AnimeGroupingValidator.ValidateSlot(series, existing.Concat(prepared));
+                    prepared.Add(series);
+                }
+                catch (ValidationException) when (ignoreErrors)
+                {
+                    _logger.Debug("A prepared grouped series now conflicts with a library member and remains pending for a later list sync.");
+                }
+            }
+
+            if (prepared.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                _seriesRepository.InsertMany(prepared);
+                added.AddRange(prepared);
+                return;
+            }
+            catch (Exception ex) when (TryGetGroupSlotFailure(ex, out var failure))
+            {
+                // InsertMany rolls its transaction back but has already assigned IDs
+                // to earlier objects. None of those IDs represent committed rows.
+                foreach (var series in prepared)
+                {
+                    series.Id = 0;
+                }
+
+                if (!ignoreErrors)
+                {
+                    throw new ValidationException(new[] { failure });
+                }
+            }
+
+            // A concurrent edit or another process can still occupy a slot after
+            // validation. Keep the unique indexes and save only nonconflicting rows.
+            foreach (var series in prepared)
+            {
+                try
+                {
+                    InsertSeries(series);
+                    added.Add(series);
+                }
+                catch (ValidationException)
+                {
+                    _logger.Debug("A grouped series could not claim its member slot and remains pending for a later list sync.");
+                }
+            }
+        }
+
+        private static bool TryGetGroupSlotFailure(Exception exception, out ValidationFailure failure)
+        {
+            string property = null;
+            if (exception is SQLiteException sqlite && sqlite.ResultCode == SQLiteErrorCode.Constraint)
+            {
+                var messages = sqlite.Message.Split('\n').Select(message => message.Trim());
+                if (messages.Contains("UNIQUE constraint failed: Series.AnimeGroupId, Series.AnimeGroupMemberKind, Series.AnimeGroupSeasonNumber"))
+                {
+                    property = nameof(Series.AnimeGroupSeasonNumber);
+                }
+                else if (messages.Contains("UNIQUE constraint failed: Series.AnimeGroupId, Series.AnimeGroupMemberKind, Series.AnimeGroupMovieNumber"))
+                {
+                    property = nameof(Series.AnimeGroupMovieNumber);
+                }
+            }
+            else if (exception is PostgresException postgres && postgres.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                property = postgres.ConstraintName switch
+                {
+                    "IX_Series_AnimeGroupSeasonSlot" => nameof(Series.AnimeGroupSeasonNumber),
+                    "IX_Series_AnimeGroupMovieSlot" => nameof(Series.AnimeGroupMovieNumber),
+                    _ => null
+                };
+            }
+
+            failure = property == null ? null : new ValidationFailure(property, "This group already contains that member number");
+            return failure != null;
         }
 
         public Series FindByTvdbId(int tvRageId)

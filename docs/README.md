@@ -11,7 +11,9 @@ original content.
 | [Project README](../README.md) | Shared TV/anime features, release links, Docker quick start and toolchain |
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
 | [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
-| [Anime season and movie groups](anime-season-groups.md) | Post-release official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
+| [Series, anime and movie groups](anime-season-groups.md) | 1.0.1 official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
+| [Tanukarr 1.0.1](releases/1.0.1.md) | Group-slot collision recovery, grouping/search/list improvements, browser reliability and upgrade guidance |
+| [1.0.1 release verification](releases/1.0.1-verification.md) | This release's executed checks, exact source/image identity, remaining findings and publication state |
 | [Tanukarr 1.0.0](releases/1.0.0.md) | Rename, Tanuki artwork, retained features, upgrade guidance and release limits |
 | [1.0.0 release verification](releases/1.0.0-verification.md) | Executed checks, exact source/image identity, remaining findings and publication |
 | [Compatibility and backups](compatibility-and-backups.md) | v3/v5 APIs, preserved core/configuration names, safe migration and backup/restore limits |
@@ -21,7 +23,8 @@ original content.
 | [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
 | [Library tools](library-tools.md) | Filters, pause, lists, retained versions, restore and companion keys |
-| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries retained in 1.0.0 |
+| [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries |
+| [Tanuki repository artwork](../resources/branding/README.md) | Supplied logo provenance, README image and GitHub social-preview setup |
 | [Compression worker](../docker/compression/README.md) | Optional host worker, presets, dependencies and filesystem safeguards |
 | [Container checks](../docker/tests/README.md) | Disposable smoke, API/security and optional Chromium verification |
 | [Contributing](../CONTRIBUTING.md) | Build/test commands, English documentation and source/model attribution |
@@ -49,12 +52,12 @@ original content.
 | [Metadata validation](metadata-validation-2026-10-13.md) | Current TV/anime source selection, credentials, series-type behavior and ordering integration limits |
 | [Anime grouping verification](anime-season-groups-verification-2026-10-13.md) | Post-1.0.0 grouping source/image checkpoint and executed checks; separate from the immutable release |
 
-Tanukarr 1.0.0 continues SonarrWeeb under a new name and supplied Tanuki branding.
-It includes the selected-library Jellyfin connection, AniList multiple-list
-inclusion/exclusion and shared request-limit recovery, and corrected Nyaa query
-encoding. Its release notes describe the
-verification performed for the version change; the linked feature reports retain
-their original source/image identities and executed checks.
+Tanukarr 1.0.1 includes the grouping, search, list-import and browser reliability
+work that followed the initial Tanukarr 1.0.0 rename. It retains selected-library
+Jellyfin refresh, AniList inclusion/exclusion and Nyaa query encoding. Its release
+verification report records only checks actually executed for the new source and
+image; older release and feature reports retain their original identities and
+results. Original SonarrWeeb and Tanukarr tags and assets remain unchanged.
 
 The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later

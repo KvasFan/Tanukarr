@@ -160,12 +160,12 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). Release **1.0.0** uses
-Git tag `v1.0.0` and container tag `ghcr.io/kvasexert/tanukarr:1.0.0`.
+[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). Release **1.0.1** uses
+Git tag `v1.0.1` and container tag `ghcr.io/kvasexert/tanukarr:1.0.1`.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/1.0.0.md) when changing the published deployment.
+[release notes](docs/releases/1.0.1.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 

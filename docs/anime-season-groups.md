@@ -8,12 +8,13 @@ provider, catalogue ID, episodes, monitoring, files and download history. The
 group season is a display and folder position; it does not replace the owning
 catalogue's episode numbering.
 
-This feature follows the immutable **Tanukarr 1.0.0** release. It belongs to the
-current `main` source and to an `edge` image built from a commit containing the
-feature. The existing `1.0.0` and `latest` release images do not gain it through
-documentation updates. Check the image's source revision and the
+This feature is included in **Tanukarr 1.0.1**. It was introduced after the
+immutable 1.0.0 release, whose source and image retain their original scope.
+Use the published 1.0.1 image or an `edge` image containing these changes. Check
+the image's source revision and the [1.0.1 verification report](releases/1.0.1-verification.md)
+for this release's checks. The original
 [grouping verification report](anime-season-groups-verification-2026-10-13.md)
-for the build and checks actually executed.
+retains its earlier source/image checkpoint.
 
 ## Choose how a title is grouped
 
@@ -101,6 +102,18 @@ and group. Season 1 and Movie 1 can coexist; two movie entries cannot both be
 Movie 1 in that group. Each member must represent a
 single native catalogue season. Group titles must be valid nonempty text; the
 generated directory name is sanitized for filesystem use.
+
+Version 1.0.1 also rechecks member slots immediately before adding series to the
+database. If a manual addition or concurrent update occupies a prepared list
+candidate's slot while its metadata is loading, the conflicting candidate stays
+pending and other valid additions can be saved. Import-list membership remains
+authoritative; an occupied slot does not remove a title from the saved list.
+Later eligible syncs may retry it, but do not overwrite the existing member or
+assign a different number automatically. Correct an unresolved conflict through
+the grouping controls. A manual same-kind duplicate returns a validation error.
+The database's separate season/movie unique indexes remain enabled. See the
+[1.0.1 report](releases/1.0.1-verification.md) for the reproduced SQLite failure,
+implemented safeguards and verification scope.
 
 Manual grouping can organize a single-season entry without changing its
 metadata owner. It does not combine episode records or make a title from one

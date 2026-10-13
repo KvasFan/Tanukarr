@@ -131,7 +131,7 @@ namespace NzbDrone.Core.Test.TvTests
 
             add.Should().Throw<ValidationException>()
                .Which.Errors.Should().Contain(error => error.PropertyName == "AnimeGroupSeasonNumber");
-            Mocker.GetMock<ISeriesService>().Verify(s => s.AddSeries(It.IsAny<List<Series>>()), Times.Never());
+            Mocker.GetMock<ISeriesService>().Verify(s => s.AddSeries(It.IsAny<List<Series>>(), It.IsAny<bool>()), Times.Never());
         }
 
         [Test]

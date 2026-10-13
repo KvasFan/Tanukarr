@@ -1,7 +1,8 @@
 # Compatibility, migration and backups
 
-**Tanukarr 1.0.0** continues the SonarrWeeb fork. The product name, supplied
-Tanuki logos, GitHub repository and new release image namespace change; the
+**Tanukarr 1.0.1** continues the SonarrWeeb fork. The Tanukarr name, supplied
+Tanuki logos, GitHub repository and release image namespace introduced in 1.0.0
+remain in use; the
 Sonarr-derived storage and API identifiers remain intentional compatibility
 boundaries. This project is an independent GPL-licensed derivative of Sonarr,
 with original source authors, copyright and license notices retained.
@@ -18,7 +19,7 @@ missing/wrong API keys with 401 and returned branded calendar data for a valid
 key. See the [release verification](releases/1.0.0-verification.md) for the exact
 tested image identity; no downstream-client compatibility claim is implied.
 
-The product version is **1.0.0**. Sonarr's inherited internal assembly version
+The product version is **1.0.1**. Sonarr's inherited internal assembly version
 remains `10.0.0.*`; it is not a second Tanukarr release number. The `Sonarr`
 executable/core names, `config.xml`, SQLite `sonarr.db`, migration history,
 provider identities and container port **8989** remain unchanged. The default
@@ -39,7 +40,7 @@ external services if moving an installation directory.
 
 For an existing SonarrWeeb Docker deployment, stop the container, save a
 consistent configuration backup and change the image to
-`ghcr.io/kvasexert/tanukarr:1.0.0`. Preserve the original `/config` volume or bind
+`ghcr.io/kvasexert/tanukarr:1.0.1`. Preserve the original `/config` volume or bind
 mount, media mounts, Compose project/volume identity and client categories.
 A new volume name selects new storage and can make the application appear empty.
 Never let two running instances share one writable `/config`.

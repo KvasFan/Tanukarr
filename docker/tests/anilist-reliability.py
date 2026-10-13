@@ -162,6 +162,9 @@ def serve_fixture(root):
 
 
 class AniListReliability(_groups.AnimeGroups):
+    fixture_script = "anilist-reliability.py"
+    fixture_ready_message = "Local AniList reliability TLS fixture ready"
+
     def __init__(self, args):
         super().__init__(args)
         self.observations = {}
@@ -205,8 +208,8 @@ class AniListReliability(_groups.AnimeGroups):
             "--network-alias", "graphql.anilist.co", "--env", "PYTHONDONTWRITEBYTECODE=1",
             "--mount", f"type=bind,source={Path(__file__).resolve().parent},target=/runner,readonly",
             "--mount", f"type=bind,source={tls},target=/fixture", self.args.mock_image,
-            "python", "-u", "/runner/anilist-reliability.py", "--serve-fixture", "/fixture")
-        self.until(lambda: "Local AniList reliability TLS fixture ready" in self.docker("logs", self.mock), "TLS fixture did not start")
+            "python", "-u", "/runner/" + self.fixture_script, "--serve-fixture", "/fixture")
+        self.until(lambda: self.fixture_ready_message in self.docker("logs", self.mock), "TLS fixture did not start")
         startup = ("set -eu; cp /fixture-ca.crt /usr/local/share/ca-certificates/tanukarr-reliability-fixture.crt; "
                    "update-ca-certificates >/dev/null 2>&1; exec /entrypoint.sh /app/Sonarr -nobrowser -data=/config")
         self.container = self.docker(

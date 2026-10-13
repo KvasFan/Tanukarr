@@ -1,6 +1,6 @@
 {
   "name": "tanukarr",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tanukarr manages TV series and anime with per-series TheTVDB, TMDB, AniList and MyAnimeList metadata for Usenet and BitTorrent users",
   "type": "module",
   "scripts": {

@@ -35,8 +35,8 @@ namespace NzbDrone.Core.Test.TvTests
                   .Setup(service => service.GetAllSeries())
                   .Returns(new List<Series>());
             Mocker.GetMock<ISeriesService>()
-                  .Setup(service => service.AddSeries(It.IsAny<List<Series>>()))
-                  .Returns((List<Series> values) => values);
+                  .Setup(service => service.AddSeries(It.IsAny<List<Series>>(), It.IsAny<bool>()))
+                  .Returns((List<Series> values, bool _) => values);
             Mocker.GetMock<IBuildFileNames>()
                   .Setup(builder => builder.GetSeriesFolder(It.IsAny<Series>(), null))
                   .Returns((Series series, NamingConfig _) => series.Title);
@@ -91,7 +91,7 @@ namespace NzbDrone.Core.Test.TvTests
 
             result.Select(series => series.ForeignId).Should().Equal("1", "2");
             _provider.Verify(provider => provider.GetSeriesInfo(It.Is<Series>(series => series.ForeignId == "22")), Times.Never());
-            Mocker.GetMock<ISeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(series => series.Count == 2)), Times.Once());
+            Mocker.GetMock<ISeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(series => series.Count == 2), true), Times.Once());
             ExceptionVerification.ExpectedWarns(1);
         }
 
@@ -127,7 +127,7 @@ namespace NzbDrone.Core.Test.TvTests
                      .Throws(ProviderError(HttpStatusCode.TooManyRequests));
 
             Assert.Throws<TooManyRequestsException>(() => Subject.AddSeries(new List<Series> { Candidate(1) }));
-            Mocker.GetMock<ISeriesService>().Verify(service => service.AddSeries(It.IsAny<List<Series>>()), Times.Never());
+            Mocker.GetMock<ISeriesService>().Verify(service => service.AddSeries(It.IsAny<List<Series>>(), It.IsAny<bool>()), Times.Never());
         }
 
         [Test]
@@ -137,7 +137,7 @@ namespace NzbDrone.Core.Test.TvTests
                      .Throws(new InvalidOperationException("Unexpected mapping failure"));
 
             Assert.Throws<InvalidOperationException>(() => Subject.AddSeries(new List<Series> { Candidate(1) }, ignoreErrors: true));
-            Mocker.GetMock<ISeriesService>().Verify(service => service.AddSeries(It.IsAny<List<Series>>()), Times.Never());
+            Mocker.GetMock<ISeriesService>().Verify(service => service.AddSeries(It.IsAny<List<Series>>(), It.IsAny<bool>()), Times.Never());
         }
     }
 }

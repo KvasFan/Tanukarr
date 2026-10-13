@@ -53,6 +53,8 @@ local commit makes their original author name unreachable from HEAD.
   It also diagnoses the cover-bearing library's CommonJS component export
   failure and adapts the inherited frontend dependency boundary with focused
   regression and browser checks; verification scope is recorded separately.
+  Tanukarr 1.0.1 preparation adds group-slot collision recovery, its regression
+  coverage, release documentation and GitHub repository artwork integration.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -65,6 +67,7 @@ local commit makes their original author name unreachable from HEAD.
 | TV/anime positioning and provider guide, metadata workflow/ordering audit, Add New Series recommended-type correction and regression checks | OpenAI Codex, based on GPT-6 | Same local coding session; the post-release correction does not change the immutable 1.0.0 tag |
 | Post-release official-relation/manual anime season and movie groups, configurable season/arc/movie folders and native group-file tokens, per-member library presentation, pack-only season search, AniList name autocomplete/typed membership compatibility, regression checks and English guides | OpenAI Codex, based on GPT-6 | Same local coding session; AniList/Jikan relationship data and original provider authors remain separately credited |
 | Subsequent AniList public metadata/relation cache and pacing, partial metadata-import progress, guarded saved-list resume, expected cloud-policy handling, cover-bearing frontend CommonJS interoperability, sanitized log audit, regression fixtures and English reliability documentation | OpenAI Codex, based on GPT-6 | Same local coding session; implementation and verification status are recorded separately in the new checkpoint; no exact model variant is established |
+| Tanukarr 1.0.1 group-slot collision recovery, regression coverage, release packaging/documentation and GitHub repository Tanuki branding | OpenAI Codex, based on GPT-6 | Same local coding session; executed checks and publication state belong to the 1.0.1 verification report |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -76,15 +79,15 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The current integrated project is distributed as **Tanukarr 1.0.0**, with Git tag
-`v1.0.0`, under the GitHub profile
+The current release target is **Tanukarr 1.0.1**, with Git tag
+`v1.0.1`, under the GitHub profile
 [KvasExert](https://github.com/KvasExert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/1.0.0.md) and
+[release notes](docs/releases/1.0.1.md), [verification report](docs/releases/1.0.1-verification.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
 The original SonarrWeeb [0.0.1](docs/releases/0.0.1.md) and
@@ -120,6 +123,14 @@ from the supplied Tanuki image. Existing `Logo/Sonarr.svg` and
 This credits integration work,
 not authorship of the supplied artwork. The original Sonarr copyright/license
 notices remain unchanged.
+
+The GitHub README uses the supplied `Logo/800.png` directly so its Tanuki logo
+renders as a normal PNG on the repository page. The prepared
+[GitHub social-preview image](resources/branding/github-social-preview.png) is a
+byte-identical copy of that original 800-pixel PNG, with no new art or raster
+edits. [Branding instructions](resources/branding/README.md) distinguish this
+tracked artifact from GitHub's repository-level social-preview setting. These
+changes reuse the owner's supplied artwork and preserve its original provenance.
 
 For macOS ICNS format research, **mmaietta**'s
 [electron-builder-binaries commit 40acc0b8](https://github.com/electron-userland/electron-builder-binaries/commit/40acc0b8ad6886b99d9878fd00ff475cce2ee4e3)
@@ -161,6 +172,17 @@ layer preserves. See [Anime season groups](docs/anime-season-groups.md) and its
 [verification checkpoint](docs/anime-season-groups-verification-2026-10-13.md)
 for behavior and executed evidence. This addition does not change the immutable
 1.0.0 source tag or release image.
+
+The 1.0.1 group-slot persistence correction and deterministic SQLite race fixture
+also used **OpenAI Codex, based on GPT-6**. The earlier grouping layer and its
+unique indexes are local GPT-6-assisted work; upstream Sonarr's repository,
+transaction, series and event infrastructure retain their original authorship.
+The correction rechecks memberships before persistence and narrowly handles
+group-slot constraint races, preserving valid additions and existing members.
+It does not copy another project's grouping implementation, disable indexes or
+claim authorship of provider relationships. The
+[1.0.1 report](docs/releases/1.0.1-verification.md) separates reproduced SQLite
+behavior, executed new checks and the unexecuted PostgreSQL runtime path.
 
 ### Shared TV/anime metadata workflows and recommended series type
 

@@ -13,7 +13,7 @@ links the integration and validation reports.
 | What you want to do | Where to find it |
 | --- | --- |
 | Select a drive and combine anime, monitored or missing filters | Library: **Filter by path** and **Combine filters** |
-| Present related anime entries as one anime with seasons and movies | Add/edit a title's grouping controls; library toolbar **Group anime seasons**; see [Anime season and movie groups](anime-season-groups.md) for post-1.0.0 folders, naming and manual overrides |
+| Present related TV/anime entries as one title with seasons and movies | Add/edit a title's grouping controls; library toolbar **Group anime seasons**; see [Series, anime and movie groups](anime-season-groups.md) for 1.0.1 folders, naming and manual overrides |
 | Pause automatic searches, RSS grabs and list additions | **System → Library tools → Pause automation**; use the banner to resume |
 | Understand why a search skipped releases | Interactive search score details, and **System → Library tools → Recent searches** |
 | Test all indexers and see individual failures | **Settings → Indexers → Test All** |
@@ -186,7 +186,7 @@ custom-list exclusions are configured, pagination failures and GraphQL errors
 also retain the previous successful list. An excluded AniList media ID cannot be reintroduced
 by a duplicate accepted entry on another response page.
 
-The post-release importer requests both AniList's normal membership map and the
+The importer in 1.0.1 requests both AniList's normal membership map and the
 documented `customLists(asArray: true)` shape. If the map is unavailable, only an
 explicit, valid array of names and boolean membership flags can replace it;
 an empty array means known empty membership. Null or missing data in both shapes,
@@ -243,7 +243,7 @@ and AniList's [official rate-limit documentation](https://github.com/AniList/doc
 
 #### Pending additions and the development reliability update
 
-The post-1.0.0 development update preserves progress when metadata
+The reliability update included in 1.0.1 preserves progress when metadata
 retrieval reaches a provider's request limit. In an automatic list-add batch,
 series with successfully prepared metadata are saved; HTTP 429 defers remaining
 entries from that source for this batch while other sources can continue.
@@ -251,6 +251,15 @@ A transient metadata HTTP failure leaves that entry pending. The completion
 message counts series actually added, rather than all candidates attempted.
 Executed local checks and publication status are recorded in the
 [reliability checkpoint](anilist-react-reliability-2026-10-13.md).
+
+Version 1.0.1 applies the same progress-preserving principle when a prepared
+group-season or movie slot becomes occupied before insertion. The conflicting
+candidate stays pending while valid candidates persist; completion reports the
+actual saved count. The complete list snapshot and existing group assignments
+are retained, and retries do not overwrite or silently renumber the occupant.
+Use the grouping controls to resolve a persistent same-kind slot conflict. See
+the [release verification report](releases/1.0.1-verification.md) for the exact
+SQLite reproduction and executed checks.
 
 The normal **Import List Sync** task runs every five minutes. AniList's full
 account-list refresh interval remains **12 hours**. After a complete successful

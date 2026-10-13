@@ -39,7 +39,9 @@ routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [release notes](docs/releases/1.0.0.md) for packaging scope.
+configuration and [current release notes](docs/releases/1.0.1.md) for packaging
+scope. Version 1.0.1 also includes the later grouping and AniList/browser
+reliability work; the immutable 1.0.0 source and assets remain unchanged.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -160,7 +162,7 @@ season 0 when the selected group omits them.
 
 ## Anime season and movie groups
 
-The post-1.0.0 main feature groups separate AniList/MyAnimeList catalogue entries
+The grouping feature included in 1.0.1 separates AniList/MyAnimeList catalogue entries
 using explicit, supported prequel/sequel chains, including linear movie members.
 Manual membership is available for every catalogue owner and Series Type. Disabled
 mode let the user correct or decline those assignments. TheTVDB/TMDB entries
@@ -182,6 +184,19 @@ duplicate slots within the same member kind,
 unsafe generated paths and overlaps with registered series directories are
 rejected. Folder rearrangement uses the existing explicit path/move workflow.
 
+Metadata preparation can finish minutes before persistence. Version 1.0.1
+therefore revalidates member slots against the current library and prepared
+batch inside a short addition lock immediately before insertion. A concurrently
+occupied slot defers only that automatic-list candidate; valid rows can persist
+and the returned additions drive the completion count. A narrowly classified
+group-slot UNIQUE race can fall back to individual inserts after resetting IDs
+assigned by the rolled-back batch. Unrelated constraint/database failures still
+propagate. Manual duplicate assignments become validation errors. These changes
+retain the unique indexes and existing member numbers instead of changing the
+schema or renumbering occupied seasons/movies. PostgreSQL-specific classification
+is reviewed in source; no PostgreSQL runtime verification is claimed. See the
+[1.0.1 checkpoint](docs/releases/1.0.1-verification.md).
+
 Five naming expressions configure the group, numbered season, story arc,
 movie-title and numbered-film folders. Automatic story-arc naming requires the
 exact canonical title prefix plus a colon/dash and a terminal Arc/hen/Chapter
@@ -194,7 +209,8 @@ Configured filenames retain their native member numbering, so a group season 2
 member can still be native `S01E01`. This protects matching and does not promise
 that a media server interprets every group as a shared TheTVDB/TMDB season list.
 See [Anime season groups](docs/anime-season-groups.md) for catalogue rules,
-controls, folder examples and the post-release verification checkpoint.
+controls, folder examples, the original grouping checkpoint and the
+[1.0.1 verification report](docs/releases/1.0.1-verification.md).
 
 ## Downloading
 

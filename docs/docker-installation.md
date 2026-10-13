@@ -1,15 +1,16 @@
-# Install Tanukarr 1.0.0 with Docker
+# Install Tanukarr 1.0.1 with Docker
 
 Tanukarr is an independent Sonarr fork. Its source and release notes are on
-[GitHub](https://github.com/KvasExert/Tanukarr). The **1.0.0**
-[release notes](releases/1.0.0.md) describe the Tanukarr rename, supplied Tanuki
-logos, selected-library Jellyfin connection, AniList inclusion/exclusion and
-request-limit recovery, and Nyaa query encoding. Original
+[GitHub](https://github.com/KvasExert/Tanukarr). The **1.0.1**
+[release notes](releases/1.0.1.md) describe grouping, safer AniList imports,
+covered-library rendering and the supplied Tanuki repository branding. The
+selected-library Jellyfin connection, AniList inclusion/exclusion and Nyaa
+query encoding introduced in earlier versions remain included. Original
 Sonarr and fork contributors, including recorded AI tool/model attribution, are
 listed in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
 GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
-below uses `ghcr.io/kvasexert/tanukarr:1.0.0`; the GitHub repository itself is source
+below uses `ghcr.io/kvasexert/tanukarr:1.0.1`; the GitHub repository itself is source
 code, not a Docker image. Check the release notes and
 [package page](https://github.com/users/KvasExert/packages/container/package/tanukarr) for
 the published architectures and image digest. Use only a tag that has finished
@@ -37,7 +38,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasexert/tanukarr:1.0.0
+    image: ghcr.io/kvasexert/tanukarr:1.0.1
     container_name: tanukarr
     restart: unless-stopped
     ports:
@@ -85,9 +86,9 @@ Open **http://localhost:6970**. The named volume holds the database, `config.xml
 settings and logs. Recreating the container retains this volume. Avoid
 `docker compose down -v`, which deletes it.
 
-Once the [1.0.0 release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.0)
+Once the [1.0.1 release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.1)
 has finished publishing, its ready-to-use
-[`compose.yaml`](https://github.com/KvasExert/Tanukarr/releases/download/v1.0.0/compose.yaml)
+[`compose.yaml`](https://github.com/KvasExert/Tanukarr/releases/download/v1.0.1/compose.yaml)
 with bind-mounted `./config` and `./media` defaults is an alternative to the
 named-volume example. Download that file into a new
 installation directory, create those two directories with the correct permissions,
@@ -166,7 +167,7 @@ different credentials. See [Metadata providers](metadata-providers.md) for
 catalogue coverage and the implemented access requirements.
 AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
-Version 1.0.0 lets you include several AniList custom lists and veto entries by
+Version 1.0.1 lets you include several AniList custom lists and veto entries by
 custom-list membership or list state. For Jellyfin, configure the dedicated
 connection under **Settings -> Connect** and select one initialized library;
 see [Jellyfin refresh](jellyfin.md) for the three refresh modes and networking.
@@ -183,7 +184,7 @@ setting for the new instance.
 A **public** GHCR package supports anonymous pulls:
 
 ```sh
-docker pull ghcr.io/kvasexert/tanukarr:1.0.0
+docker pull ghcr.io/kvasexert/tanukarr:1.0.1
 ```
 
 If GitHub reports `denied` or `unauthorized`, confirm that the tag exists and that
@@ -201,7 +202,7 @@ shell command that saves them in command history.
 
 ## Version pins and updates
 
-`1.0.0` is the Tanukarr release version; the application's inherited internal
+`1.0.1` is the Tanukarr release version; the application's inherited internal
 Sonarr version may use a different numbering scheme. Prefer the exact release
 tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
@@ -234,13 +235,13 @@ location when a rollback requires it. Never overwrite your only backup.
 ## Release archive fallback
 
 If a release includes a Docker image archive, download that archive and its
-checksum from the [GitHub release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.0).
+checksum from the [GitHub release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.1).
 Choose an architecture compatible with your Docker host. Verify the filename
 listed in the release's checksum file before loading it:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-1.0.0-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-1.0.1-linux-amd64-docker.tar.gz
 ```
 
 On Windows, use `Get-FileHash -Algorithm SHA256` and compare its output with
@@ -254,7 +255,7 @@ docker compose up -d --pull never
 ```
 
 Use the actual asset name shown for the release; the command above illustrates
-the 1.0.0 Linux amd64 archive naming convention. This is an offline image import,
+the 1.0.1 Linux amd64 archive naming convention. This is an offline image import,
 not a source build. Asset availability, architectures, SBOMs, manifests and test
 receipts must be checked on the corresponding release. GitHub source archives
 are source code and cannot be loaded with `docker load`. Source and image assets
@@ -263,24 +264,24 @@ must preserve the project's GPL license and contributor notices.
 The initial SonarrWeeb 0.0.1 release provides an image archive for **Linux amd64** and
 its matching source archive, SBOM, manifest and verification receipts. Its
 immutable assets and dated reports remain historical checkpoints; they do not
-establish that an equivalent 1.0.0 asset has been published or tested.
+establish that an equivalent 1.0.1 asset has been published or tested.
 
 ## Building from the GitHub source
 
 To build the tagged source instead of pulling the published image:
 
 ```sh
-git clone --branch v1.0.0 --depth 1 https://github.com/KvasExert/Tanukarr.git
+git clone --branch v1.0.1 --depth 1 https://github.com/KvasExert/Tanukarr.git
 cd Tanukarr
-docker build --progress=plain -t tanukarr:1.0.0 .
+docker build --progress=plain -t tanukarr:1.0.1 .
 ```
 
-Use `image: tanukarr:1.0.0` in the standalone Compose example above and run
+Use `image: tanukarr:1.0.1` in the standalone Compose example above and run
 `docker compose up -d --pull never`. The build downloads dependencies and runs
 the checks encoded in the Dockerfile. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The `v1.0.0` checkout command requires that the release tag has been pushed.
+The `v1.0.1` checkout command requires that the release tag has been pushed.
 Before that happens, clone `main` and check the repository's `VERSION` file.
 An untagged main checkout can include changes added after a release, so record
 the full Git commit when reproducing a build.
@@ -294,7 +295,7 @@ their configuration mount and Compose project identity when changing images.
 ## Upgrading an existing SonarrWeeb installation
 
 The repository and product are now named **Tanukarr**. New installations use
-`ghcr.io/kvasexert/tanukarr:1.0.0`; old SonarrWeeb releases retain their original
+`ghcr.io/kvasexert/tanukarr:1.0.1`; old SonarrWeeb releases retain their original
 `ghcr.io/kvasexert/sonarrweeb` image paths and asset filenames. A GitHub repository
 rename does not rename an existing GHCR package or move the host's directories.
 

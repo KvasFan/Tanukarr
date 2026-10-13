@@ -67,7 +67,7 @@ v3 key used by the metadata/episode-group client.
 
 ## AniList request reuse and pagination
 
-The post-1.0.0 development reliability update uses short-lived public
+The reliability update included in 1.0.1 uses short-lived public
 AniList caches: **five minutes for catalogue metadata** and **15 minutes for
 official relations**. Concurrent requests for the same public key share one
 fetch across provider instances, and each caller receives its own object graph.

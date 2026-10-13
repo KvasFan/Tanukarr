@@ -7,7 +7,7 @@ security reports.
 
 ## Anime season grouping
 
-For a main-source build containing the post-1.0.0 grouping feature, run from a
+For a 1.0.1 or main-source build containing the grouping feature, run from a
 Linux/WSL host with Python 3, OpenSSL, FFmpeg with `libx264` and Docker available:
 
 ```sh
@@ -97,6 +97,46 @@ The same final-image fixture also passed its 12 checks with actual host
 UID/GID 1001 and the supplementary Docker socket group, including cleanup.
 That runner-ownership repeat is separate evidence, not 12 additional distinct
 runtime cases.
+
+## Concurrent grouped list additions
+
+Use an already built 1.0.1 image and the Python/Docker/OpenSSL prerequisites above
+to test the group-slot race against real SQLite in owned disposable data:
+
+```sh
+python3 docker/tests/group-import-collisions.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report /tmp/tanukarr-group-import-collisions.json
+```
+
+The script does not build or pull images. Its generated TLS AniList sidecar and
+application run on an owned internal network with normal certificate validation;
+a fixed-destination relay publishes only the disposable API on a random loopback
+port. It does not read the main configuration, contact public metadata services,
+use real credentials, configure acquisition providers or download media.
+
+The scenario holds a metadata response after an automatic list batch prepares
+related Season 1, Season 2, Movie 1 and an unrelated entry. A concurrent manual
+API addition then claims the prepared Season 1 slot. The repaired flow must defer
+only that candidate, save the other three entries, report three actual additions
+and retain both the manual occupant and complete four-entry list snapshot. A
+later unchanged sync must report zero additions, avoid duplicate rows and
+complete without another list fetch or SQLite UNIQUE error. Manual same-kind
+season/movie duplicates must return HTTP 400. The fixture checks distinct season
+and movie ordinal namespaces, native S01 episode identities, retained unique
+indexes and a read-only SQLite `integrity_check`.
+
+To reproduce the older behavior against a known unrepaired image, add
+`--expect-old-failure`. That mode requires the exact reported season-slot UNIQUE
+exception, a failed `ImportListSync` and rollback of all four prepared additions;
+it is baseline reproduction, not a pass of the corrected behavior. The
+[1.0.1 verification report](../../docs/releases/1.0.1-verification.md) records
+actual image identities and executed results. PostgreSQL is not exercised by
+this SQLite fixture.
+
+Cleanup removes only this invocation's containers, networks and temporary data.
+`--keep` retains those resources for inspection; generated API/OAuth/CA secrets
+remain private to the fixture and are redacted from its captured logs.
 
 ## Native Nyaa search metadata
 
