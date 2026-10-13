@@ -7,6 +7,7 @@ using Moq;
 using NLog;
 using NUnit.Framework;
 using NzbDrone.Common.Cache;
+using NzbDrone.Common.Serializer;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.AniList.List;
 using NzbDrone.Core.ImportLists.ImportListItems;
@@ -158,6 +159,30 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
+        public void should_ignore_removed_status_fields_when_matching_a_complete_anilist_fetch_witness()
+        {
+            var list = WithAniList();
+            var definition = (ImportListDefinition)list.Object.Definition;
+
+            // Provider settings persist UTC dates at second precision. Establish
+            // the witness from that saved representation before editing old fields.
+            definition.Settings = STJson.Deserialize<AniListSettings>(STJson.ToJson(definition.Settings));
+            var unchangedSettings = Json.ToJson(definition.Settings);
+            Subject.Fetch();
+            var original = STJson.ToJson(definition.Settings);
+            var legacy = original.TrimEnd().TrimEnd('}') + """
+                ,"excludeCurrent":true,"excludePlanning":true,"excludeCompleted":true,
+                 "excludeDropped":true,"excludePaused":true,"excludeRepeating":true}
+                """;
+            definition.Settings = STJson.Deserialize<AniListSettings>(legacy);
+
+            Json.ToJson(definition.Settings).Should().Be(unchangedSettings);
+            Subject.Fetch().Series.Should().ContainSingle();
+
+            list.Verify(provider => provider.Fetch(), Times.Once());
+        }
+
+        [Test]
         public void should_not_resume_after_restart_without_a_process_local_complete_fetch_witness()
         {
             var list = WithAniList();
@@ -175,7 +200,6 @@ namespace NzbDrone.Core.Test.ImportListTests
         [TestCase("included-list")]
         [TestCase("excluded-list")]
         [TestCase("included-status")]
-        [TestCase("excluded-status")]
         [TestCase("media-status")]
         [TestCase("base-url")]
         [TestCase("root-folder")]
@@ -209,9 +233,6 @@ namespace NzbDrone.Core.Test.ImportListTests
                     break;
                 case "included-status":
                     settings.ImportCompleted = true;
-                    break;
-                case "excluded-status":
-                    settings.ExcludePlanning = true;
                     break;
                 case "media-status":
                     settings.ImportCancelled = true;

@@ -54,14 +54,9 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 throw new ImportListException(importListResponse, "AniList returned a list entry without a valid media ID. The previous list will be retained.");
             }
 
-            if (HasExclusions() && page.MediaList.Any(item => !IsKnownListStatus(item.Status)))
-            {
-                throw new ImportListException(importListResponse, "AniList returned an entry without a valid list status needed for exclusions. The previous list will be retained.");
-            }
-
             NormalizeCustomListMembership(page.MediaList, importListResponse);
 
-            if (_settings.ExcludedCustomLists?.Any() == true && page.MediaList.Any(item => item.CustomLists == null))
+            if (HasExclusions() && page.MediaList.Any(item => item.CustomLists == null))
             {
                 throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for exclusions. The previous list will be retained.");
             }
@@ -77,8 +72,8 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 var media = item.Media;
 
                 // Process every exclusion before inclusion filters so an excluded duplicate
-                // cannot be admitted by a different status or custom list on another page.
-                if (IsExcludedListStatus(item.Status) || IsOnExcludedCustomList(item, importListResponse))
+                // cannot be admitted by a different custom list on another page.
+                if (IsOnExcludedCustomList(item, importListResponse))
                 {
                     ExcludedMediaIds.Add(media.Id);
                     continue;
@@ -212,31 +207,9 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             };
         }
 
-        private static bool IsKnownListStatus(string status)
-        {
-            return status == MediaListStatus.Current || status == MediaListStatus.Planning ||
-                   status == MediaListStatus.Completed || status == MediaListStatus.Dropped ||
-                   status == MediaListStatus.Paused || status == MediaListStatus.Repeating;
-        }
-
         private bool HasExclusions()
         {
-            return _settings.ExcludedCustomLists?.Any() == true || _settings.ExcludeCurrent || _settings.ExcludePlanning ||
-                   _settings.ExcludeCompleted || _settings.ExcludeDropped || _settings.ExcludePaused || _settings.ExcludeRepeating;
-        }
-
-        private bool IsExcludedListStatus(string status)
-        {
-            return status switch
-            {
-                MediaListStatus.Current => _settings.ExcludeCurrent,
-                MediaListStatus.Planning => _settings.ExcludePlanning,
-                MediaListStatus.Completed => _settings.ExcludeCompleted,
-                MediaListStatus.Dropped => _settings.ExcludeDropped,
-                MediaListStatus.Paused => _settings.ExcludePaused,
-                MediaListStatus.Repeating => _settings.ExcludeRepeating,
-                _ => false
-            };
+            return _settings.ExcludedCustomLists?.Any() == true;
         }
 
         private bool ValidateMediaStatus(MediaInfo media)

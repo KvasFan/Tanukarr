@@ -386,9 +386,18 @@ reads disposable credentials from stdin and redacts them from reports. It checks
 login, navigation, provider attribution/links, native-series detail and lookup,
 complete search and AniList list settings. The AniList editor scenario also
 checks custom-list inclusion/exclusion controls, literal names
-containing commas, all six explicit watching-state exclusions and the submitted
-settings payload. Its connection test intentionally fails local validation
+containing commas, all eleven Import status controls and the submitted settings
+payload. The six removed account-status exclusion controls must be absent from
+the form and request; custom-list exclusions remain available. The duplicate
+legacy single-list textbox is absent even with advanced settings shown, and any
+legacy scalar in the submitted settings must be empty. Its connection
+test intentionally fails local validation
 without OAuth credentials; cancelling the editor leaves saved lists unchanged.
+For an owned settings-only invocation, the Node helper accepts `menuOnly: true`
+in its stdin JSON. That mode retains login, AniList form/payload/cancellation
+checks and JavaScript/cloud-request checks, while skipping live provider lookup
+and series-search cases. Its report records `menuOnly`; the regular Python
+wrapper continues to request the default full browser scenario.
 The native-series/complete-search
 scenario needs `--anilist`; the browser's lookup scenario requires network access
 even if that flag is omitted. Browser reports and screenshots are

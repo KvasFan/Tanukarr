@@ -619,9 +619,7 @@ class AnimeGroups(ContainerSmoke):
                   "importCurrent": True, "importPlanning": False, "importCompleted": False,
                   "importDropped": False, "importPaused": False, "importRepeating": False,
                   "importFinished": True, "importReleasing": False, "importUnreleased": False,
-                  "importCancelled": False, "importHiatus": False,
-                  "excludeCurrent": False, "excludePlanning": False, "excludeCompleted": False,
-                  "excludeDropped": False, "excludePaused": False, "excludeRepeating": False}
+                  "importCancelled": False, "importHiatus": False}
         fields = {field["name"]: field for field in resource["fields"]}
         require(all(key in fields for key in values), "AniList runtime schema omitted required fixture fields")
         for key, value in values.items():

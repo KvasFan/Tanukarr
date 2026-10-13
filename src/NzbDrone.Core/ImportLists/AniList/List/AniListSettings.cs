@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using FluentValidation;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Annotations;
@@ -29,16 +32,16 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         }
     }
 
-    public class AniListSettings : AniListSettingsBase<AniListSettings>
+    public class AniListSettings : AniListSettingsBase<AniListSettings>, IJsonOnDeserialized
     {
         public const string SectionImport = "Import List Status";
         public const string SectionMedia = "Import Media Release Status";
-        public const string SectionExclude = "Exclude List Status";
 
         private static readonly AniListSettingsValidator Validator = new();
 
         public AniListSettings()
         {
+            CustomList = string.Empty;
             ImportCurrent = true;
             ImportPlanning = true;
             ImportReleasing = true;
@@ -50,7 +53,9 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         [FieldDefinition(1, Label = "Username", HelpText = "ImportListsAniListSettingsUsernameHelpText")]
         public string Username { get; set; }
 
-        [FieldDefinition(2, Label = "ImportListsAniListSettingsCustomList", HelpText = "ImportListsAniListSettingsCustomListHelpText", Advanced = true)]
+        // Retain the old API field so older clients can submit it; new forms use
+        // IncludedCustomLists, which receives this selection when settings load.
+        [FieldDefinition(2, Label = "ImportListsAniListSettingsCustomList", Hidden = HiddenType.Hidden)]
         public string CustomList { get; set; }
 
         [FieldDefinition(3, Label = "ImportListsAniListSettingsImportWatching", Type = FieldType.Checkbox, Section = SectionImport, HelpText = "ImportListsAniListSettingsImportWatchingHelpText")]
@@ -92,27 +97,40 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         [FieldDefinition(15, Label = "ImportListsAniListSettingsExcludedCustomLists", Type = FieldType.Tag, HelpText = "ImportListsAniListSettingsExcludedCustomListsHelpText")]
         public IEnumerable<string> ExcludedCustomLists { get; set; }
 
-        [FieldDefinition(16, Label = "ImportListsAniListSettingsExcludeWatching", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
-        public bool ExcludeCurrent { get; set; }
-
-        [FieldDefinition(17, Label = "ImportListsAniListSettingsExcludePlanning", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
-        public bool ExcludePlanning { get; set; }
-
-        [FieldDefinition(18, Label = "ImportListsAniListSettingsExcludeCompleted", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
-        public bool ExcludeCompleted { get; set; }
-
-        [FieldDefinition(19, Label = "ImportListsAniListSettingsExcludeDropped", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
-        public bool ExcludeDropped { get; set; }
-
-        [FieldDefinition(20, Label = "ImportListsAniListSettingsExcludePaused", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
-        public bool ExcludePaused { get; set; }
-
-        [FieldDefinition(21, Label = "ImportListsAniListSettingsExcludeRepeating", Type = FieldType.Checkbox, Section = SectionExclude, HelpText = "ImportListsAniListSettingsExcludeStatusHelpText")]
-        public bool ExcludeRepeating { get; set; }
-
         public override NzbDroneValidationResult Validate()
         {
+            NormalizeLegacyCustomList();
             return new NzbDroneValidationResult(Validator.Validate(this));
+        }
+
+        void IJsonOnDeserialized.OnDeserialized()
+        {
+            NormalizeLegacyCustomList();
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            NormalizeLegacyCustomList();
+        }
+
+        private void NormalizeLegacyCustomList()
+        {
+            if (CustomList.IsNotNullOrWhiteSpace())
+            {
+                // The legacy textbox trimmed its single name. Preserve literal
+                // modern names, including case and whitespace, when merging it.
+                var included = (IncludedCustomLists ?? Array.Empty<string>()).ToList();
+                var legacy = CustomList.Trim();
+                if (!included.Contains(legacy, StringComparer.Ordinal))
+                {
+                    included.Add(legacy);
+                }
+
+                IncludedCustomLists = included.ToArray();
+            }
+
+            CustomList = string.Empty;
         }
     }
 }

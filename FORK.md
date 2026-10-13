@@ -309,12 +309,21 @@ is a third, separate condition. At least one membership state and one media
 release state must be enabled. A named custom list does not override either
 state selection.
 
-Tanukarr 1.0.0 supports multiple included
-and excluded custom lists, plus explicit exclusion checkboxes for all six
-watching states. Included names form an OR condition, including the retained
-legacy `CustomList` name. Empty inclusion controls omit that condition.
-Membership in any excluded custom list or an explicitly excluded watching state
-vetoes an entry, even when Watching or an included custom list would otherwise
+Current `main` supports multiple included and excluded custom lists. Account-list
+states are selected through the existing Import checkboxes; the six separate
+status-exclusion controls and their parser behavior have been removed. This
+simplification follows the immutable 1.0.1 release and does not alter its tag or
+images. Included names form an OR condition. Older `CustomList` scalar values
+are transferred into `IncludedCustomLists` and cleared in the normalized settings;
+the redundant textbox is not rendered, including under Show Advanced. Only the
+legacy scalar is trimmed, matching its old parser behavior. Modern tag names
+retain exact spaces, punctuation and case; an exact duplicate is not added
+twice. Reading/testing does not rewrite the stored settings JSON, while a later
+Save persists the normalized representation. Removing the transferred tag clears
+that restriction rather than leaving a hidden scalar active. Empty inclusion
+controls omit that condition.
+Membership in any excluded custom list vetoes an entry, even when Watching or an
+included custom list would otherwise
 accept it. The release-state filter remains an independent AND condition.
 Custom names retain spaces and punctuation, including commas.
 

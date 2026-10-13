@@ -411,27 +411,26 @@ class FunctionalSecurity(ContainerSmoke):
         self.json_api("/api/v5/indexer?skipTesting=true", "POST", provider)
 
     def anilist_schema(self):
-        schema = self.json_api("/api/v5/importlist/schema")
-        provider = next(item for item in schema if item.get("implementation") == "AniListImport")
-        fields = {field["name"]: field for field in provider["fields"]}
         list_status = ("importCurrent", "importPlanning", "importCompleted", "importDropped", "importPaused", "importRepeating")
         media_status = ("importFinished", "importReleasing", "importUnreleased", "importCancelled", "importHiatus")
-        require(all(name in fields for name in list_status + media_status), "AniList statuses missing from API schema")
-        require("customList" in fields and "username" in fields, "AniList username/custom-list fields not distinct")
-        require(len({fields[name].get("section") for name in list_status}) == 1, "User-list statuses are not grouped")
-        require(fields["importCurrent"].get("section") != fields["importFinished"].get("section"),
-                "User-list status and media-release status conflated")
-        excluded_status = ("excludeCurrent", "excludePlanning", "excludeCompleted", "excludeDropped", "excludePaused", "excludeRepeating")
-        require(all(name in fields and fields[name].get("value") is False for name in excluded_status),
-                "AniList status exclusions missing or unexpectedly enabled")
-        for name in ("includedCustomLists", "excludedCustomLists"):
-            require(name in fields and fields[name].get("type") == "tag" and fields[name].get("value") == [],
-                    "AniList custom-list inclusion/exclusion field is missing or has unsafe defaults")
-        require(fields["excludeCurrent"].get("section") not in
-                (fields["importCurrent"].get("section"), fields["importFinished"].get("section")),
-                "AniList excluded statuses are not grouped separately")
+        removed_status = ("excludeCurrent", "excludePlanning", "excludeCompleted", "excludeDropped", "excludePaused", "excludeRepeating")
+        for version in ("v3", "v5"):
+            schema = self.json_api(f"/api/{version}/importlist/schema")
+            provider = next(item for item in schema if item.get("implementation") == "AniListImport")
+            fields = {field["name"]: field for field in provider["fields"]}
+            require(all(name in fields for name in list_status + media_status), "AniList statuses missing from API schema")
+            require("customList" in fields and "username" in fields, "AniList username/custom-list fields not distinct")
+            require(fields["customList"].get("hidden") == "hidden" and fields["customList"].get("value") in (None, ""),
+                    "The single legacy custom-list control is still visible or has an active default")
+            require(len({fields[name].get("section") for name in list_status}) == 1, "User-list statuses are not grouped")
+            require(fields["importCurrent"].get("section") != fields["importFinished"].get("section"),
+                    "User-list status and media-release status conflated")
+            require(all(name not in fields for name in removed_status), f"Removed AniList status exclusions remain in {version} schema")
+            for name in ("includedCustomLists", "excludedCustomLists"):
+                require(name in fields and fields[name].get("type") == "tag" and fields[name].get("value") == [],
+                        "AniList custom-list inclusion/exclusion field is missing or has unsafe defaults")
         require(self.json_api("/api/v5/importlist") == [], "Schema lookup saved an import list")
-        self.observations.append("AniList list status, media release status, username and custom-list fields are distinct in runtime schema; private-account synchronization requires real OAuth credentials and was not run.")
+        self.observations.append("AniList v3/v5 schemas retain separate user-list imports, media-release filters and custom-list inclusion/exclusion; all six removed status exclusions are absent and the old scalar custom-list compatibility field is hidden/blank. Private-account synchronization was not run.")
 
     def persist(self):
         before = self.json_api("/api/v5/system/status")
@@ -491,7 +490,7 @@ class FunctionalSecurity(ContainerSmoke):
             ("non-root app, zero effective capabilities, no privileged/socket/host-network deployment", self.container_security),
             ("TMDB key masking, API aliases and legacy save compatibility", self.metadata_masking),
             ("companion read/add permission allowlists, path normalization, secret-safe listing and revocation", self.companion_permissions),
-            ("AniList list-status/media-status/custom-list schema separation", self.anilist_schema),
+            ("AniList v3/v5 import/release/custom-list schema separation with removed status exclusions absent", self.anilist_schema),
         ):
             self.run_check(name, callback)
         if self.args.anilist:

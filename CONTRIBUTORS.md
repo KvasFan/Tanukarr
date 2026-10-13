@@ -273,6 +273,21 @@ model declarations remain unchanged. See the
 [configuration guide](docs/library-tools.md#anilist-lists) and
 [verification checkpoint](docs/anilist-filters-verification-2026-10-13.md).
 
+At the owner's subsequent request, **OpenAI Codex, based on GPT-6**, simplified
+the current `main` controls to custom-list exclusions and removed all six
+account-list-status exclusion properties and their parser behavior. Existing
+Import membership/release-status checkboxes, included/excluded custom lists,
+OAuth and existing single-list restrictions remain. The redundant legacy textbox
+is hidden and its saved scalar transfers into Included Custom Lists tags, with
+exact modern names preserved and no restriction resurrected after tag removal.
+Older unknown exclusion fields are ignored rather than retained as hidden active
+filters. The frontend,
+backend and isolated regressions cover this simplification; verification scope
+is reported separately. This work follows the immutable Tanukarr 1.0.1 release,
+whose source/tag/notes and original attribution remain unchanged. The
+[settings cleanup checkpoint](docs/anilist-settings-cleanup-2026-10-13.md)
+records the actual new checks and pending final-image scope.
+
 The subsequent custom-list synchronization request-limit correction also used
 **OpenAI Codex, based on GPT-6**. It adds a shared AniList request budget,
 server-directed cooldown and bounded HTTP 429 recovery across list and metadata

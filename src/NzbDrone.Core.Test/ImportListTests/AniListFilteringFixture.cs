@@ -5,6 +5,7 @@ using System.Text.Json;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Common.Http;
+using NzbDrone.Common.Serializer;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.AniList.List;
 using NzbDrone.Core.ImportLists.Exceptions;
@@ -62,16 +63,6 @@ namespace NzbDrone.Core.Test.ImportListTests
             _settings.ImportRepeating = status == "REPEATING";
         }
 
-        private void ExcludeStatus(string status)
-        {
-            _settings.ExcludeCurrent = status == "CURRENT";
-            _settings.ExcludePlanning = status == "PLANNING";
-            _settings.ExcludeCompleted = status == "COMPLETED";
-            _settings.ExcludeDropped = status == "DROPPED";
-            _settings.ExcludePaused = status == "PAUSED";
-            _settings.ExcludeRepeating = status == "REPEATING";
-        }
-
         [Test]
         public void should_preserve_default_watching_and_planning_inclusions_without_custom_filters()
         {
@@ -102,15 +93,22 @@ namespace NzbDrone.Core.Test.ImportListTests
         [TestCase("DROPPED")]
         [TestCase("PAUSED")]
         [TestCase("REPEATING")]
-        public void should_let_each_excluded_watching_status_override_its_inclusion(string status)
+        public void should_ignore_removed_status_exclusions_when_importing_selected_statuses(string status)
         {
+            _settings = Json.Deserialize<AniListSettings>("""
+                {"username":"someone","excludeCurrent":true,"excludePlanning":true,"excludeCompleted":true,
+                 "excludeDropped":true,"excludePaused":true,"excludeRepeating":true}
+                """);
             EnableStatus(status);
-            ExcludeStatus(status);
             _settings.IncludedCustomLists = new[] { "Seasonal" };
+            _settings.ExcludedCustomLists = new[] { "Manual only" };
             var parser = new AniListParser(_settings);
 
-            parser.ParseResponse(Response(Entry(1, status, new Dictionary<string, bool> { { "Seasonal", true } }))).Should().BeEmpty();
-            parser.ExcludedMediaIds.Should().Contain(1);
+            parser.ParseResponse(Response(
+                Entry(1, status, new Dictionary<string, bool> { { "Seasonal", true }, { "Manual only", false } }),
+                Entry(2, status, new Dictionary<string, bool> { { "Seasonal", true }, { "Manual only", true } })))
+                .Should().ContainSingle().Which.AniListId.Should().Be(1);
+            parser.ExcludedMediaIds.Should().Equal(2);
         }
 
         [Test]
@@ -157,6 +155,27 @@ namespace NzbDrone.Core.Test.ImportListTests
                 Entry(3, customLists: new Dictionary<string, bool> { { "Legacy", false }, { "Seasonal", false } })));
 
             result.Select(item => item.AniListId).Should().Equal(1, 2);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void should_preserve_legacy_import_membership_after_moving_it_to_modern_tags(bool systemTextJson)
+        {
+            const string legacy = """
+                {"username":"someone","customList":" Legacy ","includedCustomLists":["Modern"],"excludedCustomLists":["Manual only"]}
+                """;
+            var settings = systemTextJson ? STJson.Deserialize<AniListSettings>(legacy) : Json.Deserialize<AniListSettings>(legacy);
+            var parser = new AniListParser(settings);
+
+            var result = parser.ParseResponse(Response(
+                Entry(1, customLists: new Dictionary<string, bool> { { "Legacy", true }, { "Modern", false }, { "Manual only", false } }),
+                Entry(2, customLists: new Dictionary<string, bool> { { "Legacy", false }, { "Modern", true }, { "Manual only", false } }),
+                Entry(3, customLists: new Dictionary<string, bool> { { "Legacy", true }, { "Modern", true }, { "Manual only", true } }),
+                Entry(4, customLists: new Dictionary<string, bool> { { "Legacy", false }, { "Modern", false }, { "Manual only", false } })));
+
+            result.Select(item => item.AniListId).Should().Equal(1, 2);
+            parser.ExcludedMediaIds.Should().Equal(3);
+            settings.CustomList.Should().BeEmpty();
         }
 
         [Test]
@@ -297,11 +316,15 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         [TestCase(null)]
         [TestCase("UNKNOWN")]
-        public void should_fail_when_exclusions_cannot_evaluate_the_returned_watching_status(string status)
+        public void should_apply_custom_exclusions_independently_of_an_unknown_list_status(string status)
         {
-            _settings.ExcludeCompleted = true;
+            _settings.ExcludedCustomLists = new[] { "Excluded" };
+            var parser = new AniListParser(_settings);
 
-            Assert.Throws<ImportListException>(() => new AniListParser(_settings).ParseResponse(Response(Entry(1, status))));
+            parser.ParseResponse(Response(
+                Entry(1, status, new Dictionary<string, bool> { { "Excluded", true } }),
+                Entry(1, customLists: new Dictionary<string, bool> { { "Excluded", false } }))).Should().BeEmpty();
+            parser.ExcludedMediaIds.Should().Contain(1);
         }
 
         [Test]
@@ -328,16 +351,20 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void should_veto_duplicate_media_ids_with_an_excluded_watching_status(bool excludedFirst)
+        public void should_keep_imported_statuses_independent_after_legacy_status_exclusions_are_removed(bool completedFirst)
         {
+            _settings = Json.Deserialize<AniListSettings>("""
+                {"username":"someone","excludeCurrent":true,"excludePlanning":true,"excludeCompleted":true,
+                 "excludeDropped":true,"excludePaused":true,"excludeRepeating":true}
+                """);
             _settings.ImportCompleted = true;
-            _settings.ExcludeCompleted = true;
-            var allowed = Entry(1);
-            var excluded = Entry(1, "COMPLETED");
+            var current = Entry(1);
+            var completed = Entry(1, "COMPLETED");
             var parser = new AniListParser(_settings);
 
-            parser.ParseResponse(excludedFirst ? Response(excluded, allowed) : Response(allowed, excluded)).Should().BeEmpty();
-            parser.ExcludedMediaIds.Should().Equal(1);
+            parser.ParseResponse(completedFirst ? Response(completed, current) : Response(current, completed))
+                .Select(item => item.AniListId).Should().Equal(1, 1);
+            parser.ExcludedMediaIds.Should().BeEmpty();
         }
     }
 }

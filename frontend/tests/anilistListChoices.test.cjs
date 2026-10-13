@@ -21,7 +21,8 @@ function loadSource(relative, mocks = {}) {
   return compiled.exports;
 }
 
-const statusNames = ['importCurrent', 'importPlanning', 'importCompleted', 'importDropped', 'importPaused', 'importRepeating', 'importFinished', 'importReleasing', 'importUnreleased', 'importCancelled', 'importHiatus', 'excludeCurrent', 'excludePlanning', 'excludeCompleted', 'excludeDropped', 'excludePaused', 'excludeRepeating'];
+const statusNames = ['importCurrent', 'importPlanning', 'importCompleted', 'importDropped', 'importPaused', 'importRepeating', 'importFinished', 'importReleasing', 'importUnreleased', 'importCancelled', 'importHiatus'];
+const removedStatusNames = ['excludeCurrent', 'excludePlanning', 'excludeCompleted', 'excludeDropped', 'excludePaused', 'excludeRepeating'];
 const defaultFields = [
   { name: 'username', value: 'generated-account', type: 'textbox' },
   { name: 'accessToken', value: 'generated-token', type: 'textbox', hidden: 'hidden' },
@@ -30,11 +31,11 @@ const defaultFields = [
   ...statusNames.map((name) => ({ name, value: name === 'importCurrent', type: 'checkbox' })),
   { name: 'includedCustomLists', value: ['Stored unavailable name'], type: 'tag' },
   { name: 'excludedCustomLists', value: ['Excluded stored name'], type: 'tag' },
-  { name: 'customList', value: 'Legacy saved filter', type: 'textbox', advanced: true },
+  { name: 'customList', value: '', type: 'textbox', hidden: 'hidden', advanced: true },
   { name: 'futureProviderSetting', value: 'Preserve any new provider field', type: 'textbox', advanced: true }
 ].map((field, order) => ({ advanced: false, label: field.name, order, errors: [], warnings: [], pending: false, ...field }));
 
-function fixture(response) {
+function fixture(response, initialFields = defaultFields) {
   const requests = [];
   const changes = [];
   const translate = (key) => key;
@@ -42,7 +43,7 @@ function fixture(response) {
   const TagInput = (properties) => React.createElement('div', { 'data-tag-field': properties.name, tags: properties.tags, tagList: properties.tagList, minQueryLength: properties.minQueryLength, delimiters: properties.delimiters, onAdd: properties.onTagAdd, onDelete: properties.onTagDelete });
   const TextTag = loadSource('Components/Form/Tag/TextTagInput.tsx', { './TagInput': TagInput, 'Utilities/String/split': (value) => String(value ?? '').split(',').filter(Boolean) }).default;
   const ProviderField = loadSource('Components/Form/ProviderFieldFormGroup.tsx', {
-    'Components/Form/FormInput': (properties) => properties.type === 'textTag' ? React.createElement(TextTag, properties) : React.createElement('div', { 'data-provider-field': properties.name, 'data-value': properties.value, onChange: properties.onChange }),
+    'Components/Form/FormInput': (properties) => properties.type === 'textTag' ? React.createElement(TextTag, properties) : React.createElement('div', { 'data-provider-field': properties.name, 'data-value': properties.value, 'data-input-type': properties.type, onChange: properties.onChange }),
     'Components/Form/FormInputHelpText': (properties) => React.createElement('p', {}, properties.text),
     'Components/Form/FormLabel': wrapper,
     'Components/Form/FormRow': wrapper,
@@ -69,11 +70,12 @@ function fixture(response) {
   let setData;
   let renderer;
   function FormFixture() {
-    const [fields, setFields] = React.useState(defaultFields);
+    const [fields, setFields] = React.useState(initialFields);
     setData = setFields;
-    const onChange = React.useCallback(({ name, value }) => {
+    const onChange = React.useCallback(({ name, value, additionalProperties }) => {
       changes.push({ name, value });
-      setFields((old) => old.map((field) => field.name === name ? { ...field, value } : field));
+      const values = { [name]: value, ...additionalProperties };
+      setFields((old) => old.map((field) => Object.hasOwn(values, field.name) ? { ...field, value: values[field.name] } : field));
     }, []);
     return React.createElement(Groups, { providerData: { id: { value: 0 }, implementation: { value: 'AniListImport' }, name: { value: 'Generated test list' }, enableAutomaticAdd: { value: false }, fields }, advancedSettings: true, onChange });
   }
@@ -83,17 +85,62 @@ function fixture(response) {
   return { renderer, requests, changes, tags, changeField };
 }
 
-test('AniList grouped settings retain every status, OAuth, legacy and future provider field exactly once', () => {
+test('AniList grouped settings retain all eleven import choices, custom-list tags, OAuth and future provider fields', () => {
   const { renderer } = fixture(async () => ({ options: [] }));
   const visible = renderer.root.findAll((item) => item.props['data-provider-field'] || item.props['data-tag-field']).map((item) => item.props['data-provider-field'] ?? item.props['data-tag-field']);
   const expected = defaultFields.filter((field) => field.hidden !== 'hidden').map((field) => field.name);
   assert.deepEqual([...visible].sort(), [...expected].sort());
   assert.equal(new Set(visible).size, visible.length);
   assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListIncludeStatuses' }).length, 1);
-  assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListExcludeStatuses' }).length, 1);
+  assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListExcludeStatuses' }).length, 0);
+  assert.deepEqual(renderer.root.findAllByProps({ 'data-input-type': 'check' }).map((field) => field.props['data-provider-field']).sort(), [...statusNames].sort());
+  assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListReleaseStatuses' }).length, 1);
+  assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListCustomLists' }).length, 1);
+  assert.equal(renderer.root.findAll((item) => item.props['data-tag-field']).length, 2);
   assert.match(JSON.stringify(renderer.toJSON()), /AniListExclusionPrecedenceHelp/);
   assert.match(JSON.stringify(renderer.toJSON()), /AniListTestRetentionHelp/);
   TestRenderer.act(() => renderer.unmount());
+});
+
+test('obsolete enabled status exclusions from an older schema are absent from the form and custom-name request', async () => {
+  const olderFields = [...defaultFields, ...removedStatusNames.map((name) => ({
+    name, value: true, type: 'checkbox', advanced: false, label: name,
+    errors: [], warnings: [], pending: false,
+  }))];
+  const item = fixture(async () => ({ options: [] }), olderFields);
+  const visible = item.renderer.root.findAll((node) => node.props['data-provider-field']).map((node) => node.props['data-provider-field']);
+  assert.ok(removedStatusNames.every((name) => !visible.includes(name)));
+  assert.equal(item.renderer.root.findAllByProps({ 'data-input-type': 'check' }).length, 11);
+  assert.equal(item.renderer.root.findAllByProps({ 'data-section-title': 'AniListExcludeStatuses' }).length, 0);
+  await TestRenderer.act(async () => { await item.renderer.root.findByType('button').props.onClick(); });
+  assert.equal(item.requests.length, 1);
+  const submitted = item.requests[0].body.fields.map((field) => field.name);
+  assert.ok(removedStatusNames.every((name) => !submitted.includes(name)));
+  assert.deepEqual([...submitted].sort(), defaultFields.filter((field) => field.name !== 'customList').map((field) => field.name).sort());
+  assert.deepEqual(item.tags('includedCustomLists').props.tags.map((tag) => tag.name), ['Stored unavailable name']);
+  assert.deepEqual(item.tags('excludedCustomLists').props.tags.map((tag) => tag.name), ['Excluded stored name']);
+  TestRenderer.act(() => item.renderer.unmount());
+});
+
+test('a stale legacy custom list moves into exact included tags and removing it does not restore a hidden restriction', async () => {
+  const legacyName = 'Legacy, saved filter';
+  const lowercaseName = 'legacy, saved filter';
+  const originalFields = defaultFields.map((field) => field.name === 'customList'
+    ? { ...field, hidden: undefined, value: `  ${legacyName}  ` }
+    : field.name === 'includedCustomLists' ? { ...field, value: ['  Exact modern name  ', lowercaseName] } : field);
+  const item = fixture(async () => ({ options: [] }), originalFields);
+  assert.equal(item.renderer.root.findAllByProps({ 'data-provider-field': 'customList' }).length, 0);
+  assert.deepEqual(item.tags('includedCustomLists').props.tags.map((tag) => tag.name), ['  Exact modern name  ', lowercaseName, legacyName]);
+  await TestRenderer.act(async () => { await item.renderer.root.findByType('button').props.onClick(); });
+  const submitted = new Map(item.requests[0].body.fields.map((field) => [field.name, field.value]));
+  assert.equal(submitted.has('customList'), false);
+  assert.deepEqual(submitted.get('includedCustomLists'), ['  Exact modern name  ', lowercaseName, legacyName]);
+  TestRenderer.act(() => item.tags('includedCustomLists').props.onDelete({ index: 2 }));
+  assert.deepEqual(item.tags('includedCustomLists').props.tags.map((tag) => tag.name), ['  Exact modern name  ', lowercaseName]);
+  await TestRenderer.act(async () => { await item.renderer.root.findByType('button').props.onClick(); });
+  assert.deepEqual(item.requests[1].body.fields.find((field) => field.name === 'includedCustomLists').value, ['  Exact modern name  ', lowercaseName]);
+  assert.deepEqual(item.tags('excludedCustomLists').props.tags.map((tag) => tag.name), ['Excluded stored name']);
+  TestRenderer.act(() => item.renderer.unmount());
 });
 
 test('loading custom names uses current unsaved fields, preserves selections and exact comma-containing list names', async () => {

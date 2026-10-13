@@ -167,8 +167,16 @@ different credentials. See [Metadata providers](metadata-providers.md) for
 catalogue coverage and the implemented access requirements.
 AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
-Version 1.0.1 lets you include several AniList custom lists and veto entries by
-custom-list membership or list state. For Jellyfin, configure the dedicated
+AniList lets you include several custom lists and veto entries by excluded
+custom-list membership, within the enabled Import membership/release statuses.
+Current `main` removes the six separate account-status exclusion controls and
+their behavior; the immutable 1.0.1 image retains its original settings. Use an
+`edge` image containing that later simplification if you need the updated
+controls, and check its source revision. The later source also removes the
+duplicate legacy custom-list textbox, moving its saved name into Included
+Custom Lists tags without discarding the filter.
+
+For Jellyfin, configure the dedicated
 connection under **Settings -> Connect** and select one initialized library;
 see [Jellyfin refresh](jellyfin.md) for the three refresh modes and networking.
 

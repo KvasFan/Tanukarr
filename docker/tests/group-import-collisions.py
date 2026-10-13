@@ -173,9 +173,7 @@ class GroupImportCollisions(_reliability.AniListReliability):
                   "includedCustomLists": ["Include"], "excludedCustomLists": [], "customList": "",
                   "importCurrent": True, "importPlanning": False, "importCompleted": False, "importDropped": False,
                   "importPaused": False, "importRepeating": False, "importFinished": True, "importReleasing": False,
-                  "importUnreleased": False, "importCancelled": False, "importHiatus": False,
-                  "excludeCurrent": False, "excludePlanning": False, "excludeCompleted": False,
-                  "excludeDropped": False, "excludePaused": False, "excludeRepeating": False}
+                  "importUnreleased": False, "importCancelled": False, "importHiatus": False}
         fields = {field["name"]: field for field in resource["fields"]}
         require(all(key in fields for key in values), "AniList schema omitted fixture settings")
         for key, value in values.items():

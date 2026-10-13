@@ -133,16 +133,26 @@ Configure AniList under **Settings → Import Lists**, authenticate with AniList
 and enter the target username. The multiple-list inclusion and exclusion controls
 are included in **Tanukarr 1.0.0** and were introduced in SonarrWeeb 0.1.0;
 the immutable SonarrWeeb 0.0.1 release predates them. These filters
-describe different things and are combined:
+describe different things and are combined.
+
+Current `main` simplifies exclusions to **custom-list membership only**. The six
+separate Exclude Watching/Planning/Completed/Dropped/Paused/Repeating controls
+and their parser behavior have been removed. This change follows the immutable
+Tanukarr 1.0.1 release; its original tag and images retain their previous settings.
+Previously saved status-exclusion flags are ignored by the new typed settings
+model. No list deletion, database migration or OAuth reset is needed.
+The redundant **Custom List (Legacy)** textbox is also absent, even under Show
+Advanced. An older saved single-list name appears as an ordinary **Included
+Custom Lists** tag, preserving its inclusion restriction.
+The [settings cleanup checkpoint](anilist-settings-cleanup-2026-10-13.md) records
+the new source's actual checks and final-image verification state.
 
 | Setting | What it selects |
 | --- | --- |
 | Import List Status | Enabled membership states: Watching, Planning, Completed, Dropped, Paused or Repeating |
 | Import Media Release Status | The anime's release status: Finished, Releasing, Not Yet Released, Cancelled or Hiatus |
 | Included Custom Lists | Membership in any of the named custom lists owned by the selected user |
-| Custom List (Legacy) | The original single-name setting under Show Advanced, retained for saved connections; its name joins Included Custom Lists |
 | Excluded Custom Lists | Membership in any named exclusion list vetoes the import, even when another filter includes the anime |
-| Exclude List Status | Explicit exclusions for Watching, Planning, Completed, Dropped, Paused and Repeating; exclusion wins over the corresponding import checkbox |
 
 Choose at least one membership status and one release status. Watching and
 Planning, together with Finished and Releasing, are the defaults. For example,
@@ -151,28 +161,32 @@ as well if that is required. AniList gives an entry one watching state, while
 the same entry can belong to several custom lists independently.
 
 Included custom-list names are alternatives: matching any one is sufficient.
-The original **Custom List (Legacy)** name participates in that same union, so an existing
-connection keeps its restriction until that name is cleared. Leave both
-inclusion controls empty to accept every entry matching the enabled membership
+Older saved single-list names are transferred into that same set rather than
+discarded. The old scalar's boundary whitespace is trimmed as before; modern
+tag values preserve their exact names, and only exact duplicates are merged.
+Remove the transferred tag to remove that restriction. Reading or testing the
+connection does not rewrite its stored settings; Save persists the normalized
+tag representation and clears the legacy scalar. Leave **Included Custom Lists**
+empty to accept every entry matching the enabled membership
 and release states. Named-list inclusion does not bypass either state filter.
 
 Exclusions always take precedence. For example, enable **Import Watching** and
 include `Seasonal`, then exclude `Do not download`: an anime marked Watching
-and belonging to both custom lists is excluded. Explicitly checking
-**Exclude Watching** also blocks Watching entries even when **Import Watching**
-is checked. All explicit exclusions start disabled; excluded custom lists start
-empty. Release-state filtering remains separate.
+and belonging to both custom lists is excluded. To omit an account-list state,
+leave its **Import** checkbox unchecked; inclusion by a custom name does not
+bypass that selection. Excluded custom lists start empty. Release-state filtering
+remains separate.
 
 Enter each complete custom-list name and press **Enter** to add it. Repeat for
 more names. Spaces, commas and other punctuation are part of the name, so
 `Seasonal, favorites` is one name, not two. The editor trims name boundaries;
 direct API array values retain their spelling, including boundary whitespace.
 
-Post-release `main` organizes the editor into account, membership statuses,
-release statuses, custom lists and explicit exclusions. **Load custom lists**
+Current `main` organizes the editor into account, membership statuses,
+release statuses and custom lists. **Load custom lists**
 reads the target account's defined list names and offers autocomplete for the
 included/excluded tags. It does not save the connection or start a sync. Manual
-typing, unknown saved names, OAuth controls and the legacy advanced name remain
+typing, unknown saved names and OAuth controls remain
 available. Enter the AniList username, rather than a custom-list name, in the
 account field.
 

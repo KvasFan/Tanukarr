@@ -48,6 +48,7 @@ original content.
 | [AniList filter verification](anilist-filters-verification-2026-10-13.md) | Post-release inclusion/exclusion precedence, pagination, compatible settings and UI checks |
 | [AniList request-limit verification](anilist-rate-limit-verification-2026-10-13.md) | Post-0.1.0 custom-list sync failure, shared request pacing, cooldown and bounded recovery |
 | [AniList and browser reliability checkpoint](anilist-react-reliability-2026-10-13.md) | Post-1.0.0 partial-progress/resume, public cache and covered-group UI correction; executed local checks, exact deployment preservation and publication status |
+| [AniList settings cleanup](anilist-settings-cleanup-2026-10-13.md) | Post-1.0.1 custom-list-only exclusions, legacy scalar transfer into tags, executed checks and final-image verification state |
 | [Nyaa verification](nyaa-verification-2026-10-13.md) | Native RSS searches, reserved-title encoding and search-only container verification |
 | [Metadata validation](metadata-validation-2026-10-13.md) | Current TV/anime source selection, credentials, series-type behavior and ordering integration limits |
 | [Anime grouping verification](anime-season-groups-verification-2026-10-13.md) | Post-1.0.0 grouping source/image checkpoint and executed checks; separate from the immutable release |

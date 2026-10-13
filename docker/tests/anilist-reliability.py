@@ -2,6 +2,7 @@
 """Verify AniList quota recovery using only disposable Docker data and trusted local TLS."""
 
 import argparse
+from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
@@ -25,6 +26,8 @@ _spec.loader.exec_module(_groups)
 
 IDS = (940101, 940102, 940103, 940104)
 MOCK_IMAGE = "python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a"
+REMOVED_STATUS_EXCLUSION_FIELDS = ("excludeCurrent", "excludePlanning", "excludeCompleted", "excludeDropped", "excludePaused", "excludeRepeating")
+LEGACY_CUSTOM_LIST_NAME = "Legacy selection"
 
 
 def poster_png():
@@ -96,7 +99,10 @@ def serve_fixture(root):
                     require(page in (1, 2) and "customListEntries:" in query, "Unexpected fixture list query")
                     rows = []
                     for media_id in IDS[(page - 1) * 2:page * 2]:
-                        membership = {"Include": True, "Never": media_id == IDS[3], "After edit": media_id == IDS[2]}
+                        legacy_only_id = control.get("legacyOnlyId")
+                        membership = {"Include": media_id != legacy_only_id, "Never": media_id == IDS[3], "After edit": media_id == IDS[2]}
+                        if legacy_only_id:
+                            membership[LEGACY_CUSTOM_LIST_NAME] = media_id == legacy_only_id
                         rows.append({"status": "CURRENT", "progress": 0, "media": media_resource(media_id),
                                      "customLists": None if control.get("unknownMembership") else membership,
                                      "customListEntries": None if control.get("unknownMembership") else [
@@ -214,7 +220,8 @@ class AniListReliability(_groups.AnimeGroups):
                    "update-ca-certificates >/dev/null 2>&1; exec /entrypoint.sh /app/Sonarr -nobrowser -data=/config")
         self.container = self.docker(
             "create", "--name", "tanukarr-anilist-reliability-" + suffix,
-            "--label", "tanukarr.anilist-reliability-test=true", "--network", self.network, "--network-alias", "fixture-app",
+            "--label", "tanukarr.anilist-reliability-test=true", "--label", "sonarr.smoke-test=true",
+            "--network", self.network, "--network-alias", "fixture-app",
             "--env", "PUID=1000", "--env", "PGID=1000", "--env", "UMASK=002",
             "--env", "HTTP_PROXY=", "--env", "HTTPS_PROXY=", "--env", "ALL_PROXY=",
             "--mount", f"type=bind,source={config},target=/config", "--mount", f"type=bind,source={media},target=/media",
@@ -246,7 +253,7 @@ class AniListReliability(_groups.AnimeGroups):
         require(path.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"),
                 "Read-only database inspection escaped the owned fixture")
         uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
-        with sqlite3.connect(uri, uri=True, timeout=10) as connection:
+        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
             connection.execute("PRAGMA query_only = ON")
             return sorted(row[0] for row in connection.execute("SELECT AniListId FROM ImportListItems WHERE ImportListId = ?", (self.definition["id"],)))
 
@@ -259,6 +266,19 @@ class AniListReliability(_groups.AnimeGroups):
 
     def create_list(self):
         resource = next(item for item in self.api_json("/api/v5/importlist/schema") if item["implementation"] == "AniListImport")
+        for version in ("v3", "v5"):
+            schema = self.api_json(f"/api/{version}/importlist/schema")
+            names = {field["name"] for provider in schema if provider["implementation"] == "AniListImport" for field in provider["fields"]}
+            require(not names.intersection(REMOVED_STATUS_EXCLUSION_FIELDS), f"Removed status exclusions remain in {version} schema")
+            require(all(name in names for name in ("importCurrent", "importPlanning", "importCompleted", "importDropped",
+                                                   "importPaused", "importRepeating", "importFinished", "importReleasing",
+                                                   "importUnreleased", "importCancelled", "importHiatus",
+                                                   "includedCustomLists", "excludedCustomLists")), "Retained AniList filters are missing")
+            scalar = next(field for provider in schema if provider["implementation"] == "AniListImport"
+                          for field in provider["fields"] if field["name"] == "customList")
+            require(scalar.get("hidden") == "hidden" and scalar.get("value") in (None, ""),
+                    "The legacy scalar custom-list default is not hidden and blank")
+        self.check("v3/v5 schemas omit all six removed status exclusions and retain import/release/custom-list filters")
         resource.update(name="Generated reliability list", rootFolderPath="/media/library", qualityProfileId=self.profile_id,
                         language={"id": 1, "name": "English"}, metadataSource="aniList", enableAutomaticAdd=True,
                         shouldMonitor="none", searchForMissingEpisodes=False, seriesType="anime", seasonFolder=True)
@@ -267,16 +287,34 @@ class AniListReliability(_groups.AnimeGroups):
                   "includedCustomLists": ["Include"], "excludedCustomLists": ["Never"], "customList": "",
                   "importCurrent": True, "importPlanning": False, "importCompleted": False, "importDropped": False,
                   "importPaused": False, "importRepeating": False, "importFinished": True, "importReleasing": False,
-                  "importUnreleased": False, "importCancelled": False, "importHiatus": False,
-                  "excludeCurrent": False, "excludePlanning": False, "excludeCompleted": False,
-                  "excludeDropped": False, "excludePaused": False, "excludeRepeating": False}
+                  "importUnreleased": False, "importCancelled": False, "importHiatus": False}
         fields = {field["name"]: field for field in resource["fields"]}
         require(all(key in fields for key in values), "AniList schema omitted fixture settings")
         for key, value in values.items():
             fields[key]["value"] = value
+        resource["fields"].extend({"name": name, "type": "checkbox", "value": True} for name in REMOVED_STATUS_EXCLUSION_FIELDS)
         self.definition = self.api_json("/api/v5/importlist", "POST", resource)
         self.idle()
+        require(not {field["name"] for field in self.definition["fields"]}.intersection(REMOVED_STATUS_EXCLUSION_FIELDS),
+                "Saving a legacy payload reintroduced removed status exclusions")
         self.check("synthetic custom-list definition saved with inclusion and exclusion precedence")
+
+    def legacy_status_payload(self):
+        statuses = {}
+        for version in ("v3", "v5"):
+            resource = self.api_json(f"/api/{version}/importlist/{self.definition['id']}")
+            require(not {field["name"] for field in resource["fields"]}.intersection(REMOVED_STATUS_EXCLUSION_FIELDS),
+                    f"Saved legacy payload exposed removed status exclusions through {version}")
+            resource["fields"].extend({"name": name, "type": "checkbox", "value": True} for name in REMOVED_STATUS_EXCLUSION_FIELDS)
+            status, _body = self.raw(f"/api/{version}/importlist/test", "POST", resource)
+            expected_status = 200 if version == "v3" else 204
+            require(status == expected_status, f"Legacy true status-exclusion fields broke the {version} provider Test: HTTP {status}")
+            statuses[version] = status
+        saved = self.api_json("/api/v5/importlist/" + str(self.definition["id"]))
+        require(saved["fields"] == self.definition["fields"], "Provider Test persisted legacy status-exclusion fields")
+        self.observations["ignoredLegacyStatusExclusions"] = {"submittedTrueFields": list(REMOVED_STATUS_EXCLUSION_FIELDS),
+                                                             "testStatuses": statuses, "savedFieldsUnchanged": True}
+        self.check("legacy API payloads with all six former exclusions true pass v3/v5 Test without restoring removed settings")
 
     def quota_recovery(self):
         self.command({"name": "ImportListSync"})
@@ -300,6 +338,9 @@ class AniListReliability(_groups.AnimeGroups):
         require(after == before, "Automatic quota recovery repeated the successful list GraphQL pagination")
         self.observations["cachedRecovery"] = {"listRequestsBefore": before, "listRequestsAfter": after, "libraryIds": self.library_ids()}
         self.check("automatic ImportListSync resumes unchanged successful membership without a fresh list request")
+        require(IDS[3] not in self.library_ids() and IDS[3] not in self.stored_ids(),
+                "Custom-list exclusion did not dominate included Watching membership")
+        self.check("legacy status exclusions do not block included Watching entries while custom-list exclusions retain precedence")
 
         for series in self.api_json("/api/v5/series"):
             self.command({"name": "RefreshSeries", "seriesId": series["id"]})
@@ -351,6 +392,116 @@ class AniListReliability(_groups.AnimeGroups):
         self.observations["changedExclusions"] = {"libraryIds": self.library_ids(), "storedMembershipIds": self.stored_ids()}
         self.check("explicit fresh sync stores the new authoritative exclusions and does not re-add excluded Watching media")
 
+    def saved_definition(self, version="v5"):
+        return self.api_json(f"/api/{version}/importlist/{self.definition['id']}")
+
+    @staticmethod
+    def field(resource, name):
+        return next(field for field in resource["fields"] if field["name"] == name)
+
+    def stored_settings_json(self):
+        path = (self.root / "config" / "sonarr.db").resolve(strict=True)
+        require(path.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"),
+                "Legacy-settings inspection escaped the owned fixture")
+        uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
+            connection.execute("PRAGMA query_only = ON")
+            row = connection.execute("SELECT Settings FROM ImportLists WHERE Id = ?", (self.definition["id"],)).fetchone()
+        require(row is not None, "Owned fixture import-list row is missing")
+        return row[0]
+
+    def normalized_custom_lists(self, expected):
+        for version in ("v3", "v5"):
+            resource = self.saved_definition(version)
+            included = self.field(resource, "includedCustomLists")["value"]
+            scalar = self.field(resource, "customList")
+            require(included == expected, f"{version} did not retain the exact normalized custom-list selection")
+            require(scalar.get("hidden") == "hidden" and scalar.get("value") in (None, ""),
+                    f"{version} exposed a visible or active scalar custom-list filter")
+        return self.saved_definition()
+
+    def legacy_custom_list_migration(self):
+        self.control(legacyOnlyId=IDS[2])
+        resource = self.saved_definition()
+        self.field(resource, "includedCustomLists")["value"] = ["Include"]
+        self.field(resource, "excludedCustomLists")["value"] = ["Never"]
+        self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+        self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
+        require(self.library_ids() == list(IDS[:2]) and self.stored_ids() == list(IDS[:2]),
+                "Legacy migration setup did not isolate the custom-list-only member")
+
+        # Exercise the real settings converter on startup. This is one generated
+        # row in our stopped temporary app, never the user's configuration.
+        self.docker("stop", "--time", "20", self.container)
+        self.prepare_config_for_host_sqlite()
+        path = (self.root / "config" / "sonarr.db").resolve(strict=True)
+        require(path.parent == self.root / "config", "Legacy-settings seed escaped the owned fixture")
+        settings = json.loads(self.stored_settings_json())
+        key = next((name for name in settings if name.lower() == "customlist"), "customList")
+        settings[key] = "  " + LEGACY_CUSTOM_LIST_NAME + "  "
+        raw_seed = json.dumps(settings)
+        with closing(sqlite3.connect(path, timeout=10)) as connection:
+            changed = connection.execute("UPDATE ImportLists SET Settings = ? WHERE Id = ?", (raw_seed, self.definition["id"])).rowcount
+            require(changed == 1, "Legacy-settings seed affected an unexpected number of rows")
+            connection.commit()
+        self.docker("start", self.container)
+        self.wait_ready()
+        self.verify_app_ownership_after_host_seed()
+        self.idle()
+        self.normalized_custom_lists(["Include", LEGACY_CUSTOM_LIST_NAME])
+        require(self.stored_settings_json() == raw_seed, "Loading legacy custom-list settings rewrote their stored JSON before Save")
+        self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
+        self.idle()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Stored legacy custom-list selection was lost rather than merged into included tags")
+        self.observations["legacyCustomListMigration"] = {"normalizedIncludedLists": ["Include", LEGACY_CUSTOM_LIST_NAME],
+                                                        "storedSettingsUnchangedBeforeSave": True,
+                                                        "libraryIdsAfterMigration": self.library_ids()}
+        self.check("restart preserves a stored legacy custom-list selection as modern included tags without rewriting JSON before Save")
+
+        third = next(s for s in self.api_json("/api/v5/series") if int(s["foreignId"]) == IDS[2])
+        self.api_json(f"/api/v5/series/{third['id']}?deleteFiles=false&addImportListExclusion=false", "DELETE")
+        self.idle()
+        resource = self.saved_definition()
+        self.field(resource, "includedCustomLists")["value"] = ["Include"]
+        resource["fields"] = [field for field in resource["fields"] if field["name"] != "customList"]
+        self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+        self.normalized_custom_lists(["Include"])
+        self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
+        self.idle()
+        require(self.library_ids() == list(IDS[:2]) and self.stored_ids() == list(IDS[:2]),
+                "Removing the migrated tag restored a hidden legacy filter or re-added its exclusive member")
+        saved_settings = json.loads(self.stored_settings_json())
+        require(all(not value for key, value in saved_settings.items() if key.lower() == "customlist"),
+                "Saving modern tags retained an active legacy scalar setting")
+        self.check("editing modern tags clears the old scalar filter and stops re-adding its exclusive Watching member")
+
+        statuses = {}
+        for version in ("v3", "v5"):
+            resource = self.saved_definition(version)
+            self.field(resource, "customList")["value"] = "  " + LEGACY_CUSTOM_LIST_NAME + "  "
+            status, _body = self.raw(f"/api/{version}/importlist/test", "POST", resource)
+            expected_status = 200 if version == "v3" else 204
+            require(status == expected_status, f"Legacy scalar custom-list input failed the {version} provider Test: HTTP {status}")
+            statuses[version] = status
+        self.normalized_custom_lists(["Include"])
+        self.api_json(f"/api/v3/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+        resource = self.normalized_custom_lists(["Include", LEGACY_CUSTOM_LIST_NAME])
+        self.field(resource, "customList")["value"] = "  " + LEGACY_CUSTOM_LIST_NAME + "  "
+        self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+        self.normalized_custom_lists(["Include", LEGACY_CUSTOM_LIST_NAME])
+        self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
+        self.idle()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]) and IDS[3] not in self.library_ids(),
+                "Legacy scalar API normalization lost its selection or weakened the custom-list exclusion")
+        self.observations["legacyScalarApi"] = {"testStatuses": statuses, "normalizedIncludedLists": ["Include", LEGACY_CUSTOM_LIST_NAME],
+                                                "normalizationDeduplicated": True, "excludedWatchingEntryRetainedAsExcluded": True}
+        self.check("v3/v5 legacy scalar Test/save inputs normalize once into tags while custom exclusions remain authoritative")
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -380,8 +531,10 @@ def main():
         audit.start()
         audit.prepare()
         audit.create_list()
+        audit.legacy_status_payload()
         audit.quota_recovery()
         audit.stale_guard()
+        audit.legacy_custom_list_migration()
         audit.no_acquisition()
     except (Exception, KeyboardInterrupt) as caught:
         error = redact(f"{audit.last_request}: {caught or type(caught).__name__}")
@@ -407,10 +560,11 @@ def main():
                 "mockImage": args.mock_image, "mockImageId": audit.mock_id, "runtime": audit.runtime_metadata,
                 "passed": error is None, "checks": audit.results, "error": error,
                 "observations": audit.observations, "fixtureRequests": records,
+                "fixtureConfigOwnership": audit.fixture_config_ownership,
                 "scope": {"trustedLocalAniListMock": True, "liveAniListTested": False, "privateAccountUsed": False,
                           "realLibraryTested": False, "downloadsTested": False, "tlsValidationDisabled": False,
                           "externalProviderRoutingEnabled": False, "mainConfigurationAccessed": False,
-                          "databaseInspection": "read-only, owned disposable configuration only"},
+                          "databaseInspection": "read-only plus one targeted legacy-settings seed in the owned stopped fixture"},
                 "cleanupComplete": cleanup_complete,
                 "keptData": str(audit.root) if args.keep and audit.root else None,
             }, indent=2) + "\n", encoding="utf-8")

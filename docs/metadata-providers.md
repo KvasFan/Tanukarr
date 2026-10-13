@@ -100,6 +100,18 @@ that the server will accept the next request. See AniList's
 and [Library tools](library-tools.md#pending-additions-and-the-development-reliability-update)
 for partial-progress and saved-list resume behavior.
 
+In the current `main` import-list editor, account-list states and anime release
+states remain their separate Import checkbox groups. Exclusion vetoes use only
+**Excluded Custom Lists**; the six separate account-status exclusion flags and
+their parser behavior were removed after the immutable 1.0.1 release. Public
+catalogue lookup and these account-list filters are separate workflows. See
+[AniList list configuration](library-tools.md#anilist-lists) for the simplified
+controls and handling of older saved settings.
+The duplicate legacy single-list textbox is not shown. Existing single-name
+restrictions are transferred into Included Custom Lists tags, with modern
+literal names preserved; removing a transferred tag does not reactivate a hidden
+legacy filter.
+
 ## The selected provider owns the series
 
 One metadata source owns each added series. Its provider/source and native

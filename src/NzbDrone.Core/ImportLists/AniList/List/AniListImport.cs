@@ -300,10 +300,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 var pageIndex = 1;
                 var continueTesting = true;
                 var matchingIds = new HashSet<int>();
-                var checkAllPages = Settings.ExcludedCustomLists?.Any() == true ||
-                                    Settings.ExcludeCurrent || Settings.ExcludePlanning ||
-                                    Settings.ExcludeCompleted || Settings.ExcludeDropped ||
-                                    Settings.ExcludePaused || Settings.ExcludeRepeating;
+                var checkAllPages = Settings.ExcludedCustomLists?.Any() == true;
 
                 // Anilist caps the result list to 50 items at maximum per query, so the data must be pulled in batches.
                 // The number of pages are not known upfront, so the fetch logic must be changed to look at the returned page data.

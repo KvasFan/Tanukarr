@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Alert from 'Components/Alert';
 import FormInputHelpText from 'Components/Form/FormInputHelpText';
 import ProviderFieldFormGroup from 'Components/Form/ProviderFieldFormGroup';
@@ -45,28 +51,49 @@ const FIELD_GROUPS = [
   },
   {
     title: 'AniListCustomLists',
-    names: ['includedCustomLists', 'excludedCustomLists', 'customList'],
-  },
-  {
-    title: 'AniListExcludeStatuses',
-    names: [
-      'excludeCurrent',
-      'excludePlanning',
-      'excludeCompleted',
-      'excludeDropped',
-      'excludePaused',
-      'excludeRepeating',
-    ],
+    names: ['includedCustomLists', 'excludedCustomLists'],
   },
 ];
 const GROUPED_FIELDS = new Set(FIELD_GROUPS.flatMap((group) => group.names));
+const REMOVED_LEGACY_FIELDS = new Set([
+  'customList',
+  'excludeCurrent',
+  'excludePlanning',
+  'excludeCompleted',
+  'excludeDropped',
+  'excludePaused',
+  'excludeRepeating',
+]);
 
 function AniListFieldGroups({
   providerData,
   advancedSettings,
   onChange,
 }: AniListFieldGroupsProps) {
-  const fields = providerData.fields ?? [];
+  const fields = useMemo(() => {
+    const incomingFields = providerData.fields ?? [];
+    const legacyValue = incomingFields.find(
+      (field) => field.name === 'customList'
+    )?.value;
+    const legacyName =
+      typeof legacyValue === 'string' ? legacyValue.trim() : '';
+
+    return incomingFields
+      .filter((field) => !REMOVED_LEGACY_FIELDS.has(field.name))
+      .map((field) =>
+        field.name === 'includedCustomLists' && legacyName
+          ? {
+              ...field,
+              value: [
+                ...new Set([
+                  ...(Array.isArray(field.value) ? field.value : []),
+                  legacyName,
+                ]),
+              ],
+            }
+          : field
+      );
+  }, [providerData.fields]);
   const username = fields.find((field) => field.name === 'username')?.value;
   const accessToken = fields.find(
     (field) => field.name === 'accessToken'
@@ -89,6 +116,23 @@ function AniListFieldGroups({
     setLoadFailed(false);
   }, [username, accessToken]);
 
+  const onFieldChange = useCallback(
+    (change: EnhancedSelectInputChanged<unknown>) => {
+      onChange(
+        change.name === 'includedCustomLists'
+          ? {
+              ...change,
+              additionalProperties: {
+                ...change.additionalProperties,
+                customList: '',
+              },
+            }
+          : change
+      );
+    },
+    [onChange]
+  );
+
   const onLoadCustomLists = useCallback(async () => {
     if (inFlight.current) {
       return;
@@ -97,7 +141,7 @@ function AniListFieldGroups({
     inFlight.current = true;
     setLoadFailed(false);
     const revision = accountRevision.current;
-    const requestBody = Object.fromEntries(
+    const requestBody: Record<string, unknown> = Object.fromEntries(
       Object.entries(providerData).map(([name, property]) => [
         name,
         property && typeof property === 'object' && 'value' in property
@@ -105,6 +149,7 @@ function AniListFieldGroups({
           : property,
       ])
     );
+    requestBody.fields = fields;
 
     try {
       const result = await mutateAsync(requestBody);
@@ -132,7 +177,7 @@ function AniListFieldGroups({
     } finally {
       inFlight.current = false;
     }
-  }, [mutateAsync, providerData]);
+  }, [fields, mutateAsync, providerData]);
 
   return (
     <>
@@ -146,7 +191,7 @@ function AniListFieldGroups({
               provider="importList"
               providerData={providerData}
               {...field}
-              onChange={onChange}
+              onChange={onFieldChange}
             />
           ))}
       </ModalSection>
@@ -184,7 +229,7 @@ function AniListFieldGroups({
                 providerData={providerData}
                 {...field}
                 tagSuggestions={suggestions}
-                onChange={onChange}
+                onChange={onFieldChange}
               />
             ) : null;
           })}

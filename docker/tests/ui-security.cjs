@@ -63,7 +63,7 @@ async function main(input) {
       await page.locator('#root').waitFor({ state: 'visible' });
       await page.getByRole('link', { name: 'Series', exact: true }).first().waitFor({ state: 'visible' });
     });
-    if (input.seriesId) {
+    if (input.seriesId && !input.menuOnly) {
       await check('native AniList series detail renders and complete-series modal alone issues its scoped search', async () => {
         let completeSearches = 0;
         const listener = (request) => {
@@ -95,27 +95,29 @@ async function main(input) {
         }
       });
     }
-    await check('Add Series separates TheTVDB, TMDB, AniList and MyAnimeList providers and performs native AniList lookup', async () => {
-      await page.goto(input.baseUrl + '/add/new');
-      const provider = page.locator('select[name="metadataSource"]');
-      await provider.waitFor({ state: 'visible' });
-      assert.deepEqual(await provider.locator('option').evaluateAll((options) => options.map((option) => option.value)),
-        ['tvdb', 'tmdb', 'aniList', 'myAnimeList']);
-      await provider.selectOption('aniList');
-      const responsePromise = page.waitForResponse((response) => {
-        const url = new URL(response.url());
-        return url.pathname === '/api/v5/series/lookup' && url.searchParams.get('metadataSource') === 'aniList';
-      }, { timeout: 90000 });
-      await page.locator('input[name="seriesLookup"]').fill('Cowboy Bebop');
-      const response = await responsePromise;
-      assert.equal(response.status(), 200);
-      const found = await response.json();
-      assert.ok(found.some((series) => series.metadataSource === 'aniList' && String(series.foreignId) === '1'));
-      await page.getByRole('link', { name: 'Cowboy Bebop', exact: true }).first().waitFor({ state: 'visible' });
-      await page.getByText('Metadata is provided by AniList', { exact: true }).first().waitFor({ state: 'visible' });
-      assert.ok(await page.locator('a[href="https://anilist.co/anime/1"]').count());
-      assert.equal(await page.locator('a[href*="thetvdb.com"][href*="id=-"]').count(), 0);
-    });
+    if (!input.menuOnly) {
+      await check('Add Series separates TheTVDB, TMDB, AniList and MyAnimeList providers and performs native AniList lookup', async () => {
+        await page.goto(input.baseUrl + '/add/new');
+        const provider = page.locator('select[name="metadataSource"]');
+        await provider.waitFor({ state: 'visible' });
+        assert.deepEqual(await provider.locator('option').evaluateAll((options) => options.map((option) => option.value)),
+          ['tvdb', 'tmdb', 'aniList', 'myAnimeList']);
+        await provider.selectOption('aniList');
+        const responsePromise = page.waitForResponse((response) => {
+          const url = new URL(response.url());
+          return url.pathname === '/api/v5/series/lookup' && url.searchParams.get('metadataSource') === 'aniList';
+        }, { timeout: 90000 });
+        await page.locator('input[name="seriesLookup"]').fill('Cowboy Bebop');
+        const response = await responsePromise;
+        assert.equal(response.status(), 200);
+        const found = await response.json();
+        assert.ok(found.some((series) => series.metadataSource === 'aniList' && String(series.foreignId) === '1'));
+        await page.getByRole('link', { name: 'Cowboy Bebop', exact: true }).first().waitFor({ state: 'visible' });
+        await page.getByText('Metadata is provided by AniList', { exact: true }).first().waitFor({ state: 'visible' });
+        assert.ok(await page.locator('a[href="https://anilist.co/anime/1"]').count());
+        assert.equal(await page.locator('a[href*="thetvdb.com"][href*="id=-"]').count(), 0);
+      });
+    }
     await check('AniList import-list editor distinguishes username/custom list, user-list status and media-release status', async () => {
       await page.goto(input.baseUrl + '/settings/importlists');
       await page.getByRole('button', { name: 'Add Import List', exact: true }).waitFor({ state: 'visible' });
@@ -124,7 +126,7 @@ async function main(input) {
       await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
       await page.getByRole('button', { name: 'Add Import List - AniList List', exact: true }).click();
       await page.locator('input[name="username"]').waitFor({ state: 'visible' });
-      await page.locator('input[name="customList"]').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('input[name="customList"]').count(), 0, 'Obsolete single-list textbox is still displayed');
       for (const name of ['importCurrent', 'importPlanning', 'importCompleted', 'importDropped', 'importPaused', 'importRepeating',
         'importFinished', 'importReleasing', 'importUnreleased', 'importCancelled', 'importHiatus']) {
         assert.equal(await page.locator('input[name="' + name + '"]').count(), 1, 'Missing distinct field ' + name);
@@ -134,13 +136,11 @@ async function main(input) {
       assert.equal(await page.locator('input[name="importCurrent"]').isChecked(), true);
       assert.equal(await page.locator('input[name="importFinished"]').isChecked(), true);
       await page.locator('input[name="username"]').fill('isolated-user');
-      await page.locator('input[name="customList"]').fill('Watching later');
       assert.equal(await page.locator('input[name="username"]').inputValue(), 'isolated-user');
-      assert.equal(await page.locator('input[name="customList"]').inputValue(), 'Watching later');
       if (input.artifactDirectory) await page.screenshot({ path: path.join(input.artifactDirectory, 'anilist-list-status-fields.png'), fullPage: true });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
     });
-    await check('AniList include/exclude controls preserve literal names and exclusion priority in the submitted settings', async () => {
+    await check('AniList custom-list exclusions preserve literal names while obsolete status exclusions are absent', async () => {
       const savedBefore = await context.request.get(input.baseUrl + '/api/v5/importlist', {
         headers: { 'X-Api-Key': input.apiKey },
       });
@@ -152,11 +152,11 @@ async function main(input) {
       const excluded = page.locator('input[name="excludedCustomLists"]');
       await included.waitFor({ state: 'visible' });
       await excluded.waitFor({ state: 'visible' });
-      for (const name of ['excludeCurrent', 'excludePlanning', 'excludeCompleted', 'excludeDropped', 'excludePaused', 'excludeRepeating']) {
-        const field = page.locator('input[name="' + name + '"]');
-        assert.equal(await field.count(), 1, 'Missing explicit status exclusion ' + name);
-        assert.equal(await field.isChecked(), false, 'New exclusion unexpectedly enabled');
+      const obsoleteStatusExclusions = ['excludeCurrent', 'excludePlanning', 'excludeCompleted', 'excludeDropped', 'excludePaused', 'excludeRepeating'];
+      for (const name of obsoleteStatusExclusions) {
+        assert.equal(await page.locator('input[name="' + name + '"]').count(), 0, 'Removed status exclusion is still displayed: ' + name);
       }
+      assert.equal(await page.getByText('Always exclude these list statuses', { exact: true }).count(), 0);
       const selectedName = 'Seasonal, favorites';
       const excludedName = 'Do not download, duplicates';
       await included.fill(selectedName);
@@ -174,9 +174,6 @@ async function main(input) {
       assert.equal(await page.getByText(selectedName, { exact: true }).count(), 2);
       assert.equal(await page.getByText(excludedName, { exact: true }).count(), 1);
       assert.equal(await page.locator('input[name="importCurrent"]').isChecked(), true);
-      // Sonarr draws the clickable checkbox over its native input.
-      await page.locator('input[name="excludeCurrent"]').locator('..').click();
-      assert.equal(await page.locator('input[name="excludeCurrent"]').isChecked(), true);
       await page.locator('input[name="username"]').fill('isolated-user');
       const testResponse = page.waitForResponse((response) =>
         /\/api\/v[35]\/importlist\/test\/?$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST');
@@ -188,7 +185,8 @@ async function main(input) {
       assert.deepEqual(fields.get('includedCustomLists'), [selectedName, 'Watching later']);
       assert.deepEqual(fields.get('excludedCustomLists'), [excludedName, selectedName]);
       assert.equal(fields.get('importCurrent'), true);
-      assert.equal(fields.get('excludeCurrent'), true);
+      assert.ok(obsoleteStatusExclusions.every((name) => !fields.has(name)), 'Removed status exclusions were submitted');
+      assert.ok(!fields.has('customList') || !fields.get('customList'), 'An obsolete hidden custom-list restriction was submitted');
       if (input.artifactDirectory) await page.screenshot({
         path: path.join(input.artifactDirectory, 'anilist-included-excluded-lists.png'), fullPage: true,
         style: 'input[type="password"] { visibility: hidden !important; }',
@@ -208,6 +206,7 @@ async function main(input) {
     await browser.close();
   }
   const report = { passed: failures.length === 0, browser: 'Chromium', playwrightVersion: require(path.join(input.playwrightModule, 'package.json')).version,
+    menuOnly: Boolean(input.menuOnly),
     checks: results, failures, pageErrors, forbiddenCloudRequests: cloudRequests, realLibraryTested: false, downloadsTested: false, privateAniListAccountTested: false };
   if (input.artifactDirectory) fs.writeFileSync(path.join(input.artifactDirectory, 'ui-security.json'), JSON.stringify(report, null, 2) + '\n');
   process.exitCode = failures.length ? 1 : 0;
