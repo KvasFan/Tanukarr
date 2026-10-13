@@ -337,6 +337,70 @@ namespace NzbDrone.Core.Test.AniList
         }
 
         [Test]
+        public void should_spread_a_low_remaining_shared_budget_until_the_advertised_reset()
+        {
+            var reset = new DateTimeOffset(_now.AddSeconds(40)).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
+            GivenResponses(false,
+                Response(HttpStatusCode.OK, "X-RateLimit-Remaining", "4", "X-RateLimit-Reset", reset),
+                Response(HttpStatusCode.OK));
+
+            Subject.Execute(_request);
+            AnotherInstance().Execute(_request);
+
+            _waits.Should().Equal(TimeSpan.FromSeconds(10));
+        }
+
+        [Test]
+        public void should_track_the_observed_remaining_budget_when_success_headers_omit_reset()
+        {
+            GivenResponses(false,
+                Response(HttpStatusCode.OK, "X-RateLimit-Remaining", "3"),
+                Response(HttpStatusCode.OK, "X-RateLimit-Remaining", "2"),
+                Response(HttpStatusCode.OK));
+
+            Subject.Execute(_request);
+            AnotherInstance().Execute(_request);
+            Subject.Execute(_request);
+
+            _waits.Should().Equal(TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(20));
+        }
+
+        [Test]
+        public void should_stop_remaining_budget_throttling_after_the_observed_window_expires()
+        {
+            GivenResponses(false,
+                Response(HttpStatusCode.OK, "X-RateLimit-Remaining", "1"),
+                Response(HttpStatusCode.OK));
+
+            Subject.Execute(_request);
+            _now += TimeSpan.FromSeconds(61);
+            AnotherInstance().Execute(_request);
+
+            _waits.Should().BeEmpty();
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void should_keep_remaining_budget_spacing_when_a_following_request_fails(bool networkFailure)
+        {
+            Exception exception = networkFailure
+                ? new WebException("Connection failed", WebExceptionStatus.ConnectFailure)
+                : new HttpException(_request, Response(HttpStatusCode.InternalServerError));
+            Mocker.GetMock<IHttpClient>()
+                .SetupSequence(client => client.Execute(It.IsAny<HttpRequest>()))
+                .Returns(Response(HttpStatusCode.OK, "X-RateLimit-Remaining", "3"))
+                .Throws(exception)
+                .Returns(Response(HttpStatusCode.OK));
+
+            Subject.Execute(_request);
+            Action failedRequest = () => AnotherInstance().Execute(_request);
+            failedRequest.Should().Throw<Exception>().Which.Should().BeSameAs(exception);
+            Subject.Execute(_request);
+
+            _waits.Should().Equal(TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(20));
+        }
+
+        [Test]
         public void should_allow_requests_after_a_long_shared_cooldown_expires()
         {
             GivenResponses(false,

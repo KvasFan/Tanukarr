@@ -241,6 +241,48 @@ name or a need to replace OAuth credentials. See the
 [request-limit verification report](anilist-rate-limit-verification-2026-10-13.md)
 and AniList's [official rate-limit documentation](https://github.com/AniList/docs/blob/master/docs/guide/rate-limiting.md).
 
+#### Pending additions and the development reliability update
+
+The post-1.0.0 development update preserves progress when metadata
+retrieval reaches a provider's request limit. In an automatic list-add batch,
+series with successfully prepared metadata are saved; HTTP 429 defers remaining
+entries from that source for this batch while other sources can continue.
+A transient metadata HTTP failure leaves that entry pending. The completion
+message counts series actually added, rather than all candidates attempted.
+Executed local checks and publication status are recorded in the
+[reliability checkpoint](anilist-react-reliability-2026-10-13.md).
+
+The normal **Import List Sync** task runs every five minutes. AniList's full
+account-list refresh interval remains **12 hours**. After a complete successful
+fetch witnessed in this running process, intervening ticks can retry pending
+metadata additions from the saved list without requesting its private pages
+again. This requires the same saved definition and settings, including account,
+OAuth fields, statuses, custom-list filters, root folder and tags; the recorded
+successful-sync timestamp must still match and the list must be enabled and
+unblocked. Settings changes, a failed or partial later fetch, or a restart
+invalidate this permission to resume. After restart, the saved membership stays
+in the database but a new complete fetch is required before this optimization
+can be used again.
+
+This never treats missing membership as empty or successful. Unknown inclusion
+or exclusion membership, malformed flags, GraphQL errors and incomplete list
+pagination retain the previous successful list. The five-minute retry is for
+pending metadata additions after a known complete list; it does not bypass
+account authorization, exclusions, the normal full-refresh interval or AniList's
+server cooldown. A complete successful response containing no eligible entries
+still updates the saved list normally. Existing Clean Library and automation
+pause settings remain separate controls.
+
+Public catalogue metadata is reused for up to five minutes and official
+relations for up to 15 minutes. The first metadata query also supplies the
+root's relations, and simultaneous requests for the same public item share one
+fetch. These bounded memory caches contain public catalogue data, not private
+account-list responses or OAuth credentials, and reset on restart. Pacing also
+uses the remaining server allowance to spread requests across its reset window;
+other applications using the same public IP can still cause HTTP 429. See
+[Metadata providers](metadata-providers.md#anilist-request-reuse-and-pagination)
+for cache and pagination limits.
+
 ### Custom-format groups
 
 Custom-format conditions with alternative group zero retain the existing shared

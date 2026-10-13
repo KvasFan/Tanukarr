@@ -60,6 +60,44 @@ are visible to the Linux Docker daemon, as described below. See the
 [dated verification report](../../docs/anime-season-groups-verification-2026-10-13.md)
 for the build and executed results rather than inferring a pass from this script.
 
+## Deterministic AniList quota and saved-list resume
+
+For a development image containing the newer AniList reliability changes, run
+with the same Python/Docker/OpenSSL prerequisites used by the grouping fixture:
+
+```sh
+python3 docker/tests/anilist-reliability.py --image tanukarr:verified \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report anilist-reliability-report.json
+```
+
+Select an already built local image with `--image`; the script does not build
+or pull it. It uses an owned internal network, a generated trusted test CA,
+synthetic AniList list/catalogue responses and a generated poster. It does not
+contact public AniList, use private settings/accounts, configure an indexer or
+download client, or acquire media. The fixed-destination relay exposes only the
+fixture API on a random loopback port, while the app and mock have no external
+route.
+
+The scenario checks that a terminal metadata HTTP 429 saves the successfully
+prepared first series and complete filtered list membership, then an automatic
+sync resumes pending additions without requesting account-list pages again.
+It also checks public metadata reuse during refresh. Changing the synthetic
+exclusion settings and returning unknown membership must preserve existing
+saved items and refuse stale additions. Clearing a cooldown or passing a Test
+must not recreate a complete-fetch witness; a later explicit complete fetch
+must apply the new filters normally. All IDs and credentials belong only to
+this invocation's disposable data.
+
+The [reliability checkpoint](../../docs/anilist-react-reliability-2026-10-13.md)
+records the final image's 12 passing checks and earlier fixture-helper failures.
+These checks use synthetic data; they are not a live-account or owner-library
+test. A different image or modified script needs its own recorded execution.
+The same final-image fixture also passed its 12 checks with actual host
+UID/GID 1001 and the supplementary Docker socket group, including cleanup.
+That runner-ownership repeat is separate evidence, not 12 additional distinct
+runtime cases.
+
 ## Native Nyaa search metadata
 
 Use an already built image to exercise native v5/v3 complete-series searches and
@@ -115,9 +153,10 @@ metadata ingestion or a real library.
 
 ## Docker workflow fixture prerequisites
 
-The Docker workflow runs smoke, functional/security, grouping/naming/AniList,
-reserved-title RSS and multi-season pack checks before publishing its tested
-image. The additional runtime checks use locally generated catalogue/RSS data;
+The development Docker workflow runs smoke, functional/security,
+grouping/naming/AniList, reserved-title RSS, multi-season pack and the newer
+AniList quota/resume checks before publishing its tested image. The additional
+runtime checks use locally generated catalogue/RSS data;
 live AniList/Jikan/Nyaa responses and private account credentials are not
 required. They remain distinct from optional public-provider investigation.
 
@@ -136,6 +175,9 @@ python3 docker/tests/nyaa-search.py --image tanukarr:local --fixture \
 python3 docker/tests/series-packs.py --image tanukarr:local \
   --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
   --report series-packs-report.json
+python3 docker/tests/anilist-reliability.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report anilist-reliability-report.json
 ```
 
 OpenSSL creates the grouping fixture's test CA. FFmpeg with `libx264` generates

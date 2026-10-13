@@ -36,6 +36,7 @@ namespace NzbDrone.Common.Test.Http
             var exception = Assert.ThrowsAsync<HttpException>(async () => await Subject.ExecuteAsync(request));
 
             exception.Response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+            SonarrCloudRequestPolicy.IsExpectedBlock(exception).Should().BeTrue();
             VerifyDispatchCount(Times.Never());
         }
 
@@ -102,6 +103,27 @@ namespace NzbDrone.Common.Test.Http
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             VerifyDispatchCount(Times.Once());
+        }
+
+        [TestCase("host")]
+        [TestCase("status")]
+        [TestCase("body")]
+        [TestCase("message")]
+        public void should_not_classify_unrelated_http_errors_as_expected_policy_blocks(string difference)
+        {
+            var blocked = Assert.Throws<HttpException>(() => SonarrCloudRequestPolicy.EnsureAllowed(new HttpRequest("https://services.sonarr.tv/v1/")));
+            var request = new HttpRequest(difference == "host" ? "https://example.test/" : "https://services.sonarr.tv/v1/");
+            var status = difference == "status" ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.Forbidden;
+            var response = new HttpResponse(request, new HttpHeader(), difference == "body" ? "Forbidden" : blocked.Response.Content, status);
+            var error = new HttpException(request, response, difference == "message" ? "Forbidden" : blocked.Message);
+
+            SonarrCloudRequestPolicy.IsExpectedBlock(error).Should().BeFalse();
+        }
+
+        [Test]
+        public void should_not_classify_a_missing_exception_as_a_policy_block()
+        {
+            SonarrCloudRequestPolicy.IsExpectedBlock(null).Should().BeFalse();
         }
 
         private void VerifyDispatchCount(Times times)

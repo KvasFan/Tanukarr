@@ -31,6 +31,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 Media(id: $id, type: ANIME) {
                     id
                     idMal
+                    type
                     title { romaji english native userPreferred }
                     synonyms
                     description(asHtml: false)
@@ -47,7 +48,26 @@ namespace NzbDrone.Core.MetadataSource.AniList
                     coverImage { extraLarge large }
                     bannerImage
                     studios { nodes { name isAnimationStudio } }
+                    relations {
+                        edges {
+                            relationType(version: 2)
+                            node { id type format }
+                        }
+                    }
                     airingSchedule(page: $page, perPage: 50) {
+                        pageInfo { currentPage hasNextPage }
+                        nodes { episode airingAt }
+                    }
+                }
+            }
+        ";
+
+        public const string AiringScheduleById = @"
+            query ($id: Int, $page: Int) {
+                Media(id: $id, type: ANIME) {
+                    id
+                    airingSchedule(page: $page, perPage: 50) {
+                        pageInfo { currentPage hasNextPage }
                         nodes { episode airingAt }
                     }
                 }

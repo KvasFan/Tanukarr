@@ -212,10 +212,10 @@ namespace NzbDrone.Core.ImportLists
                 }
             }
 
-            _addSeriesService.AddSeries(seriesToAdd, true);
+            var addedSeries = _addSeriesService.AddSeries(seriesToAdd, true);
             UpdateTagsOnPendingSeries(existingSeriesToUpdate);
 
-            _logger.ProgressInfo("Import List Sync Completed. Items found: {0}, Series added: {1}", items.Count, seriesToAdd.Count);
+            _logger.ProgressInfo("Import List Sync Completed. Items found: {0}, Series added: {1}", items.Count, addedSeries?.Count ?? 0);
         }
 
         private static bool SameSeries(Series first, Series second)

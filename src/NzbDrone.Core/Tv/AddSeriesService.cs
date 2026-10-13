@@ -7,6 +7,7 @@ using FluentValidation.Results;
 using NLog;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Http;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.MetadataSource.Grouping;
@@ -69,9 +70,15 @@ namespace NzbDrone.Core.Tv
             var added = DateTime.UtcNow;
             var seriesToAdd = new List<Series>();
             var existingSeriesTvdbIds = _seriesService.AllSeriesTvdbIds();
+            var throttledSources = new HashSet<MetadataSourceType>();
 
             foreach (var s in newSeries)
             {
+                if (ignoreErrors && throttledSources.Contains(s.MetadataSource))
+                {
+                    continue;
+                }
+
                 if (s.Path.IsNullOrWhiteSpace())
                 {
                     _logger.Info("Adding Series {0} Root Folder Path: [{1}]", s, s.RootFolderPath);
@@ -107,6 +114,20 @@ namespace NzbDrone.Core.Tv
                     }
 
                     seriesToAdd.Add(series);
+                }
+                catch (TooManyRequestsException) when (ignoreErrors)
+                {
+                    // Keep the metadata already prepared and stop spending this provider's
+                    // shared allowance. The complete import-list snapshot remains available
+                    // for a later sync; other metadata providers can still make progress.
+                    throttledSources.Add(s.MetadataSource);
+                    _logger.Warn("Metadata source {0} reached its request limit. Prepared series will be saved; pending entries will be retried by a later list sync.", s.MetadataSource);
+                }
+                catch (HttpException) when (ignoreErrors)
+                {
+                    // A transient provider failure must not discard earlier successful
+                    // entries or expose provider response bodies in an import-list log.
+                    _logger.Warn("Metadata could not be retrieved from {0}. This entry remains pending for a later list sync.", s.MetadataSource);
                 }
                 catch (ValidationException ex)
                 {

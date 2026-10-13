@@ -44,6 +44,10 @@ namespace NzbDrone.Core.HealthCheck.Checks
                         "#system-time-off");
                 }
             }
+            catch (HttpException e) when (SonarrCloudRequestPolicy.IsExpectedBlock(e))
+            {
+                _logger.Debug("The shared Sonarr clock service is disabled by this fork's cloud policy");
+            }
             catch (Exception e)
             {
                 _logger.Warn(e, "Unable to verify system time");

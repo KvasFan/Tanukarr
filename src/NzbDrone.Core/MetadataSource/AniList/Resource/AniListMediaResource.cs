@@ -68,6 +68,7 @@ namespace NzbDrone.Core.MetadataSource.AniList.Resource
         public AniListAiringScheduleConnection AiringSchedule { get; set; }
         public string Type { get; set; }
         public AniListRelationConnection Relations { get; set; }
+        internal bool ScheduleIsComplete { get; set; }
     }
 
     public class AniListRelationConnection
@@ -115,7 +116,14 @@ namespace NzbDrone.Core.MetadataSource.AniList.Resource
 
     public class AniListAiringScheduleConnection
     {
+        public AniListPageInfoResource PageInfo { get; set; }
         public List<AniListAiringScheduleResource> Nodes { get; set; }
+    }
+
+    public class AniListPageInfoResource
+    {
+        public int? CurrentPage { get; set; }
+        public bool? HasNextPage { get; set; }
     }
 
     public class AniListAiringScheduleResource

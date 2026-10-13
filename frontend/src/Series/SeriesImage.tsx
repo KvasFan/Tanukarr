@@ -5,9 +5,29 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import LazyLoad from 'react-lazyload';
+import LazyLoadExport from 'react-lazyload';
 import translate from 'Utilities/String/translate';
 import { CoverType, Image } from './Series';
+
+function getLazyLoadComponent(value: unknown): typeof LazyLoadExport {
+  if (typeof value === 'function') {
+    return value as typeof LazyLoadExport;
+  }
+
+  // Rolldown's Node interop exposes this CommonJS package as a namespace.
+  if (
+    value &&
+    typeof value === 'object' &&
+    'default' in value &&
+    typeof value.default === 'function'
+  ) {
+    return value.default as typeof LazyLoadExport;
+  }
+
+  throw new TypeError('react-lazyload did not export a component');
+}
+
+const LazyLoad = getLazyLoadComponent(LazyLoadExport);
 
 function findImage(images: Image[], coverType: CoverType) {
   return images.find((image) => image.coverType === coverType);

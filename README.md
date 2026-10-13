@@ -150,6 +150,14 @@ fallback accepts explicit valid flags when AniList's normal map is unavailable;
 unknown membership retains the previous list. Loading names or testing unsaved
 settings does not save or sync the connection.
 
+The post-release development reliability update adds progress-preserving metadata
+imports, eligible saved-list retries on the normal five-minute task and bounded
+public metadata/relation reuse. It retains the existing exclusion safeguards;
+the immutable 1.0.0 release remains unchanged. See the
+[reliability checkpoint](docs/anilist-react-reliability-2026-10-13.md) for executed
+local checks and publication status, and [Library tools](docs/library-tools.md#pending-additions-and-the-development-reliability-update)
+for the retry conditions.
+
 AniList account-list membership (Watching/Planning/Completed/etc.), anime release
 status (Releasing/Finished/etc.) and custom-list membership are separate filters.
 All configured filters apply together. A native AniList item retains its own

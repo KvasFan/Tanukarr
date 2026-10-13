@@ -32,16 +32,20 @@ namespace NzbDrone.Core.MetadataSource.AniList
         // Long series need several schedule pages. Keep the work per refresh bounded;
         // the shared request service enforces AniList's current rate limits.
         private const int MaxAiringSchedulePages = 20;
+        private static readonly TimeSpan MetadataCacheLifetime = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan RelationCacheLifetime = TimeSpan.FromMinutes(15);
 
         // AniList descriptions carry a little HTML even with asHtml: false.
         private static readonly Regex HtmlTagRegex = new Regex(@"<[^>]+>", RegexOptions.Compiled);
 
         private readonly IAniListRequestService _aniListRequestService;
+        private readonly AniListMetadataCache _metadataCache;
         private readonly Logger _logger;
 
-        public AniListProxy(IAniListRequestService aniListRequestService, Logger logger)
+        public AniListProxy(IAniListRequestService aniListRequestService, AniListMetadataCache metadataCache, Logger logger)
         {
             _aniListRequestService = aniListRequestService;
+            _metadataCache = metadataCache;
             _logger = logger;
         }
 
@@ -54,12 +58,22 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 return null;
             }
 
+            return _metadataCache.Get("relations:" + id, () => FetchAnimeRelations(id), RelationCacheLifetime);
+        }
+
+        private AnimeRelationNode FetchAnimeRelations(int id)
+        {
             var response = Query<AniListMediaResponse>(AniListQueries.RelationsById, new { id });
             var media = response?.Data?.Media;
 
             // GraphQL can report partial data with HTTP 200. A missing relationship field
             // must not be mistaken for an empty, authoritative chain or a single branch.
-            if (response?.Errors?.Count > 0 || media == null || media.Id != id || media.Type != "ANIME" ||
+            return response?.Errors?.Count > 0 ? null : MapRelations(media, id);
+        }
+
+        private static AnimeRelationNode MapRelations(AniListMediaResource media, int id)
+        {
+            if (media == null || media.Id != id || media.Type != "ANIME" ||
                 media.Format.IsNullOrWhiteSpace() || media.Relations?.Edges == null)
             {
                 return null;
@@ -95,7 +109,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 ? series.ForeignId
                 : series.AniListIds?.FirstOrDefault().ToString();
 
-            if (!int.TryParse(foreignId, out var aniListId))
+            if (!int.TryParse(foreignId, out var aniListId) || aniListId <= 0)
             {
                 throw new SeriesNotFoundException(series.TvdbId, "Series has no AniList id");
             }
@@ -105,6 +119,11 @@ namespace NzbDrone.Core.MetadataSource.AniList
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(int aniListId)
         {
+            if (aniListId <= 0)
+            {
+                throw new SeriesNotFoundException(0, "Series has no valid AniList id");
+            }
+
             var media = FetchMedia(aniListId);
 
             if (media == null)
@@ -120,35 +139,79 @@ namespace NzbDrone.Core.MetadataSource.AniList
 
         private AniListMediaResource FetchMedia(int aniListId)
         {
-            var media = Query<AniListMediaResponse>(AniListQueries.MediaById, new { id = aniListId, page = 1 })?.Data?.Media;
+            return _metadataCache.Get("media:" + aniListId, () => FetchMediaUncached(aniListId), MetadataCacheLifetime, media => media.ScheduleIsComplete);
+        }
+
+        private AniListMediaResource FetchMediaUncached(int aniListId)
+        {
+            var first = Query<AniListMediaResponse>(AniListQueries.MediaById, new { id = aniListId, page = 1 });
+            var media = ValidateMetadataPage(first, aniListId, 1);
 
             if (media == null)
             {
                 return null;
             }
 
+            // A metadata add is normally followed by grouping and refresh. Reuse
+            // the authoritative root relations already included in this response.
+            _metadataCache.Set("relations:" + aniListId, MapRelations(media, aniListId), RelationCacheLifetime);
+
             // The first page of the airing schedule covers 50 episodes. Anything longer,
             // which is the case this provider exists for, needs the remaining pages.
             var page = 2;
+            var hasNextPage = HasNextSchedulePage(media.AiringSchedule);
 
-            while (media.AiringSchedule?.Nodes != null &&
-                   media.AiringSchedule.Nodes.Count >= 50 * (page - 1) &&
-                   page <= MaxAiringSchedulePages)
+            while (hasNextPage && page <= MaxAiringSchedulePages)
             {
-                var next = Query<AniListMediaResponse>(AniListQueries.MediaById, new { id = aniListId, page })?.Data?.Media;
-
+                var response = Query<AniListMediaResponse>(AniListQueries.AiringScheduleById, new { id = aniListId, page });
+                var next = ValidateMetadataPage(response, aniListId, page);
                 var nodes = next?.AiringSchedule?.Nodes;
 
-                if (nodes == null || nodes.Count == 0)
+                if (nodes == null)
                 {
-                    break;
+                    throw IncompleteMetadataException();
                 }
 
+                hasNextPage = HasNextSchedulePage(next.AiringSchedule);
                 media.AiringSchedule.Nodes.AddRange(nodes);
                 page++;
             }
 
+            // Keep the existing bounded schedule behavior for very long series,
+            // but do not retain a schedule truncated at the page limit in cache.
+            media.ScheduleIsComplete = !hasNextPage;
             return media;
+        }
+
+        private static AniListMediaResource ValidateMetadataPage(AniListMediaResponse response, int aniListId, int page)
+        {
+            var media = response?.Data?.Media;
+            var pageInfo = media?.AiringSchedule?.PageInfo;
+
+            if (response == null || response.Errors?.Count > 0 ||
+                (media != null && media.Id != aniListId) ||
+                (pageInfo?.CurrentPage.HasValue == true && pageInfo.CurrentPage != page) ||
+                (pageInfo != null && !pageInfo.HasNextPage.HasValue) ||
+                (pageInfo?.HasNextPage == true && media.AiringSchedule.Nodes?.Count is not > 0))
+            {
+                throw IncompleteMetadataException();
+            }
+
+            return media;
+        }
+
+        private static bool HasNextSchedulePage(AniListAiringScheduleConnection schedule)
+        {
+            // hasNextPage is the reliable AniList boundary. Older recorded responses
+            // omit pageInfo, so retain the conservative 50-item fallback for those.
+            return schedule?.PageInfo?.HasNextPage ?? schedule?.Nodes?.Count == 50;
+        }
+
+        private static HttpException IncompleteMetadataException()
+        {
+            var request = new HttpRequest(AniListQueries.BaseUrl) { Method = HttpMethod.Post };
+            var response = new HttpResponse(request, new HttpHeader(), "AniList returned incomplete metadata. Retry later; existing metadata has not been replaced.", HttpStatusCode.ServiceUnavailable);
+            return new HttpException(request, response);
         }
 
         private Series MapSeries(AniListMediaResource media)

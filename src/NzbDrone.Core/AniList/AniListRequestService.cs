@@ -68,10 +68,24 @@ namespace NzbDrone.Core.AniList
 
                     // Failed HTTP requests can still consume the server allowance.
                     // Reserve a known lower budget before dispatch, including errors.
-                    if (_state.AdvertisedInterval > RequestInterval)
+                    var effectiveInterval = EffectiveInterval();
+
+                    if (effectiveInterval > RequestInterval)
                     {
-                        var nextRequest = _state.LastRequestAt.Add(_state.AdvertisedInterval);
+                        var nextRequest = _state.LastRequestAt.Add(effectiveInterval);
                         _state.NotBefore = nextRequest > _state.NotBefore ? nextRequest : _state.NotBefore;
+                    }
+
+                    if (_state.BudgetResetAt > _delay.UtcNow && _state.LastRemaining > 0)
+                    {
+                        // Reserve a response-observed allowance even when the next
+                        // request fails before returning updated quota headers.
+                        _state.LastRemaining--;
+
+                        if (_state.LastRemaining == 0 && _state.BudgetResetAt > _state.NotBefore)
+                        {
+                            _state.NotBefore = _state.BudgetResetAt;
+                        }
                     }
 
                     HttpResponse response;
@@ -140,6 +154,8 @@ namespace NzbDrone.Core.AniList
 
         private void UpdateAdvertisedBudget(HttpResponse response)
         {
+            var now = _delay.UtcNow;
+
             if (int.TryParse(response.Headers["X-RateLimit-Limit"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var limit) && limit > 0)
             {
                 // A lower advertised allowance needs wider spacing. Never speed up
@@ -148,15 +164,67 @@ namespace NzbDrone.Core.AniList
                 _state.AdvertisedInterval = interval > RequestInterval ? interval : RequestInterval;
             }
 
-            if (_state.AdvertisedInterval > RequestInterval)
+            if (int.TryParse(response.Headers["X-RateLimit-Remaining"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var remaining) && remaining >= 0)
             {
-                var nextRequest = _delay.UtcNow.Add(_state.AdvertisedInterval);
+                var reset = GetResetTime(response);
+
+                if (reset > now)
+                {
+                    _state.BudgetResetAt = reset;
+                }
+                else if (_state.BudgetResetAt <= now || remaining > _state.LastRemaining)
+                {
+                    // Successful AniList responses often omit reset. Track the
+                    // observed window instead of assuming each request starts one.
+                    _state.BudgetResetAt = now.Add(DefaultCooldown);
+                }
+
+                _state.LastRemaining = remaining;
+                _state.BudgetInterval = remaining > 0
+                    ? TimeSpan.FromTicks((_state.BudgetResetAt - now).Ticks / remaining)
+                    : RequestInterval;
+            }
+
+            var effectiveInterval = EffectiveInterval();
+
+            if (effectiveInterval > RequestInterval)
+            {
+                var nextRequest = now.Add(effectiveInterval);
 
                 if (nextRequest > _state.NotBefore)
                 {
                     _state.NotBefore = nextRequest;
                 }
             }
+        }
+
+        private TimeSpan EffectiveInterval()
+        {
+            if (_state.BudgetResetAt <= _delay.UtcNow)
+            {
+                _state.BudgetInterval = RequestInterval;
+            }
+
+            return _state.AdvertisedInterval > _state.BudgetInterval
+                ? _state.AdvertisedInterval
+                : _state.BudgetInterval;
+        }
+
+        private static DateTime GetResetTime(HttpResponse response)
+        {
+            if (long.TryParse(response.Headers["X-RateLimit-Reset"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var resetSeconds))
+            {
+                try
+                {
+                    return DateTimeOffset.FromUnixTimeSeconds(resetSeconds).UtcDateTime;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    // An invalid timestamp cannot override the observed budget.
+                }
+            }
+
+            return default;
         }
 
         private void ExtendCooldown(HttpResponse response)
@@ -227,6 +295,9 @@ namespace NzbDrone.Core.AniList
             public DateTime NotBefore { get; set; }
             public DateTime LastRequestAt { get; set; }
             public TimeSpan AdvertisedInterval { get; set; } = RequestInterval;
+            public DateTime BudgetResetAt { get; set; }
+            public int LastRemaining { get; set; }
+            public TimeSpan BudgetInterval { get; set; } = RequestInterval;
         }
     }
 }

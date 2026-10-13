@@ -65,6 +65,41 @@ The TMDB import-list providers described in [Library tools](library-tools.md)
 use a TMDB API Read Access Token. Keep that import-list token separate from the
 v3 key used by the metadata/episode-group client.
 
+## AniList request reuse and pagination
+
+The post-1.0.0 development reliability update uses short-lived public
+AniList caches: **five minutes for catalogue metadata** and **15 minutes for
+official relations**. Concurrent requests for the same public key share one
+fetch across provider instances, and each caller receives its own object graph.
+The initial metadata query includes root relations; later airing-schedule pages
+request the schedule rather than repeat the complete metadata selection.
+This reduces duplicate requests when addition is followed by grouping and
+refresh. Private account-list responses and OAuth credentials do not enter
+these public caches. Executed local verification is recorded in the
+[reliability checkpoint](anilist-react-reliability-2026-10-13.md).
+
+The cache is bounded to 512 entries and 512 KiB per entry. Null/error responses
+and incomplete metadata schedules are not retained as reusable metadata.
+Pagination checks GraphQL errors, the requested media identity and the returned
+page boundary. `hasNextPage` controls continuation; a conservative 50-node
+fallback remains for older recorded responses that omit `pageInfo`. A supplied
+page-info object with an unknown continuation flag is rejected. The existing
+20-page airing-schedule cap remains; a result that reaches the cap before
+completion is not stored in the metadata cache. These bounds do not promise
+complete episode detail for every catalogue entry. AniList's nullable optional
+airing-schedule field may legitimately be absent; that alone is not treated as
+a malformed response or proof that the series was removed. AniList documents its
+[pagination boundary](https://github.com/AniList/docs/blob/master/docs/guide/graphql/pagination.md).
+
+Request pacing shares the allowance across public metadata, relations, searches
+and account-list operations. It honors server retry/reset headers and spreads
+calls when little allowance remains, using the observed window when a reset
+header is absent. Caching and pacing reduce duplicate work; they do not guarantee
+that the server will accept the next request. See AniList's
+[rate-limit documentation](https://github.com/AniList/docs/blob/master/docs/guide/rate-limiting.md)
+and [Library tools](library-tools.md#pending-additions-and-the-development-reliability-update)
+for partial-progress and saved-list resume behavior.
+
 ## The selected provider owns the series
 
 One metadata source owns each added series. Its provider/source and native

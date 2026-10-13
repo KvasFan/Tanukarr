@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Text;
 using Moq;
 using NUnit.Framework;
@@ -63,6 +64,18 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
             Subject.Check().ShouldBeOk();
 
             Mocker.GetMock<IHttpClient>().Verify(s => s.Execute(It.IsAny<HttpRequest>()), Times.Never());
+        }
+
+        [Test]
+        public void should_still_warn_when_a_permitted_clock_service_request_fails()
+        {
+            Mocker.GetMock<IHttpClient>().Setup(client => client.Execute(It.IsAny<HttpRequest>()))
+                .Returns((HttpRequest request) => throw new HttpException(request,
+                    new HttpResponse(request, new HttpHeader(), "Clock service unavailable", HttpStatusCode.ServiceUnavailable)));
+
+            Subject.Check().ShouldBeOk();
+
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Once());
             ExceptionVerification.ExpectedWarns(1);
         }
     }

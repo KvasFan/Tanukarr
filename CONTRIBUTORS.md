@@ -46,6 +46,13 @@ local commit makes their original author name unreachable from HEAD.
   the Add New Series modal on initial settings mount. It also implements the
   subsequent official-relation/manual anime season groups, library presentation,
   generated season directories and English feature documentation.
+  The later reliability work adds bounded public AniList metadata/relation
+  reuse, quota-aware pacing, progress-preserving list additions, guarded
+  saved-membership resume and precise handling of intentionally blocked Sonarr
+  cloud requests, with regression fixtures and English checkpoint documentation.
+  It also diagnoses the cover-bearing library's CommonJS component export
+  failure and adapts the inherited frontend dependency boundary with focused
+  regression and browser checks; verification scope is recorded separately.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -57,6 +64,7 @@ local commit makes their original author name unreachable from HEAD.
 | Local integration, SonarrWeeb 0.0.1/0.1.0 and Tanukarr 1.0.0 packaging/documentation, Jellyfin refresh, AniList controls and request-limit recovery, Nyaa query encoding and Tanuki asset integration | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | TV/anime positioning and provider guide, metadata workflow/ordering audit, Add New Series recommended-type correction and regression checks | OpenAI Codex, based on GPT-6 | Same local coding session; the post-release correction does not change the immutable 1.0.0 tag |
 | Post-release official-relation/manual anime season and movie groups, configurable season/arc/movie folders and native group-file tokens, per-member library presentation, pack-only season search, AniList name autocomplete/typed membership compatibility, regression checks and English guides | OpenAI Codex, based on GPT-6 | Same local coding session; AniList/Jikan relationship data and original provider authors remain separately credited |
+| Subsequent AniList public metadata/relation cache and pacing, partial metadata-import progress, guarded saved-list resume, expected cloud-policy handling, cover-bearing frontend CommonJS interoperability, sanitized log audit, regression fixtures and English reliability documentation | OpenAI Codex, based on GPT-6 | Same local coding session; implementation and verification status are recorded separately in the new checkpoint; no exact model variant is established |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -251,6 +259,20 @@ above. The design follows **AniList contributors'** official request-limit
 documentation and reuses Sonarr's existing rate-limit service. See the
 [request-limit verification checkpoint](docs/anilist-rate-limit-verification-2026-10-13.md)
 for the reported failure, reproduction and executed checks.
+
+The subsequent reliability adaptation also used **OpenAI Codex, based on
+GPT-6**. It reuses public AniList metadata/relations, improves remaining-quota
+pacing, preserves successful entries in a partially throttled import batch and
+permits guarded retries from a witnessed complete saved list. It also narrows
+expected disabled-cloud-service logging without re-enabling those services.
+The original batch staging and validation-only exception handling were present
+in upstream Sonarr before these adaptations; this is not an attribution of that
+inherited behavior to a fork contributor. AniList contributors maintain the
+request-limit and pagination contract; **Xabis** and the inherited metadata
+provider authors above retain their original credits. See the
+[new reliability checkpoint](docs/anilist-react-reliability-2026-10-13.md) for
+implemented scope and verification status. Its results do not revise earlier
+release checkpoints.
 
 ### Nyaa RSS search and reserved-title query encoding
 

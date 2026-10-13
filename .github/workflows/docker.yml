@@ -114,6 +114,12 @@ jobs:
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --report "${RUNNER_TEMP}/tanukarr-series-packs.json"
 
+      - name: Isolated AniList quota recovery and safe membership resume
+        run: |
+          python3 docker/tests/anilist-reliability.py --image tanukarr:verified \
+            --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-anilist-reliability.json"
+
       - name: Upload verification reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -125,6 +131,7 @@ jobs:
             ${{ runner.temp }}/tanukarr-groups.json
             ${{ runner.temp }}/tanukarr-nyaa-fixture.json
             ${{ runner.temp }}/tanukarr-series-packs.json
+            ${{ runner.temp }}/tanukarr-anilist-reliability.json
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry

@@ -5,7 +5,9 @@ using FizzWare.NBuilder;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using NzbDrone.Common.Cloud;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Http;
 using NzbDrone.Core.DataAugmentation.Scene;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Test.Common;
@@ -80,6 +82,69 @@ namespace NzbDrone.Core.Test.DataAugmentation.Scene
 
             AssertNoUpdate();
 
+            ExceptionVerification.ExpectedErrors(1);
+        }
+
+        [Test]
+        public void should_retain_cached_mappings_when_the_shared_cloud_provider_is_deliberately_disabled()
+        {
+            GivenProviders(new[] { _provider1 });
+            _provider1.Setup(provider => provider.GetSceneMappings()).Returns(() =>
+            {
+                SonarrCloudRequestPolicy.EnsureAllowed(new HttpRequest("https://services.sonarr.tv/v1/scenemapping"));
+                return new List<SceneMapping>();
+            });
+            Mocker.GetMock<ISceneMappingRepository>().Setup(repository => repository.All()).Returns(_fakeMappings);
+
+            Subject.Execute(new UpdateSceneMappingCommand());
+
+            AssertNoUpdate();
+            Subject.FindByTvdbId(_fakeMappings[0].TvdbId).Should().Contain(_fakeMappings[0]);
+        }
+
+        [Test]
+        public void should_keep_a_disabled_provider_mapping_while_other_providers_update()
+        {
+            var disabled = new DisabledCloudSceneMappingProvider();
+            Mocker.SetConstant<IEnumerable<ISceneMappingProvider>>(new[] { disabled, (ISceneMappingProvider)_provider2.Object });
+            var retained = new SceneMapping
+            {
+                Id = 100,
+                TvdbId = 100,
+                MappingId = "retained-cloud-mapping",
+                Title = "Retained cloud alias",
+                SearchTerm = "Retained cloud alias",
+                ParseTerm = "retainedcloudalias",
+                Type = nameof(DisabledCloudSceneMappingProvider)
+            };
+            var stored = new List<SceneMapping> { retained };
+            Mocker.GetMock<ISceneMappingRepository>().Setup(repository => repository.All()).Returns(stored);
+            Mocker.GetMock<ISceneMappingRepository>().Setup(repository => repository.InsertMany(It.IsAny<IList<SceneMapping>>()))
+                .Callback<IList<SceneMapping>>(mappings => stored.AddRange(mappings));
+
+            Subject.Execute(new UpdateSceneMappingCommand());
+
+            _provider2.Verify(provider => provider.GetSceneMappings(), Times.Once());
+            Mocker.GetMock<ISceneMappingRepository>().Verify(repository => repository.GetAllByType(nameof(DisabledCloudSceneMappingProvider)), Times.Never());
+            Mocker.GetMock<ISceneMappingRepository>().Verify(repository => repository.DeleteMany(It.Is<List<SceneMapping>>(mappings => mappings.Contains(retained))), Times.Never());
+            Mocker.GetMock<ISceneMappingRepository>().Verify(repository => repository.InsertMany(It.Is<IList<SceneMapping>>(mappings => mappings.Count == _fakeMappings.Count)), Times.Once());
+            Subject.FindByTvdbId(100).Should().Contain(retained);
+            Subject.FindByTvdbId(_fakeMappings[0].TvdbId).Should().Contain(_fakeMappings[0]);
+        }
+
+        [Test]
+        public void should_still_log_and_retain_mappings_on_an_unrelated_forbidden_response()
+        {
+            GivenProviders(new[] { _provider1 });
+            var request = new HttpRequest("https://example.test/scenemapping");
+            _provider1.Setup(provider => provider.GetSceneMappings()).Throws(new HttpException(request,
+                new HttpResponse(request, new HttpHeader(), "Forbidden", HttpStatusCode.Forbidden)));
+            Mocker.GetMock<ISceneMappingRepository>().Setup(repository => repository.All()).Returns(_fakeMappings);
+
+            Subject.Execute(new UpdateSceneMappingCommand());
+
+            AssertNoUpdate();
+            Subject.FindByTvdbId(_fakeMappings[0].TvdbId).Should().Contain(_fakeMappings[0]);
             ExceptionVerification.ExpectedErrors(1);
         }
 
@@ -393,6 +458,15 @@ namespace NzbDrone.Core.Test.DataAugmentation.Scene
             {
                 Subject.GetSceneNames(sceneMapping.TvdbId, _fakeMappings.Select(m => m.SeasonNumber.Value).Distinct().ToList(), new List<int>()).Should().Contain(sceneMapping.SearchTerm);
                 Subject.FindTvdbId(sceneMapping.ParseTerm, null, sceneMapping.SceneSeasonNumber ?? -1).Should().Be(sceneMapping.TvdbId);
+            }
+        }
+
+        private sealed class DisabledCloudSceneMappingProvider : ISceneMappingProvider
+        {
+            public List<SceneMapping> GetSceneMappings()
+            {
+                SonarrCloudRequestPolicy.EnsureAllowed(new HttpRequest("https://services.sonarr.tv/v1/scenemapping"));
+                return new List<SceneMapping>();
             }
         }
     }

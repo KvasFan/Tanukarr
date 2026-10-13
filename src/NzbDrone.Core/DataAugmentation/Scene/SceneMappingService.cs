@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Cache;
+using NzbDrone.Common.Cloud;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Http;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser;
@@ -204,6 +206,10 @@ namespace NzbDrone.Core.DataAugmentation.Scene
                     {
                         _logger.Warn("Received empty list of mapping. will not update");
                     }
+                }
+                catch (HttpException ex) when (SonarrCloudRequestPolicy.IsExpectedBlock(ex))
+                {
+                    _logger.Debug("The shared Sonarr scene mapping service is disabled by this fork's cloud policy; existing mappings are retained");
                 }
                 catch (Exception ex)
                 {
