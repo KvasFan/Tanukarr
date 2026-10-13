@@ -7,6 +7,7 @@ using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Exceptions;
+using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MetadataSource.Grouping;
@@ -56,7 +57,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
             // Jikan limiter and canonical cache-friendly URL; no episode pages are read.
             var anime = Get<JikanAnimeResponse>($"/anime/{id}/full")?.Data;
 
-            if (anime == null)
+            if (anime == null || anime.MalId != id || anime.Title.IsNullOrWhiteSpace())
             {
                 return null;
             }
@@ -86,7 +87,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 ? series.ForeignId
                 : series.MalIds?.FirstOrDefault().ToString();
 
-            if (!int.TryParse(foreignId, out var malId))
+            if (!int.TryParse(foreignId, out var malId) || malId <= 0)
             {
                 throw new SeriesNotFoundException(series.TvdbId, "Series has no MyAnimeList id");
             }
@@ -96,9 +97,14 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(int malId)
         {
+            if (malId <= 0)
+            {
+                throw new SeriesNotFoundException(0, "Series has no valid MyAnimeList ID");
+            }
+
             var anime = Get<JikanAnimeResponse>($"/anime/{malId}/full")?.Data;
 
-            if (anime == null)
+            if (anime == null || anime.MalId != malId || anime.Title.IsNullOrWhiteSpace())
             {
                 throw new SeriesNotFoundException(0, "Series not found on MyAnimeList: {0}", malId);
             }
@@ -134,6 +140,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
                     break;
                 }
+                catch (RequestLimitReachedException)
+                {
+                    _logger.Warn("Jikan is cooling down; using the declared episode count for MyAnimeList series {0}", malId);
+                    break;
+                }
 
                 if (response?.Data == null || response.Data.Count == 0)
                 {
@@ -142,7 +153,14 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
                 foreach (var resource in response.Data)
                 {
-                    episodes.Add(MapEpisode(resource, episodes.Count + 1, runtime));
+                    if (resource != null)
+                    {
+                        var episode = MapEpisode(resource, episodes.Count + 1, runtime);
+                        if (episodes.All(existing => existing.EpisodeNumber != episode.EpisodeNumber))
+                        {
+                            episodes.Add(episode);
+                        }
+                    }
                 }
 
                 if (response.Pagination?.HasNextPage != true)
@@ -166,15 +184,21 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         {
             var declared = anime.Type == "Movie" ? Math.Max(anime.Episodes ?? 0, 1) : anime.Episodes ?? 0;
 
-            if (declared <= episodes.Count)
+            var existingNumbers = episodes.Select(episode => episode.EpisodeNumber).ToHashSet();
+            if (declared <= 0)
             {
                 return episodes;
             }
 
-            _logger.Debug("Filling {0} episodes of {1} that the episode list did not cover", declared - episodes.Count, anime.MalId);
+            _logger.Debug("Filling missing episode numbers up to {0} for MyAnimeList series {1}", declared, anime.MalId);
 
-            for (var number = episodes.Count + 1; number <= declared; number++)
+            for (var number = 1; number <= declared; number++)
             {
+                if (existingNumbers.Contains(number))
+                {
+                    continue;
+                }
+
                 episodes.Add(new Episode
                 {
                     ForeignId = string.Format("{0}:{1}", anime.MalId, number),
@@ -187,7 +211,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 });
             }
 
-            return episodes;
+            return episodes.OrderBy(episode => episode.EpisodeNumber).ToList();
         }
 
         private static Episode MapEpisode(JikanEpisodeResource resource, int number, int runtime)
@@ -329,17 +353,20 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         private T Get<T>(string resource)
             where T : new()
         {
-            _rateLimiter.WaitForSlot();
-
             var request = new HttpRequestBuilder(BaseUrl + resource).Build();
 
             request.AllowAutoRedirect = true;
             request.SuppressHttpError = true;
-
-            var response = _httpClient.Get<T>(request);
-
-            if (response.HasHttpError)
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            for (var attempt = 1; attempt <= 3; attempt++)
             {
+                _rateLimiter.WaitForSlot();
+                var response = _httpClient.Get<T>(request);
+                if (!response.HasHttpError)
+                {
+                    return response.Resource;
+                }
+
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     throw new SeriesNotFoundException(0, "Series not found on MyAnimeList: {0}", resource);
@@ -347,15 +374,19 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
                 if (response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    // The limiter should prevent this; if it happens the service is under
-                    // load and retrying immediately would make it worse.
-                    _logger.Warn("Jikan rate limit hit despite throttling, backing off");
+                    var limited = new TooManyRequestsException(request, response);
+                    var wait = limited.RetryAfter > TimeSpan.Zero ? limited.RetryAfter : TimeSpan.FromSeconds(5);
+                    _rateLimiter.BackOff(wait);
+                    if (attempt < 3 && DateTime.UtcNow.Add(wait) <= deadline)
+                    {
+                        continue;
+                    }
                 }
 
                 throw new HttpException(request, response);
             }
 
-            return response.Resource;
+            throw new RequestLimitReachedException("Jikan exhausted the bounded request retry budget.");
         }
 
         public List<Series> SearchForNewSeriesByMyAnimeListId(int malId)
@@ -388,7 +419,9 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
                 var results = response?.Data ?? new List<JikanAnimeResource>();
 
-                var mapped = results.Where(IsSuitable)
+                var mapped = results.Where(anime => anime != null && anime.MalId > 0 && anime.Title.IsNotNullOrWhiteSpace())
+                                    .Where(IsSuitable)
+                                    .DistinctBy(anime => anime.MalId)
                                     .Take(MaxSearchResults)
                                     .Select(MapSeries)
                                     .ToList();
@@ -403,6 +436,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 // other sources usable rather than failing the whole search.
                 _logger.Warn(ex, "MyAnimeList search for '{0}' failed", title);
 
+                return new List<Series>();
+            }
+            catch (RequestLimitReachedException)
+            {
+                _logger.Warn("MyAnimeList search is waiting for Jikan's request cooldown.");
                 return new List<Series>();
             }
         }

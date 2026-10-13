@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using FluentValidation.Results;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Exceptions;
+using NzbDrone.Core.ImportLists.Exceptions;
 using NzbDrone.Core.Localization;
 using NzbDrone.Core.Notifications.Plex.PlexTv;
 using NzbDrone.Core.Parser;
+using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Validation;
 
 namespace NzbDrone.Core.ImportLists.Plex
@@ -50,6 +55,87 @@ namespace NzbDrone.Core.ImportLists.Plex
         public override IImportListRequestGenerator GetRequestGenerator()
         {
             return new PlexListRequestGenerator(_plexTvService, Settings, PageSize);
+        }
+
+        protected override ImportListFetchResult FetchItems(Func<IImportListRequestGenerator, ImportListPageableRequestChain> selector, bool isRecent = false)
+        {
+            return ReadWatchlist(true);
+        }
+
+        protected override ValidationFailure TestConnection()
+        {
+            var result = ReadWatchlist(false);
+            if (result.AnyFailure)
+            {
+                return new ValidationFailure(string.Empty, "Unable to read the complete Plex Watchlist. Check authentication and availability. The previous list will be retained.");
+            }
+
+            return result.Series.Count == 0
+                ? new NzbDroneValidationFailure(string.Empty, "Connected to Plex, but the complete Watchlist contains no TV series.") { IsWarning = true }
+                : null;
+        }
+
+        private ImportListFetchResult ReadWatchlist(bool recordStatus)
+        {
+            return ImportListSetOperations.Fetch(
+                (ImportListDefinition)Definition,
+                _importListStatusService,
+                _logger,
+                () => CleanupListItems(ReadCompleteWatchlist()).ToList(),
+                recordStatus);
+        }
+
+        private List<ImportListItemInfo> ReadCompleteWatchlist()
+        {
+            var generator = new PlexListRequestGenerator(_plexTvService, Settings, PageSize);
+            var parser = new PlexParser();
+            var result = new List<ImportListItemInfo>();
+            var offset = 0;
+            int? total = null;
+            for (var index = 0; index < PlexListRequestGenerator.MaxPages; index++)
+            {
+                var response = FetchImportListResponse(generator.GetRequest(offset));
+                var page = parser.ParsePage(response, offset);
+                if (total.HasValue && page.Total != total)
+                {
+                    throw new ImportListException(response, "Plex Watchlist changed while being read. The previous list will be retained.");
+                }
+
+                total = page.Total;
+                result.AddRange(page.Series);
+                offset = checked(offset + page.Size);
+                if (total == offset || (!total.HasValue && page.Size == 0))
+                {
+                    return result;
+                }
+
+                if (page.Size == 0)
+                {
+                    throw new ImportListException(response, "Plex Watchlist ended before its declared total. The previous list will be retained.");
+                }
+            }
+
+            throw new ImportListException(null, "Plex Watchlist pagination limit was reached before completion. The previous list will be retained.");
+        }
+
+        protected override ImportListResponse FetchImportListResponse(ImportListRequest request)
+        {
+            request.HttpRequest.LogHttpError = false;
+            request.HttpRequest.LogResponseContent = false;
+            request.HttpRequest.AllowAutoRedirect = false;
+            request.HttpRequest.SuppressHttpError = true;
+            if (request.HttpRequest.RateLimit < RateLimit)
+            {
+                request.HttpRequest.RateLimit = RateLimit;
+            }
+
+            var response = _httpClient.Execute(request.HttpRequest);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new TooManyRequestsException(request.HttpRequest, response);
+            }
+
+            return new ImportListResponse(request, response);
         }
 
         public override object RequestAction(string action, IDictionary<string, string> query)

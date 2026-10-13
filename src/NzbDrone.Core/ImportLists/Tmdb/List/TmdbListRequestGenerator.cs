@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NzbDrone.Common.Http;
 
 namespace NzbDrone.Core.ImportLists.Tmdb.List;
@@ -37,6 +38,6 @@ public class TmdbListRequestGenerator : IImportListRequestGenerator
         return new HttpRequestBuilder(_settings.BaseUrl)
             .Accept(HttpAccept.Json)
             .SetHeader("Authorization", $"Bearer {_settings.AuthToken}")
-            .Resource($"4/list/{_settings.ListId ?? _settings.AccountListId}");
+            .Resource($"4/list/{_settings.IncludedListIds?.FirstOrDefault() ?? (_settings.ListId ?? _settings.AccountListId)?.ToString()}");
     }
 }

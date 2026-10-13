@@ -1,10 +1,10 @@
 # Jellyfin library refresh
 
-The dedicated **Jellyfin** connection is included in **Tanukarr 1.0.1** and was
+The dedicated **Jellyfin** connection is retained in **Tanukarr 1.0.2** and was
 introduced in SonarrWeeb 0.1.0.
 It is separate from the existing **Emby / Jellyfin**
 connection, which reports changed media paths. The immutable SonarrWeeb `v0.0.1`
-release does not contain this connection. Use the published 1.0.1 image, a verified
+release does not contain this connection. Use 1.0.2 after verified publication, a verified
 `edge` image or build the current source; check publication status as described
 in [Docker installation](docker-installation.md).
 

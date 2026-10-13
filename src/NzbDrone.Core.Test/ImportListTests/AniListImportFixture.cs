@@ -292,7 +292,7 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void should_prioritize_explicit_custom_inclusion_across_pages_regardless_of_order(bool excludedFirst)
+        public void should_subtract_custom_exclusions_across_pages_regardless_of_order(bool excludedFirst)
         {
             GivenCustomExclusions();
             GivenResponses(FilteredPage(1, true, excludedFirst, 1), FilteredPage(2, false, !excludedFirst, 1));
@@ -300,7 +300,7 @@ namespace NzbDrone.Core.Test.ImportListTests
             var result = _subject.Fetch();
 
             result.AnyFailure.Should().BeFalse();
-            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
+            result.Series.Should().BeEmpty();
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -333,14 +333,14 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void connection_test_should_preserve_explicit_inclusion_after_scanning_later_exclusions()
+        public void connection_test_should_subtract_later_exclusions_from_earlier_inclusions()
         {
             GivenCustomExclusions();
             GivenResponses(FilteredPage(1, true, false, 1), FilteredPage(2, false, true, 1));
 
             var result = _subject.Test();
 
-            result.IsValid.Should().BeTrue();
+            result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("no entries match");
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -360,7 +360,7 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void should_prioritize_explicit_inclusion_across_pages_with_null_map_and_explicit_array(bool excludedFirst)
+        public void should_subtract_exclusions_across_pages_with_null_map_and_explicit_array(bool excludedFirst)
         {
             GivenCustomExclusions();
             GivenResponses(ArrayMembershipPage(1, true, excludedFirst, 1), ArrayMembershipPage(2, false, !excludedFirst, 1));
@@ -368,7 +368,7 @@ namespace NzbDrone.Core.Test.ImportListTests
             var result = _subject.Fetch();
 
             result.AnyFailure.Should().BeFalse();
-            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
+            result.Series.Should().BeEmpty();
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -404,7 +404,7 @@ namespace NzbDrone.Core.Test.ImportListTests
             var result = _subject.Fetch();
 
             result.AnyFailure.Should().BeFalse();
-            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
+            result.Series.Should().BeEmpty();
             Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.Is<HttpRequest>(request =>
                 Encoding.UTF8.GetString(request.ContentData).Contains("MediaListCollection") && request.Headers["Authorization"].ToString() == "Bearer test-access-token")),
                 Times.Once());
@@ -412,13 +412,30 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void connection_test_should_apply_complete_membership_and_inclusion_precedence_to_unsaved_filters()
+        public void connection_test_should_apply_complete_membership_set_difference_to_unsaved_filters()
         {
             GivenCustomExclusions();
             GivenResponses(SparsePage(1, false, 1, 2), MembershipCollection());
 
-            _subject.Test().IsValid.Should().BeTrue();
+            _subject.Test().Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("no entries match");
 
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.Is<HttpRequest>(request =>
+                Encoding.UTF8.GetString(request.ContentData).Contains("MediaListCollection"))),
+                Times.Once());
+        }
+
+        [Test]
+        public void should_keep_authoritatively_included_members_that_are_not_in_the_exclusion_union()
+        {
+            GivenCustomExclusions();
+            var collection = System.Text.Json.Nodes.JsonNode.Parse(MembershipCollection());
+            collection["data"]["MediaListCollection"]["lists"][2]["entries"].AsArray().RemoveAt(0);
+            GivenResponses(SparsePage(1, false, 1, 2), collection.ToJsonString());
+
+            var result = _subject.Fetch();
+
+            result.AnyFailure.Should().BeFalse();
+            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
             Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.Is<HttpRequest>(request =>
                 Encoding.UTF8.GetString(request.ContentData).Contains("MediaListCollection"))),
                 Times.Once());

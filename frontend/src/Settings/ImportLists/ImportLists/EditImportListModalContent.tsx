@@ -27,6 +27,7 @@ import { EnhancedSelectInputChanged, InputChanged } from 'typings/inputs';
 import formatShortTimeSpan from 'Utilities/Date/formatShortTimeSpan';
 import translate from 'Utilities/String/translate';
 import AniListFieldGroups from './AniListFieldGroups';
+import ProviderListFieldGroups from './ProviderListFieldGroups';
 import tagExistingOptions from './tagExistingOptions';
 import { useManageImportList } from './useImportLists';
 import styles from './EditImportListModalContent.module.css';
@@ -113,6 +114,43 @@ function EditImportListModalContent({
       onModalClose();
     }
   }, [isSaving, wasSaving, saveError, onModalClose]);
+
+  let providerFields: React.ReactNode = fields?.map((field) => (
+    <ProviderFieldFormGroup
+      key={field.name}
+      advancedSettings={showAdvancedSettings}
+      provider="importList"
+      providerData={item}
+      {...field}
+      onChange={handleFieldChange}
+    />
+  ));
+
+  if (item.implementation?.value === 'AniListImport') {
+    providerFields = (
+      <AniListFieldGroups
+        providerData={item}
+        advancedSettings={showAdvancedSettings}
+        onChange={handleFieldChange}
+      />
+    );
+  } else if (
+    [
+      'MyAnimeListImport',
+      'TmdbListImport',
+      'TraktListImport',
+      'MDBListImport',
+      'SimklUserImport',
+    ].includes(item.implementation?.value ?? '')
+  ) {
+    providerFields = (
+      <ProviderListFieldGroups
+        providerData={item}
+        advancedSettings={showAdvancedSettings}
+        onChange={handleFieldChange}
+      />
+    );
+  }
 
   return (
     <ModalContent onModalClose={onModalClose}>
@@ -288,26 +326,7 @@ function EditImportListModalContent({
             </FormRow>
           </ModalSection>
 
-          {item.implementation?.value === 'AniListImport' ? (
-            <AniListFieldGroups
-              providerData={item}
-              advancedSettings={showAdvancedSettings}
-              onChange={handleFieldChange}
-            />
-          ) : (
-            fields?.map((field) => {
-              return (
-                <ProviderFieldFormGroup
-                  key={field.name}
-                  advancedSettings={showAdvancedSettings}
-                  provider="importList"
-                  providerData={item}
-                  {...field}
-                  onChange={handleFieldChange}
-                />
-              );
-            })
-          )}
+          {providerFields}
 
           <FormRow>
             <FormLabel>{translate('SonarrTags')}</FormLabel>

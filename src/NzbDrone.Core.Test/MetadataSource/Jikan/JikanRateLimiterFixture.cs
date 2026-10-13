@@ -1,6 +1,8 @@
+using System;
 using System.Diagnostics;
 using FluentAssertions;
 using NUnit.Framework;
+using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.MetadataSource.Jikan;
 using NzbDrone.Core.Test.Framework;
 
@@ -54,6 +56,17 @@ namespace NzbDrone.Core.Test.MetadataSource.Jikan
             // Six requests fit inside the per-minute allowance, so all must be admitted
             // rather than the limiter deadlocking once the per-second window fills.
             Assert.Pass();
+        }
+
+        [Test]
+        public void should_reject_a_long_shared_cooldown_without_blocking_or_issuing_a_request()
+        {
+            var limiter = new JikanRateLimiter();
+            limiter.BackOff(TimeSpan.FromMinutes(2));
+            var stopwatch = Stopwatch.StartNew();
+            Action wait = () => limiter.WaitForSlot();
+            wait.Should().Throw<RequestLimitReachedException>();
+            stopwatch.ElapsedMilliseconds.Should().BeLessThan(200);
         }
     }
 }

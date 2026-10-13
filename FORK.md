@@ -39,9 +39,12 @@ routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [current release notes](docs/releases/1.0.1.md) for packaging
+configuration and [current release notes](docs/releases/1.0.2.md) for packaging
 scope. Version 1.0.1 also includes the later grouping and AniList/browser
 reliability work; the immutable 1.0.0 source and assets remain unchanged.
+Version 1.0.2 adds the simplified list controls, final exclusion-veto selection
+rule and complete AniList membership recovery. Earlier tags and dated reports
+retain their original source and behavior.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -322,22 +325,22 @@ twice. Reading/testing does not rewrite the stored settings JSON, while a later
 Save persists the normalized representation. Removing the transferred tag clears
 that restriction rather than leaving a hidden scalar active. Empty inclusion
 controls omit that condition.
-An eligible match in an explicitly included custom list overrides excluded
-custom-list membership. This override requires both enabled account-list and
-media-release states; inclusion does not bypass either filter. Without explicit
-inclusion, membership in an excluded custom list vetoes an otherwise accepted
-Watching/Planning entry. This later `main` rule follows the initial exclusion-first
-implementation; earlier tags and dated reports retain their original behavior.
+In 1.0.2, membership in any excluded custom list vetoes an otherwise accepted
+entry, including one also selected by an included custom list. Eligible entries
+are the enabled account-list and media-release states, restricted to the union
+of named included lists when those names are configured, minus the union of
+excluded lists. Empty included names omit that restriction. This final rule
+supersedes the intermediate inclusion-first development checkpoint; earlier
+tags and dated reports retain their original behavior.
 The release-state filter remains an independent AND condition.
 Custom names retain spaces and punctuation, including commas.
 
 Exact name matches distinguish lists that differ only in case. A unique
 case-insensitive fallback remains convenient for manual entry; an ambiguous
-excluded name fails the sync when its exclusion must be evaluated, rather than
-guessing. An eligible explicit inclusion is tracked by native AniList media ID
-across pagination, so an excluded copy on an earlier or later page cannot undo
-it. An unselected status or an unmatched custom name does not create that
-override. Unknown required membership still fails the fetch unless the new
+excluded name fails the sync rather than guessing. Excluded membership is tracked
+by native AniList media ID across pagination, so an excluded copy on an earlier
+or later page removes an otherwise selected duplicate. Unknown required
+membership still fails the fetch unless the new
 complete-collection fallback can validate it authoritatively.
 The previous cached list is retained when the fetch fails.
 
@@ -347,8 +350,24 @@ policy remains separate. Source attribution is preserved in
 [CONTRIBUTORS.md](CONTRIBUTORS.md), and executed checks belong to the
 [AniList filter verification checkpoint](docs/anilist-filters-verification-2026-10-13.md).
 The [membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
-records the newer rule, public-response observations, authenticated unsaved Test
-scope and final implementation/verification state.
+records the intermediate rule and public/authenticated investigation.
+The [1.0.2 verification report](docs/releases/1.0.2-verification.md) records
+the final exclusion-veto rule, provider capabilities and newly executed checks.
+
+The same 1.0.2 set-difference rule applies to TMDB List, Trakt List and MDBList
+source selections. These providers require at least one included source because
+there is no implemented finite whole-account source. Their single-source legacy
+settings normalize into included tags; unavailable/partial exclusions cannot
+authorize a partial replacement. Excluded lists are read without optional
+content filters so membership is not accidentally lost before subtraction.
+Source selectors retain each service's actual IDs, slugs or validated HTTPS URLs.
+
+MyAnimeList account imports use the official account API and exact list tags,
+with status, score and release-state requirements. A registered Client ID can
+read a named public user; direct PKCE/OAuth handles `@me` and authorized private
+data. This avoids the prohibited Sonarr cloud broker. Jikan remains the public
+metadata source; its retired user-list endpoint is not used to fabricate account
+list support. See [provider capabilities](docs/library-tools.md#provider-capabilities).
 
 Imported AniList entries keep `(AniList, ForeignId)` as their identity. Import,
 preview, deduplication, exclusions and cleanup do not replace a separate anime

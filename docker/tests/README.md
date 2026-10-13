@@ -7,7 +7,7 @@ security reports.
 
 ## Anime season grouping
 
-For a 1.0.1 or main-source build containing the grouping feature, run from a
+For a 1.0.2 or main-source build containing the grouping feature, run from a
 Linux/WSL host with Python 3, OpenSSL, FFmpeg with `libx264` and Docker available:
 
 ```sh
@@ -90,7 +90,7 @@ must apply the new filters normally. All IDs and credentials belong only to
 this invocation's disposable data.
 
 The [reliability checkpoint](../../docs/anilist-react-reliability-2026-10-13.md)
-records the final image's 12 passing checks and earlier fixture-helper failures.
+records that checkpoint's image, 12 passing checks and earlier fixture-helper failures.
 These checks use synthetic data; they are not a live-account or owner-library
 test. A different image or modified script needs its own recorded execution.
 The same final-image fixture also passed its 12 checks with actual host
@@ -98,9 +98,80 @@ UID/GID 1001 and the supplementary Docker socket group, including cleanup.
 That runner-ownership repeat is separate evidence, not 12 additional distinct
 runtime cases.
 
+The 1.0.2 scenario additionally checks the final exclusion-veto selection rule,
+overlapping custom names across duplicate pages, and complete-collection recovery
+when both membership shapes are unavailable. Partial/wrong-owner/missing-ID
+collections must retain the previous list. New execution counts belong to the
+[1.0.2 verification report](../../docs/releases/1.0.2-verification.md), rather
+than those earlier twelve checks.
+
+## MyAnimeList account lists and Jikan catalogue fixture
+
+Use a built image containing the 1.0.2 direct MAL account-list changes:
+
+```sh
+python3 docker/tests/myanimelist-reliability.py --image tanukarr:verified \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report myanimelist-reliability-report.json
+```
+
+The trusted local TLS fixture supplies official-shape MAL account pages and
+Jikan catalogue/episode responses. It checks public Client ID versus OAuth access,
+tag inclusion minus exclusion, account/score/airing filters, pagination,
+unknown required tags, bounded HTTP 429 retention and direct PKCE/OAuth
+state/replay handling. Unsaved Test renewal and saved Fetch renewal have separate
+settings-persistence assertions. Jikan TV/movie catalogue ingestion and episode
+gaps are separate from account-list membership. No real MAL account, registered
+client, Jikan network response or owner library is used; TLS validation remains
+enabled and acquisition stays empty. The report records image identity and
+owned-fixture cleanup. This command is reproduction guidance, not a claim that
+these cases have already passed for an arbitrary image.
+
+## TMDB, Trakt, MDBList and Plex source-set fixture
+
+The source-set fixture uses generated provider responses and disposable data:
+
+```sh
+python3 docker/tests/list-set-operations.py --image tanukarr:verified \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report list-set-operations-report.json
+```
+
+It covers provider-native list IDs/slugs/URLs, combined inclusions minus
+exclusions, supported list-name actions, hidden legacy-source normalization and
+safe retention when a selected list or page is unavailable/incomplete. These
+providers require at least one included source. Excluded membership must be read
+without optional content filters. Use the executed report for actual case counts,
+source/image identity and limitations; synthetic credentials do not authorize
+or verify a real account.
+
+The same fixture also exercises the Plex TV Watchlist using official-shape local
+TLS responses: 1,001 generated items require an eleventh page, and a failure on
+that later page must retain the complete earlier list. Test reads without saving
+provider settings; recovery must replace the snapshot only after completion.
+Named Plex Lists and a live Plex account are outside this fixture's scope.
+
+## Optional SIMKL V2 custom-list fixture
+
+Use a built image containing the optional registered AUTH V2 implementation:
+
+```sh
+python3 docker/tests/simkl-reliability.py --image tanukarr:verified \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report simkl-reliability-report.json
+```
+
+Generated trusted TLS SIMKL/Jikan responses exercise V2 authorization, readable
+custom-list choices, selected Watchlist status, inclusion intersection minus
+exclusions, complete pagination and beta/premium failure retention. Full
+inventories, activity/date-based deltas, native-ID deletion reconciliation and
+private cursor persistence are checked separately from unsaved Test staging.
+The fixture uses no live premium account or owner configuration, downloads no
+media and records exact image identity and owned cleanup in its report.
+
 ## Concurrent grouped list additions
 
-Use an already built 1.0.1 image and the Python/Docker/OpenSSL prerequisites above
+Use an already built 1.0.2 image and the Python/Docker/OpenSSL prerequisites above
 to test the group-slot race against real SQLite in owned disposable data:
 
 ```sh
@@ -195,7 +266,15 @@ metadata ingestion or a real library.
 
 The development Docker workflow runs smoke, functional/security,
 grouping/naming/AniList, reserved-title RSS, multi-season pack and the newer
-AniList quota/resume checks before publishing its tested image. The additional
+AniList quota/resume checks before publishing its tested image. Version 1.0.2
+also requires the MyAnimeList/Jikan and provider source-set fixtures. The latter
+includes TMDB/Trakt/MDBList selections and complete Plex Watchlist pagination;
+SIMKL V2 has its own additional required fixture. Smoke and functional/security
+plus eight additional reports form ten publishing gates. Release packaging
+aggregates the eight additional reports in `provider-verification.json` and
+records their actual check counts in `release-manifest.json`, using the same
+tested image throughout.
+The additional
 runtime checks use locally generated catalogue/RSS data;
 live AniList/Jikan/Nyaa responses and private account credentials are not
 required. They remain distinct from optional public-provider investigation.
@@ -390,8 +469,10 @@ containing commas, all eleven Import status controls and the submitted settings
 payload. The six removed account-status exclusion controls must be absent from
 the form and request; custom-list exclusions remain available. The duplicate
 legacy single-list textbox is absent even with advanced settings shown, and any
-legacy scalar in the submitted settings must be empty. Its connection
-test intentionally fails local validation
+legacy scalar in the submitted settings must be empty. The visible help states
+that custom-list exclusions always win, including overlap with included lists;
+account/media Import status filters remain separate. The connection test
+intentionally fails local validation
 without OAuth credentials; cancelling the editor leaves saved lists unchanged.
 For an owned settings-only invocation, the Node helper accepts `menuOnly: true`
 in its stdin JSON. That mode retains login, AniList form/payload/cancellation

@@ -24,6 +24,8 @@ namespace NzbDrone.Core.ImportLists.Simkl
 
     public class SimklSeriesResource
     {
+        public string Status { get; set; }
+
         public SimklSeriesPropsResource Show { get; set; }
 
         [JsonProperty("anime_type")]

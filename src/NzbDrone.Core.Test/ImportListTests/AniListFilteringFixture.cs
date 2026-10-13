@@ -143,6 +143,28 @@ namespace NzbDrone.Core.Test.ImportListTests
             result.Select(item => item.AniListId).Should().Equal(1, 2);
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_import_the_eligible_inclusion_union_minus_the_exclusion_union(bool restrictToIncludedLists)
+        {
+            _settings.IncludedCustomLists = restrictToIncludedLists ? new[] { "A", "B" } : Array.Empty<string>();
+            _settings.ExcludedCustomLists = new[] { "C", "D" };
+            var parser = new AniListParser(_settings);
+
+            var result = parser.ParseResponse(Response(
+                Entry(1, customLists: new Dictionary<string, bool> { { "A", true } }),
+                Entry(2, customLists: new Dictionary<string, bool> { { "B", true } }),
+                Entry(3, customLists: new Dictionary<string, bool> { { "A", true }, { "B", true }, { "C", true } }),
+                Entry(4, customLists: new Dictionary<string, bool> { { "A", true }, { "D", true } }),
+                Entry(5, customLists: new Dictionary<string, bool> { { "Outside", true } }),
+                Entry(6, "COMPLETED", new Dictionary<string, bool> { { "A", true } }),
+                Entry(7, customLists: new Dictionary<string, bool> { { "B", true } }, releaseStatus: "CANCELLED"),
+                Entry(8, customLists: new Dictionary<string, bool> { { "C", true } })));
+
+            result.Select(item => item.AniListId).Should().Equal(restrictToIncludedLists ? new[] { 1, 2 } : new[] { 1, 2, 5 });
+            parser.ExcludedMediaIds.Should().BeEquivalentTo(new[] { 3, 4, 8 });
+        }
+
         [Test]
         public void should_combine_legacy_custom_list_with_new_inclusions()
         {
@@ -180,7 +202,7 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void should_prioritize_explicit_custom_inclusion_over_excluded_watching_members()
+        public void should_subtract_excluded_watching_members_from_explicit_custom_inclusions()
         {
             _settings.IncludedCustomLists = new[] { "Seasonal" };
             _settings.ExcludedCustomLists = new[] { "Do not import", "Manual only" };
@@ -191,19 +213,18 @@ namespace NzbDrone.Core.Test.ImportListTests
                 Entry(2, customLists: new Dictionary<string, bool> { { "Seasonal", true }, { "Do not import", false }, { "Manual only", true } }),
                 Entry(3, customLists: new Dictionary<string, bool> { { "Seasonal", true }, { "Do not import", false }, { "Manual only", false } })));
 
-            result.Select(item => item.AniListId).Should().Equal(1, 2, 3);
-            parser.ExcludedMediaIds.Should().BeEmpty();
-            parser.IncludedMediaIds.Should().BeEquivalentTo(new[] { 1, 2, 3 });
+            result.Should().ContainSingle().Which.AniListId.Should().Be(3);
+            parser.ExcludedMediaIds.Should().BeEquivalentTo(new[] { 1, 2 });
         }
 
         [Test]
-        public void should_include_members_of_a_list_selected_for_both_inclusion_and_exclusion()
+        public void should_remove_members_of_a_list_selected_for_both_inclusion_and_exclusion()
         {
             _settings.IncludedCustomLists = new[] { "Seasonal" };
             _settings.ExcludedCustomLists = new[] { "Seasonal" };
 
             new AniListParser(_settings).ParseResponse(Response(
-                Entry(1, customLists: new Dictionary<string, bool> { { "Seasonal", true } }))).Should().ContainSingle();
+                Entry(1, customLists: new Dictionary<string, bool> { { "Seasonal", true } }))).Should().BeEmpty();
         }
 
         [Test]
@@ -254,14 +275,13 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void should_not_evaluate_an_ambiguous_exclusion_after_explicit_inclusion_is_confirmed()
+        public void should_reject_an_ambiguous_exclusion_even_when_explicit_inclusion_is_confirmed()
         {
             _settings.IncludedCustomLists = new[] { "Selected" };
             _settings.ExcludedCustomLists = new[] { "EXCLUDED" };
 
-            new AniListParser(_settings).ParseResponse(Response(Entry(1,
-                customLists: new Dictionary<string, bool> { { "Selected", true }, { "Excluded", true }, { "excluded", false } })))
-                .Should().ContainSingle();
+            Assert.Throws<ImportListException>(() => new AniListParser(_settings).ParseResponse(Response(Entry(1,
+                customLists: new Dictionary<string, bool> { { "Selected", true }, { "Excluded", true }, { "excluded", false } }))));
         }
 
         [Test]
@@ -293,7 +313,7 @@ namespace NzbDrone.Core.Test.ImportListTests
                 Entry(2, customLists: new Dictionary<string, bool> { { " Seasonal ", true }, { "Excluded", true } }),
                 Entry(3, customLists: new Dictionary<string, bool> { { "Seasonal", true }, { " Excluded ", false } })));
 
-            result.Select(item => item.AniListId).Should().Equal(1, 2);
+            result.Should().ContainSingle().Which.AniListId.Should().Be(2);
 
             _settings.IncludedCustomLists = Array.Empty<string>();
             var exclusionOnly = new AniListParser(_settings).ParseResponse(Response(
@@ -356,7 +376,7 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void should_prioritize_explicit_inclusion_for_duplicate_media_ids_regardless_of_entry_order(bool excludedFirst)
+        public void should_subtract_excluded_duplicate_media_ids_regardless_of_entry_order(bool excludedFirst)
         {
             _settings.IncludedCustomLists = new[] { "Seasonal" };
             _settings.ExcludedCustomLists = new[] { "Excluded" };
@@ -364,10 +384,8 @@ namespace NzbDrone.Core.Test.ImportListTests
             var excluded = Entry(1, customLists: new Dictionary<string, bool> { { "Seasonal", false }, { "Excluded", true } });
             var parser = new AniListParser(_settings);
 
-            parser.ParseResponse(excludedFirst ? Response(excluded, allowed) : Response(allowed, excluded))
-                .Should().ContainSingle().Which.AniListId.Should().Be(1);
-            parser.ExcludedMediaIds.Should().BeEmpty();
-            parser.IncludedMediaIds.Should().Equal(1);
+            parser.ParseResponse(excludedFirst ? Response(excluded, allowed) : Response(allowed, excluded)).Should().BeEmpty();
+            parser.ExcludedMediaIds.Should().Equal(1);
         }
 
         [TestCase(true)]
@@ -381,7 +399,6 @@ namespace NzbDrone.Core.Test.ImportListTests
 
             parser.ParseResponse(excludedFirst ? Response(excluded, allowed) : Response(allowed, excluded)).Should().BeEmpty();
             parser.ExcludedMediaIds.Should().Equal(1);
-            parser.IncludedMediaIds.Should().BeEmpty();
         }
 
         [TestCase("COMPLETED", "FINISHED")]
@@ -397,7 +414,6 @@ namespace NzbDrone.Core.Test.ImportListTests
                 status,
                 new Dictionary<string, bool> { { "Included", true }, { "Excluded", true } },
                 releaseStatus))).Should().BeEmpty();
-            parser.IncludedMediaIds.Should().BeEmpty();
             parser.ExcludedMediaIds.Should().Equal(1);
         }
 

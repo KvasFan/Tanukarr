@@ -65,6 +65,15 @@ The main frontend command also includes naming-token/search payload and AniList
 custom-list autocomplete cases. Those mocked component checks remain separate
 from the real Docker API import/list action checks.
 
+For 1.0.2 list changes, verify the actual provider capability rather than assuming
+every service supports AniList custom lists. Included names form a union; matching
+excluded names always remove entries from that selection, including overlaps
+and duplicate pages. Account/media filters remain independent requirements.
+Unknown required membership and incomplete pagination must retain the previous
+successful list. See [Library tools](docs/library-tools.md#lists-rules-and-keys)
+and the [1.0.2 verification report](docs/releases/1.0.2-verification.md) for
+provider-specific limits and executed evidence.
+
 To reproduce the Docker workflow's new deterministic provider/search checks,
 use an already built image and the pinned Python fixture image. On Debian/Ubuntu:
 
@@ -160,12 +169,12 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). Release **1.0.1** uses
-Git tag `v1.0.1` and container tag `ghcr.io/kvasexert/tanukarr:1.0.1`.
+[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). Release **1.0.2** uses
+Git tag `v1.0.2` and container tag `ghcr.io/kvasexert/tanukarr:1.0.2`.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/1.0.1.md) when changing the published deployment.
+[release notes](docs/releases/1.0.2.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 

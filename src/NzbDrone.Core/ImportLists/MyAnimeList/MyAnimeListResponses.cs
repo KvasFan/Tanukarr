@@ -7,6 +7,13 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
     {
         [JsonProperty("data")]
         public List<MyAnimeListItem> Animes { get; set; }
+
+        public MyAnimeListPaging Paging { get; set; }
+    }
+
+    public class MyAnimeListPaging
+    {
+        public string Next { get; set; }
     }
 
     public class MyAnimeListItem
@@ -21,13 +28,19 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
     public class MyAnimeListStatusResult
     {
         public string Status { get; set; }
-        public int Score { get; set; }
+        public int? Score { get; set; }
+
+        public List<string> Tags { get; set; }
+
+        [JsonProperty("is_rewatching")]
+        public bool IsRewatching { get; set; }
     }
 
     public class MyAnimeListItemInfo
     {
         public int Id { get; set; }
         public string Title { get; set; }
+        public string Status { get; set; }
     }
 
     public class MyAnimeListIds

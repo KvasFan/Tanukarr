@@ -66,7 +66,7 @@ def list_membership(media_id, control, include_override=None):
         included = True
     if include_override is not None:
         included = include_override
-    membership = {"Include": included, "Never": media_id == IDS[3], "After edit": media_id == IDS[2]}
+    membership = {"Include": included, "Never": media_id == IDS[3] and control.get("overlapExcluded", True), "After edit": media_id == IDS[2]}
     if legacy_only_id:
         membership[LEGACY_CUSTOM_LIST_NAME] = media_id == legacy_only_id
     return membership
@@ -74,6 +74,8 @@ def list_membership(media_id, control, include_override=None):
 
 def list_row(media_id, control, include_override=None):
     membership = list_membership(media_id, control, include_override)
+    if include_override is not None:
+        membership["Never"] = not include_override
     resource = media_resource(media_id)
     if media_id == IDS[3]:
         resource["status"] = control.get("overlapReleaseStatus", "FINISHED")
@@ -237,6 +239,8 @@ def serve_fixture(root):
 class AniListReliability(_groups.AnimeGroups):
     fixture_script = "anilist-reliability.py"
     fixture_ready_message = "Local AniList reliability TLS fixture ready"
+    fixture_hosts = ("graphql.anilist.co",)
+    fixture_startup_check = "isolated trusted TLS AniList, loopback-only API and no external provider routing"
 
     def __init__(self, args):
         super().__init__(args)
@@ -278,7 +282,7 @@ class AniListReliability(_groups.AnimeGroups):
         self.mock = self.docker(
             "run", "--detach", "--name", "tanukarr-anilist-reliability-mock-" + suffix,
             "--label", "tanukarr.anilist-reliability-test=true", "--network", self.network,
-            "--network-alias", "graphql.anilist.co", "--env", "PYTHONDONTWRITEBYTECODE=1",
+            *(argument for host in self.fixture_hosts for argument in ("--network-alias", host)), "--env", "PYTHONDONTWRITEBYTECODE=1",
             "--mount", f"type=bind,source={Path(__file__).resolve().parent},target=/runner,readonly",
             "--mount", f"type=bind,source={tls},target=/fixture", self.args.mock_image,
             "python", "-u", "/runner/" + self.fixture_script, "--serve-fixture", "/fixture")
@@ -308,8 +312,9 @@ class AniListReliability(_groups.AnimeGroups):
         require(json.loads(self.docker("network", "inspect", self.network))[0]["Internal"], "Fixture external routing enabled")
         mock_networks = json.loads(self.docker("inspect", self.mock))[0]["NetworkSettings"]["Networks"]
         mock_ip = next(iter(mock_networks.values()))["IPAddress"]
-        require(mock_ip in self.docker("exec", self.container, "getent", "hosts", "graphql.anilist.co"), "AniList DNS escaped the mock")
-        self.check("isolated trusted TLS AniList, loopback-only API and no external provider routing")
+        for host in self.fixture_hosts:
+            require(mock_ip in self.docker("exec", self.container, "getent", "hosts", host), "Provider DNS escaped the mock")
+        self.check(self.fixture_startup_check)
 
     def records(self):
         path = self.root / "fixture" / "requests.jsonl"
@@ -579,26 +584,24 @@ class AniListReliability(_groups.AnimeGroups):
         self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
         self.idle()
 
-    def explicit_inclusion_precedence(self):
+    def custom_list_set_difference(self):
         self.control(includeExcludedOverlap=True)
         self.fresh_sync()
-        require(self.library_ids() == list(IDS) and self.stored_ids() == list(IDS),
-                "Explicit custom-list inclusion did not override membership in an excluded custom list")
-        self.check("an explicitly included Watching member imports even when it also belongs to an excluded custom list")
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "An included member was not subtracted when it also belongs to an excluded custom list")
+        self.check("an excluded custom list subtracts an overlapping included Watching member")
 
         duplicate_orders = {}
         for order in ("excludedThenIncluded", "includedThenExcluded"):
-            self.delete_owned_member(IDS[3])
             self.control(overlapDuplicateOrder=order)
             self.fresh_sync()
-            require(self.library_ids() == list(IDS) and self.stored_ids() == list(IDS),
-                    "An excluded duplicate on another page cancelled an eligible explicit inclusion")
+            require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                    "An included copy on another page defeated the authoritative exclusion")
             duplicate_orders[order] = self.library_ids()
-        self.observations["crossPageExplicitInclusion"] = duplicate_orders
-        self.check("explicit inclusion survives earlier/later excluded copies across pages with one native series per media ID")
+        self.observations["crossPageExclusionVeto"] = duplicate_orders
+        self.check("exclusions win over earlier/later included copies across pages using native media identity")
 
-        self.delete_owned_member(IDS[3])
-        self.control(overlapDuplicateOrder=None, overlapListStatus="PLANNING")
+        self.control(overlapDuplicateOrder=None, overlapExcluded=False, overlapListStatus="PLANNING")
         self.fresh_sync()
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
                 "Custom inclusion bypassed an unselected user-list status")
@@ -610,17 +613,17 @@ class AniListReliability(_groups.AnimeGroups):
                 "Custom inclusion bypassed an unselected media-release status")
         self.check("explicit custom-list inclusion still requires a selected media-release status")
 
-        self.control(includeExcludedOverlap=False, overlapReleaseStatus="FINISHED")
+        self.control(includeExcludedOverlap=False, overlapExcluded=False, overlapReleaseStatus="FINISHED")
         self.fresh_sync()
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
-                "An excluded-only member was added without explicit custom inclusion")
-        self.check("an excluded-only Watching member remains excluded when explicit custom inclusion is absent")
+                "A member outside every included custom list was imported")
+        self.check("members outside all included lists are ignored even when no exclusion applies")
 
         resource = self.saved_definition()
         self.field(resource, "includedCustomLists")["value"] = []
+        self.control(includeExcludedOverlap=True, overlapExcluded=True)
         self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
         self.idle()
-        self.control(includeExcludedOverlap=True)
         self.fresh_sync()
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
                 "Watching or an unconfigured custom-list name incorrectly overrode an exclusion")
@@ -724,7 +727,7 @@ def main():
         audit.quota_recovery()
         audit.stale_guard()
         audit.legacy_custom_list_migration()
-        audit.explicit_inclusion_precedence()
+        audit.custom_list_set_difference()
         audit.sparse_membership_recovery()
         audit.no_acquisition()
     except (Exception, KeyboardInterrupt) as caught:

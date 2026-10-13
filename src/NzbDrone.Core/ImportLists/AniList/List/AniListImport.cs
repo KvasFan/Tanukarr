@@ -218,8 +218,8 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 }
                 while (hasNextPage);
 
-                // A later exclusion can remove an earlier result unless explicit
-                // custom-list inclusion has accepted the media on any complete page.
+                // A later custom-list exclusion removes an earlier occurrence,
+                // including media that matched an explicitly included custom list.
                 releases.RemoveAll(item => parser.ExcludedMediaIds.Contains(item.AniListId));
 
                 _importListStatusService.RecordSuccess(Definition.Id);

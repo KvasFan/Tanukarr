@@ -36,6 +36,11 @@ Check the selected entry's episode list and numbering against your releases.
 A title missing from one catalogue may be available in another configured
 source; no provider is guaranteed to cover every title or genre.
 
+API clients must use `/api/v5/series/lookup` and its `metadataSource` query
+parameter to select these catalogues. The legacy `/api/v3/series/lookup` remains
+TheTVDB-only. Other supported v3 compatibility routes retain their own contracts;
+see [API compatibility](compatibility-and-backups.md#api-and-internal-names).
+
 ## Catalogue coverage and current access requirements
 
 | Source | Catalogue | Access used by this fork |
@@ -60,6 +65,23 @@ TMDB's v3 key and Read Access Token are different credential forms, AniList's
 public data and account-authorized operations have different access rules, and
 Jikan serves public metadata rather than authenticated MyAnimeList account
 operations.
+
+In 1.0.2, the separate **MyAnimeList import-list connection** reads MAL's official
+account API. It supports public usernames with a registered Client ID, or direct
+OAuth/PKCE for `@me` and authorized private data. Account-state, score, airing-state
+and exact list-tag filters belong to that connection; they do not change Jikan's
+public catalogue credentials. See
+[account-list configuration and provider capabilities](library-tools.md#provider-capabilities)
+for the implemented differences and
+[1.0.2 verification](releases/1.0.2-verification.md) for actual execution scope.
+
+The 1.0.2 Jikan catalogue client validates requested and returned positive MAL
+identities, preserves TV/movie types and the source's episode numbers, and skips
+duplicate episode rows. Missing episode numbers receive placeholders without
+renumbering returned episodes. Shared HTTP 429 recovery allows at most three
+attempts within thirty seconds; incomplete detail still uses the existing
+placeholder fallback. These catalogue safeguards do not configure account-list
+filters or establish live provider availability.
 
 The TMDB import-list providers described in [Library tools](library-tools.md)
 use a TMDB API Read Access Token. Keep that import-list token separate from the
@@ -102,8 +124,9 @@ for partial-progress and saved-list resume behavior.
 
 In the current `main` import-list editor, account-list states and anime release
 states remain their separate Import checkbox groups. Exclusion vetoes use only
-**Excluded Custom Lists**; an eligible match in **Included Custom Lists** overrides
-that custom-list veto. Neither group bypasses the account/media Import filters.
+**Excluded Custom Lists** and always veto a matching entry, including one also
+selected by **Included Custom Lists**. Neither group bypasses the account/media
+Import filters.
 The six separate account-status exclusion flags and
 their parser behavior were removed after the immutable 1.0.1 release. Public
 catalogue lookup and these account-list filters are separate workflows. See
@@ -130,8 +153,8 @@ parent entry from another catalogue.
 
 Failed or incomplete list retrieval does not authorize destructive list cleanup.
 AniList watching states, anime release states and custom-list membership remain
-separate filters, with eligible explicit custom-list inclusion taking priority
-over custom-list exclusion in current `main`. See
+separate filters, with custom-list exclusions always removing matching included
+entries in 1.0.2. See
 [AniList list configuration](library-tools.md#anilist-lists).
 
 Post-release [anime season and movie groups](anime-season-groups.md) can present related

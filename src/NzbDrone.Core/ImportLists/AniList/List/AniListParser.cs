@@ -21,7 +21,6 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         }
 
         public ISet<int> ExcludedMediaIds { get; } = new HashSet<int>();
-        public ISet<int> IncludedMediaIds { get; } = new HashSet<int>();
 
         public virtual IList<ImportListItemInfo> ParseResponse(ImportListResponse importListResponse)
         {
@@ -73,24 +72,17 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             foreach (var item in page.MediaList)
             {
                 var media = item.Media;
-                var selectedStatus = IsSelectedListStatus(item.Status) && ValidateMediaStatus(media);
-                var selectedCustomList = IsOnSelectedCustomList(item);
 
-                // Explicit custom-list inclusion wins an overlap, including duplicates
-                // on earlier or later pages. Account and release statuses still apply.
-                if (selectedStatus && selectedCustomList && HasInclusions())
-                {
-                    IncludedMediaIds.Add(media.Id);
-                    ExcludedMediaIds.Remove(media.Id);
-                }
-
-                if (!IncludedMediaIds.Contains(media.Id) && IsOnExcludedCustomList(item, importListResponse))
+                // Excluded custom-list membership removes the media from the selected
+                // set, including duplicate entries on earlier or later pages.
+                if (IsOnExcludedCustomList(item, importListResponse))
                 {
                     ExcludedMediaIds.Add(media.Id);
                     continue;
                 }
 
-                if (ExcludedMediaIds.Contains(media.Id) || !selectedStatus || !selectedCustomList)
+                if (ExcludedMediaIds.Contains(media.Id) || !IsSelectedListStatus(item.Status) ||
+                    !ValidateMediaStatus(media) || !IsOnSelectedCustomList(item))
                 {
                     continue;
                 }

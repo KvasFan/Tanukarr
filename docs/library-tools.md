@@ -127,6 +127,119 @@ cutoff-unmet searches. Up to 25 shows can be added per selection. A preview expi
 after ten minutes; refresh it before adding shows if it expires. Incomplete
 provider results cannot be used to add shows.
 
+### Provider capabilities
+
+Choose **Settings > Import Lists > Add Import List** and configure the selected
+service. Catalogue search credentials and account-list credentials can differ.
+The list editor groups account information, filters and list/tag selections,
+while retaining manual input and the selected provider's available fields.
+Use Test to check the current form, then Save when the selection is correct;
+loading choices or testing does not itself save or start synchronization.
+
+| Import-list provider | Included/excluded selection | Other implemented filters and access |
+| --- | --- | --- |
+| AniList | Native custom-list names; any included match selects, any excluded match vetoes | Six account states and five media release states; configured OAuth for account-list import |
+| MyAnimeList | Exact account-list tags, not AniList-style custom lists; any excluded tag vetoes | Multiple official account states, three airing states and minimum score; registered Client ID for a named public user or direct OAuth for `@me`/private access |
+| TMDB List | Positive list IDs; selected included lists are combined, excluded lists are subtracted | TMDB import-list Read Access Token; Account ID/list-name loading where supported by this provider |
+| Trakt List | List slugs or IDs for the configured username; combined inclusions minus exclusions | Existing Trakt credentials and filters; list-name loading where available |
+| MDBList | Complete validated HTTPS list URLs; combined inclusions minus exclusions | Configured MDBList API key; manual URL entry |
+| SIMKL User | Existing selected Shows/Anime Watchlist bucket; optional V2 custom-list IDs restrict/subtract membership | V2 custom lists are a read-only beta requiring a separately registered AUTH V2 app and PRO/VIP account; V1 Watchlist behavior remains when this option is unset |
+| Plex | Existing TV Watchlist | Plex authentication; named Plex Lists/library collections and account-status/custom-tag selectors are not implemented by this provider |
+
+AniList/MAL empty included **membership filters** select all otherwise eligible
+entries from that account. TMDB List, Trakt List and MDBList require at least one
+included **source**; an empty selector does not mean every list in an account.
+Older saved single-source settings are transferred into the corresponding
+included selection rather than discarded. Exclusions use list membership before
+optional content filters, so a filtered-out copy in an excluded list cannot
+accidentally permit the same title from an included list.
+Positive external-ID aliases are resolved together, so a TVDB/TMDB alias for the
+same title cannot bypass an exclusion through a different supplied ID. Titles
+are not used to guess membership.
+
+These capabilities belong to the named provider types. Other account, discovery,
+person, collection or RSS providers keep their own controls; they are not assumed
+to expose custom lists or tag filters. Per-connection import-list selections are
+also separate from Tanukarr's existing global import-list exclusion records.
+Unknown required data, incomplete pages or a failed selected source retains the
+previous successful list rather than authorizing partial replacement/cleanup.
+The [1.0.2 verification report](releases/1.0.2-verification.md) distinguishes
+source audit, disposable provider checks and any live account operation.
+
+SIMKL's optional custom-list selection starts from its configured Watchlist
+bucket: intersect any included custom lists when configured, then subtract
+excluded membership. It does not reinterpret an item's `watching` aggregate as
+the user's account status. Movie custom-list entries are ignored by this
+TV/anime importer. Beta/authentication/permission/premium errors, including an
+HTTP 200 `premium_only` body, or incomplete pagination retain the prior list.
+V2 import first reads a complete all-status inventory, then uses validated
+activity cursors and `date_from` deltas. Native-ID reconciliation handles
+deletions. Its private inventory/cursor survives restart inside the configuration
+cache; Test stages reads without saving that snapshot or provider settings.
+The [official custom-list guide](https://api.simkl.org/guides/custom-lists)
+describes the V2/PRO/VIP requirements; the older status-conventions page's
+custom-list statement is superseded by this beta contract. No live premium
+account verification is inferred from the documentation or synthetic checks.
+
+Enter a separately registered AUTH V2 Client ID for optional SIMKL custom lists
+and authorize that application. Its optional client secret follows the
+registration's requirements; use the instance's `oauth.html` callback including
+the URL base. Choose Shows or Anime and the account Watchlist status as before,
+then enter positive included/excluded custom-list IDs or load supported name
+choices. Keep those V2/custom selections empty to retain the existing V1 path.
+
+The inherited Plex reader stopped after ten 100-entry pages. Version 1.0.2
+instead validates body offsets/raw sizes and any pagination headers, follows
+the actual returned raw count, and confirms completion from a consistent total
+or a terminal empty raw page. Short pages or non-TV rows do not falsely end
+pagination. The 1,000-page safety bound fails rather than silently accepting a
+partial list. This preserves the TV Watchlist scope and does not add named Plex
+Lists. The [official pagination reference](https://developer.plex.tv/pms/)
+documents returned offsets/sizes and optional totals; new execution evidence
+belongs to the release report. Sonarr remote, generic JSON and RSS
+providers keep their actual remote-series/tag/profile/root-folder or feed
+selectors; they do not expose invented AniList-style account membership.
+
+### MyAnimeList account lists and Jikan metadata
+
+Select **MyAnimeList** as an import-list provider to read its official account
+API. For a named public user, enter that username and your registered
+application's Client ID. For your own or private account data, use `@me`, enter
+the registered Client ID and select **Authenticate with MyAnimeList**. A Client
+Secret is optional and is needed only when the registered application requires
+one. Register the callback for this instance, including its URL base:
+`http://localhost:6970/oauth.html` for the default local address. Use the actual
+origin/base path for a differently hosted instance.
+
+The direct OAuth flow uses PKCE and the application's registered credentials;
+it does not use Sonarr's cloud broker. Older saved bearer credentials remain
+usable while valid. Renewal/new authorization needs the registered Client ID;
+follow the connection's reconnect guidance rather than removing the saved list.
+Account states, minimum score and catalogue release states apply before tag
+selection. Enter each complete tag name and press Enter; names match exactly.
+MAL's rewatching entries follow the Watching selection.
+Included tags are alternatives, and matching an excluded tag always removes the
+entry. Hidden legacy single-status values are transferred into the modern
+status selection, without a database migration.
+
+An unsaved token-renewing Test keeps replacement credentials in the running
+process for up to one day. A subsequent saved Fetch can persist them without
+saving that Test form's filters. This credential handoff does not survive a
+restart; it is separate from SIMKL's persisted inventory cursor. If the service
+invalidated the old refresh token before a discarded Test and restart, authorize
+the registered application again.
+
+Jikan supplies public anime **catalogue metadata** for per-title MyAnimeList
+search/details. It does not authorize private account-list operations. Jikan's
+old user-anime-list endpoint is deprecated/discontinued, so it is not used as a
+replacement account-list source. API shape/credentials and service availability
+are separate questions: a documented endpoint is not an uptime guarantee.
+The direct account API and OAuth follow
+[MyAnimeList's official list reference](https://myanimelist.net/apiconfig/references/api/v2#operation/users_user_id_animelist_get)
+and [authorization reference](https://myanimelist.net/apiconfig/references/authorization).
+Jikan's retirement is recorded in its
+[official OpenAPI source](https://github.com/jikan-me/jikan-rest/blob/master/storage/api-docs/api-docs.json).
+
 ### AniList lists
 
 Configure AniList under **Settings → Import Lists**, authenticate with AniList
@@ -135,7 +248,7 @@ are included in **Tanukarr 1.0.0** and were introduced in SonarrWeeb 0.1.0;
 the immutable SonarrWeeb 0.0.1 release predates them. These filters
 describe different things and are combined.
 
-Current `main` simplifies exclusions to **custom-list membership only**. The six
+Version 1.0.2 simplifies exclusions to **custom-list membership only**. The six
 separate Exclude Watching/Planning/Completed/Dropped/Paused/Repeating controls
 and their parser behavior have been removed. This change follows the immutable
 Tanukarr 1.0.1 release; its original tag and images retain their previous settings.
@@ -151,8 +264,8 @@ the new source's actual checks and final-image verification state.
 | --- | --- |
 | Import List Status | Enabled membership states: Watching, Planning, Completed, Dropped, Paused or Repeating |
 | Import Media Release Status | The anime's release status: Finished, Releasing, Not Yet Released, Cancelled or Hiatus |
-| Included Custom Lists | Membership in any named custom list; an eligible included match overrides custom-list exclusions |
-| Excluded Custom Lists | Membership vetoes the import unless an eligible explicitly included custom list also matches |
+| Included Custom Lists | Membership in any named custom list; leave empty to select all otherwise eligible entries |
+| Excluded Custom Lists | Membership in any named list always vetoes the import, including overlapping included memberships |
 
 Choose at least one membership status and one release status. Watching and
 Planning, together with Finished and Releasing, are the defaults. For example,
@@ -170,12 +283,12 @@ tag representation and clears the legacy scalar. Leave **Included Custom Lists**
 empty to accept every entry matching the enabled membership
 and release states. Named-list inclusion does not bypass either state filter.
 
-Explicit custom-list inclusion takes priority over custom-list exclusion. For
-example, enable **Import Watching** and
-include `Seasonal`, then exclude `Do not download`: an anime marked Watching
-and belonging to both custom lists is included if its media release state is
-enabled. If Included Custom Lists is empty, an otherwise eligible Watching entry
-in `Do not download` is excluded. To omit an account-list state,
+Custom-list exclusion always wins over custom-list inclusion. For example,
+enable **Import Watching**, include `Seasonal`, and exclude `Do not download`:
+an anime marked Watching and belonging to both custom lists is excluded.
+An anime in `Seasonal` alone is eligible if its media release state is enabled.
+If Included Custom Lists is empty, an otherwise eligible Watching entry in
+`Do not download` is still excluded. To omit an account-list state,
 leave its **Import** checkbox unchecked; inclusion by a custom name does not
 bypass that selection. Excluded custom lists start empty. Release-state filtering
 remains separate.
@@ -183,13 +296,17 @@ remains separate.
 | Enabled account/media states | Included custom lists | Matching excluded list | Result |
 | --- | --- | --- | --- |
 | No | Any | Any | Skip; explicit inclusion does not bypass status filters |
-| Yes | Matches an explicitly included list | Yes or no | Include |
+| Yes | Matches an included list | No | Include |
+| Yes | Matches an included list | Yes | Exclude |
 | Yes | Configured but no name matches | Any | Skip; the inclusion condition is unmet |
 | Yes | No included names configured | Yes | Exclude |
 | Yes | No included names configured | No | Include |
 
-This inclusion-first rule is a later `main` update. The immutable 1.0.1 release
-and earlier dated checkpoints retain their original exclusion-first behavior.
+The final 1.0.2 rule is: eligible entries intersect the union of included lists
+(or all eligible entries when no included names are configured), minus the union
+of excluded lists. This supersedes the intermediate inclusion-first development
+checkpoint. Immutable releases and dated reports retain their original behavior;
+the [1.0.2 verification report](releases/1.0.2-verification.md) records new checks.
 
 Enter each complete custom-list name and press **Enter** to add it. Repeat for
 more names. Spaces, commas and other punctuation are part of the name, so
@@ -208,10 +325,10 @@ An exact custom-list name takes precedence. A case-insensitive fallback is
 accepted only when it identifies a single list, so distinct names differing
 only in case are not merged. Membership requires a `true` flag; a list name
 whose flag is `false` does not match. If an excluded name has an ambiguous
-case-insensitive match, use its exact spelling: when that exclusion needs to be
-evaluated, the sync fails and retains the previous successful list rather than
-guessing. An eligible explicit inclusion is tracked across pages by native media
-ID; a duplicate excluded copy cannot undo it. Missing custom-list data while
+case-insensitive match, use its exact spelling: the sync fails and retains the
+previous successful list rather than guessing. Excluded membership is tracked
+across pages by native media ID; a duplicate included copy cannot undo the veto.
+Missing custom-list data while
 custom-list exclusions are configured, pagination failures and GraphQL errors
 retain the previous successful list unless complete validated collection data
 can supply the missing membership.
@@ -226,7 +343,7 @@ membership response into an empty list. AniList documents the nullable
 [MediaList field and array argument](https://github.com/AniList/docs/blob/master/docs/reference/object/medialist.md)
 and [GraphQL errors](https://github.com/AniList/docs/blob/master/docs/guide/graphql/errors.md).
 
-A later `main` update can resolve a missing map and missing array from a complete
+Version 1.0.2 can resolve a missing map and missing array from a complete
 collection for the same user and authentication context. It requests this only
 when an active custom-list filter needs membership, validates the owner and
 definitions, follows bounded chunk pagination, and requires every sparse Page
@@ -234,7 +351,9 @@ entry to appear in that collection. The snapshot lasts for one fetch or Test and
 uses the existing shared rate limits. Incomplete, mismatched or unavailable
 collection data still retains the previous successful list. See the
 [membership and priority checkpoint](anilist-membership-priority-2026-10-13.md)
-for the live investigation and verification state; the intermittent upstream
+for the earlier live investigation, and the
+[1.0.2 verification report](releases/1.0.2-verification.md) for new checks.
+The intermittent upstream
 missing-field cause was not reproduced by the successful live samples.
 
 These filters apply to this saved AniList connection and its previews. They do
@@ -313,6 +432,13 @@ unblocked. Settings changes, a failed or partial later fetch, or a restart
 invalidate this permission to resume. After restart, the saved membership stays
 in the database but a new complete fetch is required before this optimization
 can be used again.
+
+Version 1.0.2 extends this guarded completed-fetch resume to MyAnimeList, TMDB
+List, Trakt List, MDBList, Plex Watchlist and SIMKL User, each within its own
+minimum refresh interval. A fetched item carrying season-monitor overrides
+does not create a resume witness: those overrides are not persisted in the
+saved membership rows. This optimization retries pending metadata additions;
+it neither bypasses provider cooldowns nor treats a failed response as complete.
 
 This never treats missing membership as empty or successful. Unknown inclusion
 or exclusion membership, malformed flags, GraphQL errors and incomplete list

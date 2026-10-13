@@ -3,6 +3,7 @@ import FormInput from 'Components/Form/FormInput';
 import FormInputHelpText from 'Components/Form/FormInputHelpText';
 import FormLabel from 'Components/Form/FormLabel';
 import FormRow from 'Components/Form/FormRow';
+import { TextTagSuggestion } from 'Components/Form/Tag/TextTagInput';
 import { FieldSelectOption } from 'typings/Field';
 import { InputChanged } from 'typings/inputs';
 import { Failure } from 'typings/pending';
@@ -28,7 +29,7 @@ interface ProviderFieldFormGroupProps<T> {
   warnings: Failure[];
   selectOptions?: FieldSelectOption<T>[];
   selectOptionsProviderAction?: string;
-  tagSuggestions?: string[];
+  tagSuggestions?: TextTagSuggestion[];
   onChange: (change: InputChanged<T>) => void;
 }
 
@@ -135,7 +136,20 @@ function ProviderFieldFormGroup<T>({
         pending={pending}
         includeFiles={providerType === 'filePath' ? true : undefined}
         {...(otherProps.provider === 'importList' &&
-        (name === 'includedCustomLists' || name === 'excludedCustomLists')
+        [
+          'includedCustomLists',
+          'excludedCustomLists',
+          'includedTags',
+          'excludedTags',
+          'includedListIds',
+          'excludedListIds',
+          'includedLists',
+          'excludedLists',
+          'includedListUrls',
+          'excludedListUrls',
+          'includedCustomListIds',
+          'excludedCustomListIds',
+        ].includes(name)
           ? {
               preserveTagText: true,
               tagSuggestions,

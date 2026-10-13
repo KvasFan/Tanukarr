@@ -10,9 +10,10 @@ Private vulnerability reporting is enabled for this repository. Use
 [private reporting form](https://github.com/KvasExert/Tanukarr/security/advisories/new),
 before publishing exploit details or credentials.
 
-Release 1.0.0 is identified by Git tag `v1.0.0` and the GHCR image
-`ghcr.io/kvasexert/tanukarr:1.0.0`. Identify the exact Git commit and image digest
-in reports. The [release notes](docs/releases/1.0.0.md) and release manifest record
+Release 1.0.2 is identified by Git tag `v1.0.2` and the GHCR image
+`ghcr.io/kvasexert/tanukarr:1.0.2` after verified publication. Identify the exact
+Git commit and image digest in reports. The [release notes](docs/releases/1.0.2.md)
+and release manifest record
 the artifact being distributed. Source Kakarotto, gaboy or ikatun images can
 contain different code and require reports to their own maintainers.
 
@@ -35,6 +36,17 @@ public reports. Do not test against third-party services, another user's instanc
 or a real media library without authorization.
 
 ## Recorded verification
+
+The [1.0.2 verification report](docs/releases/1.0.2-verification.md) records the
+new source and local image checkpoint. Its final image scan found zero Critical
+advisories, three distinct High ImageSharp advisories repeated across 21 package
+occurrences, and zero detected secrets. ImageSharp remains at 3.1.12; the
+advertised 4.1.2 fixes are not included. The C# scan found no flags on the 50
+changed/new paths, while 87 existing findings were triaged and three historical
+SQL migrations remain hardening candidates. Remaining parser limits and runtime
+scope are documented rather than claiming a clean repository or complete audit.
+This local evidence is separate from any subsequently published registry image
+and its actual release manifests.
 
 The [October 12 security and functional report](docs/security-functional-validation-2026-10-12.md)
 records confirmed fixes, tested image identity, tool versions and residual

@@ -68,6 +68,7 @@ local commit makes their original author name unreachable from HEAD.
 | Post-release official-relation/manual anime season and movie groups, configurable season/arc/movie folders and native group-file tokens, per-member library presentation, pack-only season search, AniList name autocomplete/typed membership compatibility, regression checks and English guides | OpenAI Codex, based on GPT-6 | Same local coding session; AniList/Jikan relationship data and original provider authors remain separately credited |
 | Subsequent AniList public metadata/relation cache and pacing, partial metadata-import progress, guarded saved-list resume, expected cloud-policy handling, cover-bearing frontend CommonJS interoperability, sanitized log audit, regression fixtures and English reliability documentation | OpenAI Codex, based on GPT-6 | Same local coding session; implementation and verification status are recorded separately in the new checkpoint; no exact model variant is established |
 | Tanukarr 1.0.1 group-slot collision recovery, regression coverage, release packaging/documentation and GitHub repository Tanuki branding | OpenAI Codex, based on GPT-6 | Same local coding session; executed checks and publication state belong to the 1.0.1 verification report |
+| Tanukarr 1.0.2 final exclusion-veto selection, simplified/compatible list controls, complete AniList membership recovery, provider capability audit, direct MyAnimeList account-list adaptation and release documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original providers/authors remain credited and fresh execution/publication evidence belongs to the 1.0.2 verification report |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -79,15 +80,15 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The current release target is **Tanukarr 1.0.1**, with Git tag
-`v1.0.1`, under the GitHub profile
+The current release target is **Tanukarr 1.0.2**, with Git tag
+`v1.0.2`, under the GitHub profile
 [KvasExert](https://github.com/KvasExert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/1.0.1.md), [verification report](docs/releases/1.0.1-verification.md) and
+[release notes](docs/releases/1.0.2.md), [verification report](docs/releases/1.0.2-verification.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
 The original SonarrWeeb [0.0.1](docs/releases/0.0.1.md) and
@@ -288,9 +289,9 @@ whose source/tag/notes and original attribution remain unchanged. The
 [settings cleanup checkpoint](docs/anilist-settings-cleanup-2026-10-13.md)
 records the actual checks and that cleanup's final-image scope.
 
-The later owner-requested priority change and incomplete-membership adaptation
-also use **OpenAI Codex, based on GPT-6**. Explicitly included custom lists now
-override excluded custom lists only for entries passing the existing account
+The intermediate owner-requested priority change and incomplete-membership
+adaptation also used **OpenAI Codex, based on GPT-6**. Explicitly included custom
+lists overrode excluded custom lists only for entries passing the existing account
 and media-status filters, including duplicate native IDs across pages. The
 adaptation consults AniList contributors' official `MediaList`,
 `MediaListCollection` and `MediaListGroup` contracts, preserving original
@@ -299,6 +300,16 @@ provider/list authorship. The
 separates live public schema observations, real unsaved account Test results,
 synthetic missing-response regressions, final-image checks and preserved local
 deployment.
+
+For the final Tanukarr 1.0.2 request, **OpenAI Codex, based on GPT-6**, restored
+exclusion vetoes: eligible entries intersect any configured included custom lists,
+then remove membership in any excluded custom list, including overlaps and
+duplicate pages. The complete-collection recovery and original provider/list
+authorship are retained. The same local tool prepares provider-capability
+documentation, regression verification, version metadata and the release.
+New 1.0.2 execution evidence belongs to the
+[release verification report](docs/releases/1.0.2-verification.md); earlier
+development checkpoints retain their original rules and results.
 
 The subsequent custom-list synchronization request-limit correction also used
 **OpenAI Codex, based on GPT-6**. It adds a shared AniList request budget,
@@ -336,6 +347,46 @@ encoding correction, regression tests and English verification documentation.
 The defect was present in the integrated upstream snapshot, rather than caused
 by the AniList request-limit correction. See the
 [Nyaa verification checkpoint](docs/nyaa-verification-2026-10-13.md).
+
+### MyAnimeList account-list provider and direct authentication
+
+- [1335efd48](https://github.com/Sonarr/Sonarr/commit/1335efd487a02ab66f075064781c35634494f2f1): **iceypotato**, original MyAnimeList import-list provider.
+- [a85419df1](https://github.com/Sonarr/Sonarr/commit/a85419df15532da666b7adf4b94d588b76caad79): **Andrew Ukkonen**, original minimum-score filter.
+
+The inherited MyAnimeList account-list code remained unchanged from upstream
+before this adaptation. The fork's deliberate Sonarr-cloud prohibition requires
+a direct registered MyAnimeList client for new authorization/renewal instead of
+the inherited cloud broker. **OpenAI Codex, based on GPT-6**, adapts direct
+PKCE/OAuth and public-user Client ID access, multiple official account statuses,
+exact list-tag selection/exclusion, catalogue release filters and guarded
+pagination. These are MyAnimeList list tags, not invented AniList custom-list
+capabilities. Jikan's public metadata provider remains separately credited.
+Fresh verification and limitations belong to the
+[1.0.2 report](docs/releases/1.0.2-verification.md).
+
+### SIMKL Watchlist and optional AUTH V2 custom lists
+
+- [4a740acb8](https://github.com/Sonarr/Sonarr/commit/4a740acb801a04bc2ead45d272d493f4ec46f7e8): **Qstick**, original SIMKL list support.
+
+The optional 1.0.2 adaptation uses SIMKL contributors' documented read-only
+custom-list beta, registered AUTH V2/PRO-or-VIP requirements and response
+contracts. **OpenAI Codex, based on GPT-6**, adapts direct authorization and
+membership intersection/subtraction while preserving the original V1 Watchlist
+path when unset. Account status remains the selected Watchlist bucket, rather
+than an item's community watching count. Source credit does not imply a live
+premium-account test; actual checks belong to the new release report.
+
+### Plex Watchlist and complete pagination
+
+The original Plex Watchlist provider remains credited to **justin vanderhooft**,
+[f6fbd3cfe](https://github.com/Sonarr/Sonarr/commit/f6fbd3cfee4db891e68f9f15551ea62b02077b5e).
+Its pagination code was unchanged from the recorded upstream base before the
+1.0.2 adaptation. **OpenAI Codex, based on GPT-6**, replaces the inherited silent
+1,000-item cap with complete validated raw pagination, fail-closed retention and
+private-response logging safeguards. This credits the adaptation and regression
+coverage while preserving the provider's original authorship. It does not
+implement Plex's separately announced named Lists or claim a live owner
+Watchlist import; executed evidence belongs to the new release report.
 
 ### IMDb orderings, bounded dataset import and Jikan fallback
 

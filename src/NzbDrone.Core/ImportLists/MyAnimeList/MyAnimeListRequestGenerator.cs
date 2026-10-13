@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 
 namespace NzbDrone.Core.ImportLists.MyAnimeList
@@ -7,7 +9,7 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
     {
         public MyAnimeListSettings Settings { get; set; }
 
-        private static readonly Dictionary<MyAnimeListStatus, string> StatusMapping = new Dictionary<MyAnimeListStatus, string>
+        public static readonly IReadOnlyDictionary<MyAnimeListStatus, string> StatusMapping = new Dictionary<MyAnimeListStatus, string>
         {
             { MyAnimeListStatus.Watching, "watching" },
             { MyAnimeListStatus.Completed, "completed" },
@@ -27,24 +29,33 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
 
         private IEnumerable<ImportListRequest> GetSeriesRequest()
         {
-            var status = (MyAnimeListStatus)Settings.ListStatus;
+            yield return GetRequest(0);
+        }
+
+        public ImportListRequest GetRequest(int offset)
+        {
+            Settings.NormalizeLegacyStatus();
             var requestBuilder = new HttpRequestBuilder(Settings.BaseUrl.Trim());
 
-            requestBuilder.Resource("users/@me/animelist");
-            requestBuilder.AddQueryParam("fields", "list_status");
+            requestBuilder.Resource("users/{username}/animelist");
+            requestBuilder.SetSegment("username", Settings.Username == "@me" ? "@me" : Uri.EscapeDataString(Settings.Username));
+            requestBuilder.AddQueryParam("fields", "status,list_status{status,score,tags,is_rewatching}");
             requestBuilder.AddQueryParam("limit", "1000");
+            requestBuilder.AddQueryParam("offset", offset);
             requestBuilder.Accept(HttpAccept.Json);
-
-            if (status != MyAnimeListStatus.All && StatusMapping.TryGetValue(status, out var statusName))
-            {
-                requestBuilder.AddQueryParam("status", statusName);
-            }
 
             var httpReq = new ImportListRequest(requestBuilder.Build());
 
-            httpReq.HttpRequest.Headers.Add("Authorization", $"Bearer {Settings.AccessToken}");
+            if (Settings.AccessToken.IsNotNullOrWhiteSpace())
+            {
+                httpReq.HttpRequest.Headers.Add("Authorization", $"Bearer {Settings.AccessToken}");
+            }
+            else
+            {
+                httpReq.HttpRequest.Headers.Add("X-MAL-CLIENT-ID", Settings.ClientId);
+            }
 
-            yield return httpReq;
+            return httpReq;
         }
     }
 }

@@ -11,6 +11,12 @@ using NzbDrone.Common.Serializer;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.AniList.List;
 using NzbDrone.Core.ImportLists.ImportListItems;
+using NzbDrone.Core.ImportLists.MDBList;
+using NzbDrone.Core.ImportLists.MyAnimeList;
+using NzbDrone.Core.ImportLists.Plex;
+using NzbDrone.Core.ImportLists.Simkl.User;
+using NzbDrone.Core.ImportLists.Tmdb.List;
+using NzbDrone.Core.ImportLists.Trakt.List;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Parser.Model;
@@ -128,6 +134,132 @@ namespace NzbDrone.Core.Test.ImportListTests
                 Mocker.GetMock<IImportListItemService>().Object,
                 cacheManager,
                 LogManager.GetLogger("Fixture import list fetcher"));
+        }
+
+        private Mock<IImportList> WithResumableProvider(string provider)
+        {
+            var list = WithAniList();
+            var definition = (ImportListDefinition)list.Object.Definition;
+            definition.Implementation = provider;
+            switch (provider)
+            {
+                case nameof(MyAnimeListImport):
+                    definition.Settings = new MyAnimeListSettings { AccessToken = "generated-token" };
+                    list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(new[] { new ImportListItemInfo { MalId = 900101, Title = "MAL fixture" } }, false));
+                    break;
+                case nameof(TmdbListImport):
+                    definition.Settings = new TmdbListSettings();
+                    list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(new[] { new ImportListItemInfo { TmdbId = 900101, Title = "TMDB fixture" } }, false));
+                    break;
+                case nameof(MDBListImport):
+                    definition.Settings = new MDBListSettings();
+                    list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(new[] { new ImportListItemInfo { ImdbId = "tt900101", Title = "MDB fixture" } }, false));
+                    break;
+                case nameof(TraktListImport):
+                    definition.Settings = new TraktListSettings();
+                    list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(new[] { new ImportListItemInfo { TvdbId = 900101, Title = "Trakt fixture" } }, false));
+                    break;
+                case nameof(PlexImport):
+                    definition.Settings = new PlexListSettings { AccessToken = "generated-token" };
+                    list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(new[] { new ImportListItemInfo { TvdbId = 900101, Title = "Plex fixture" } }, false));
+                    break;
+                case nameof(SimklUserImport):
+                    definition.Settings = new SimklUserSettings { AccessToken = "generated-token" };
+                    list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(new[] { new ImportListItemInfo { MalId = 900101, Title = "SIMKL fixture" } }, false));
+                    break;
+            }
+
+            return list;
+        }
+
+        [TestCase(nameof(MyAnimeListImport))]
+        [TestCase(nameof(TmdbListImport))]
+        [TestCase(nameof(MDBListImport))]
+        [TestCase(nameof(TraktListImport))]
+        [TestCase(nameof(PlexImport))]
+        [TestCase(nameof(SimklUserImport))]
+        public void should_resume_other_complete_list_providers_from_authoritative_rows_without_repeating_http(string provider)
+        {
+            var list = WithResumableProvider(provider);
+            var original = Subject.Fetch().Series.Should().ContainSingle().Subject;
+            var resumed = Subject.Fetch().Series.Should().ContainSingle().Subject;
+
+            resumed.MalId.Should().Be(original.MalId);
+            resumed.TmdbId.Should().Be(original.TmdbId);
+            resumed.TvdbId.Should().Be(original.TvdbId);
+            resumed.ImdbId.Should().Be(original.ImdbId);
+            resumed.AniListId.Should().Be(0);
+            resumed.ImportListId.Should().Be(10);
+            resumed.Should().NotBeSameAs(_savedAniListItems[0]);
+            list.Verify(item => item.Fetch(), Times.Once());
+            Mocker.GetMock<IImportListItemService>().Verify(service => service.SyncSeriesForList(It.IsAny<List<ImportListItemInfo>>(), 10), Times.Once());
+        }
+
+        [TestCase(nameof(MyAnimeListImport))]
+        [TestCase(nameof(TmdbListImport))]
+        [TestCase(nameof(MDBListImport))]
+        [TestCase(nameof(TraktListImport))]
+        [TestCase(nameof(PlexImport))]
+        [TestCase(nameof(SimklUserImport))]
+        public void should_not_resume_other_provider_membership_after_credentials_or_definition_change(string provider)
+        {
+            var list = WithResumableProvider(provider);
+            Subject.Fetch();
+            var definition = (ImportListDefinition)list.Object.Definition;
+            definition.Settings = provider switch
+            {
+                nameof(MyAnimeListImport) => new MyAnimeListSettings { AccessToken = "changed-generated-token" },
+                nameof(TmdbListImport) => new TmdbListSettings { IncludedListIds = new[] { "123" } },
+                nameof(TraktListImport) => new TraktListSettings { IncludedLists = new[] { "changed-source" } },
+                nameof(PlexImport) => new PlexListSettings { AccessToken = "changed-generated-token" },
+                nameof(SimklUserImport) => new SimklUserSettings { AccessToken = "changed-generated-token" },
+                _ => new MDBListSettings { IncludedListUrls = new[] { "https://mdblist.com/lists/fixture/changed" } }
+            };
+
+            Subject.Fetch().Series.Should().BeEmpty();
+
+            list.Verify(item => item.Fetch(), Times.Once());
+            Mocker.GetMock<IImportListItemService>().Verify(service => service.GetAllForLists(It.IsAny<List<int>>()), Times.Never());
+        }
+
+        [TestCase(nameof(MyAnimeListImport))]
+        [TestCase(nameof(TmdbListImport))]
+        [TestCase(nameof(MDBListImport))]
+        [TestCase(nameof(TraktListImport))]
+        [TestCase(nameof(PlexImport))]
+        [TestCase(nameof(SimklUserImport))]
+        public void should_require_a_complete_process_local_witness_for_other_resumable_providers(string provider)
+        {
+            var list = WithResumableProvider(provider);
+            Subject.Fetch();
+
+            AnotherService(new CacheManager()).Fetch().Series.Should().BeEmpty();
+
+            list.Verify(item => item.Fetch(), Times.Once());
+        }
+
+        [TestCase(nameof(AniListImport))]
+        [TestCase(nameof(MyAnimeListImport))]
+        [TestCase(nameof(TmdbListImport))]
+        [TestCase(nameof(MDBListImport))]
+        [TestCase(nameof(TraktListImport))]
+        [TestCase(nameof(PlexImport))]
+        [TestCase(nameof(SimklUserImport))]
+        public void should_not_resume_fetched_season_monitor_overrides_without_persisting_them(string provider)
+        {
+            var list = WithResumableProvider(provider);
+            list.Setup(item => item.Fetch()).Returns(new ImportListFetchResult(
+                new[]
+                {
+                    new ImportListItemInfo { TvdbId = 900101, Seasons = new List<Season> { new Season { SeasonNumber = 2, Monitored = true } } }
+                },
+                false));
+            Subject.Fetch().Series.Should().ContainSingle().Subject.Seasons.Should().ContainSingle();
+
+            Subject.Fetch().Series.Should().BeEmpty();
+
+            list.Verify(item => item.Fetch(), Times.Once());
+            Mocker.GetMock<IImportListItemService>().Verify(service => service.GetAllForLists(It.IsAny<List<int>>()), Times.Never());
         }
 
         [Test]

@@ -88,16 +88,15 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void should_prioritize_explicit_array_inclusion_when_the_same_member_is_excluded()
+        public void should_subtract_array_exclusions_when_the_same_member_is_included()
         {
             _settings.IncludedCustomLists = new[] { "Included" };
             var parser = new AniListParser(_settings);
 
             parser.ParseResponse(Response(@"""customLists"":null,""customListEntries"":[
                 {""name"":""Included"",""enabled"":true},{""name"":""Excluded"",""enabled"":true}]"))
-                .Should().ContainSingle();
-            parser.IncludedMediaIds.Should().Equal(1);
-            parser.ExcludedMediaIds.Should().BeEmpty();
+                .Should().BeEmpty();
+            parser.ExcludedMediaIds.Should().Equal(1);
         }
 
         [Test]

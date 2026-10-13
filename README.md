@@ -4,7 +4,7 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.0.1** manages **TV series and anime** in one Sonarr-derived application.
+**Tanukarr 1.0.2** manages **TV series and anime** in one Sonarr-derived application.
 It is the renamed continuation of **SonarrWeeb** and includes
 selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
 shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
@@ -14,14 +14,15 @@ and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr)
-and read the [release notes for 1.0.1](docs/releases/1.0.1.md). Published versions
+and read the [release notes for 1.0.2](docs/releases/1.0.2.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExert/Tanukarr/releases).
-The [1.0.1 verification report](docs/releases/1.0.1-verification.md) records this
+The [1.0.2 verification report](docs/releases/1.0.2-verification.md) records this
 release's checks, publication status and remaining findings. The historical
-[1.0.0 report](docs/releases/1.0.0-verification.md) retains its original evidence.
+[1.0.1 report](docs/releases/1.0.1-verification.md) retains its original evidence.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
-Version 1.0.1 includes [series, anime and movie groups](docs/anime-season-groups.md):
+Version 1.0.2 retains [series, anime and movie groups](docs/anime-season-groups.md)
+introduced in 1.0.1:
 official prequel/sequel discovery, manual overrides and one anime presentation
 with configurable season, story-arc and movie folders for newly generated paths.
 It also includes native season-pack search, clearer AniList list settings and
@@ -145,12 +146,13 @@ still follows the configured series and episode numbering.
 **AniList custom lists** — target your own custom lists alongside Planning and
 Watching. Tanukarr supports multiple included lists, excluded lists and
 the existing Import checkboxes for account-list and media-release states.
-Matching any explicitly included custom list takes priority over excluded
-custom-list membership. Account-list and media-release Import filters still
-apply; without an included match, custom-list exclusions remain effective.
+Matching any included custom list selects a candidate; matching any excluded
+custom list always removes it, including overlaps. Account-list and media-release
+Import filters still apply. Empty included names select all otherwise eligible
+entries before exclusions.
 ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
 
-Current `main` removes the six separate Exclude Watching/Planning/Completed/
+Version 1.0.2 removes the six separate Exclude Watching/Planning/Completed/
 Dropped/Paused/Repeating controls and their behavior. Select states through the
 Import checkboxes and exclude entries through custom lists. This simplification
 follows the immutable 1.0.1 release, whose original settings remain unchanged.
@@ -158,9 +160,10 @@ The duplicate single-list textbox is also removed: an older saved custom-list
 name becomes an **Included Custom Lists** tag, so its filter stays visible and
 can be edited there. The [settings cleanup checkpoint](docs/anilist-settings-cleanup-2026-10-13.md)
 records this later source change and its verification scope.
-The later [membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
-records the requested inclusion-first rule and investigation of incomplete
-custom-list responses, separately from immutable release behavior.
+The earlier [membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
+records an intermediate inclusion-first development rule. Version 1.0.2 uses
+the final exclusion-veto rule and retains complete-collection recovery for
+otherwise unknown membership; see the [new release verification](docs/releases/1.0.2-verification.md).
 
 Version 1.0.1 includes grouped AniList settings and **Load custom lists** name
 autocomplete while preserving manual names and OAuth. A typed-array membership
@@ -183,6 +186,15 @@ provider ID throughout preview, synchronization, exclusions and cleanup; it is
 not converted into a parent TVDB series. See [Library tools](docs/library-tools.md)
 and the [integration report](docs/integration-2026-10-12.md).
 
+**Other list providers** — TMDB List, Trakt List and MDBList can combine several
+included sources and subtract excluded sources; at least one included source is
+required. MyAnimeList account imports use the official MAL API, registered
+Client ID/public username or direct OAuth, account states, minimum score, airing
+states and exact list tags. Matching an excluded tag always removes an entry.
+Jikan remains a separate public catalogue metadata provider. The
+[provider capability matrix](docs/library-tools.md#provider-capabilities)
+describes supported selectors, credentials and legacy-setting preservation.
+
 **Library tools and retained versions** — combined path/library filters,
 automation pause, import-list previews, search diagnostics, guarded restore,
 scoped companion keys and per-show retained versions are described in
@@ -197,7 +209,7 @@ imports survive restarts and failed requests are retried. See the
 [Jellyfin guide](docs/jellyfin.md). New libraries must first complete an initial
 scan in Jellyfin; pending imports are retained until every configured folder is
 indexed. This connection was introduced in SonarrWeeb 0.1.0 and is retained in
-Tanukarr 1.0.1.
+Tanukarr 1.0.2.
 
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
@@ -224,12 +236,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexert/tanukarr:1.0.1
+docker pull ghcr.io/kvasexert/tanukarr:1.0.2
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexert/tanukarr:1.0.1
+  --restart unless-stopped ghcr.io/kvasexert/tanukarr:1.0.2
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -289,7 +301,8 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `1.0.1` | Series/anime/movie groups, season-pack searches, clearer AniList controls, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; use after publication completes. |
+| `1.0.2` | Simplified AniList controls and complete membership recovery; exclusion vetoes, combined TMDB/Trakt/MDBList sources, and direct MAL account status/tag filters. Use after publication completes. |
+| `1.0.1` | Historical grouping, season-pack searches, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; retains its original list controls. |
 | `1.0.0` | Historical first Tanukarr release with Jellyfin refresh, AniList include/exclude controls and request-limit recovery, and corrected Nyaa query encoding. |
 | `latest` | The newest published release; it can change when a later version is released. |
 | `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |

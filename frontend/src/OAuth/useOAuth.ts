@@ -96,18 +96,24 @@ function showOAuthWindow(
       ) {
         delete selfWindow.onCompleteOauth;
 
-        const queryParams: Record<string, string> = {};
-        const splitQuery = query.substring(1).split('&');
+        try {
+          const parameters = new URLSearchParams(query);
+          const names = new Set<string>();
 
-        splitQuery.forEach((param) => {
-          if (param) {
-            const paramSplit = param.split('=');
-            queryParams[paramSplit[0]] = paramSplit[1];
-          }
-        });
+          parameters.forEach((_value, key) => {
+            if (names.has(key)) {
+              throw new Error('OAuth callback contained duplicate parameters');
+            }
 
-        onComplete();
-        resolve(queryParams);
+            names.add(key);
+          });
+
+          onComplete();
+          resolve(Object.fromEntries(parameters));
+        } catch (error) {
+          onComplete();
+          reject(error);
+        }
       };
     }
   });

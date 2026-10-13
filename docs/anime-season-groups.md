@@ -8,11 +8,12 @@ provider, catalogue ID, episodes, monitoring, files and download history. The
 group season is a display and folder position; it does not replace the owning
 catalogue's episode numbering.
 
-This feature is included in **Tanukarr 1.0.1**. It was introduced after the
+This feature is retained in **Tanukarr 1.0.2** and first shipped in 1.0.1 after the
 immutable 1.0.0 release, whose source and image retain their original scope.
-Use the published 1.0.1 image or an `edge` image containing these changes. Check
-the image's source revision and the [1.0.1 verification report](releases/1.0.1-verification.md)
-for this release's checks. The original
+Use 1.0.2 after verified publication or an `edge` image containing these changes.
+Check the image's source revision and the
+[1.0.2 verification report](releases/1.0.2-verification.md) for newly executed checks.
+The [1.0.1 report](releases/1.0.1-verification.md) and original
 [grouping verification report](anime-season-groups-verification-2026-10-13.md)
 retains its earlier source/image checkpoint.
 

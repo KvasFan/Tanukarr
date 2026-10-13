@@ -270,14 +270,15 @@ class AnimeGroups(ContainerSmoke):
         tls = self.root / "fixture"
         tls.mkdir()
         extensions = tls / "server.ext"
+        hosts = getattr(self, "fixture_hosts", ("graphql.anilist.co",))
         extensions.write_text(
             "basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\n"
-            "extendedKeyUsage=serverAuth\nsubjectAltName=DNS:graphql.anilist.co\n", encoding="utf-8")
+            "extendedKeyUsage=serverAuth\nsubjectAltName=" + ",".join("DNS:" + host for host in hosts) + "\n", encoding="utf-8")
         commands = [
             [self.args.openssl, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
              "-subj", "/CN=Tanukarr disposable anime grouping CA", "-addext", "basicConstraints=critical,CA:TRUE",
              "-addext", "keyUsage=critical,keyCertSign,cRLSign", "-keyout", str(tls / "ca.key"), "-out", str(tls / "ca.crt")],
-            [self.args.openssl, "req", "-new", "-newkey", "rsa:2048", "-nodes", "-subj", "/CN=graphql.anilist.co",
+            [self.args.openssl, "req", "-new", "-newkey", "rsa:2048", "-nodes", "-subj", "/CN=" + hosts[0],
              "-keyout", str(tls / "server.key"), "-out", str(tls / "server.csr")],
             [self.args.openssl, "x509", "-req", "-days", "1", "-in", str(tls / "server.csr"),
              "-CA", str(tls / "ca.crt"), "-CAkey", str(tls / "ca.key"), "-CAcreateserial",

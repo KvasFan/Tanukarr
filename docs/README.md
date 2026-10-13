@@ -12,7 +12,9 @@ original content.
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
 | [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
 | [Series, anime and movie groups](anime-season-groups.md) | 1.0.1 official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
-| [Tanukarr 1.0.1](releases/1.0.1.md) | Group-slot collision recovery, grouping/search/list improvements, browser reliability and upgrade guidance |
+| [Tanukarr 1.0.2](releases/1.0.2.md) | Final list selection/exclusion behavior, provider-specific list capabilities, simplified controls and upgrade guidance |
+| [1.0.2 release verification](releases/1.0.2-verification.md) | Newly executed source/image checks, provider coverage, remaining findings and publication checkpoint |
+| [Tanukarr 1.0.1](releases/1.0.1.md) | Historical group-slot collision recovery, grouping/search/list improvements, browser reliability and upgrade guidance |
 | [1.0.1 release verification](releases/1.0.1-verification.md) | This release's executed checks, exact source/image identity, remaining findings and publication state |
 | [Tanukarr 1.0.0](releases/1.0.0.md) | Rename, Tanuki artwork, retained features, upgrade guidance and release limits |
 | [1.0.0 release verification](releases/1.0.0-verification.md) | Executed checks, exact source/image identity, remaining findings and publication |
@@ -60,6 +62,12 @@ Jellyfin refresh, AniList inclusion/exclusion and Nyaa query encoding. Its relea
 verification report records only checks actually executed for the new source and
 image; older release and feature reports retain their original identities and
 results. Original SonarrWeeb and Tanukarr tags and assets remain unchanged.
+
+Tanukarr 1.0.2 adds the simplified current list controls, final exclusion-veto
+rule and guarded complete AniList membership recovery. Service-specific list
+capabilities are documented rather than assuming every provider supports AniList
+custom lists. Its own verification report records only newly executed checks;
+the intermediate inclusion-first development checkpoint remains historical.
 
 The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later

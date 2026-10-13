@@ -140,11 +140,11 @@ async function main(input) {
       if (input.artifactDirectory) await page.screenshot({ path: path.join(input.artifactDirectory, 'anilist-list-status-fields.png'), fullPage: true });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
     });
-    await check('AniList custom-list help states explicit inclusion priority without bypassing status filters', async () => {
+    await check('AniList custom-list help states exclusions always veto overlapping inclusions', async () => {
       await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
       await page.getByRole('button', { name: 'Add Import List - AniList List', exact: true }).click();
       await page.locator('input[name="includedCustomLists"]').waitFor({ state: 'visible' });
-      await page.getByText('An explicitly included custom list wins over an excluded custom list. Import list and release statuses still apply. Without an included match, exclusions remain effective.', { exact: true }).waitFor({ state: 'visible' });
+      await page.getByText('An excluded custom list always wins, even when the anime also belongs to an included custom list. Import list and release statuses still apply.', { exact: true }).waitFor({ state: 'visible' });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
     });
     await check('AniList custom-list exclusions preserve literal names while obsolete status exclusions are absent', async () => {
@@ -205,6 +205,84 @@ async function main(input) {
       assert.equal(savedAfter.status(), 200);
       assert.deepEqual(await savedAfter.json(), originalLists, 'Cancelled filter editor changed saved lists');
     });
+    for (const provider of [
+      { implementation: 'TmdbListImport', include: 'includedListIds', exclude: 'excludedListIds', sample: '42', legacy: ['listId', 'accountListId'], controls: ['authToken', 'accountId'], loading: true },
+      { implementation: 'TraktListImport', include: 'includedLists', exclude: 'excludedLists', sample: 'watching-this-season', legacy: ['listname'], controls: ['username', 'years'], loading: true },
+      { implementation: 'MDBListImport', include: 'includedListUrls', exclude: 'excludedListUrls', sample: 'https://mdblist.com/lists/generated-owner/weekend-picks', legacy: ['listUrl'], controls: ['apiKey'], loading: false },
+      { implementation: 'MyAnimeListImport', include: 'includedTags', exclude: 'excludedTags', sample: 'Spring, favorites', legacy: ['listStatus'], controls: ['username', 'clientId', 'clientSecret', 'minimumScore', 'importFinished', 'importAiring', 'importUnreleased'], loading: false },
+      { implementation: 'SimklUserImport', include: 'includedCustomListIds', exclude: 'excludedCustomListIds', sample: '501', legacy: [], controls: ['clientIdV2', 'clientSecretV2'], choices: ['Shows', 'Watching'], loading: true },
+    ]) {
+      await check(provider.implementation + ' grouped list form preserves literal selections, excludes overlaps and cancels without account access', async () => {
+        const headers = { 'X-Api-Key': input.apiKey };
+        const schemaResponse = await context.request.get(input.baseUrl + '/api/v5/importlist/schema', { headers });
+        assert.equal(schemaResponse.status(), 200);
+        const schema = (await schemaResponse.json()).find((candidate) => candidate.implementation === provider.implementation);
+        assert.ok(schema, 'The packaged provider schema is missing');
+        const savedBefore = await context.request.get(input.baseUrl + '/api/v5/importlist', { headers });
+        assert.equal(savedBefore.status(), 200);
+        const originalLists = await savedBefore.json();
+        await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
+        await page.getByRole('button', { name: 'Add Import List - ' + schema.implementationName, exact: true }).click();
+        const included = page.locator('input[name="' + provider.include + '"]');
+        const excluded = page.locator('input[name="' + provider.exclude + '"]');
+        await included.waitFor({ state: 'visible' });
+        await excluded.waitFor({ state: 'visible' });
+        await page.getByText('Included selections are combined, then entries in any excluded selection are removed. Exclusions always win, including overlaps', { exact: true }).waitFor({ state: 'visible' });
+        await page.getByText('Test checks the current form without saving it. If the provider returns incomplete or unknown required list data, the last successful import list is retained', { exact: true }).waitFor({ state: 'visible' });
+        for (const name of provider.controls) {
+          assert.equal(await page.locator('input[name="' + name + '"]').count(), 1, 'Missing provider control ' + name);
+        }
+        for (const name of provider.choices ?? []) {
+          assert.equal(await page.getByRole('button', { name, exact: true }).count(), 1, 'Missing provider catalogue/status choice ' + name);
+        }
+        for (const name of provider.legacy) {
+          assert.equal(await page.locator('input[name="' + name + '"]').count(), 0, 'Obsolete single-selection field is visible');
+        }
+        assert.equal(await page.getByRole('button', { name: 'Load lists', exact: true }).count(), provider.loading ? 1 : 0);
+        await included.fill(provider.sample);
+        await included.press('Enter');
+        await excluded.fill(provider.sample);
+        await excluded.press('Enter');
+        await page.getByText(provider.sample, { exact: true }).nth(1).waitFor({ state: 'visible' });
+        assert.equal(await page.getByText(provider.sample, { exact: true }).count(), 2, 'A literal selection was split or dropped');
+        if (provider.implementation === 'TraktListImport') await page.locator('input[name="username"]').fill('generated-user');
+        if (provider.implementation === 'SimklUserImport') {
+          await page.locator('input[name="clientIdV2"]').fill('generated-v2-application');
+          await page.getByRole('button', { name: 'Shows', exact: true }).click();
+          await page.getByText('Anime', { exact: true }).last().click();
+        }
+        if (provider.implementation === 'MyAnimeListImport') {
+          const statuses = page.locator('input[name="listStatuses"]');
+          await statuses.waitFor({ state: 'visible' });
+          await statuses.fill('Watching');
+          await statuses.press('Enter');
+        }
+        const testResponse = page.waitForResponse((response) =>
+          /\/api\/v[35]\/importlist\/test\/?$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST');
+        await page.getByRole('button', { name: 'Test', exact: true }).last().click();
+        const response = await testResponse;
+        // Every generated form deliberately omits credentials. Local validation
+        // must fail before a request to a real account/list service.
+        assert.equal(response.status(), 400);
+        const fields = new Map(response.request().postDataJSON().fields.map((field) => [field.name, field.value]));
+        assert.deepEqual(fields.get(provider.include), [provider.sample]);
+        assert.deepEqual(fields.get(provider.exclude), [provider.sample]);
+        if (provider.implementation === 'MyAnimeListImport') {
+          assert.ok(Array.isArray(fields.get('listStatuses')) && fields.get('listStatuses').includes(1));
+          assert.ok(fields.get('listStatuses').every((value) => Number.isInteger(value)));
+        }
+        if (provider.implementation === 'SimklUserImport') {
+          assert.equal(fields.get('clientIdV2'), 'generated-v2-application');
+          assert.equal(fields.get('showType'), 1);
+          assert.equal(fields.get('listType'), 0);
+        }
+        for (const name of provider.legacy) assert.ok(!fields.has(name) || !fields.get(name), 'A hidden restriction was submitted');
+        await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
+        const savedAfter = await context.request.get(input.baseUrl + '/api/v5/importlist', { headers });
+        assert.equal(savedAfter.status(), 200);
+        assert.deepEqual(await savedAfter.json(), originalLists, 'Cancelled provider editor changed saved lists');
+      });
+    }
     await check('browser navigation produces no unhandled JavaScript exceptions or forbidden Sonarr-cloud requests', async () => {
       assert.deepEqual(pageErrors, []);
       assert.deepEqual(cloudRequests, []);

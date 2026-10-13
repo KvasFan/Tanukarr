@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NzbDrone.Common.Http;
 
 namespace NzbDrone.Core.ImportLists.MDBList
@@ -23,14 +24,27 @@ namespace NzbDrone.Core.ImportLists.MDBList
         {
             for (var offset = 0; offset < 1000; offset += 250)
             {
-                var builder = new HttpRequestBuilder("https://api.mdblist.com")
-                    .Resource(MDBListSettings.GetListPath(_settings.ListUrl))
-                    .Accept(HttpAccept.Json)
-                    .AddQueryParam("apikey", _settings.ApiKey)
-                    .AddQueryParam("limit", 250)
-                    .AddQueryParam("offset", offset);
-                yield return new ImportListRequest(builder.Build());
+                yield return GetRequest(_settings.IncludedListUrls?.FirstOrDefault() ?? _settings.ListUrl, null, offset);
             }
+        }
+
+        public ImportListRequest GetRequest(string listUrl, string cursor, int? offset)
+        {
+            var builder = new HttpRequestBuilder("https://api.mdblist.com")
+                .Resource(MDBListSettings.GetListPath(listUrl))
+                .Accept(HttpAccept.Json)
+                .AddQueryParam("apikey", _settings.ApiKey)
+                .AddQueryParam("limit", 250);
+            if (cursor != null)
+            {
+                builder.AddQueryParam("cursor", cursor);
+            }
+            else if (offset.HasValue)
+            {
+                builder.AddQueryParam("offset", offset.Value);
+            }
+
+            return new ImportListRequest(builder.Build());
         }
     }
 }

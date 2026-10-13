@@ -11,6 +11,12 @@ using NzbDrone.Common.Serializer;
 using NzbDrone.Common.TPL;
 using NzbDrone.Core.ImportLists.AniList.List;
 using NzbDrone.Core.ImportLists.ImportListItems;
+using NzbDrone.Core.ImportLists.MDBList;
+using NzbDrone.Core.ImportLists.MyAnimeList;
+using NzbDrone.Core.ImportLists.Plex;
+using NzbDrone.Core.ImportLists.Simkl.User;
+using NzbDrone.Core.ImportLists.Tmdb.List;
+using NzbDrone.Core.ImportLists.Trakt.List;
 using NzbDrone.Core.Parser.Model;
 
 namespace NzbDrone.Core.ImportLists
@@ -26,7 +32,7 @@ namespace NzbDrone.Core.ImportLists
         private readonly IImportListFactory _importListFactory;
         private readonly IImportListStatusService _importListStatusService;
         private readonly IImportListItemService _importListItemService;
-        private readonly ICached<CompletedAniListFetch> _completedAniListFetches;
+        private readonly ICached<CompletedListFetch> _completedListFetches;
         private readonly Logger _logger;
 
         public FetchAndParseImportListService(IImportListFactory importListFactory,
@@ -38,7 +44,7 @@ namespace NzbDrone.Core.ImportLists
             _importListFactory = importListFactory;
             _importListStatusService = importListStatusService;
             _importListItemService = importListItemService;
-            _completedAniListFetches = cacheManager.GetCache<CompletedAniListFetch>(typeof(FetchAndParseImportListService), "completedAniListFetches");
+            _completedListFetches = cacheManager.GetCache<CompletedListFetch>(typeof(FetchAndParseImportListService), "completedListFetches");
             _logger = logger;
         }
 
@@ -72,7 +78,7 @@ namespace NzbDrone.Core.ImportLists
                     if (DateTime.UtcNow < importListNextSync)
                     {
                         _logger.Trace("Skipping refresh of Import List {0} ({1}) due to minimum refresh interval. Next sync after {2}", importList.Name, importListLocal.Definition.Name, importListNextSync);
-                        ResumeCompletedAniListFetch(importListLocal, status, result);
+                        ResumeCompletedListFetch(importListLocal, status, result);
                         continue;
                     }
                 }
@@ -81,7 +87,7 @@ namespace NzbDrone.Core.ImportLists
                      {
                          try
                          {
-                             ForgetCompletedAniListFetch(importListLocal);
+                             ForgetCompletedListFetch(importListLocal);
                              var fetchResult = importListLocal.Fetch();
                              var importListReports = fetchResult.Series;
 
@@ -95,7 +101,7 @@ namespace NzbDrone.Core.ImportLists
                                      result.Series.AddRange(importListReports);
                                      var removed = _importListItemService.SyncSeriesForList(importListReports, importList.Definition.Id);
                                      _importListStatusService.UpdateListSyncStatus(importList.Definition.Id, removed > 0);
-                                     RememberCompletedAniListFetch(importListLocal);
+                                     RememberCompletedListFetch(importListLocal, importListReports);
                                  }
 
                                  result.AnyFailure |= fetchResult.AnyFailure;
@@ -146,7 +152,7 @@ namespace NzbDrone.Core.ImportLists
             {
                 try
                 {
-                    ForgetCompletedAniListFetch(importListLocal);
+                    ForgetCompletedListFetch(importListLocal);
                     var fetchResult = importListLocal.Fetch();
                     var importListReports = fetchResult.Series;
 
@@ -160,7 +166,7 @@ namespace NzbDrone.Core.ImportLists
                             result.Series.AddRange(importListReports);
                             var removed = _importListItemService.SyncSeriesForList(importListReports, importList.Definition.Id);
                             _importListStatusService.UpdateListSyncStatus(importList.Definition.Id, removed > 0);
-                            RememberCompletedAniListFetch(importListLocal);
+                            RememberCompletedListFetch(importListLocal, importListReports);
                         }
 
                         result.AnyFailure |= fetchResult.AnyFailure;
@@ -187,11 +193,16 @@ namespace NzbDrone.Core.ImportLists
             return result;
         }
 
-        private static bool IsAniListImport(IImportList importList)
+        private static bool SupportsCompletedFetchResume(IImportList importList)
         {
             return importList.Definition is ImportListDefinition definition &&
-                   definition.Implementation == nameof(AniListImport) &&
-                   definition.Settings is AniListSettings;
+                   ((definition.Implementation == nameof(AniListImport) && definition.Settings is AniListSettings) ||
+                    (definition.Implementation == nameof(MyAnimeListImport) && definition.Settings is MyAnimeListSettings) ||
+                    (definition.Implementation == nameof(TmdbListImport) && definition.Settings is TmdbListSettings) ||
+                    (definition.Implementation == nameof(MDBListImport) && definition.Settings is MDBListSettings) ||
+                    (definition.Implementation == nameof(TraktListImport) && definition.Settings is TraktListSettings) ||
+                    (definition.Implementation == nameof(PlexImport) && definition.Settings is PlexListSettings) ||
+                    (definition.Implementation == nameof(SimklUserImport) && definition.Settings is SimklUserSettings));
         }
 
         private static string DefinitionFingerprint(IImportList importList)
@@ -225,14 +236,15 @@ namespace NzbDrone.Core.ImportLists
             return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(configuration.ToJson())));
         }
 
-        private void ForgetCompletedAniListFetch(IImportList importList)
+        private void ForgetCompletedListFetch(IImportList importList)
         {
-            _completedAniListFetches.Remove(importList.Definition.Id.ToString(CultureInfo.InvariantCulture));
+            _completedListFetches.Remove(importList.Definition.Id.ToString(CultureInfo.InvariantCulture));
         }
 
-        private void RememberCompletedAniListFetch(IImportList importList)
+        private void RememberCompletedListFetch(IImportList importList, List<ImportListItemInfo> items)
         {
-            if (!IsAniListImport(importList) || !((ImportListDefinition)importList.Definition).EnableAutomaticAdd)
+            if (!SupportsCompletedFetchResume(importList) || !((ImportListDefinition)importList.Definition).EnableAutomaticAdd ||
+                items.Any(item => item.Seasons?.Count > 0))
             {
                 return;
             }
@@ -247,9 +259,9 @@ namespace NzbDrone.Core.ImportLists
                 return;
             }
 
-            _completedAniListFetches.Set(
+            _completedListFetches.Set(
                 importList.Definition.Id.ToString(CultureInfo.InvariantCulture),
-                new CompletedAniListFetch
+                new CompletedListFetch
                 {
                     Fingerprint = DefinitionFingerprint(importList),
                     LastInfoSync = status.LastInfoSync.Value
@@ -257,17 +269,17 @@ namespace NzbDrone.Core.ImportLists
                 importList.MinRefreshInterval);
         }
 
-        private void ResumeCompletedAniListFetch(IImportList importList, ImportListStatus status, ImportListFetchResult result)
+        private void ResumeCompletedListFetch(IImportList importList, ImportListStatus status, ImportListFetchResult result)
         {
-            if (!IsAniListImport(importList))
+            if (!SupportsCompletedFetchResume(importList))
             {
-                ForgetCompletedAniListFetch(importList);
+                ForgetCompletedListFetch(importList);
                 return;
             }
 
             var definition = (ImportListDefinition)importList.Definition;
             var key = definition.Id.ToString(CultureInfo.InvariantCulture);
-            var completed = _completedAniListFetches.Find(key);
+            var completed = _completedListFetches.Find(key);
 
             if (completed == null)
             {
@@ -279,13 +291,14 @@ namespace NzbDrone.Core.ImportLists
                 status.MostRecentFailure >= completed.LastInfoSync ||
                 completed.Fingerprint != DefinitionFingerprint(importList))
             {
-                _completedAniListFetches.Remove(key);
+                _completedListFetches.Remove(key);
                 return;
             }
 
             // Only a complete fetch witnessed in this process may resume. Read the
             // authoritative saved membership; never recover from a failed HTTP response.
-            // AniList list entries do not carry per-season monitor overrides.
+            // Fetches carrying per-season monitor overrides never create a witness:
+            // those overrides are not persisted in import-list membership rows.
             var items = _importListItemService.GetAllForLists(new List<int> { definition.Id })
                 .Where(item => item.ImportListId == definition.Id)
                 .Select(item => new ImportListItemInfo
@@ -309,7 +322,7 @@ namespace NzbDrone.Core.ImportLists
             }
         }
 
-        private sealed class CompletedAniListFetch
+        private sealed class CompletedListFetch
         {
             public string Fingerprint { get; set; }
             public DateTime LastInfoSync { get; set; }

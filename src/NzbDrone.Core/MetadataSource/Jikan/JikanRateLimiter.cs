@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using NzbDrone.Core.Indexers.Exceptions;
 
 namespace NzbDrone.Core.MetadataSource.Jikan
 {
     public interface IJikanRateLimiter
     {
         void WaitForSlot();
+        void BackOff(TimeSpan duration);
     }
 
     /// <summary>
@@ -24,6 +26,19 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
         private readonly Queue<DateTime> _requests = new Queue<DateTime>();
         private readonly object _lock = new object();
+        private DateTime _notBefore;
+
+        public void BackOff(TimeSpan duration)
+        {
+            lock (_lock)
+            {
+                var until = DateTime.UtcNow.Add(duration);
+                if (until > _notBefore)
+                {
+                    _notBefore = until;
+                }
+            }
+        }
 
         public void WaitForSlot()
         {
@@ -34,6 +49,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 lock (_lock)
                 {
                     var now = DateTime.UtcNow;
+
+                    if (_notBefore - now > TimeSpan.FromSeconds(30))
+                    {
+                        throw new RequestLimitReachedException("Jikan is cooling down after an HTTP 429 response.", _notBefore - now);
+                    }
 
                     while (_requests.Count > 0 && now - _requests.Peek() > TimeSpan.FromMinutes(1))
                     {
@@ -50,7 +70,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                         }
                     }
 
-                    if (inLastSecond < PerSecond && _requests.Count < PerMinute)
+                    if (_notBefore <= now && inLastSecond < PerSecond && _requests.Count < PerMinute)
                     {
                         _requests.Enqueue(now);
 
@@ -59,7 +79,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
                     // Wait only until the oldest relevant request ages out, so the caller
                     // resumes as soon as a slot frees rather than after a fixed delay.
-                    wait = inLastSecond >= PerSecond
+                    wait = _notBefore > now ? _notBefore - now : inLastSecond >= PerSecond
                         ? TimeSpan.FromSeconds(1) - (now - PeekOldestWithin(now, TimeSpan.FromSeconds(1)))
                         : TimeSpan.FromMinutes(1) - (now - _requests.Peek());
                 }

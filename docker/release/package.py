@@ -148,6 +148,19 @@ def package(args):
     require(bool(smoke.get("checks")) and bool(functional.get("checks")), "Verification reports contain no checks")
     require(not smoke.get("keptContainer") and not functional.get("keptContainer"),
             "Use completed, cleaned-up test reports for release packaging")
+    additional = {}
+    for path in args.verification_report:
+        require(path.name not in additional, "Additional verification report names must be unique")
+        report = load_json(path)
+        require(report.get("passed") is True and bool(report.get("checks")),
+                f"Additional verification report did not pass: {path.name}")
+        require(report.get("imageId") == image["Id"], f"Additional report belongs to another image: {path.name}")
+        require(not report.get("keptContainer") and not report.get("keptData"),
+                f"Use a completed, cleaned-up additional report: {path.name}")
+        product_version = report.get("runtime", {}).get("productVersion")
+        require(product_version is None or product_version == args.version,
+                f"Additional report product version mismatch: {path.name}")
+        additional[path.name] = report
     sbom = load_json(args.sbom)
     require(sbom.get("bomFormat") == "CycloneDX" and bool(sbom.get("components")),
             "Provide a CycloneDX image SBOM with discovered components")
@@ -173,6 +186,8 @@ def package(args):
         shutil.copyfile(args.sbom, staging / f"{stem}-sbom.cdx.json")
         shutil.copyfile(args.smoke_report, staging / "smoke.json")
         shutil.copyfile(args.functional_report, staging / "functional-security.json")
+        if additional:
+            (staging / "provider-verification.json").write_text(json.dumps(additional, indent=2) + "\n", encoding="utf-8")
         (staging / "compose.yaml").write_text(compose(args.image), encoding="utf-8", newline="\n")
         metadata = {
             "project": "Tanukarr", "version": args.version,
@@ -182,6 +197,7 @@ def package(args):
             "registryDigests": image.get("RepoDigests", []), "platform": "linux/amd64",
             "created": datetime.now(timezone.utc).isoformat(),
             "smokeChecks": len(smoke["checks"]), "functionalChecks": len(functional["checks"]),
+            "additionalVerificationChecks": {name: len(report["checks"]) for name, report in additional.items()},
             "liveAniListRequested": bool(functional.get("liveAniListRequested")),
             "browserUITested": bool(functional.get("browserUITested")),
             "realLibraryTested": bool(smoke.get("realLibraryTested") or functional.get("realLibraryTested")),
@@ -207,6 +223,8 @@ def main():
     parser.add_argument("--sbom", required=True, type=Path)
     parser.add_argument("--smoke-report", required=True, type=Path)
     parser.add_argument("--functional-report", required=True, type=Path)
+    parser.add_argument("--verification-report", action="append", default=[], type=Path,
+                        help="additional passed verification report for the exact packaged image; repeat for every required gate")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--git", default="git")
