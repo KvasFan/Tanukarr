@@ -58,6 +58,67 @@ def media_resource(media_id):
     }
 
 
+def list_membership(media_id, control, include_override=None):
+    legacy_only_id = control.get("legacyOnlyId")
+    excluded_only = control.get("excludedOnlyIds", [IDS[3]])
+    included = media_id != legacy_only_id and media_id not in excluded_only
+    if media_id == IDS[3] and control.get("includeExcludedOverlap"):
+        included = True
+    if include_override is not None:
+        included = include_override
+    membership = {"Include": included, "Never": media_id == IDS[3], "After edit": media_id == IDS[2]}
+    if legacy_only_id:
+        membership[LEGACY_CUSTOM_LIST_NAME] = media_id == legacy_only_id
+    return membership
+
+
+def list_row(media_id, control, include_override=None):
+    membership = list_membership(media_id, control, include_override)
+    resource = media_resource(media_id)
+    if media_id == IDS[3]:
+        resource["status"] = control.get("overlapReleaseStatus", "FINISHED")
+    row = {"status": control.get("overlapListStatus", "CURRENT") if media_id == IDS[3] else "CURRENT",
+           "progress": 0, "media": resource}
+    shape = "omitted" if control.get("unknownMembership") else control.get("membershipShape", "map")
+    if shape != "omitted":
+        row["customLists"] = membership if shape == "map" else None
+        row["customListEntries"] = ([{"name": name, "enabled": enabled} for name, enabled in membership.items()]
+                                    if shape in ("map", "array") else None)
+    return row
+
+
+def membership_collection(control, chunk):
+    names = ["Include", "Never", "After edit"]
+    if control.get("legacyOnlyId"):
+        names.append(LEGACY_CUSTOM_LIST_NAME)
+    owner = {"id": 940001, "name": "generated-reliability-account"}
+    user = dict(owner, mediaListOptions={"animeList": {"customLists": names}})
+    if control.get("unknownMembership") or control.get("collectionFailure") == "unavailable":
+        return {"data": {"User": user, "MediaListCollection": None},
+                "errors": [{"message": "Synthetic collection membership unavailable"}]}
+    if control.get("collectionFailure") == "partial" and chunk == 2:
+        return {"data": {"User": user, "MediaListCollection": None},
+                "errors": [{"message": "Synthetic second collection chunk unavailable"}]}
+    chunks = bool(control.get("collectionChunks"))
+    members = list(IDS[(chunk - 1) * 2:chunk * 2]) if chunks else list(IDS)
+    if chunks and chunk == 2:
+        members.append(IDS[0])
+    if control.get("collectionFailure") == "missingId":
+        members = [media_id for media_id in members if media_id != IDS[2]]
+    def entries(ids):
+        return [{"media": {"id": media_id, "type": "ANIME"}} for media_id in ids]
+    lists = [{"name": "Watching", "isCustomList": False, "entries": entries(members)}]
+    for name in names:
+        ids = [] if control.get("collectionEmptyCustomMembership") else [
+            media_id for media_id in members if list_membership(media_id, control).get(name)]
+        lists.append({"name": name, "isCustomList": True, "entries": entries(ids)})
+    collection_owner = dict(owner)
+    if control.get("collectionFailure") == "wrongOwner":
+        collection_owner = {"id": 940002, "name": "generated-other-account"}
+    return {"data": {"User": user, "MediaListCollection": {
+        "user": collection_owner, "hasNextChunk": chunks and chunk == 1, "lists": lists}}}
+
+
 def serve_fixture(root):
     lock = threading.Lock()
 
@@ -93,20 +154,26 @@ def serve_fixture(root):
                 request = json.loads(self.rfile.read(length))
                 query, variables = request["query"], request["variables"]
                 control = json.loads((root / "control.json").read_text(encoding="utf-8"))
-                if "mediaList(userName:" in query:
+                if "MediaListCollection(" in query:
+                    require(variables.get("id") == "generated-reliability-account", "Unexpected collection account")
+                    chunk = int(variables["chunk"])
+                    require(chunk in (1, 2) and "isCustomList" in query and "mediaListOptions" in query,
+                            "Unexpected authoritative collection query")
+                    record.update(kind="membership-collection", chunk=chunk, failure=control.get("collectionFailure"),
+                                  unavailable=bool(control.get("unknownMembership")))
+                    value = membership_collection(control, chunk)
+                elif "mediaList(userName:" in query:
                     require(variables.get("id") == "generated-reliability-account", "Unexpected fixture account")
                     page = int(variables["page"])
                     require(page in (1, 2) and "customListEntries:" in query, "Unexpected fixture list query")
                     rows = []
                     for media_id in IDS[(page - 1) * 2:page * 2]:
-                        legacy_only_id = control.get("legacyOnlyId")
-                        membership = {"Include": media_id != legacy_only_id, "Never": media_id == IDS[3], "After edit": media_id == IDS[2]}
-                        if legacy_only_id:
-                            membership[LEGACY_CUSTOM_LIST_NAME] = media_id == legacy_only_id
-                        rows.append({"status": "CURRENT", "progress": 0, "media": media_resource(media_id),
-                                     "customLists": None if control.get("unknownMembership") else membership,
-                                     "customListEntries": None if control.get("unknownMembership") else [
-                                         {"name": name, "enabled": enabled} for name, enabled in membership.items()]})
+                        override = None
+                        if media_id == IDS[3] and control.get("overlapDuplicateOrder"):
+                            override = control["overlapDuplicateOrder"] == "excludedThenIncluded"
+                        rows.append(list_row(media_id, control, override))
+                    if page == 1 and control.get("overlapDuplicateOrder"):
+                        rows.append(list_row(IDS[3], control, control["overlapDuplicateOrder"] == "includedThenExcluded"))
                     record.update(kind="list", page=page, unknownMembership=bool(control.get("unknownMembership")))
                     value = {"data": {"Page": {"pageInfo": {"currentPage": page, "hasNextPage": page == 1}, "mediaList": rows}}}
                 elif "Media(" in query:
@@ -297,7 +364,7 @@ class AniListReliability(_groups.AnimeGroups):
         self.idle()
         require(not {field["name"] for field in self.definition["fields"]}.intersection(REMOVED_STATUS_EXCLUSION_FIELDS),
                 "Saving a legacy payload reintroduced removed status exclusions")
-        self.check("synthetic custom-list definition saved with inclusion and exclusion precedence")
+        self.check("synthetic custom-list definition saved with explicit inclusion and excluded-only membership")
 
     def legacy_status_payload(self):
         statuses = {}
@@ -339,8 +406,8 @@ class AniListReliability(_groups.AnimeGroups):
         self.observations["cachedRecovery"] = {"listRequestsBefore": before, "listRequestsAfter": after, "libraryIds": self.library_ids()}
         self.check("automatic ImportListSync resumes unchanged successful membership without a fresh list request")
         require(IDS[3] not in self.library_ids() and IDS[3] not in self.stored_ids(),
-                "Custom-list exclusion did not dominate included Watching membership")
-        self.check("legacy status exclusions do not block included Watching entries while custom-list exclusions retain precedence")
+                "An excluded-only custom-list entry was imported")
+        self.check("legacy status exclusions do not block included Watching entries while excluded-only entries stay excluded")
 
         for series in self.api_json("/api/v5/series"):
             self.command({"name": "RefreshSeries", "seriesId": series["id"]})
@@ -364,7 +431,7 @@ class AniListReliability(_groups.AnimeGroups):
         self.idle()
         resource = self.api_json("/api/v5/importlist/" + str(self.definition["id"]))
         next(field for field in resource["fields"] if field["name"] == "excludedCustomLists")["value"] = ["Never", "After edit"]
-        self.control(unknownMembership=True)
+        self.control(unknownMembership=True, excludedOnlyIds=[IDS[2], IDS[3]])
         before = sum(r.get("kind") == "list" for r in self.records())
         self.api_json("/api/v5/importlist/" + str(self.definition["id"]) + "?skipTesting=true", "PUT", resource)
         self.idle()
@@ -421,7 +488,7 @@ class AniListReliability(_groups.AnimeGroups):
         return self.saved_definition()
 
     def legacy_custom_list_migration(self):
-        self.control(legacyOnlyId=IDS[2])
+        self.control(legacyOnlyId=IDS[2], excludedOnlyIds=[IDS[3]])
         resource = self.saved_definition()
         self.field(resource, "includedCustomLists")["value"] = ["Include"]
         self.field(resource, "excludedCustomLists")["value"] = ["Never"]
@@ -499,8 +566,130 @@ class AniListReliability(_groups.AnimeGroups):
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]) and IDS[3] not in self.library_ids(),
                 "Legacy scalar API normalization lost its selection or weakened the custom-list exclusion")
         self.observations["legacyScalarApi"] = {"testStatuses": statuses, "normalizedIncludedLists": ["Include", LEGACY_CUSTOM_LIST_NAME],
-                                                "normalizationDeduplicated": True, "excludedWatchingEntryRetainedAsExcluded": True}
-        self.check("v3/v5 legacy scalar Test/save inputs normalize once into tags while custom exclusions remain authoritative")
+                                                "normalizationDeduplicated": True, "excludedOnlyWatchingEntryRemainsExcluded": True}
+        self.check("v3/v5 legacy scalar Test/save inputs normalize once into tags while excluded-only entries remain excluded")
+
+    def delete_owned_member(self, media_id):
+        matches = [s for s in self.api_json("/api/v5/series") if int(s["foreignId"]) == media_id]
+        require(len(matches) == 1, "Expected exactly one owned synthetic member to delete")
+        self.api_json(f"/api/v5/series/{matches[0]['id']}?deleteFiles=false&addImportListExclusion=false", "DELETE")
+        self.idle()
+
+    def fresh_sync(self):
+        self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
+        self.idle()
+
+    def explicit_inclusion_precedence(self):
+        self.control(includeExcludedOverlap=True)
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS) and self.stored_ids() == list(IDS),
+                "Explicit custom-list inclusion did not override membership in an excluded custom list")
+        self.check("an explicitly included Watching member imports even when it also belongs to an excluded custom list")
+
+        duplicate_orders = {}
+        for order in ("excludedThenIncluded", "includedThenExcluded"):
+            self.delete_owned_member(IDS[3])
+            self.control(overlapDuplicateOrder=order)
+            self.fresh_sync()
+            require(self.library_ids() == list(IDS) and self.stored_ids() == list(IDS),
+                    "An excluded duplicate on another page cancelled an eligible explicit inclusion")
+            duplicate_orders[order] = self.library_ids()
+        self.observations["crossPageExplicitInclusion"] = duplicate_orders
+        self.check("explicit inclusion survives earlier/later excluded copies across pages with one native series per media ID")
+
+        self.delete_owned_member(IDS[3])
+        self.control(overlapDuplicateOrder=None, overlapListStatus="PLANNING")
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Custom inclusion bypassed an unselected user-list status")
+        self.check("explicit custom-list inclusion still requires a selected user-list status")
+
+        self.control(overlapListStatus="CURRENT", overlapReleaseStatus="NOT_YET_RELEASED")
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Custom inclusion bypassed an unselected media-release status")
+        self.check("explicit custom-list inclusion still requires a selected media-release status")
+
+        self.control(includeExcludedOverlap=False, overlapReleaseStatus="FINISHED")
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "An excluded-only member was added without explicit custom inclusion")
+        self.check("an excluded-only Watching member remains excluded when explicit custom inclusion is absent")
+
+        resource = self.saved_definition()
+        self.field(resource, "includedCustomLists")["value"] = []
+        self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+        self.control(includeExcludedOverlap=True)
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Watching or an unconfigured custom-list name incorrectly overrode an exclusion")
+        self.check("Watching and an empty explicit custom include list do not override custom-list exclusions")
+        resource = self.saved_definition()
+        self.field(resource, "includedCustomLists")["value"] = ["Include", LEGACY_CUSTOM_LIST_NAME]
+        self.control(includeExcludedOverlap=False)
+        self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+
+    def sparse_membership_recovery(self):
+        before = sum(r.get("kind") == "membership-collection" for r in self.records())
+        self.control(membershipShape="array")
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Explicit array flags changed known membership")
+        require(sum(r.get("kind") == "membership-collection" for r in self.records()) == before,
+                "Known typed-array membership unnecessarily fetched a collection")
+        self.check("complete typed-array flags retain membership without an extra collection request")
+
+        self.control(membershipShape="null", collectionChunks=True)
+        before = sum(r.get("kind") == "membership-collection" for r in self.records())
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Sparse null map/array fields did not recover the authoritative custom memberships")
+        after = sum(r.get("kind") == "membership-collection" for r in self.records())
+        require(after - before == 2, "Sparse membership repeated collection pagination for each list page")
+        self.observations["sparseNullRecovery"] = {"collectionRequestsPerSync": after - before,
+                                                 "collectionChunks": 2, "storedMembershipIds": self.stored_ids()}
+        self.check("sparse null map/array membership recovers from two complete trusted collection chunks once per sync")
+
+        resource = self.saved_definition()
+        self.field(resource, "includedCustomLists")["value"] = []
+        self.control(collectionChunks=False, collectionEmptyCustomMembership=True)
+        self.api_json(f"/api/v5/importlist/{self.definition['id']}?skipTesting=true", "PUT", resource)
+        self.idle()
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS) and self.stored_ids() == list(IDS),
+                "A complete collection proving empty custom membership was mistaken for unknown membership")
+        self.check("complete collection evidence permits an eligible null-membership entry belonging to no custom lists")
+
+        self.delete_owned_member(IDS[3])
+        self.control(collectionEmptyCustomMembership=False)
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Recovered excluded-only collection membership failed to veto the entry")
+        self.check("recovered collection memberships still exclude an unselected excluded-only custom member")
+
+        failures = {}
+        for failure in ("partial", "missingId", "wrongOwner", "unavailable"):
+            self.control(membershipShape="omitted", collectionChunks=failure == "partial", collectionFailure=failure)
+            resource = self.saved_definition()
+            status, _body = self.raw("/api/v5/importlist/test", "POST", resource)
+            require(status == 400, f"Unconfirmed {failure} collection incorrectly passed provider Test")
+            self.fresh_sync()
+            require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                    f"Unconfirmed {failure} collection replaced the prior complete list or added stale rows")
+            failures[failure] = status
+        self.observations["unconfirmedCollectionRetention"] = failures
+        self.check("partial, missing-ID, wrong-owner and unavailable collections reject unknown membership and retain the complete saved list")
+
+        self.control(membershipShape="null", collectionChunks=False, collectionFailure=None)
+        before = sum(r.get("kind") == "membership-collection" for r in self.records())
+        self.fresh_sync()
+        require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
+                "Recovered complete collection did not resume a valid fresh sync")
+        require(sum(r.get("kind") == "membership-collection" for r in self.records()) - before == 1,
+                "Recovery did not execute a fresh complete collection request")
+        self.check("a later complete collection restores fresh synchronization after conservative membership retention")
 
 
 def main():
@@ -535,6 +724,8 @@ def main():
         audit.quota_recovery()
         audit.stale_guard()
         audit.legacy_custom_list_migration()
+        audit.explicit_inclusion_precedence()
+        audit.sparse_membership_recovery()
         audit.no_acquisition()
     except (Exception, KeyboardInterrupt) as caught:
         error = redact(f"{audit.last_request}: {caught or type(caught).__name__}")
@@ -563,6 +754,7 @@ def main():
                 "fixtureConfigOwnership": audit.fixture_config_ownership,
                 "scope": {"trustedLocalAniListMock": True, "liveAniListTested": False, "privateAccountUsed": False,
                           "realLibraryTested": False, "downloadsTested": False, "tlsValidationDisabled": False,
+                          "sparseNullMembershipSimulated": True, "liveSparseNullFailureReproduced": False,
                           "externalProviderRoutingEnabled": False, "mainConfigurationAccessed": False,
                           "databaseInspection": "read-only plus one targeted legacy-settings seed in the owned stopped fixture"},
                 "cleanupComplete": cleanup_complete,

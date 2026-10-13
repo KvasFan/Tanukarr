@@ -133,6 +133,13 @@ def serve_fixture(root):
                     require(len(matches) == 1, "Unknown local catalogue search")
                     record.update(kind="search", mediaId=matches[0]["id"])
                     response = {"data": {"Page": {"media": matches}}}
+                elif "MediaListCollection(" in query:
+                    require(variables.get("id") == "fixture-unknown" and variables.get("chunk") == 1,
+                            "Unexpected synthetic collection fallback")
+                    record.update(kind="unconfirmed-custom-list-collection")
+                    response = {"data": {"User": {"id": 900001, "name": "fixture-unknown", "mediaListOptions": {
+                        "animeList": {"customLists": ["DaiBaNanaTop", "Fixture optional"]}}}, "MediaListCollection": None},
+                        "errors": [{"message": "Synthetic collection membership unavailable"}]}
                 elif "User(name:" in query and "mediaListOptions" in query:
                     require(variables.get("username") == "fixture-array", "Unknown synthetic fixture username")
                     record.update(kind="custom-list-names")

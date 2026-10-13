@@ -151,8 +151,8 @@ the new source's actual checks and final-image verification state.
 | --- | --- |
 | Import List Status | Enabled membership states: Watching, Planning, Completed, Dropped, Paused or Repeating |
 | Import Media Release Status | The anime's release status: Finished, Releasing, Not Yet Released, Cancelled or Hiatus |
-| Included Custom Lists | Membership in any of the named custom lists owned by the selected user |
-| Excluded Custom Lists | Membership in any named exclusion list vetoes the import, even when another filter includes the anime |
+| Included Custom Lists | Membership in any named custom list; an eligible included match overrides custom-list exclusions |
+| Excluded Custom Lists | Membership vetoes the import unless an eligible explicitly included custom list also matches |
 
 Choose at least one membership status and one release status. Watching and
 Planning, together with Finished and Releasing, are the defaults. For example,
@@ -170,12 +170,26 @@ tag representation and clears the legacy scalar. Leave **Included Custom Lists**
 empty to accept every entry matching the enabled membership
 and release states. Named-list inclusion does not bypass either state filter.
 
-Exclusions always take precedence. For example, enable **Import Watching** and
+Explicit custom-list inclusion takes priority over custom-list exclusion. For
+example, enable **Import Watching** and
 include `Seasonal`, then exclude `Do not download`: an anime marked Watching
-and belonging to both custom lists is excluded. To omit an account-list state,
+and belonging to both custom lists is included if its media release state is
+enabled. If Included Custom Lists is empty, an otherwise eligible Watching entry
+in `Do not download` is excluded. To omit an account-list state,
 leave its **Import** checkbox unchecked; inclusion by a custom name does not
 bypass that selection. Excluded custom lists start empty. Release-state filtering
 remains separate.
+
+| Enabled account/media states | Included custom lists | Matching excluded list | Result |
+| --- | --- | --- | --- |
+| No | Any | Any | Skip; explicit inclusion does not bypass status filters |
+| Yes | Matches an explicitly included list | Yes or no | Include |
+| Yes | Configured but no name matches | Any | Skip; the inclusion condition is unmet |
+| Yes | No included names configured | Yes | Exclude |
+| Yes | No included names configured | No | Include |
+
+This inclusion-first rule is a later `main` update. The immutable 1.0.1 release
+and earlier dated checkpoints retain their original exclusion-first behavior.
 
 Enter each complete custom-list name and press **Enter** to add it. Repeat for
 more names. Spaces, commas and other punctuation are part of the name, so
@@ -194,11 +208,13 @@ An exact custom-list name takes precedence. A case-insensitive fallback is
 accepted only when it identifies a single list, so distinct names differing
 only in case are not merged. Membership requires a `true` flag; a list name
 whose flag is `false` does not match. If an excluded name has an ambiguous
-case-insensitive match, use its exact spelling: the sync fails and retains the
-previous successful list rather than guessing. Missing custom-list data while
+case-insensitive match, use its exact spelling: when that exclusion needs to be
+evaluated, the sync fails and retains the previous successful list rather than
+guessing. An eligible explicit inclusion is tracked across pages by native media
+ID; a duplicate excluded copy cannot undo it. Missing custom-list data while
 custom-list exclusions are configured, pagination failures and GraphQL errors
-also retain the previous successful list. An excluded AniList media ID cannot be reintroduced
-by a duplicate accepted entry on another response page.
+retain the previous successful list unless complete validated collection data
+can supply the missing membership.
 
 The importer in 1.0.1 requests both AniList's normal membership map and the
 documented `customLists(asArray: true)` shape. If the map is unavailable, only an
@@ -209,6 +225,17 @@ membership-dependent filter is configured. This does not turn an unknown
 membership response into an empty list. AniList documents the nullable
 [MediaList field and array argument](https://github.com/AniList/docs/blob/master/docs/reference/object/medialist.md)
 and [GraphQL errors](https://github.com/AniList/docs/blob/master/docs/guide/graphql/errors.md).
+
+A later `main` update can resolve a missing map and missing array from a complete
+collection for the same user and authentication context. It requests this only
+when an active custom-list filter needs membership, validates the owner and
+definitions, follows bounded chunk pagination, and requires every sparse Page
+entry to appear in that collection. The snapshot lasts for one fetch or Test and
+uses the existing shared rate limits. Incomplete, mismatched or unavailable
+collection data still retains the previous successful list. See the
+[membership and priority checkpoint](anilist-membership-priority-2026-10-13.md)
+for the live investigation and verification state; the intermittent upstream
+missing-field cause was not reproduced by the successful live samples.
 
 These filters apply to this saved AniList connection and its previews. They do
 not create a global exclusion for another import-list connection or prevent

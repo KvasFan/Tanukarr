@@ -132,7 +132,14 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
         public override AniListParser GetParser()
         {
-            return new AniListParser(Settings);
+            // Resolve sparse membership at most once per fetch/test operation. Ordinary
+            // maps and explicit array flags require no collection request.
+            var generator = GetRequestGenerator();
+            var username = Settings.Username;
+            var membership = new Lazy<AniListCustomListMembershipSnapshot>(() =>
+                AniListCustomListMembershipSnapshot.Load(username,
+                    chunk => FetchImportListResponse(generator.GetMembershipRequest(chunk))));
+            return new AniListParser(Settings, id => membership.Value.GetMembership(id));
         }
 
         protected override ImportListResponse FetchImportListResponse(ImportListRequest request)
@@ -211,7 +218,8 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 }
                 while (hasNextPage);
 
-                // A later page can veto an earlier occurrence of the same media ID.
+                // A later exclusion can remove an earlier result unless explicit
+                // custom-list inclusion has accepted the media on any complete page.
                 releases.RemoveAll(item => parser.ExcludedMediaIds.Contains(item.AniListId));
 
                 _importListStatusService.RecordSuccess(Definition.Id);

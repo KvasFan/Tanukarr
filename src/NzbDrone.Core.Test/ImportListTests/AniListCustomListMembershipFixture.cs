@@ -88,6 +88,28 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
+        public void should_prioritize_explicit_array_inclusion_when_the_same_member_is_excluded()
+        {
+            _settings.IncludedCustomLists = new[] { "Included" };
+            var parser = new AniListParser(_settings);
+
+            parser.ParseResponse(Response(@"""customLists"":null,""customListEntries"":[
+                {""name"":""Included"",""enabled"":true},{""name"":""Excluded"",""enabled"":true}]"))
+                .Should().ContainSingle();
+            parser.IncludedMediaIds.Should().Equal(1);
+            parser.ExcludedMediaIds.Should().BeEmpty();
+        }
+
+        [Test]
+        public void should_not_infer_explicit_inclusion_when_both_membership_shapes_are_unknown()
+        {
+            _settings.IncludedCustomLists = new[] { "Included" };
+
+            Assert.Throws<ImportListException>(() => new AniListParser(_settings).ParseResponse(
+                Response(@"""customLists"":null,""customListEntries"":null")));
+        }
+
+        [Test]
         public void should_keep_known_empty_included_lists_empty_without_falling_back_to_everything()
         {
             _settings.IncludedCustomLists = new[] { "Seasonal" };

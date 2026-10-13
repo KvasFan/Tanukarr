@@ -286,7 +286,19 @@ backend and isolated regressions cover this simplification; verification scope
 is reported separately. This work follows the immutable Tanukarr 1.0.1 release,
 whose source/tag/notes and original attribution remain unchanged. The
 [settings cleanup checkpoint](docs/anilist-settings-cleanup-2026-10-13.md)
-records the actual new checks and pending final-image scope.
+records the actual checks and that cleanup's final-image scope.
+
+The later owner-requested priority change and incomplete-membership adaptation
+also use **OpenAI Codex, based on GPT-6**. Explicitly included custom lists now
+override excluded custom lists only for entries passing the existing account
+and media-status filters, including duplicate native IDs across pages. The
+adaptation consults AniList contributors' official `MediaList`,
+`MediaListCollection` and `MediaListGroup` contracts, preserving original
+provider/list authorship. The
+[membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
+separates live public schema observations, real unsaved account Test results,
+synthetic missing-response regressions, final-image checks and preserved local
+deployment.
 
 The subsequent custom-list synchronization request-limit correction also used
 **OpenAI Codex, based on GPT-6**. It adds a shared AniList request budget,

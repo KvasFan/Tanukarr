@@ -83,7 +83,7 @@ namespace NzbDrone.Core.Test.ImportListTests
                         mediaList = mediaIds.Select(id => new
                         {
                             status = "CURRENT",
-                            customLists = new Dictionary<string, bool> { { "Seasonal", true }, { "Excluded", excluded } },
+                            customLists = new Dictionary<string, bool> { { "Seasonal", !excluded }, { "Excluded", excluded } },
                             media = new { id, status = "FINISHED", title = new { userPreferred = "Same title" } }
                         }).ToList()
                     }
@@ -113,13 +113,46 @@ namespace NzbDrone.Core.Test.ImportListTests
                             {
                                 status = "CURRENT",
                                 customLists = (object)null,
-                                customListEntries = new[] { new { name = "Seasonal", enabled = true }, new { name = "Excluded", enabled = excluded } },
+                                customListEntries = new[] { new { name = "Seasonal", enabled = !excluded }, new { name = "Excluded", enabled = excluded } },
                                 media = new { id = mediaId, status = "FINISHED", title = new { userPreferred = "Generated anime" } }
                             }
                         }
                     }
                 }
             });
+        }
+
+        private static string SparsePage(int currentPage, bool hasNextPage, params int[] ids)
+        {
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                data = new
+                {
+                    Page = new
+                    {
+                        pageInfo = new { currentPage, hasNextPage },
+                        mediaList = ids.Select(id => new
+                        {
+                            status = "CURRENT",
+                            customLists = (object)null,
+                            customListEntries = (object)null,
+                            media = new { id, status = "FINISHED", title = new { userPreferred = "Generated anime" } }
+                        }).ToArray()
+                    }
+                }
+            });
+        }
+
+        private static string MembershipCollection()
+        {
+            return """
+                {"data":{"User":{"id":10,"name":"someone","mediaListOptions":{"animeList":{"customLists":["Seasonal","Excluded"]}}},
+                 "MediaListCollection":{"user":{"id":10,"name":"someone"},"hasNextChunk":false,"lists":[
+                  {"name":"Watching","isCustomList":false,"entries":[{"media":{"id":1,"type":"ANIME"}},{"media":{"id":2,"type":"ANIME"}}]},
+                  {"name":"Seasonal","isCustomList":true,"entries":[{"media":{"id":1,"type":"ANIME"}}]},
+                  {"name":"Excluded","isCustomList":true,"entries":[{"media":{"id":1,"type":"ANIME"}},{"media":{"id":2,"type":"ANIME"}}]}
+                 ]}}}
+                """;
         }
 
         private void GivenRateLimit(int seconds)
@@ -259,7 +292,7 @@ namespace NzbDrone.Core.Test.ImportListTests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void should_veto_duplicate_media_ids_across_pages_regardless_of_order(bool excludedFirst)
+        public void should_prioritize_explicit_custom_inclusion_across_pages_regardless_of_order(bool excludedFirst)
         {
             GivenCustomExclusions();
             GivenResponses(FilteredPage(1, true, excludedFirst, 1), FilteredPage(2, false, !excludedFirst, 1));
@@ -267,7 +300,7 @@ namespace NzbDrone.Core.Test.ImportListTests
             var result = _subject.Fetch();
 
             result.AnyFailure.Should().BeFalse();
-            result.Series.Should().BeEmpty();
+            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -289,7 +322,7 @@ namespace NzbDrone.Core.Test.ImportListTests
         {
             GivenCustomExclusions();
             var incomplete = FilteredPage(2, false, false, 9253).Replace("\"customLists\":{\"Seasonal\":true,\"Excluded\":false},", string.Empty);
-            GivenResponses(FilteredPage(1, true, false, 1), incomplete);
+            GivenResponses(FilteredPage(1, true, false, 1), incomplete, "{\"data\":null,\"errors\":[{\"message\":\"Membership unavailable\"}]}");
 
             var result = _subject.Fetch();
 
@@ -300,14 +333,14 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void connection_test_should_scan_later_pages_before_accepting_included_media()
+        public void connection_test_should_preserve_explicit_inclusion_after_scanning_later_exclusions()
         {
             GivenCustomExclusions();
             GivenResponses(FilteredPage(1, true, false, 1), FilteredPage(2, false, true, 1));
 
             var result = _subject.Test();
 
-            result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("Connected to AniList").And.Contain("no entries match");
+            result.IsValid.Should().BeTrue();
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -316,18 +349,18 @@ namespace NzbDrone.Core.Test.ImportListTests
         {
             GivenCustomExclusions();
             var incomplete = FilteredPage(2, false, false, 9253).Replace("\"customLists\":{\"Seasonal\":true,\"Excluded\":false},", string.Empty);
-            GivenResponses(FilteredPage(1, true, false, 1), incomplete);
+            GivenResponses(FilteredPage(1, true, false, 1), incomplete, "{\"data\":null,\"errors\":[{\"message\":\"Membership unavailable\"}]}");
 
             var result = _subject.Test();
 
             result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("previous list will be retained");
-            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(3));
             ExceptionVerification.ExpectedWarns(1);
         }
 
         [TestCase(true)]
         [TestCase(false)]
-        public void should_veto_watching_duplicates_across_pages_with_null_map_and_explicit_array(bool excludedFirst)
+        public void should_prioritize_explicit_inclusion_across_pages_with_null_map_and_explicit_array(bool excludedFirst)
         {
             GivenCustomExclusions();
             GivenResponses(ArrayMembershipPage(1, true, excludedFirst, 1), ArrayMembershipPage(2, false, !excludedFirst, 1));
@@ -335,7 +368,7 @@ namespace NzbDrone.Core.Test.ImportListTests
             var result = _subject.Fetch();
 
             result.AnyFailure.Should().BeFalse();
-            result.Series.Should().BeEmpty();
+            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -360,6 +393,57 @@ namespace NzbDrone.Core.Test.ImportListTests
             Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(10), Times.Never());
             Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordFailure(10, TimeSpan.Zero), Times.Once());
             ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public void should_resolve_sparse_membership_once_per_fetch_using_the_same_shared_authenticated_client()
+        {
+            GivenCustomExclusions();
+            GivenResponses(SparsePage(1, true, 1), MembershipCollection(), SparsePage(2, false, 2));
+
+            var result = _subject.Fetch();
+
+            result.AnyFailure.Should().BeFalse();
+            result.Series.Should().ContainSingle().Which.AniListId.Should().Be(1);
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.Is<HttpRequest>(request =>
+                Encoding.UTF8.GetString(request.ContentData).Contains("MediaListCollection") && request.Headers["Authorization"].ToString() == "Bearer test-access-token")),
+                Times.Once());
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(3));
+        }
+
+        [Test]
+        public void connection_test_should_apply_complete_membership_and_inclusion_precedence_to_unsaved_filters()
+        {
+            GivenCustomExclusions();
+            GivenResponses(SparsePage(1, false, 1, 2), MembershipCollection());
+
+            _subject.Test().IsValid.Should().BeTrue();
+
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.Is<HttpRequest>(request =>
+                Encoding.UTF8.GetString(request.ContentData).Contains("MediaListCollection"))),
+                Times.Once());
+        }
+
+        [Test]
+        public void should_retain_the_previous_list_if_a_sparse_page_id_is_not_in_the_authoritative_collection()
+        {
+            GivenCustomExclusions();
+            GivenResponses(SparsePage(1, false, 999), MembershipCollection());
+
+            _subject.Fetch().AnyFailure.Should().BeTrue();
+
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(10), Times.Never());
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public void should_not_fetch_a_collection_when_unfiltered_entries_have_no_custom_membership()
+        {
+            GivenResponses(SparsePage(1, false, 1));
+
+            _subject.Fetch().Series.Should().ContainSingle();
+
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.IsAny<HttpRequest>()), Times.Once());
         }
     }
 }

@@ -322,17 +322,23 @@ twice. Reading/testing does not rewrite the stored settings JSON, while a later
 Save persists the normalized representation. Removing the transferred tag clears
 that restriction rather than leaving a hidden scalar active. Empty inclusion
 controls omit that condition.
-Membership in any excluded custom list vetoes an entry, even when Watching or an
-included custom list would otherwise
-accept it. The release-state filter remains an independent AND condition.
+An eligible match in an explicitly included custom list overrides excluded
+custom-list membership. This override requires both enabled account-list and
+media-release states; inclusion does not bypass either filter. Without explicit
+inclusion, membership in an excluded custom list vetoes an otherwise accepted
+Watching/Planning entry. This later `main` rule follows the initial exclusion-first
+implementation; earlier tags and dated reports retain their original behavior.
+The release-state filter remains an independent AND condition.
 Custom names retain spaces and punctuation, including commas.
 
 Exact name matches distinguish lists that differ only in case. A unique
 case-insensitive fallback remains convenient for manual entry; an ambiguous
-excluded name fails the sync rather than weakening the exclusion. Unknown
-membership with custom-list exclusions configured also fails the fetch. Vetoes
-persist across pagination before deduplication, so a later excluded copy of the
-same AniList media ID cannot leave an earlier accepted copy in the result.
+excluded name fails the sync when its exclusion must be evaluated, rather than
+guessing. An eligible explicit inclusion is tracked by native AniList media ID
+across pagination, so an excluded copy on an earlier or later page cannot undo
+it. An unselected status or an unmatched custom name does not create that
+override. Unknown required membership still fails the fetch unless the new
+complete-collection fallback can validate it authoritatively.
 The previous cached list is retained when the fetch fails.
 
 Filters belong to one saved AniList connection. They do not write global
@@ -340,6 +346,9 @@ exclusion records or directly delete shows or files; existing list-cleanup
 policy remains separate. Source attribution is preserved in
 [CONTRIBUTORS.md](CONTRIBUTORS.md), and executed checks belong to the
 [AniList filter verification checkpoint](docs/anilist-filters-verification-2026-10-13.md).
+The [membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
+records the newer rule, public-response observations, authenticated unsaved Test
+scope and final implementation/verification state.
 
 Imported AniList entries keep `(AniList, ForeignId)` as their identity. Import,
 preview, deduplication, exclusions and cleanup do not replace a separate anime

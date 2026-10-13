@@ -102,7 +102,9 @@ for partial-progress and saved-list resume behavior.
 
 In the current `main` import-list editor, account-list states and anime release
 states remain their separate Import checkbox groups. Exclusion vetoes use only
-**Excluded Custom Lists**; the six separate account-status exclusion flags and
+**Excluded Custom Lists**; an eligible match in **Included Custom Lists** overrides
+that custom-list veto. Neither group bypasses the account/media Import filters.
+The six separate account-status exclusion flags and
 their parser behavior were removed after the immutable 1.0.1 release. Public
 catalogue lookup and these account-list filters are separate workflows. See
 [AniList list configuration](library-tools.md#anilist-lists) for the simplified
@@ -128,7 +130,8 @@ parent entry from another catalogue.
 
 Failed or incomplete list retrieval does not authorize destructive list cleanup.
 AniList watching states, anime release states and custom-list membership remain
-separate filters, with exclusion precedence. See
+separate filters, with eligible explicit custom-list inclusion taking priority
+over custom-list exclusion in current `main`. See
 [AniList list configuration](library-tools.md#anilist-lists).
 
 Post-release [anime season and movie groups](anime-season-groups.md) can present related

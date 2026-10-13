@@ -145,8 +145,9 @@ still follows the configured series and episode numbering.
 **AniList custom lists** — target your own custom lists alongside Planning and
 Watching. Tanukarr supports multiple included lists, excluded lists and
 the existing Import checkboxes for account-list and media-release states.
-Matching any included custom list is sufficient; excluded custom-list membership
-takes precedence even when an anime is Watching.
+Matching any explicitly included custom list takes priority over excluded
+custom-list membership. Account-list and media-release Import filters still
+apply; without an included match, custom-list exclusions remain effective.
 ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
 
 Current `main` removes the six separate Exclude Watching/Planning/Completed/
@@ -157,6 +158,9 @@ The duplicate single-list textbox is also removed: an older saved custom-list
 name becomes an **Included Custom Lists** tag, so its filter stays visible and
 can be edited there. The [settings cleanup checkpoint](docs/anilist-settings-cleanup-2026-10-13.md)
 records this later source change and its verification scope.
+The later [membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
+records the requested inclusion-first rule and investigation of incomplete
+custom-list responses, separately from immutable release behavior.
 
 Version 1.0.1 includes grouped AniList settings and **Load custom lists** name
 autocomplete while preserving manual names and OAuth. A typed-array membership

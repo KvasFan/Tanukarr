@@ -169,6 +169,8 @@ AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
 AniList lets you include several custom lists and veto entries by excluded
 custom-list membership, within the enabled Import membership/release statuses.
+Current `main` gives an eligible explicitly included custom list priority over
+custom-list exclusion; without an included match, exclusions remain effective.
 Current `main` removes the six separate account-status exclusion controls and
 their behavior; the immutable 1.0.1 image retains its original settings. Use an
 `edge` image containing that later simplification if you need the updated

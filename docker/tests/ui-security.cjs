@@ -140,6 +140,13 @@ async function main(input) {
       if (input.artifactDirectory) await page.screenshot({ path: path.join(input.artifactDirectory, 'anilist-list-status-fields.png'), fullPage: true });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
     });
+    await check('AniList custom-list help states explicit inclusion priority without bypassing status filters', async () => {
+      await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
+      await page.getByRole('button', { name: 'Add Import List - AniList List', exact: true }).click();
+      await page.locator('input[name="includedCustomLists"]').waitFor({ state: 'visible' });
+      await page.getByText('An explicitly included custom list wins over an excluded custom list. Import list and release statuses still apply. Without an included match, exclusions remain effective.', { exact: true }).waitFor({ state: 'visible' });
+      await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
+    });
     await check('AniList custom-list exclusions preserve literal names while obsolete status exclusions are absent', async () => {
       const savedBefore = await context.request.get(input.baseUrl + '/api/v5/importlist', {
         headers: { 'X-Api-Key': input.apiKey },

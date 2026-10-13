@@ -44,6 +44,25 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             return request;
         }
 
+        public ImportListRequest GetMembershipRequest(int chunk)
+        {
+            var request = new ImportListRequest(Settings.BaseUrl.Trim(), HttpAccept.Json);
+            request.HttpRequest.Method = HttpMethod.Post;
+            request.HttpRequest.Headers.ContentType = "application/json";
+            request.HttpRequest.SetContent(AniListAPI.BuildQuery(AniListQuery.QueryMembership, new
+            {
+                id = Settings.Username.Trim(),
+                chunk
+            }));
+
+            if (Settings.AccessToken.IsNotNullOrWhiteSpace())
+            {
+                request.HttpRequest.Headers.Add("Authorization", "Bearer " + Settings.AccessToken);
+            }
+
+            return request;
+        }
+
         protected IEnumerable<ImportListRequest> GetRequestList(int page = 1)
         {
             yield return GetRequest(page);

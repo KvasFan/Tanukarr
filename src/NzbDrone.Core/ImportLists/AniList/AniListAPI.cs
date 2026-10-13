@@ -8,7 +8,8 @@ namespace NzbDrone.Core.ImportLists.AniList
     public enum AniListQuery
     {
         None,
-        QueryList
+        QueryList,
+        QueryMembership
     }
 
     public static class AniListAPI
@@ -21,6 +22,24 @@ namespace NzbDrone.Core.ImportLists.AniList
                 User(name: $username) {
                     mediaListOptions {
                         animeList { customLists }
+                    }
+                }
+            }";
+
+        private const string QueryMembership = @"
+            query ($id: String!, $chunk: Int!) {
+                User(name: $id) {
+                    id
+                    name
+                    mediaListOptions { animeList { customLists } }
+                }
+                MediaListCollection(userName: $id, type: ANIME, chunk: $chunk, perChunk: 500) {
+                    user { id name }
+                    hasNextChunk
+                    lists {
+                        name
+                        isCustomList
+                        entries { media { id type } }
                     }
                 }
             }";
@@ -71,6 +90,10 @@ namespace NzbDrone.Core.ImportLists.AniList
             if (query == AniListQuery.QueryList)
             {
                 querySource = QueryList;
+            }
+            else if (query == AniListQuery.QueryMembership)
+            {
+                querySource = QueryMembership;
             }
 
             if (string.IsNullOrEmpty(querySource))

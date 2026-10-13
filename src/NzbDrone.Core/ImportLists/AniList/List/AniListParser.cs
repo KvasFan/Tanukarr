@@ -12,13 +12,16 @@ namespace NzbDrone.Core.ImportLists.AniList.List
     public class AniListParser : IParseImportListResponse
     {
         private readonly AniListSettings _settings;
+        private readonly Func<int, Dictionary<string, bool>> _membershipResolver;
 
-        public AniListParser(AniListSettings settings)
+        public AniListParser(AniListSettings settings, Func<int, Dictionary<string, bool>> membershipResolver = null)
         {
             _settings = settings;
+            _membershipResolver = membershipResolver;
         }
 
         public ISet<int> ExcludedMediaIds { get; } = new HashSet<int>();
+        public ISet<int> IncludedMediaIds { get; } = new HashSet<int>();
 
         public virtual IList<ImportListItemInfo> ParseResponse(ImportListResponse importListResponse)
         {
@@ -70,17 +73,24 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             foreach (var item in page.MediaList)
             {
                 var media = item.Media;
+                var selectedStatus = IsSelectedListStatus(item.Status) && ValidateMediaStatus(media);
+                var selectedCustomList = IsOnSelectedCustomList(item);
 
-                // Process every exclusion before inclusion filters so an excluded duplicate
-                // cannot be admitted by a different custom list on another page.
-                if (IsOnExcludedCustomList(item, importListResponse))
+                // Explicit custom-list inclusion wins an overlap, including duplicates
+                // on earlier or later pages. Account and release statuses still apply.
+                if (selectedStatus && selectedCustomList && HasInclusions())
+                {
+                    IncludedMediaIds.Add(media.Id);
+                    ExcludedMediaIds.Remove(media.Id);
+                }
+
+                if (!IncludedMediaIds.Contains(media.Id) && IsOnExcludedCustomList(item, importListResponse))
                 {
                     ExcludedMediaIds.Add(media.Id);
                     continue;
                 }
 
-                if (ExcludedMediaIds.Contains(media.Id) || !IsSelectedListStatus(item.Status) ||
-                    !ValidateMediaStatus(media) || !IsOnSelectedCustomList(item))
+                if (ExcludedMediaIds.Contains(media.Id) || !selectedStatus || !selectedCustomList)
                 {
                     continue;
                 }
@@ -100,14 +110,24 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             return result.Where(item => !ExcludedMediaIds.Contains(item.AniListId)).ToList();
         }
 
-        private static void NormalizeCustomListMembership(IEnumerable<MediaList> entries, ImportListResponse response)
+        private void NormalizeCustomListMembership(IEnumerable<MediaList> entries, ImportListResponse response)
         {
             foreach (var item in entries)
             {
                 // Preserve the map's explicit flags and names when available,
                 // including compatibility with older responses without the alias.
-                if (item.CustomLists != null || item.CustomListEntries == null)
+                if (item.CustomLists != null)
                 {
+                    continue;
+                }
+
+                if (item.CustomListEntries == null)
+                {
+                    if (_membershipResolver != null && (HasInclusions() || HasExclusions()))
+                    {
+                        item.CustomLists = _membershipResolver(item.Media.Id);
+                    }
+
                     continue;
                 }
 
@@ -210,6 +230,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         private bool HasExclusions()
         {
             return _settings.ExcludedCustomLists?.Any() == true;
+        }
+
+        private bool HasInclusions()
+        {
+            return _settings.IncludedCustomLists?.Any() == true || _settings.CustomList.IsNotNullOrWhiteSpace();
         }
 
         private bool ValidateMediaStatus(MediaInfo media)
