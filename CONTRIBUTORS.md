@@ -37,7 +37,7 @@ local commit makes their original author name unreachable from HEAD.
 - **Local OpenAI Codex assistant, based on GPT-6**: this integration,
   AniList lifecycle fixes, compatibility adaptations, test/runtime work,
   security hardening, the English documentation/contributor audit and
-  SonarrWeeb 0.0.1 and 0.1.0 release packaging/installation documentation and the
+  historical 0.0.1 and 0.1.0 release packaging/installation documentation and the
   subsequent dedicated Jellyfin refresh integration and AniList multiple-list
   inclusion/exclusion controls, AniList HTTP 429 recovery, Nyaa query encoding
   and Tanukarr 1.0.0 branding, packaging and documentation. Subsequent work
@@ -63,12 +63,13 @@ local commit makes their original author name unreachable from HEAD.
 
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
-| Local integration, SonarrWeeb 0.0.1/0.1.0 and Tanukarr 1.0.0 packaging/documentation, Jellyfin refresh, AniList controls and request-limit recovery, Nyaa query encoding and Tanuki asset integration | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
+| Local integration, historical 0.0.1/0.1.0 and Tanukarr 1.0.0 packaging/documentation, Jellyfin refresh, AniList controls and request-limit recovery, Nyaa query encoding and Tanuki asset integration | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | TV/anime positioning and provider guide, metadata workflow/ordering audit, Add New Series recommended-type correction and regression checks | OpenAI Codex, based on GPT-6 | Same local coding session; the post-release correction does not change the immutable 1.0.0 tag |
 | Post-release official-relation/manual anime season and movie groups, configurable season/arc/movie folders and native group-file tokens, per-member library presentation, pack-only season search, AniList name autocomplete/typed membership compatibility, regression checks and English guides | OpenAI Codex, based on GPT-6 | Same local coding session; AniList/Jikan relationship data and original provider authors remain separately credited |
 | Subsequent AniList public metadata/relation cache and pacing, partial metadata-import progress, guarded saved-list resume, expected cloud-policy handling, cover-bearing frontend CommonJS interoperability, sanitized log audit, regression fixtures and English reliability documentation | OpenAI Codex, based on GPT-6 | Same local coding session; implementation and verification status are recorded separately in the new checkpoint; no exact model variant is established |
 | Tanukarr 1.0.1 group-slot collision recovery, regression coverage, release packaging/documentation and GitHub repository Tanuki branding | OpenAI Codex, based on GPT-6 | Same local coding session; executed checks and publication state belong to the 1.0.1 verification report |
 | Tanukarr 1.0.2 final exclusion-veto selection, simplified/compatible list controls, complete AniList membership recovery, provider capability audit, direct MyAnimeList account-list adaptation and release documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original providers/authors remain credited and fresh execution/publication evidence belongs to the 1.0.2 verification report |
+| Tanukarr 1.0.3 hourly quality-size editors, mixed-profile summaries, guarded global size updates, heuristic codec-size decisions, inherited save-error adaptation, upstream audit and English documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original Sonarr quality UI/backend and parsing authors remain credited below; new execution/publication evidence belongs to the 1.0.3 report |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -80,18 +81,18 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The current release target is **Tanukarr 1.0.2**, with Git tag
-`v1.0.2`, under the GitHub profile
+The current release target is **Tanukarr 1.0.3**, with planned Git tag
+`v1.0.3`, under the GitHub profile
 [KvasExert](https://github.com/KvasExert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/1.0.2.md), [verification report](docs/releases/1.0.2-verification.md) and
+[release notes](docs/releases/1.0.3.md), [verification report](docs/releases/1.0.3-verification.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
-The original SonarrWeeb [0.0.1](docs/releases/0.0.1.md) and
+The historical [0.0.1](docs/releases/0.0.1.md) and
 [0.1.0](docs/releases/0.1.0.md) releases and their immutable tags retain their own
 source, image filenames and verification history. Tanukarr 1.0.0 includes the
 subsequent AniList request-limit and Nyaa encoding fixes without reassigning any
@@ -142,6 +143,30 @@ Local checks decode the generated channels and compare their bytes with the
 supplied artwork. Actual macOS Finder/AppKit rendering was not executed here.
 
 ## Feature-to-contributor register
+
+### Quality-size editors, codec policy and save feedback
+
+Sonarr's quality/profile repositories, size checks, release ranking, parser and
+React settings UI retain their original upstream authorship. **Mark McDowall**
+authored the older quality save-error proposal
+[`974c4a601`](https://github.com/Sonarr/Sonarr/commit/974c4a601b6b6871f8283a1b9472a987d32ff924);
+earlier size-limit proposal work is credited to **Robert Dailey**,
+[`039d7775e`](https://github.com/Sonarr/Sonarr/commit/039d7775ed3203c9831988172243e596a36e4064).
+The useful error-feedback behavior is adapted to the current UI instead of
+copying the older class component or re-attributing inherited backend limits.
+
+Already integrated codec parsing includes **Bogdan**'s H.266 change
+[`547cd5b48`](https://github.com/Sonarr/Sonarr/commit/547cd5b48363422093142fafce4deb9aa443052c)
+and **Mark McDowall**'s EAC3 WEB-DL change
+[`6421bb621`](https://github.com/Sonarr/Sonarr/commit/6421bb62188c9025a5cb7f34f70f7186e675807e).
+The new sizing factors are project policy, not a copied codec benchmark.
+**OpenAI Codex, based on GPT-6**, implements the owner's four baseline factors,
+approved conservative factors for the remaining codecs, single decision
+normalization, hourly display/API compatibility, mixed-profile/partial-update
+guards, tests and English documentation. See the
+[upstream audit](docs/upstream-audit-2026-10-13.md),
+[quality guide](docs/quality-and-codec-size.md) and
+[1.0.3 verification](docs/releases/1.0.3-verification.md) for scope and evidence.
 
 ### Official-relation and manual anime season and movie groups
 

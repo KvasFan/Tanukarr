@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using FluentValidation;
+using FluentValidation.Results;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.CustomFormats;
@@ -272,23 +274,78 @@ namespace NzbDrone.Core.Profiles.Qualities
 
         public void UpdateAllSizeLimits(params QualityProfileSizeLimit[] sizeLimits)
         {
+            if (sizeLimits.Length == 0)
+            {
+                return;
+            }
+
             var all = All();
+            var changes = new List<(QualityProfileQualityItem Item, double? Min, double? Preferred, double? Max)>();
+            var errors = new List<ValidationFailure>();
 
             foreach (var qualityProfile in all)
             {
                 foreach (var sizeLimit in sizeLimits)
                 {
-                        var qualityIndex = qualityProfile.GetIndex(sizeLimit.Quality, true);
-                        var qualityOrGroup = qualityProfile.Items[qualityIndex.Index];
-                        var item = qualityOrGroup.Quality == null ? qualityOrGroup.Items[qualityIndex.GroupIndex] : qualityOrGroup;
+                    var item = QualityProfileSizeLimit.Leaves(qualityProfile.Items)
+                        .SingleOrDefault(candidate => candidate.Quality.Id == sizeLimit.Quality.Id);
 
-                        item.MinSize = sizeLimit.MinSize;
-                        item.MaxSize = sizeLimit.MaxSize;
-                        item.PreferredSize = sizeLimit.PreferredSize;
+                    if (item == null)
+                    {
+                        errors.Add(new ValidationFailure("quality", $"Quality {sizeLimit.Quality.Name} is missing from profile {qualityProfile.Name}."));
+                        continue;
+                    }
+
+                    var minimum = sizeLimit.UpdateMinSize ? sizeLimit.MinSize : item.MinSize;
+                    var maximum = sizeLimit.UpdateMaxSize ? sizeLimit.MaxSize : item.MaxSize;
+                    var preferred = sizeLimit.UpdatePreferredSize ? sizeLimit.PreferredSize : item.PreferredSize;
+                    var prefix = $"{qualityProfile.Name}: {item.Quality.Name}";
+
+                    ValidateSize(minimum, "minSize", prefix, errors);
+                    ValidateSize(maximum, "maxSize", prefix, errors);
+                    ValidateSize(preferred, "preferredSize", prefix, errors);
+
+                    if (minimum.HasValue && preferred.HasValue && minimum > preferred)
+                    {
+                        errors.Add(new ValidationFailure("minSize", $"{prefix}: minimum must not exceed preferred size."));
+                    }
+
+                    if (maximum > 0 && (minimum > maximum || preferred > maximum))
+                    {
+                        errors.Add(new ValidationFailure("maxSize", $"{prefix}: maximum must not be below minimum or preferred size."));
+                    }
+
+                    changes.Add((item, minimum, preferred, maximum));
                 }
             }
 
+            if (errors.Count > 0)
+            {
+                throw new ValidationException(errors);
+            }
+
+            // Validate every merged profile before changing any object or writing the batch.
+            foreach (var change in changes)
+            {
+                change.Item.MinSize = change.Min;
+                change.Item.PreferredSize = change.Preferred;
+                change.Item.MaxSize = change.Max;
+            }
+
             _qualityProfileRepository.UpdateMany(all);
+
+            foreach (var profile in all)
+            {
+                _eventAggregator.PublishEvent(new QualityProfileUpdatedEvent(profile.Id));
+            }
+        }
+
+        private static void ValidateSize(double? size, string field, string prefix, List<ValidationFailure> errors)
+        {
+            if (size.HasValue && (!double.IsFinite(size.Value) || size < QualityDefinitionLimits.Min || size > QualityDefinitionLimits.Max))
+            {
+                errors.Add(new ValidationFailure(field, $"{prefix}: size must be a finite value between {QualityDefinitionLimits.Min} and {QualityDefinitionLimits.Max} MiB per minute, or null."));
+            }
         }
 
         private QualityProfile AddDefaultProfile(string name, Quality cutoff, params Quality[] allowed)

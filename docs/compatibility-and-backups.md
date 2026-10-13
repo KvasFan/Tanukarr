@@ -1,6 +1,6 @@
 # Compatibility, migration and backups
 
-**Tanukarr 1.0.2** continues the SonarrWeeb fork. The Tanukarr name, supplied
+**Tanukarr 1.0.3** continues the earlier releases. The Tanukarr name, supplied
 Tanuki logos, GitHub repository and release image namespace introduced in 1.0.0
 remain in use; the
 Sonarr-derived storage and API identifiers remain intentional compatibility
@@ -28,7 +28,7 @@ missing/wrong API keys with 401 and returned branded calendar data for a valid
 key. See the [release verification](releases/1.0.0-verification.md) for the exact
 tested image identity; no downstream-client compatibility claim is implied.
 
-The product version is **1.0.2**. Sonarr's inherited internal assembly version
+The product version is **1.0.3**. Sonarr's inherited internal assembly version
 remains `10.0.0.*`; it is not a second Tanukarr release number. The `Sonarr`
 executable/core names, `config.xml`, SQLite `sonarr.db`, migration history,
 provider identities and container port **8989** remain unchanged. The default
@@ -47,9 +47,9 @@ media. Existing WSL distribution names and host tool-installation directories
 can remain unchanged. Review absolute paths used by scripts, bind mounts and
 external services if moving an installation directory.
 
-For an existing SonarrWeeb Docker deployment, stop the container, save a
+For an existing Tanukarr Docker deployment, stop the container, save a
 consistent configuration backup and change the image to
-`ghcr.io/kvasexert/tanukarr:1.0.2` after verified publication. Preserve the
+`ghcr.io/kvasexert/tanukarr:1.0.3` after verified publication. Preserve the
 original `/config` volume or bind mount, media mounts, Compose project/volume
 identity and client categories.
 A new volume name selects new storage and can make the application appear empty.
@@ -104,6 +104,6 @@ migration; retain the original backup until validation succeeds.
 
 The [Tanukarr 1.0.0 verification report](releases/1.0.0-verification.md) identifies
 the exact tested image. New backup receipts are in the ignored
-`_artifacts/tanukarr-1.0.0/native-backup-restore.json`; historical SonarrWeeb
+`_artifacts/tanukarr-1.0.0/native-backup-restore.json`; historical Tanukarr
 receipts remain under `_artifacts/backup-restore-2026-10-13/`. These files are not
 part of a normal source clone.

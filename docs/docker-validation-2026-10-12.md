@@ -1,16 +1,16 @@
 # Initial verified Docker build and deployment — October 12, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This historical report records the first actual Docker build and deployment,
 at `130831c3b15ebca879d78fe30904b5840b3d6a3d`. The image and deployment after the
 security corrections are documented in
 [functional/security validation](security-functional-validation-2026-10-12.md).
-The original export with the checksum below is preserved as
-`_artifacts/sonarr-weeb-local-linux-amd64-build-130831c3b.tar`; the filename without
-a commit identifier holds the final image.
+The original export with the checksum below retains its original filename,
+recorded in the private export receipt. A separate export holds the final image;
+their recorded checksums identify the distinct builds.
 
-The repository was built into `sonarr-weeb:local` and run as a Linux `amd64`
+The repository was built into `<recorded-local-image-reference>` and run as a Linux `amd64`
 container. At this checkpoint, the Compose deployment `sonarr-pro` was running
 at [http://localhost:6970](http://localhost:6970), also accessible from Windows.
 Local configuration and media directories were `config/` and `media/`, initially
@@ -32,10 +32,10 @@ labels are in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 - Runtime version: `10.0.0.30175`; SQLite migration `242`.
 - .NET SDK `10.0.401`, Node 24/Vite frontend, Docker Engine `29.9.0`,
   Compose `v5.6.0`.
-- Docker was installed in the dedicated WSL 2 distribution `SonarrWeebBuild`,
+- Docker was installed in the dedicated WSL 2 distribution `<build-distribution>`,
   Ubuntu `24.04.5`. Docker Desktop was not installed.
 - Exported archive:
-  `_artifacts/sonarr-weeb-local-linux-amd64-build-130831c3b.tar`,
+  `<historical-image-export>` (original filename in the export receipt),
   127,636,992 bytes.
 - Archive SHA-256:
   `08f7676f65cc544c97a60bd17a84d7fd5e898c5609d4bb01ac7a325bea3bf938`.
@@ -43,7 +43,7 @@ labels are in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 To import this historical image on another Linux `amd64` host:
 
 ```sh
-docker load -i sonarr-weeb-local-linux-amd64-build-130831c3b.tar
+docker load -i "<historical-image-archive>"
 ```
 
 ## Checks performed
@@ -82,7 +82,7 @@ startup uses the locally integrated image.
 
 Compose uses concrete local directories instead of `/path/to/media`, binds only
 to loopback by default, and permits configuring paths, UID/GID, timezone and
-umask through `SONARR_PRO_*` variables. Configuration, media, `.env` files and
+umask through the environment aliases recorded in its archived YAML. Configuration, media, `.env` files and
 Python caches are excluded from Git and the Docker build context.
 
 The smoke test resolves the dynamic port again after a restart because Docker
@@ -114,21 +114,21 @@ On a host with the Docker CLI:
 ```sh
 mkdir -p media
 docker compose up -d --build
-python3 docker/tests/smoke.py --image sonarr-weeb:local --anilist
+python3 docker/tests/smoke.py --image "<recorded-local-image-reference>" --anilist
 ```
 
 To stop the local deployment:
 
 ```powershell
-wsl.exe -d SonarrWeebBuild --cd /mnt/c/Users/tirael/Documents/SonarrWeeb --exec docker compose stop
+wsl.exe -d "<build-distribution>" --cd "<repository-directory>" --exec docker compose stop
 ```
 
 The `/media` volume was empty at validation. For a real library, set
-`SONARR_PRO_MEDIA_PATH` to the desired path and configure root folders, clients
+the media-path override in the archived Compose YAML to the desired path and configure root folders, clients
 and categories in the application. Downloads, media imports, private lists and
 ARM64 were not tested in this deployment.
 
-Full logs and reports are in `%LOCALAPPDATA%\SonarrWeebTools`:
+Full logs and reports are in `<local-tool-directory>`:
 `docker-build-final.log`, `docker-smoke-report-final.json`,
 `docker-deployment-report.json` and `compression-linux-tests.log`.
 No image was published to a registry. Consult the

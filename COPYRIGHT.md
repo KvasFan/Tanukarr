@@ -4,7 +4,7 @@ Copyright (C)
 
 _Please refer to the git commit log for details on all contributors and their respective contributions._
 
-The upstream notices above are retained. Additional SonarrWeeb, source-fork and
+The upstream notices above are retained. Additional Tanukarr, source-fork and
 integration work is
 credited in [CONTRIBUTORS.md](CONTRIBUTORS.md), including original feature authors,
 source repositories and AI attribution. The register complements the Git log when

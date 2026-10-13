@@ -5,7 +5,10 @@ export default interface QualityDefinitionModel extends ModelBase {
   quality: Quality;
   title: string;
   weight: number;
-  minSize: number;
-  maxSize: number;
-  preferredSize: number;
+  minSize: number | null;
+  maxSize: number | null;
+  preferredSize: number | null;
+  minSizeIsMixed?: boolean;
+  maxSizeIsMixed?: boolean;
+  preferredSizeIsMixed?: boolean;
 }

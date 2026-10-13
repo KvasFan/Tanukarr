@@ -1,6 +1,6 @@
 # Sonarr Pro integration — October 12, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This historical report records the first Kakarotto/gaboy integration on
 `integration/sonarr-latest-anilist`. Sonarr Pro was rebased onto the latest commit
@@ -119,7 +119,7 @@ queue API and AniList lookup were checked again. The distinct Core, API, HTTP
 and policy results total 5,913 passing tests, plus 17 skipped Core tests.
 
 Tools: .NET SDK `10.0.401`, Node `24.19.0`, Yarn `1.22.22`. Local tools and full
-logs are in `%LOCALAPPDATA%\SonarrWeebTools`; TRX results are under
+logs are in `<local-tool-directory>`; TRX results are under
 `test-results`. Portable Git is at `git\cmd\git.exe` within that tool directory.
 
 No real library was used. Live downloads, media moves, AniList account
@@ -129,7 +129,7 @@ Docker image was published.
 
 ## Container startup and later validation
 
-The included `docker-compose.yml` builds `sonarr-weeb:local` from these sources.
+The included `docker-compose.yml` builds `<recorded-local-image-reference>` from these sources.
 After configuring volumes and user IDs:
 
 ```sh

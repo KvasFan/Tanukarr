@@ -1,6 +1,6 @@
 # Functional and security validation — October 12, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 All 11 available .NET test suites were run on Windows, along with the Linux
 platform suites, frontend checks, compression tests using generated videos,
@@ -140,7 +140,7 @@ and reports.
 ## Artifacts and limits
 
 JSON/TRX reports, logs, the CycloneDX SBOM, screenshots and proofs are stored in
-`%LOCALAPPDATA%/SonarrWeebTools/security-2026-10-12`. Sanitized final results are
+`<local-tool-directory>/security-2026-10-12`. Sanitized final results are
 copied to `_artifacts/security-2026-10-12`; these local artifacts are not part of
 the committed source. Reusable tests and commands are documented in
 [docker/tests/README.md](../docker/tests/README.md).
@@ -160,14 +160,14 @@ the explicit AllowedHosts test configuration was not applied to it.
 
 ## Final image and deployment
 
-Image `sonarr-weeb:local`, Linux amd64:
+Image `<recorded-local-image-reference>`, Linux amd64:
 `sha256:94555df18b98fd6f7b76dc0c88b2708538c9617f4f5d08e8a3cb93a20edceb48`.
 
 Runtime `10.0.0.32728`; smoke verification, 19 runtime checks and five final
 Chromium scenarios passed on that same image. Existing deployment configuration
 and media were preserved.
 
-Export: `_artifacts/sonarr-weeb-local-linux-amd64.tar`, 128,857,088 bytes.
+Export: `<historical-image-export>` (original filename in the export receipt), 128,857,088 bytes.
 SHA-256: `f5098bfff5761f3cc661679cfec05310c5efbcf2e3b6202f4f1706b2cb722c8f`.
 
 Final deployment verification, image identity and export checksum are recorded

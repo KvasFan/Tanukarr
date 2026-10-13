@@ -96,7 +96,7 @@ these legacy names, alongside modern `c`, `f` and `q` parameters. Avoid a fixed
 title: a fixed query can override the generated term. Tanukarr 1.0.0 includes the
 correction that escapes reserved title characters such as `&`, `#` and literal `+`
 while preserving configured category/filter values and special-episode word
-separators. The immutable SonarrWeeb 0.1.0 release predates this correction.
+separators. The immutable historical 0.1.0 release predates this correction.
 
 An HTTP/RSS connection test and a release search only retrieve metadata.
 Acquisition remains a separate operation. Search results can be present but
@@ -244,8 +244,8 @@ Jikan's retirement is recorded in its
 
 Configure AniList under **Settings → Import Lists**, authenticate with AniList
 and enter the target username. The multiple-list inclusion and exclusion controls
-are included in **Tanukarr 1.0.0** and were introduced in SonarrWeeb 0.1.0;
-the immutable SonarrWeeb 0.0.1 release predates them. These filters
+are included in **Tanukarr 1.0.0** and were introduced in historical 0.1.0;
+the immutable historical 0.0.1 release predates them. These filters
 describe different things and are combined.
 
 Version 1.0.2 simplifies exclusions to **custom-list membership only**. The six
@@ -393,7 +393,7 @@ Initial synchronization of a large list can therefore take several minutes.
 The limit is shared within one application instance; another application using
 the same public IP can still exhaust AniList's server allowance.
 
-The immutable SonarrWeeb `v0.1.0` release predates this correction. Use Tanukarr
+The immutable historical `v0.1.0` release predates this correction. Use Tanukarr
 1.0.0 or another build containing the fix; repeated presses of **Test** or
 **Refresh** do not bypass the server
 cooldown. A request-limit error alone does not indicate an invalid custom-list

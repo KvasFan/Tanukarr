@@ -67,7 +67,7 @@ function QualityProfileItem({
 
   return (
     <div
-      ref={ref}
+      ref={mode === 'editSizes' ? undefined : ref}
       className={classNames(
         styles.qualityProfileItem,
         mode === 'editSizes' && styles.editSizes,

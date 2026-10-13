@@ -1,9 +1,9 @@
 # Jellyfin integration verification — October 12, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This report covers the dedicated Jellyfin connection added to development main
-after the immutable SonarrWeeb 0.0.1 release. It extends the existing upstream
+after the immutable historical 0.0.1 release. It extends the existing upstream
 Emby / Jellyfin integration without changing that connection. Configuration and
 trigger semantics are in the [Jellyfin guide](jellyfin.md); original Sonarr
 authors, Jellyfin API contributors and OpenAI Codex based on GPT-6 are credited
@@ -17,10 +17,10 @@ Europe/Rome; all final receipts are dated October 12 in UTC. The tested source i
 Subsequent documentation-only commits do not change this implementation.
 
 The local Linux amd64 image used for the complete runtime checks was
-`sonarr-weeb:jellyfin-dev`, image ID
+`<recorded-local-image-reference>`, image ID
 `sha256:a4f6eac864c12f38ddd5bcef399f6ac5a4c889192cee19d4384fc9e368b7ad81`.
 The independently built GitHub image was published as
-`ghcr.io/kvasexert/sonarrweeb:sha-2805532c4c6ebbee6fcdca90f0df746646fbdd91`,
+the original image reference for [commit `2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExert/Tanukarr/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91) in the linked publishing receipt,
 with immutable digest
 `sha256:d3d8cbff3e2858a2db1be158df3d2c5e3ea3c20ad820b9bca7f0421383085d7d`.
 Both images identify the same source revision. The published image was pulled
@@ -105,7 +105,7 @@ The real Jellyfin **12.2** harness passed all ten checks, including four
 Chromium settings scenarios. Two TV libraries had initialized baseline media
 and real-time monitoring disabled. Generated-video imports demonstrated an
 immediate selected-library refresh, a burst batched at a real one-minute tick,
-pending work surviving a SonarrWeeb restart, independent immediate/periodic
+pending work surviving a Tanukarr restart, independent immediate/periodic
 work in combined mode, and recovery after Jellyfin was stopped and restarted.
 The unselected library retained its one baseline episode while an additional
 file there remained unindexed. Stale IDs and uninitialized libraries were
@@ -167,7 +167,7 @@ commands are in [docker/tests/README.md](../docker/tests/README.md).
 ## Limits
 
 Jellyfin accepts refresh requests asynchronously. HTTP 204 verifies acceptance,
-not successful scan completion. SonarrWeeb cannot retry a later server-internal
+not successful scan completion. Tanukarr cannot retry a later server-internal
 failure it does not observe. Transport timeouts can cause duplicate accepted
 requests. Busy immediate requests may wait for the background retry task, while
 retaining one request per pending import. Scheduler checks occur every 30 seconds;

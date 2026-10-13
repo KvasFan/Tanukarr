@@ -34,6 +34,7 @@ export interface NumberInputProps
   min?: number;
   max?: number;
   isFloat?: boolean;
+  emitChangeOnBlur?: boolean;
   onChange: (change: NumberInputChanged) => void;
 }
 
@@ -43,6 +44,7 @@ function NumberInput({
   isFloat = false,
   min,
   max,
+  emitChangeOnBlur = true,
   onChange,
   ...otherProps
 }: NumberInputProps) {
@@ -79,14 +81,16 @@ function NumberInput({
       setValue(stringValue);
     }
 
-    onChange({
-      name,
-      value: parsedValue,
-      isFloat,
-    });
+    if (emitChangeOnBlur) {
+      onChange({
+        name,
+        value: parsedValue,
+        isFloat,
+      });
+    }
 
     isFocused.current = false;
-  }, [name, value, isFloat, min, max, onChange]);
+  }, [name, value, isFloat, min, max, emitChangeOnBlur, onChange]);
 
   useEffect(() => {
     if (

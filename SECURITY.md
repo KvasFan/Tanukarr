@@ -10,9 +10,10 @@ Private vulnerability reporting is enabled for this repository. Use
 [private reporting form](https://github.com/KvasExert/Tanukarr/security/advisories/new),
 before publishing exploit details or credentials.
 
-Release 1.0.2 is identified by Git tag `v1.0.2` and the GHCR image
-`ghcr.io/kvasexert/tanukarr:1.0.2` after verified publication. Identify the exact
-Git commit and image digest in reports. The [release notes](docs/releases/1.0.2.md)
+The 1.0.3 release target uses planned Git tag `v1.0.3` and GHCR image
+`ghcr.io/kvasexert/tanukarr:1.0.3`. Publication is pending until its gated
+workflows complete successfully. Identify the exact Git commit and image digest
+in reports. The [release notes](docs/releases/1.0.3.md)
 and release manifest record
 the artifact being distributed. Source Kakarotto, gaboy or ikatun images can
 contain different code and require reports to their own maintainers.
@@ -37,6 +38,10 @@ or a real media library without authorization.
 
 ## Recorded verification
 
+The [1.0.3 verification report](docs/releases/1.0.3-verification.md) records new
+checks when executed. Earlier scan results do not verify the new package or
+establish that its dependencies have been patched.
+
 The [1.0.2 verification report](docs/releases/1.0.2-verification.md) records the
 new source and local image checkpoint. Its final image scan found zero Critical
 advisories, three distinct High ImageSharp advisories repeated across 21 package
@@ -52,7 +57,7 @@ The [October 12 security and functional report](docs/security-functional-validat
 records confirmed fixes, tested image identity, tool versions and residual
 dependency/legacy-migration findings. Its SBOM and scans describe that build, not
 future releases. The [1.0.0 verification report](docs/releases/1.0.0-verification.md)
-records the checks and remaining findings for Tanukarr. Historical SonarrWeeb
+records the checks and remaining findings for Tanukarr. Historical Tanukarr
 0.0.1 and 0.1.0 reports keep their original identities. Excluded
 ImageSharp attack paths do not mean the library was
 patched; build-only braces and unpatched Ubuntu advisories remain recorded.

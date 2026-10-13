@@ -1,23 +1,42 @@
 .header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 1fr) repeat(3, minmax(120px, 1fr));
+
   margin-top: 16px;
-  gap: 24px;
+  gap: 16px;
 
   font-weight: 600;
   font-size: 13px;
 }
 
 .headerQuality {
-  flex: 0 0 240px;
+  min-width: 0;
 }
 
 .headerTitle {
-  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .definitions {
   display: flex;
   flex-direction: column;
+}
+
+.codecComparison {
+  margin-top: 24px;
+}
+
+.codecTable {
+  max-width: 700px;
+  width: 100%;
+  border-collapse: collapse;
+
+  & th,
+  & td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--hairline);
+    text-align: left;
+  }
 }
 
 @media (--breakpointSmall) {

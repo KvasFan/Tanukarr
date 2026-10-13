@@ -6409,6 +6409,47 @@
         }
       }
     },
+    "/api/v5/qualitydefinition/codecs": {
+      "get": {
+        "tags": [
+          "QualityDefinition"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number",
+                    "format": "double"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number",
+                    "format": "double"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number",
+                    "format": "double"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/qualityprofile": {
       "post": {
         "tags": [
@@ -13044,6 +13085,30 @@
           "weight": {
             "type": "integer",
             "format": "int32"
+          },
+          "minSize": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "maxSize": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "preferredSize": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "minSizeIsMixed": {
+            "type": "boolean"
+          },
+          "maxSizeIsMixed": {
+            "type": "boolean"
+          },
+          "preferredSizeIsMixed": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

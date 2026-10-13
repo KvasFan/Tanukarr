@@ -1,9 +1,9 @@
 # AniList request-limit correction verification
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This October 13, 2026 checkpoint covers a correction after the immutable
-SonarrWeeb `v0.1.0` release. That published release remains unchanged.
+historical `v0.1.0` release. That published release remains unchanged.
 
 ## Reported failure
 
@@ -74,7 +74,7 @@ one-second asynchronous logging check failure. After the fixture initialization
 correction, the complete fresh image build passed; the inherited logging test
 was not changed. A transient registry IPv6 connection error also required a retry.
 
-The corrected local image is `sonarr-weeb:anilist-fix`, identified by
+The corrected local image is `<recorded-local-image-reference>`, identified by
 `sha256:74ef0cfab1539064700cad61b56cdc34495efe0d046547977fd716c760f0568f`.
 It was built from the tested working tree with OCI revision label
 `anilist-rate-limit-working-tree-2026-10-13`; it is not the immutable release

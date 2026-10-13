@@ -1,6 +1,6 @@
 # Documentation and contributor review - October 12, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This review checks the repository files and brings maintained documentation into
 English. It records existing implementation and verification evidence; it does
@@ -90,7 +90,7 @@ no remaining Italian passages. All 748 generated contributor names exactly match
 the audited Git identity list. Repository YAML configuration also parses.
 
 Machine-readable inventory and attribution evidence are stored outside the source
-tree in `%LOCALAPPDATA%/SonarrWeebTools/docs-audit-2026-10-12`, with sanitized copies
+tree in `<local-tool-directory>/docs-audit-2026-10-12`, with sanitized copies
 under `_artifacts/docs-audit-2026-10-12`. Those ignored host artifacts are not
 promised to exist in a normal clone. This review and the contributor register are
 the portable record included in Git.

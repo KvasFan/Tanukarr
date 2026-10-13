@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using NzbDrone.Core.Datastore.Events;
 using NzbDrone.Core.Messaging.Events;
@@ -19,65 +20,48 @@ namespace Sonarr.Api.V3.Qualities
     {
         private readonly IQualityDefinitionService _qualityDefinitionService;
         private readonly IQualityProfileService _qualityProfileService;
+        private readonly IQualityDefinitionUpdateService _updateService;
 
         public QualityDefinitionController(
             IQualityDefinitionService qualityDefinitionService,
             IQualityProfileService qualityProfileService,
+            IQualityDefinitionUpdateService updateService,
             IBroadcastSignalRMessage signalRBroadcaster)
             : base(signalRBroadcaster)
         {
             _qualityDefinitionService = qualityDefinitionService;
             _qualityProfileService = qualityProfileService;
-
-            SharedValidator.RuleFor(c => c)
-                .SetValidator(new QualityDefinitionResourceValidator());
+            _updateService = updateService;
         }
 
         [RestPutById]
         public ActionResult<QualityDefinitionResource> Update([FromBody] QualityDefinitionResource resource)
         {
             var model = resource.ToModel();
-            _qualityDefinitionService.Update(model);
-
-            if (model.MinSize.HasValue || model.MaxSize.HasValue || model.PreferredSize.HasValue)
-            {
-                _qualityProfileService.UpdateAllSizeLimits(new QualityProfileSizeLimit(model));
-            }
+            _updateService.UpdateMany(new List<QualityDefinitionSizeUpdate> { ToUpdate(resource) });
 
             return Accepted(model.Id);
         }
 
         protected override QualityDefinitionResource GetResourceById(int id)
         {
-            return _qualityDefinitionService.GetById(id).ToResource();
+            var model = _qualityDefinitionService.GetById(id);
+            var limits = QualityProfileSizeLimit.Summarize(_qualityProfileService.All());
+            return model.ToResource(limits.GetValueOrDefault(model.Quality.Id));
         }
 
         [HttpGet]
         public List<QualityDefinitionResource> GetAll()
         {
-            return _qualityDefinitionService.All().ToResource();
+            return GetResources();
         }
 
         [HttpPut("update")]
         public object UpdateMany([FromBody] List<QualityDefinitionResource> resource)
         {
-            // Read from request
-            var qualityDefinitions = resource.ToModel().ToList();
+            _updateService.UpdateMany(resource.Select(ToUpdate).ToList());
 
-            _qualityDefinitionService.UpdateMany(qualityDefinitions);
-
-            var toUpdate = qualityDefinitions
-                .Where(q => q.MinSize.HasValue || q.MaxSize.HasValue || q.PreferredSize.HasValue)
-                .Select(q => new QualityProfileSizeLimit(q))
-                .ToArray();
-
-            if (toUpdate.Any())
-            {
-                _qualityProfileService.UpdateAllSizeLimits(toUpdate);
-            }
-
-            return Accepted(_qualityDefinitionService.All()
-                .ToResource());
+            return Accepted(GetResources());
         }
 
         [HttpGet("limits")]
@@ -86,6 +70,32 @@ namespace Sonarr.Api.V3.Qualities
             return Ok(new QualityDefinitionLimitsResource(
                 QualityDefinitionLimits.Min,
                 QualityDefinitionLimits.Max));
+        }
+
+        [HttpGet("codecs")]
+        [ProducesResponseType(typeof(Dictionary<string, decimal>), 200)]
+        public JsonResult GetCodecs()
+        {
+            return new JsonResult(CodecSizeNormalizer.MultiplierCatalog, new JsonSerializerOptions { DictionaryKeyPolicy = null });
+        }
+
+        private List<QualityDefinitionResource> GetResources()
+        {
+            var limits = QualityProfileSizeLimit.Summarize(_qualityProfileService.All());
+            return _qualityDefinitionService.All()
+                .Select(model => model.ToResource(limits.GetValueOrDefault(model.Quality.Id)))
+                .ToList();
+        }
+
+        private static QualityDefinitionSizeUpdate ToUpdate(QualityDefinitionResource resource)
+        {
+            return new QualityDefinitionSizeUpdate
+            {
+                Definition = resource?.ToModel(),
+                UpdateMinSize = resource?.MinSizeSpecified == true && !(resource.MinSizeIsMixed && resource.MinSize == null),
+                UpdateMaxSize = resource?.MaxSizeSpecified == true && !(resource.MaxSizeIsMixed && resource.MaxSize == null),
+                UpdatePreferredSize = resource?.PreferredSizeSpecified == true && !(resource.PreferredSizeIsMixed && resource.PreferredSize == null)
+            };
         }
 
         [NonAction]

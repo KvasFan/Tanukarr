@@ -1,6 +1,6 @@
 # AniList inclusion and exclusion verification - October 13, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This checkpoint covers the multiple custom-list inclusion/exclusion controls
 and explicit watching-state exclusions added to development main after release
@@ -17,14 +17,14 @@ The later browser-selector correction and documentation updates do not alter
 the application's filtering or frontend behavior. Verification finished on
 October 13 in Europe/Rome; the final deployment receipt is October 12 in UTC.
 
-The local Linux amd64 build produced `sonarr-weeb:anilist-dev`, image ID
+The local Linux amd64 build produced `<recorded-local-image-reference>`, image ID
 `sha256:ee5ae6a44cd781430fda88f2128cc3a602b62d8693ff73890eecd3e4eb971678`.
 It was built from the clean source checkpoint above. The local command did not
 set the optional OCI revision argument, so that label is empty; the source
 identity comes from the recorded build checkpoint rather than that label.
 
 GitHub independently built and published
-`ghcr.io/kvasexert/sonarrweeb:sha-2f0dcbc653481091028300dd377843c4cb1a075b`,
+the original image reference for [commit `2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExert/Tanukarr/commit/2f0dcbc653481091028300dd377843c4cb1a075b) in the linked publishing receipt,
 with immutable digest
 `sha256:3620cbd0b6e7d28d4291ea0549d79ea4a14a56394bb13391aa2361e2be4221d1`.
 Its OCI revision correctly identifies the source commit. An anonymous pull with

@@ -1,9 +1,11 @@
-# Install Tanukarr 1.0.2 with Docker
+# Install Tanukarr 1.0.3 with Docker
 
 Tanukarr is an independent Sonarr fork. Its source and release notes are on
-[GitHub](https://github.com/KvasExert/Tanukarr). The **1.0.2**
-[release notes](releases/1.0.2.md) describe simplified list controls, final
-exclusion-veto selection and complete AniList membership recovery. Grouping,
+[GitHub](https://github.com/KvasExert/Tanukarr). The **1.0.3**
+[release notes](releases/1.0.3.md) describe hourly quality-size controls, mixed
+profile summaries, guarded global edits and codec-aware size decisions. The
+exclusion-veto list controls and complete AniList membership recovery introduced
+in 1.0.2 remain included. Grouping,
 covered-library rendering and the supplied Tanuki repository branding remain. The
 selected-library Jellyfin connection, AniList inclusion/exclusion and Nyaa
 query encoding introduced in earlier versions remain included. Original
@@ -11,11 +13,12 @@ Sonarr and fork contributors, including recorded AI tool/model attribution, are
 listed in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
 GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
-below uses `ghcr.io/kvasexert/tanukarr:1.0.2`; the GitHub repository itself is source
+below uses `ghcr.io/kvasexert/tanukarr:1.0.3`; the GitHub repository itself is source
 code, not a Docker image. Check the release notes and
 [package page](https://github.com/users/KvasExert/packages/container/package/tanukarr) for
 the published architectures and image digest. Use only a tag that has finished
-publishing. A configured workflow does not establish that an image is available.
+publishing. **1.0.3 publication is pending until the gated workflows complete
+successfully.** A configured workflow does not establish that an image is available.
 
 ## Prerequisites
 
@@ -39,7 +42,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasexert/tanukarr:1.0.2
+    image: ghcr.io/kvasexert/tanukarr:1.0.3
     container_name: tanukarr
     restart: unless-stopped
     ports:
@@ -87,9 +90,9 @@ Open **http://localhost:6970**. The named volume holds the database, `config.xml
 settings and logs. Recreating the container retains this volume. Avoid
 `docker compose down -v`, which deletes it.
 
-Once the [1.0.2 release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.2)
+Once the [1.0.3 release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.3)
 has finished publishing, its ready-to-use
-[`compose.yaml`](https://github.com/KvasExert/Tanukarr/releases/download/v1.0.2/compose.yaml)
+[`compose.yaml`](https://github.com/KvasExert/Tanukarr/releases/download/v1.0.3/compose.yaml)
 with bind-mounted `./config` and `./media` defaults is an alternative to the
 named-volume example. Download that file into a new
 installation directory, create those two directories with the correct permissions,
@@ -170,11 +173,11 @@ AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
 AniList lets you include several custom lists and veto entries by excluded
 custom-list membership, within the enabled Import membership/release statuses.
-Version 1.0.2 always removes excluded custom-list members, including overlap with
+Version 1.0.3 retains the 1.0.2 rule: excluded custom-list members are removed, including overlap with
 an included list. It removes the six separate account-status exclusion controls
 and their behavior; the immutable 1.0.1 image retains its original settings.
-Choose the published 1.0.2 image for these controls and check its source revision.
-The new version also removes the
+Use 1.0.3 after verified publication and check its source revision.
+The list-control changes introduced in 1.0.2 also remove the
 duplicate legacy custom-list textbox, moving its saved name into Included
 Custom Lists tags without discarding the filter.
 
@@ -194,7 +197,7 @@ setting for the new instance.
 A **public** GHCR package supports anonymous pulls:
 
 ```sh
-docker pull ghcr.io/kvasexert/tanukarr:1.0.2
+docker pull ghcr.io/kvasexert/tanukarr:1.0.3
 ```
 
 If GitHub reports `denied` or `unauthorized`, confirm that the tag exists and that
@@ -212,7 +215,7 @@ shell command that saves them in command history.
 
 ## Version pins and updates
 
-`1.0.2` is the Tanukarr release version; the application's inherited internal
+`1.0.3` is the Tanukarr release version; the application's inherited internal
 Sonarr version may use a different numbering scheme. Prefer the exact release
 tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
@@ -245,13 +248,13 @@ location when a rollback requires it. Never overwrite your only backup.
 ## Release archive fallback
 
 If a release includes a Docker image archive, download that archive and its
-checksum from the [GitHub release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.2).
+checksum from the [GitHub release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.3).
 Choose an architecture compatible with your Docker host. Verify the filename
 listed in the release's checksum file before loading it:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-1.0.2-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-1.0.3-linux-amd64-docker.tar.gz
 ```
 
 On Windows, use `Get-FileHash -Algorithm SHA256` and compare its output with
@@ -265,65 +268,69 @@ docker compose up -d --pull never
 ```
 
 Use the actual asset name shown for the release; the command above illustrates
-the 1.0.2 Linux amd64 archive naming convention. This is an offline image import,
+the 1.0.3 Linux amd64 archive naming convention. This is an offline image import,
 not a source build. Asset availability, architectures, SBOMs, manifests and test
 receipts must be checked on the corresponding release. GitHub source archives
 are source code and cannot be loaded with `docker load`. Source and image assets
 must preserve the project's GPL license and contributor notices.
 
-The 1.0.2 packaging workflow also prepares `provider-verification.json`, alongside
+The 1.0.3 packaging workflow also prepares `provider-verification.json`, alongside
 the primary verification/manifest assets, to identify required provider/runtime
-checks for the same tested image. It aggregates eight additional reports beyond
-smoke and functional/security, for ten required publishing gates. The configured
+checks for the same tested image. It aggregates nine additional reports beyond
+smoke and functional/security, for eleven required publishing gates. The new
+quality/codec fixture checks editable profile-backed limits and normalized
+decisions against local RSS releases. The configured
 nine assets comprise the image archive, corresponding source archive, SBOM,
 smoke report, functional/security report, provider aggregate, Compose YAML,
 release manifest and checksum file. Inspect the actual published asset list,
 checksums and manifest; a configured workflow alone does not prove publication
 or successful execution.
 
-The initial SonarrWeeb 0.0.1 release provides an image archive for **Linux amd64** and
+The initial 0.0.1 release provides an image archive for **Linux amd64** and
 its matching source archive, SBOM, manifest and verification receipts. Its
 immutable assets and dated reports remain historical checkpoints; they do not
-establish that an equivalent 1.0.2 asset has been published or tested.
+establish that an equivalent 1.0.3 asset has been published or tested.
 
 ## Building from the GitHub source
 
 To build the tagged source instead of pulling the published image:
 
 ```sh
-git clone --branch v1.0.2 --depth 1 https://github.com/KvasExert/Tanukarr.git
+git clone --branch v1.0.3 --depth 1 https://github.com/KvasExert/Tanukarr.git
 cd Tanukarr
-docker build --progress=plain -t tanukarr:1.0.2 .
+docker build --progress=plain -t tanukarr:1.0.3 .
 ```
 
-Use `image: tanukarr:1.0.2` in the standalone Compose example above and run
+Use `image: tanukarr:1.0.3` in the standalone Compose example above and run
 `docker compose up -d --pull never`. The build downloads dependencies and runs
 the checks encoded in the Dockerfile. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The `v1.0.2` checkout command requires that the release tag has been pushed.
+The `v1.0.3` checkout command requires that the release tag has been pushed.
 Before that happens, clone `main` and check the repository's `VERSION` file.
 An untagged main checkout can include changes added after a release, so record
 the full Git commit when reproducing a build.
 
 The repository's own `docker-compose.yml` remains a local-build deployment with
-`tanukarr:local` and compatibility environment variables named
-`SONARR_PRO_*`. In that checkout, `docker compose up -d --build` rebuilds from
-source; it does not pull the GHCR release. Existing local users should preserve
+`tanukarr:local`. Use `TANUKARR_*` overrides; older aliases remain accepted for
+existing installations. In that checkout, `docker compose up -d --build`
+rebuilds from source; it does not pull the GHCR release. Existing local users should preserve
 their configuration mount and Compose project identity when changing images.
 
-## Upgrading an existing SonarrWeeb installation
+## Upgrading an existing installation
 
 The repository and product are now named **Tanukarr**. New installations use
-`ghcr.io/kvasexert/tanukarr:1.0.2`; old SonarrWeeb releases retain their original
-`ghcr.io/kvasexert/sonarrweeb` image paths and asset filenames. A GitHub repository
+`ghcr.io/kvasexert/tanukarr:1.0.3`. Historical
+[0.0.1](https://github.com/KvasExert/Tanukarr/releases/tag/v0.0.1) and
+[0.1.0](https://github.com/KvasExert/Tanukarr/releases/tag/v0.1.0) releases retain
+the image paths and filenames recorded in their manifests. A GitHub repository
 rename does not rename an existing GHCR package or move the host's directories.
 
 Stop the existing container and take a consistent backup first. Edit its image
 to the new Tanukarr tag, while retaining the exact original configuration volume
 or bind mount, media mounts, Compose project identity, port and authentication.
-For example, an existing `sonarrweeb-config:/config` volume should remain mounted
-under that name. Replacing it with `tanukarr-config` creates a new empty volume.
+For example, keep `<existing-config-volume>:/config` mounted using its actual
+existing volume name. Replacing it with `tanukarr-config` creates a new empty volume.
 Container/service display names can change separately, but do not let Compose
 silently select a different configuration volume.
 
@@ -332,7 +339,7 @@ The inherited Sonarr assembly and configuration names remain intentional:
 Existing database migrations, API keys and provider identities are preserved.
 API clients can continue using `/api/v3` and `/api/v5`; `/api/v4` is not supported.
 Both checked-in local Compose and the standalone release YAML resolve each
-setting in this order: **`TANUKARR_*` → `SONARRWEEB_*` → `SONARR_PRO_*` → default**.
+setting from **`TANUKARR_*`**, then existing compatibility aliases, then defaults.
 An unset or empty value falls through to the next name. This includes both
 configuration and media paths; an old `.env` need not be renamed to preserve
 its mounts. New installations should use `TANUKARR_*` names.
@@ -348,10 +355,11 @@ its mounts. New installations should use `TANUKARR_*` names.
 | `CONFIG_PATH` | `./config` | Configuration bind mount |
 | `MEDIA_PATH` | `./media` | Shared library/download bind mount |
 
-Existing `SonarrWeebBuild` WSL distributions and `SonarrWeebTools` host directories
-can keep those names; renaming them is unnecessary to run Tanukarr. The launcher
-accepts `TANUKARR_WSL_DISTRIBUTION` when a different configured distribution is
-needed; it defaults to the existing `SonarrWeebBuild` distribution.
+Keep your actual WSL distribution and local tool-directory names. Set
+`TANUKARR_WSL_DISTRIBUTION` to the existing configured distribution when using
+[docker/start-wsl.ps1](../docker/start-wsl.ps1). `<build-distribution>` and
+`<local-tool-directory>` are documentation placeholders, not new installation
+names or instructions to rename existing directories.
 
 See [compatibility and backups](compatibility-and-backups.md) for ZIP restore,
 the outstanding raw-XML restore limitation and PostgreSQL backup requirements.

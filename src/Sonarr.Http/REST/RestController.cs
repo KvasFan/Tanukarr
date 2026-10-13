@@ -96,6 +96,11 @@ namespace Sonarr.Http.REST
 
                 foreach (var resource in resourceArgs)
                 {
+                    if (resource == null)
+                    {
+                        throw new BadRequestException("Request body can't contain null resources");
+                    }
+
                     // Map route Id to body resource if not set in request
                     if (Request.Method == "PUT" && resource.Id == 0 && context.RouteData.Values.TryGetValue("id", out var routeId))
                     {

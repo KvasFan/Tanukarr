@@ -117,7 +117,7 @@ class SeriesPacks(module.FunctionalSecurity):
             "--network-alias", "fixture-rss", "--env", "PYTHONDONTWRITEBYTECODE=1",
             "--mount", f"type=bind,source={SCRIPTS},target=/runner,readonly",
             "--mount", f"type=bind,source={self.fixture_root},target=/fixture",
-            self.args.mock_image, "python", "-u", "/runner/series-packs.py", "--serve-fixture", "/fixture")
+            self.args.mock_image, "python", "-u", getattr(self, "fixture_script", "/runner/series-packs.py"), "--serve-fixture", "/fixture")
         deadline = time.monotonic() + self.args.timeout
         while "Local native pack RSS fixture ready" not in self.docker("logs", self.mock):
             require(time.monotonic() < deadline, "Local synthetic RSS did not become ready")

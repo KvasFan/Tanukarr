@@ -144,6 +144,12 @@ jobs:
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-simkl-reliability.json"
 
+      - name: Isolated editable quality limits and codec-normalized release decisions
+        run: |
+          python3 docker/tests/quality-codecs.py --image tanukarr:verified \
+            --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-quality-codecs.json"
+
       - name: Upload verification reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -160,6 +166,7 @@ jobs:
             ${{ runner.temp }}/tanukarr-myanimelist-reliability.json
             ${{ runner.temp }}/tanukarr-list-set-operations.json
             ${{ runner.temp }}/tanukarr-simkl-reliability.json
+            ${{ runner.temp }}/tanukarr-quality-codecs.json
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry
@@ -213,6 +220,7 @@ jobs:
             --verification-report "${RUNNER_TEMP}/tanukarr-myanimelist-reliability.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-list-set-operations.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-simkl-reliability.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-quality-codecs.json" \
             --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets

@@ -31,7 +31,7 @@ updates. [CONTRIBUTORS.md](CONTRIBUTORS.md) records original feature authors,
 maintainers and source-declared AI co-authors. Local adaptation and hardening
 were performed with OpenAI Codex based on GPT-6.
 
-Tanukarr 1.0.0 is the renamed continuation of SonarrWeeb 0.0.1 and 0.1.0,
+Tanukarr 1.0.0 is the continuation of historical releases 0.0.1 and 0.1.0,
 building on the credited Sonarr Pro source forks. The rename changes product
 branding, logos, repository and distribution names while retaining Sonarr's
 core assemblies, configuration/database filenames, migration history and API
@@ -39,12 +39,16 @@ routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [current release notes](docs/releases/1.0.2.md) for packaging
+configuration and [current release notes](docs/releases/1.0.3.md) for packaging
 scope. Version 1.0.1 also includes the later grouping and AniList/browser
 reliability work; the immutable 1.0.0 source and assets remain unchanged.
 Version 1.0.2 adds the simplified list controls, final exclusion-veto selection
 rule and complete AniList membership recovery. Earlier tags and dated reports
 retain their original source and behavior.
+Version 1.0.3 adds hourly quality-size editors, summaries of actual profile limits
+and fixed codec-normalized size decisions. The fresh
+[upstream audit](docs/upstream-audit-2026-10-13.md) found no newer accepted
+default heads; an inherited save-error feedback gap is adapted to the modern UI.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -214,6 +218,26 @@ that a media server interprets every group as a shared TheTVDB/TMDB season list.
 See [Anime season groups](docs/anime-season-groups.md) for catalogue rules,
 controls, folder examples, the original grouping checkpoint and the
 [1.0.1 verification report](docs/releases/1.0.1-verification.md).
+
+## Quality sizes and codec policy
+
+Quality profiles remain the stored source of size limits. Global Quality
+Definitions summarize those entries and identify fields with different profile
+values as Mixed. An untouched field preserves each profile's value; a changed
+global field applies to every profile containing that quality. Omitted API size
+properties and explicit null are distinct, and the merged batch must be valid
+before writing. UI values use MiB/hour with a GiB/hour preview, while API and
+database values retain MiB/minute.
+
+Codec normalization multiplies the release's actual size once for profile
+minimum/maximum checks and preferred-size ranking. The fixed factors are a
+heuristic policy, with neutral handling of unknown, mixed and lossless codecs.
+Actual bytes, physical indexer maximum sizes, source/resolution ranking, native
+runtimes and provider IDs remain independent. It neither rewrites releases nor
+starts the optional compression worker. The
+[quality and codec guide](docs/quality-and-codec-size.md) records the catalog,
+examples and API contract; executed checks belong to the
+[1.0.3 report](docs/releases/1.0.3-verification.md).
 
 ## Downloading
 
@@ -423,7 +447,7 @@ The refresh uses Jellyfin's selected-item endpoint, never its global-library
 refresh. Jellyfin queues scans asynchronously; accepting the request does not
 establish that the scan finished. See [Jellyfin refresh](docs/jellyfin.md) for
 configuration, trigger semantics, Docker networking and limitations. The
-immutable SonarrWeeb 0.0.1 release predates this addition.
+immutable historical 0.0.1 release predates this addition.
 
 ## Notes for whoever works on this next
 

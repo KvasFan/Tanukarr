@@ -145,6 +145,15 @@ which kind actually ran in the
 
 ## Compression and container tests
 
+For the 1.0.3 quality/codec work, test actual profile-backed global summaries,
+mixed versus unlimited values, omitted versus explicit-null updates and invalid
+batch retention on both API versions. Codec regressions must preserve actual
+bytes and physical indexer limits while normalizing profile decisions only once.
+Mounted UI checks should exercise hourly conversion, mixed placeholders,
+clearing/validation, failed save with retained edits and successful retry. Use
+the [quality/codec container fixture](docker/tests/README.md#editable-quality-limits-and-codec-size-decisions)
+on the exact image and keep its receipt separate from frontend test results.
+
 ```sh
 python3 docker/compression/test_worker.py
 SONARR_COMPRESSION_INTEGRATION=1 python3 docker/compression/test_worker.py
@@ -161,7 +170,8 @@ public AniList checks; it does not use a private account or start a real downloa
 
 CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tests,
 generated-video worker tests and frontend checks. The Docker workflow builds amd64
-and runs both container scripts. Published architectures and actually executed
+and runs the required disposable runtime fixtures, including the quality/codec
+fixture. Eleven reports identify one tested image before publication. Published architectures and actually executed
 runtime checks are recorded in the release verification report; configured
 support for another architecture is not an executed test or a published artifact.
 A CI pass does not imply that every online or platform suite ran.
@@ -169,12 +179,13 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). Release **1.0.2** uses
-Git tag `v1.0.2` and container tag `ghcr.io/kvasexert/tanukarr:1.0.2`.
+[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). The **1.0.3** release target uses
+planned Git tag `v1.0.3` and container tag `ghcr.io/kvasexert/tanukarr:1.0.3`.
+Publication is pending until the gated workflows complete successfully.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/1.0.2.md) when changing the published deployment.
+[release notes](docs/releases/1.0.3.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 
@@ -184,8 +195,9 @@ and original feature authors in every distribution. A release requires executed
 build/container checks and an identified image digest; creating a Git tag or
 writing a workflow alone does not verify the published image.
 
-Tanukarr was previously named SonarrWeeb. Preserve historical release artifact
-names and dated evidence. The rename does not authorize changes to Sonarr's
+Tanukarr continues the earlier releases. Archive prose uses the current product
+name, while published artifact filenames and numeric evidence retain their
+original identities in linked manifests and release pages. The rename does not authorize changes to Sonarr's
 assembly names, database/configuration paths, migration IDs or v3/v5 API routes.
 Keep original authorship, copyright and GPL notices in source and image assets.
 When changing Tanuki logo assets, retain the supplied artwork's recorded

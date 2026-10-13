@@ -262,6 +262,48 @@ network and temporary data; `--keep` retains them for inspection. The synthetic
 database is separate from an existing deployment and does not verify live TVDB
 metadata ingestion or a real library.
 
+## Editable quality limits and codec-size decisions
+
+Use a built 1.0.3 image containing the profile-backed quality summary and codec
+policy. This fixture reuses the isolated pack harness and pinned local Python
+RSS sidecar; it does not request a public provider or access an owner library:
+
+```sh
+python3 docker/tests/quality-codecs.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --report quality-codecs-report.json
+```
+
+The actual v3/v5 routes must summarize edited profile limits, identify Mixed
+values, preserve omitted fields/profile differences and accept explicit null as
+a cleared limit. Invalid merged batches must return 400 before changing titles
+or profiles. Saved values must survive restart. The read-only codec catalogs
+must match across both APIs.
+
+The native Nyaa RSS parser receives twelve synthetic variants: AVC, HEVC, AV1
+and MPEG-2 across individual episodes, a single-season pack and a three-season
+pack. Minimum/maximum rejection uses the normalized policy while reported
+physical release bytes remain unchanged. Preferred-size ranking is covered by
+separate native decision tests. Queue/history/acquisition
+commands and torrent/media requests remain empty. The fixture seeds only its
+own stopped SQLite database, uses random loopback ports and removes its owned
+containers, network and temporary files unless `--keep` is selected. Host
+UID/GID ownership transitions follow the same guarded helper as the pack test.
+
+This API/RSS fixture does not replace actual React interaction tests or
+encoder-quality measurements. Executed counts and exact image identity belong
+to the [1.0.3 verification report](../../docs/releases/1.0.3-verification.md).
+
+The optional actual Chromium helper [quality-ui.cjs](quality-ui.cjs) uses an
+external Playwright installation and generated Forms credentials supplied only
+on stdin. Its caller must own a fresh empty configuration; the helper edits
+quality settings and must not be pointed at an owner instance. It exercises
+hourly/GiB display, the codec table, real global/profile saves, Mixed focus/blur,
+explicit Unlimited, failed-save retention and a valid retry. Screenshots hide
+password fields, and saved library/acquisition settings must remain empty.
+Its browser receipt is separate from the mandatory API/RSS report and the
+mounted frontend tests.
+
 ## Docker workflow fixture prerequisites
 
 The development Docker workflow runs smoke, functional/security,
@@ -269,9 +311,10 @@ grouping/naming/AniList, reserved-title RSS, multi-season pack and the newer
 AniList quota/resume checks before publishing its tested image. Version 1.0.2
 also requires the MyAnimeList/Jikan and provider source-set fixtures. The latter
 includes TMDB/Trakt/MDBList selections and complete Plex Watchlist pagination;
-SIMKL V2 has its own additional required fixture. Smoke and functional/security
-plus eight additional reports form ten publishing gates. Release packaging
-aggregates the eight additional reports in `provider-verification.json` and
+SIMKL V2 has its own additional required fixture. Version 1.0.3 adds the
+editable quality/codec fixture. Smoke and functional/security plus nine
+additional reports form eleven publishing gates. Release packaging
+aggregates the nine additional reports in `provider-verification.json` and
 records their actual check counts in `release-manifest.json`, using the same
 tested image throughout.
 The additional
@@ -297,6 +340,9 @@ python3 docker/tests/series-packs.py --image tanukarr:local \
 python3 docker/tests/anilist-reliability.py --image tanukarr:local \
   --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
   --timeout 300 --report anilist-reliability-report.json
+python3 docker/tests/quality-codecs.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --report quality-codecs-report.json
 ```
 
 OpenSSL creates the grouping fixture's test CA. FFmpeg with `libx264` generates
@@ -514,8 +560,10 @@ followed by the
 [AniList filter verification report](../../docs/anilist-filters-verification-2026-10-13.md).
 
 The [Tanukarr 1.0.0 verification report](../../docs/releases/1.0.0-verification.md)
-records checks executed for the renamed image. The earlier SonarrWeeb image names,
-versions and test counts in dated reports remain historical evidence.
+records checks executed for the renamed image. Earlier image identities,
+versions and test counts in dated reports remain historical evidence. Archive
+prose uses the current product name; linked release manifests retain original
+published asset names.
 
 An image that passes these checks has demonstrated startup, isolated API/UI
 behavior, permissions and persistence. The Jellyfin harness additionally verifies

@@ -1,6 +1,6 @@
 # Nyaa search verification
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 This October 13, 2026 checkpoint checks the native Nyaa indexer following the
 AniList request-limit correction. No real library or acquisition is used.
@@ -45,7 +45,7 @@ Nyaa requests.
 | Corrected reserved-character HTTP fixture | Nine checks passed; both full terms and episode suffixes preserved |
 | Semgrep 1.180.0 | 65 applicable rules on the changed production file, zero findings/errors; approximately 100% parsing coverage reported |
 
-The public baseline used `sonarr-weeb:local`, image identifier
+The public baseline used `<recorded-local-image-reference>`, image identifier
 `sha256:74ef0cfab1539064700cad61b56cdc34495efe0d046547977fd716c760f0568f`,
 containing the previous AniList correction. In a disposable instance, a native
 Nyaa RSS connection test succeeded. A synthetic AniList-owned `Cowboy Bebop`
@@ -67,7 +67,7 @@ the term and its episode suffix.
 
 ## Corrected image and deployment
 
-The corrected local image is `sonarr-weeb:nyaa-fix`, identified by
+The corrected local image is `<recorded-local-image-reference>`, identified by
 `sha256:4bf51000f519b3d386ba4bf2ece29b636e3cda8820e60c11da1142f3fd9199fc`.
 It was built from the tested working tree with OCI revision label
 `nyaa-query-working-tree-2026-10-13`. Its runtime reports product 0.1.0,

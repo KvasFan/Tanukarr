@@ -80,7 +80,7 @@ function QualityProfileItemGroup({
 
   return (
     <div
-      ref={ref}
+      ref={mode === 'editSizes' ? undefined : ref}
       className={classNames(
         styles.qualityProfileItemGroup,
         mode === 'editSizes' && styles.editSizes,

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -19,15 +20,18 @@ public class QualityDefinitionController :
 {
     private readonly IQualityDefinitionService _qualityDefinitionService;
     private readonly IQualityProfileService _qualityProfileService;
+    private readonly IQualityDefinitionUpdateService _updateService;
 
     public QualityDefinitionController(
         IQualityDefinitionService qualityDefinitionService,
         IQualityProfileService qualityProfileService,
+        IQualityDefinitionUpdateService updateService,
         IBroadcastSignalRMessage signalRBroadcaster)
         : base(signalRBroadcaster)
     {
         _qualityDefinitionService = qualityDefinitionService;
         _qualityProfileService = qualityProfileService;
+        _updateService = updateService;
     }
 
     [RestPutById]
@@ -36,26 +40,23 @@ public class QualityDefinitionController :
     public Results<Accepted<QualityDefinitionResource>, NotFound> Update([FromBody] QualityDefinitionResource resource)
     {
         var model = resource.ToModel();
-        _qualityDefinitionService.Update(model);
-
-        if (model.MinSize.HasValue || model.MaxSize.HasValue || model.PreferredSize.HasValue)
-        {
-            _qualityProfileService.UpdateAllSizeLimits(new QualityProfileSizeLimit(model));
-        }
+        _updateService.UpdateMany(new List<QualityDefinitionSizeUpdate> { ToUpdate(resource) });
 
         return TypedAccepted(model.Id);
     }
 
     protected override QualityDefinitionResource GetResourceById(int id)
     {
-        return _qualityDefinitionService.GetById(id).ToResource();
+        var model = _qualityDefinitionService.GetById(id);
+        var limits = QualityProfileSizeLimit.Summarize(_qualityProfileService.All());
+        return model.ToResource(limits.GetValueOrDefault(model.Quality.Id));
     }
 
     [HttpGet]
     [Produces("application/json")]
     public Ok<List<QualityDefinitionResource>> GetAll()
     {
-        return TypedResults.Ok(_qualityDefinitionService.All().ToResource());
+        return TypedResults.Ok(GetResources());
     }
 
     [HttpPut]
@@ -63,22 +64,35 @@ public class QualityDefinitionController :
     [Produces("application/json")]
     public Ok<List<QualityDefinitionResource>> UpdateMany([FromBody] List<QualityDefinitionResource> resource)
     {
-        // Read from request
-        var qualityDefinitions = resource.ToModel().ToList();
+        _updateService.UpdateMany(resource.Select(ToUpdate).ToList());
 
-        _qualityDefinitionService.UpdateMany(qualityDefinitions);
+        return TypedResults.Ok(GetResources());
+    }
 
-        var toUpdate = qualityDefinitions
-            .Where(q => q.MinSize.HasValue || q.MaxSize.HasValue || q.PreferredSize.HasValue)
-            .Select(q => new QualityProfileSizeLimit(q))
-            .ToArray();
+    [HttpGet("codecs")]
+    [ProducesResponseType(typeof(Dictionary<string, decimal>), 200)]
+    public JsonResult GetCodecs()
+    {
+        return new JsonResult(CodecSizeNormalizer.MultiplierCatalog, new JsonSerializerOptions { DictionaryKeyPolicy = null });
+    }
 
-        if (toUpdate.Any())
+    private List<QualityDefinitionResource> GetResources()
+    {
+        var limits = QualityProfileSizeLimit.Summarize(_qualityProfileService.All());
+        return _qualityDefinitionService.All()
+            .Select(model => model.ToResource(limits.GetValueOrDefault(model.Quality.Id)))
+            .ToList();
+    }
+
+    private static QualityDefinitionSizeUpdate ToUpdate(QualityDefinitionResource resource)
+    {
+        return new QualityDefinitionSizeUpdate
         {
-            _qualityProfileService.UpdateAllSizeLimits(toUpdate);
-        }
-
-        return TypedResults.Ok(_qualityDefinitionService.All().ToResource());
+            Definition = resource?.ToModel(),
+            UpdateMinSize = resource?.MinSizeSpecified == true && !(resource.MinSizeIsMixed && resource.MinSize == null),
+            UpdateMaxSize = resource?.MaxSizeSpecified == true && !(resource.MaxSizeIsMixed && resource.MaxSize == null),
+            UpdatePreferredSize = resource?.PreferredSizeSpecified == true && !(resource.PreferredSizeIsMixed && resource.PreferredSize == null)
+        };
     }
 
     [NonAction]

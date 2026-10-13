@@ -1,13 +1,14 @@
 .qualityDefinition {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 1fr) repeat(3, minmax(120px, 1fr));
+
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid var(--hairline);
-  gap: 24px;
+  gap: 16px;
 }
 
 .quality {
-  flex: 0 0 240px;
   overflow: hidden;
   min-width: 0;
   color: var(--ink);
@@ -17,23 +18,63 @@
 }
 
 .title {
-  flex: 1 1 auto;
   min-width: 0;
   max-width: 700px;
 }
 
+.limit {
+  min-width: 0;
+}
+
+.limitField {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  & > input {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+  }
+}
+
+.limitCaption {
+  display: none;
+}
+
+.unit,
+.human {
+  color: var(--inkMuted);
+  font-size: 11px;
+}
+
+.unit {
+  flex-shrink: 0;
+}
+
 @media (--breakpointSmall) {
   .qualityDefinition {
-    flex-wrap: wrap;
-    gap: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .quality {
-    flex-basis: 100%;
+    grid-column: 1 / -1;
+
     font-weight: 500;
   }
 
   .title {
-    flex-basis: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .limitCaption {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  .limitField {
+    flex-wrap: wrap;
   }
 }

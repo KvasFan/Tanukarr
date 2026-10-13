@@ -14,7 +14,7 @@ import { emptyItemFailures, ItemFailures } from './qualityProfileItemFailures';
 import styles from './QualityProfileItemSize.module.css';
 
 const MIN = 0;
-const MAX = 400;
+const MAX = 1000;
 const STEP_SIZE = 0.1;
 const MIN_DISTANCE = 3;
 const SLIDER_MAX = roundNumber(Math.pow(MAX, 1 / 1.1));
@@ -48,8 +48,7 @@ function thumbRenderer(props: HTMLProps<HTMLDivElement>) {
 }
 
 function getSliderValue(value: number | null, defaultValue: number): number {
-  const sliderValue =
-    value != null && value > 0 ? Math.pow(value, 1 / 1.1) : defaultValue;
+  const sliderValue = value == null ? defaultValue : Math.pow(value, 1 / 1.1);
 
   return roundNumber(sliderValue);
 }
@@ -79,7 +78,7 @@ export default function QualityProfileItemSize({
   const [sizes, setSizes] = useState<SizeProps>({
     minSize: getSliderValue(minSize, MIN),
     preferredSize: getSliderValue(preferredSize, SLIDER_PREFERRED_DEFAULT),
-    maxSize: getSliderValue(maxSize, SLIDER_MAX),
+    maxSize: getSliderValue(maxSize === 0 ? null : maxSize, SLIDER_MAX),
   });
 
   const handleSliderChange = useCallback(
@@ -111,81 +110,93 @@ export default function QualityProfileItemSize({
   );
 
   const handleMinSizeChange = useCallback(
-    ({ value }: InputChanged<number>) => {
+    ({ value }: InputChanged<number | null>) => {
+      if (value != null && !Number.isFinite(value)) return;
+      const minimum = value == null ? null : value / 60;
       setSizes({
-        minSize: value,
+        minSize: getSliderValue(minimum, MIN),
         preferredSize: sizes.preferredSize,
         maxSize: sizes.maxSize,
       });
 
       onSizeChange?.({
         qualityId: id,
-        minSize: value,
-        preferredSize: sizes.preferredSize,
-        maxSize: sizes.maxSize,
+        minSize: minimum,
+        preferredSize,
+        maxSize,
       });
     },
-    [id, sizes, setSizes, onSizeChange]
+    [id, sizes, preferredSize, maxSize, setSizes, onSizeChange]
   );
 
   const handlePreferredSizeChange = useCallback(
-    ({ value }: InputChanged<number>) => {
+    ({ value }: InputChanged<number | null>) => {
+      if (value != null && !Number.isFinite(value)) return;
+      const preferred = value == null ? null : value / 60;
       setSizes({
         minSize: sizes.minSize,
-        preferredSize: value,
+        preferredSize: getSliderValue(preferred, SLIDER_PREFERRED_DEFAULT),
         maxSize: sizes.maxSize,
       });
 
       onSizeChange?.({
         qualityId: id,
-        minSize: sizes.minSize,
-        preferredSize: value,
-        maxSize: sizes.maxSize,
+        minSize,
+        preferredSize: preferred,
+        maxSize,
       });
     },
-    [id, sizes, setSizes, onSizeChange]
+    [id, sizes, minSize, maxSize, setSizes, onSizeChange]
   );
 
   const handleMaxSizeChange = useCallback(
-    ({ value }: InputChanged<number>) => {
+    ({ value }: InputChanged<number | null>) => {
+      if (value != null && !Number.isFinite(value)) return;
+      const maximum = value == null ? null : value / 60;
       setSizes({
         minSize: sizes.minSize,
         preferredSize: sizes.preferredSize,
-        maxSize: value,
+        maxSize: getSliderValue(maximum === 0 ? null : maximum, SLIDER_MAX),
       });
 
       onSizeChange?.({
         qualityId: id,
-        minSize: sizes.minSize,
-        preferredSize: sizes.preferredSize,
-        maxSize: value,
+        minSize,
+        preferredSize,
+        maxSize: maximum,
       });
     },
-    [id, sizes, setSizes, onSizeChange]
+    [id, sizes, minSize, preferredSize, setSizes, onSizeChange]
   );
 
   const handleAfterSliderChange = useCallback(() => {
     setSizes({
       minSize: getSliderValue(minSize, MIN),
-      maxSize: getSliderValue(maxSize, SLIDER_MAX),
+      maxSize: getSliderValue(maxSize === 0 ? null : maxSize, SLIDER_MAX),
       preferredSize: getSliderValue(preferredSize, SLIDER_PREFERRED_DEFAULT),
     });
   }, [minSize, maxSize, preferredSize, setSizes]);
 
-  const minBytes = (sizes.minSize ?? 0) * 1024 * 1024;
+  const minBytes = (minSize ?? 0) * 1024 * 1024;
   const minSixty = `${formatBytes(minBytes * 60)}/${translate(
     'HourShorthand'
   )}`;
 
-  const preferredBytes = (sizes.preferredSize ?? 0) * 1024 * 1024;
-  const preferredSixty = preferredBytes
-    ? `${formatBytes(preferredBytes * 60)}/${translate('HourShorthand')}`
-    : translate('Unlimited');
+  const preferredBytes =
+    preferredSize == null ? null : preferredSize * 1024 * 1024;
+  const preferredSixty =
+    preferredBytes == null
+      ? translate('Unlimited')
+      : `${formatBytes(preferredBytes * 60)}/${translate('HourShorthand')}`;
 
-  const maxBytes = maxSize == null ? null : maxSize * 1024 * 1024;
-  const maxSixty = maxBytes
-    ? `${formatBytes(maxBytes * 60)}/${translate('HourShorthand')}`
-    : translate('Unlimited');
+  const maxBytes =
+    maxSize == null || maxSize === 0 ? null : maxSize * 1024 * 1024;
+  const maxSixty =
+    maxBytes == null
+      ? translate('Unlimited')
+      : `${formatBytes(maxBytes * 60)}/${translate('HourShorthand')}`;
+
+  const maximum = maxSize != null && maxSize > 0 ? maxSize : MAX;
 
   const allFailures = [
     ...failures.errors.minSize,
@@ -219,6 +230,7 @@ export default function QualityProfileItemSize({
         onAfterChange={handleAfterSliderChange}
       />
 
+      <FormInputHelpText text={translate('QualityProfileHourlySizeHelp')} />
       <div className={styles.grid}>
         <div className={styles.column}>
           <span className={styles.caption}>{translate('Minimum')}</span>
@@ -227,17 +239,17 @@ export default function QualityProfileItemSize({
             <NumberInput
               className={styles.sizeInput}
               name={`${id}.min`}
-              value={minSize ?? MIN}
+              value={(minSize ?? MIN) * 60}
               min={MIN}
-              max={preferredSize ? preferredSize - 5 : MAX - 5}
-              step={0.1}
+              max={(preferredSize ?? maximum) * 60}
+              step={STEP_SIZE * 60}
               isFloat={true}
-              // @ts-expect-error - Typings are too loose
+              emitChangeOnBlur={false}
               onChange={handleMinSizeChange}
             />
 
             <span className={styles.unit}>
-              MiB/{translate('MinuteShorthand')}
+              MiB/{translate('HourShorthand')}
             </span>
           </div>
 
@@ -261,17 +273,18 @@ export default function QualityProfileItemSize({
             <NumberInput
               className={styles.sizeInput}
               name={`${id}.preferred`}
-              value={preferredSize ?? MAX - 5}
-              min={MIN}
-              max={maxSize ? maxSize - 5 : MAX - 5}
-              step={0.1}
+              value={preferredSize == null ? null : preferredSize * 60}
+              placeholder={translate('Unlimited')}
+              min={(minSize ?? MIN) * 60}
+              max={maximum * 60}
+              step={STEP_SIZE * 60}
               isFloat={true}
-              // @ts-expect-error - Typings are too loose
+              emitChangeOnBlur={false}
               onChange={handlePreferredSizeChange}
             />
 
             <span className={styles.unit}>
-              MiB/{translate('MinuteShorthand')}
+              MiB/{translate('HourShorthand')}
             </span>
           </div>
 
@@ -295,17 +308,18 @@ export default function QualityProfileItemSize({
             <NumberInput
               className={styles.sizeInput}
               name={`${id}.max`}
-              value={maxSize ?? MAX}
-              min={(preferredSize ?? 0) + STEP_SIZE}
-              max={MAX}
-              step={0.1}
+              value={maxSize == null || maxSize === 0 ? null : maxSize * 60}
+              placeholder={translate('Unlimited')}
+              min={Math.max(minSize ?? MIN, preferredSize ?? MIN) * 60}
+              max={MAX * 60}
+              step={STEP_SIZE * 60}
               isFloat={true}
-              // @ts-expect-error - Typings are too loose
+              emitChangeOnBlur={false}
               onChange={handleMaxSizeChange}
             />
 
             <span className={styles.unit}>
-              MiB/{translate('MinuteShorthand')}
+              MiB/{translate('HourShorthand')}
             </span>
           </div>
 

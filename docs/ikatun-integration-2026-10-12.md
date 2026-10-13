@@ -1,6 +1,6 @@
 # Integration of ikatun features — October 12, 2026
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 Requested comparison:
 [KakarottoCake main…ikatun main](https://github.com/KakarottoCake/Sonarr-Pro/compare/main...ikatun:Sonarr-Pro:main).
@@ -126,7 +126,7 @@ Push/manual runs generate immutable `sha-<full commit>` tags. The GHCR image pat
 comes from the current repository, with `packages: write` on the publishing job.
 Repository Actions/token settings must permit publication.
 
-The included Compose file builds `sonarr-weeb:local`:
+The included Compose file builds `<recorded-local-image-reference>`:
 
 ```sh
 mkdir -p media
@@ -180,7 +180,7 @@ that time. Later Docker/Linux execution and worker tests are documented in the
 linked validation reports.
 
 Tools: .NET SDK `10.0.401`, Node `24.19.0`, Yarn `1.22.22`. Full logs and TRX
-results are in `%LOCALAPPDATA%\SonarrWeebTools`; startup results are in
+results are in `<local-tool-directory>`; startup results are in
 `ikatun-smoke-result.json`. No repository or image was published.
 
 Current branch ancestry also includes upstream

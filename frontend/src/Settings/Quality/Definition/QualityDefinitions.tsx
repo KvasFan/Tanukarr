@@ -1,13 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
+import Alert from 'Components/Alert';
 import FieldSet from 'Components/FieldSet';
+import FormInputHelpText from 'Components/Form/FormInputHelpText';
 import PageSectionContent from 'Components/Page/PageSectionContent';
 import usePrevious from 'Helpers/Hooks/usePrevious';
+import { kinds } from 'Helpers/Props';
 import {
   OnChildStateChange,
   SetChildSave,
 } from 'typings/Settings/SettingsState';
 import translate from 'Utilities/String/translate';
+import QualityCodecSizeFactors from './QualityCodecSizeFactors';
 import QualityDefinition from './QualityDefinition';
 import { useManageQualityDefinitions } from './useQualityDefinitions';
 import styles from './QualityDefinitions.module.css';
@@ -30,6 +34,7 @@ function QualityDefinitions({
     isFetched,
     isSaving,
     error,
+    saveError,
     hasPendingChanges,
     updateDefinition,
     saveQualityDefinitions,
@@ -73,9 +78,18 @@ function QualityDefinitions({
         isPopulated={isFetched}
         error={error}
       >
+        <FormInputHelpText text={translate('QualityDefinitionsHourlyHelp')} />
+        {saveError ? (
+          <Alert kind={kinds.DANGER}>
+            {translate('QualityDefinitionsSaveError')}
+          </Alert>
+        ) : null}
         <div className={styles.header}>
           <div className={styles.headerQuality}>{translate('Quality')}</div>
           <div className={styles.headerTitle}>{translate('Title')}</div>
+          <div>{translate('Minimum')}</div>
+          <div>{translate('Preferred')}</div>
+          <div>{translate('Maximum')}</div>
         </div>
 
         <div className={styles.definitions}>
@@ -89,6 +103,7 @@ function QualityDefinitions({
             );
           })}
         </div>
+        <QualityCodecSizeFactors />
       </PageSectionContent>
     </FieldSet>
   );

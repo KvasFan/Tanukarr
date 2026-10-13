@@ -1,6 +1,6 @@
 # Additional features from the gaboy fork
 
-> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Original SonarrWeeb names, versions, image references and test results below describe the recorded build and remain unchanged.
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](README.md) and [Tanukarr 1.0.0 verification](releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 
 Source: [gaboy498-byte/Sonarr-Pro](https://github.com/gaboy498-byte/Sonarr-Pro),
 branch `investigate/multiseason-and-fakefilter`, reviewed at

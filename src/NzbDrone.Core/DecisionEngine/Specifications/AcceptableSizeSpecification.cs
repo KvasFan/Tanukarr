@@ -2,6 +2,7 @@ using System.Linq;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.DecisionEngine.Specifications
@@ -78,6 +79,7 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
             var qualityIndex = qualityProfile.GetIndex(quality, true);
             var qualityOrGroup = qualityProfile.Items[qualityIndex.Index];
             var item = qualityOrGroup.Quality == null ? qualityOrGroup.Items[qualityIndex.GroupIndex] : qualityOrGroup;
+            var normalized = CodecSizeNormalizer.Normalize(subject);
 
             if (item.MinSize.HasValue)
             {
@@ -87,12 +89,12 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
                 minSize *= runtime;
 
                 // If the parsed size is smaller than minSize we don't want it
-                if (subject.Release.Size < minSize)
+                if (normalized.Size < minSize)
                 {
                     var runtimeMessage = subject.Episodes.Count == 1 ? $"{runtime}min" : $"{subject.Episodes.Count} episodes totalling {runtime}min";
 
-                    _logger.Debug("Item: {0}, Size: {1} is smaller than minimum allowed size ({2} bytes for {3}), rejecting.", subject, subject.Release.Size, minSize, runtimeMessage);
-                    return DownloadSpecDecision.Reject(DownloadRejectionReason.BelowMinimumSize, "{0} is smaller than minimum allowed {1} (for {2})", subject.Release.Size.SizeSuffix(), minSize.SizeSuffix(), runtimeMessage);
+                    _logger.Debug("Item: {0}, actual size: {1}, codec-normalized size: {2} is smaller than minimum allowed size ({3} bytes for {4}), rejecting.", subject, subject.Release.Size, normalized.Size, minSize, runtimeMessage);
+                    return DownloadSpecDecision.Reject(DownloadRejectionReason.BelowMinimumSize, "{0} is smaller than minimum allowed {1} (for {2})", CodecSizeNormalizer.Describe(subject, normalized), minSize.SizeSuffix(), runtimeMessage);
                 }
             }
 
@@ -108,12 +110,12 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
                 maxSize *= runtime;
 
                 // If the parsed size is greater than maxSize we don't want it
-                if (subject.Release.Size > maxSize)
+                if (normalized.Size > maxSize)
                 {
                     var runtimeMessage = subject.Episodes.Count == 1 ? $"{runtime}min" : $"{subject.Episodes.Count} episodes totalling {runtime}min";
 
-                    _logger.Debug("Item: {0}, Size: {1} is greater than maximum allowed size ({2} for {3}), rejecting", subject, subject.Release.Size, maxSize, runtimeMessage);
-                    return DownloadSpecDecision.Reject(DownloadRejectionReason.AboveMaximumSize, "{0} is larger than maximum allowed {1} (for {2})", subject.Release.Size.SizeSuffix(), maxSize.SizeSuffix(), runtimeMessage);
+                    _logger.Debug("Item: {0}, actual size: {1}, codec-normalized size: {2} is greater than maximum allowed size ({3} for {4}), rejecting", subject, subject.Release.Size, normalized.Size, maxSize, runtimeMessage);
+                    return DownloadSpecDecision.Reject(DownloadRejectionReason.AboveMaximumSize, "{0} is larger than maximum allowed {1} (for {2})", CodecSizeNormalizer.Describe(subject, normalized), maxSize.SizeSuffix(), runtimeMessage);
                 }
             }
 

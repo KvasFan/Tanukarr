@@ -5898,6 +5898,47 @@
         }
       }
     },
+    "/api/v3/qualitydefinition/codecs": {
+      "get": {
+        "tags": [
+          "QualityDefinition"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number",
+                    "format": "double"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number",
+                    "format": "double"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number",
+                    "format": "double"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v3/qualityprofile": {
       "post": {
         "tags": [
@@ -11411,15 +11452,24 @@
             "format": "double",
             "nullable": true
           },
+          "minSizeIsMixed": {
+            "type": "boolean"
+          },
           "maxSize": {
             "type": "number",
             "format": "double",
             "nullable": true
           },
+          "maxSizeIsMixed": {
+            "type": "boolean"
+          },
           "preferredSize": {
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "preferredSizeIsMixed": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

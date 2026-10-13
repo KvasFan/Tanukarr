@@ -205,18 +205,20 @@ namespace NzbDrone.Core.DecisionEngine
                 var item = qualityOrGroup.Quality == null ? qualityOrGroup.Items[qualityIndex.GroupIndex] : qualityOrGroup;
                 var preferredSize = item.PreferredSize;
                 var runtime = GetRuntime(remoteEpisode);
+                var normalizedSize = CodecSizeNormalizer.Normalize(remoteEpisode).Size;
+                var rounding = 200.Megabytes();
 
                 // If no value for preferred it means unlimited so fallback to sort largest is best
                 if (preferredSize.HasValue && runtime > 0)
                 {
-                    var preferredReleaseSize = runtime * preferredSize.Value.Megabytes();
+                    var preferredReleaseSize = runtime * (decimal)preferredSize.Value.Megabytes();
 
                     // Calculate closest to the preferred size
-                    return Math.Abs((remoteEpisode.Release.Size - preferredReleaseSize).Round(200.Megabytes())) * (-1);
+                    return Math.Abs(decimal.Truncate((normalizedSize - preferredReleaseSize) / rounding) * rounding) * (-1);
                 }
                 else
                 {
-                    return remoteEpisode.Release.Size.Round(200.Megabytes());
+                    return decimal.Truncate(normalizedSize / rounding) * rounding;
                 }
             });
 
