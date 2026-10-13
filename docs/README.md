@@ -14,6 +14,7 @@ original content.
 | [Series, anime and movie groups](anime-season-groups.md) | 1.0.1 official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
 | [Tanukarr 1.0.2](releases/1.0.2.md) | Final list selection/exclusion behavior, provider-specific list capabilities, simplified controls and upgrade guidance |
 | [1.0.2 release verification](releases/1.0.2-verification.md) | Newly executed source/image checks, provider coverage, remaining findings and publication checkpoint |
+| [1.0.2 publication follow-up](releases/1.0.2-publication.md) | Completed hosted workflows, verified nine assets/registry digest, owner-data preservation and remaining live-provider/security limits |
 | [Tanukarr 1.0.1](releases/1.0.1.md) | Historical group-slot collision recovery, grouping/search/list improvements, browser reliability and upgrade guidance |
 | [1.0.1 release verification](releases/1.0.1-verification.md) | This release's executed checks, exact source/image identity, remaining findings and publication state |
 | [Tanukarr 1.0.0](releases/1.0.0.md) | Rename, Tanuki artwork, retained features, upgrade guidance and release limits |

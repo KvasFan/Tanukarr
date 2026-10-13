@@ -16,8 +16,11 @@ These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr)
 and read the [release notes for 1.0.2](docs/releases/1.0.2.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExert/Tanukarr/releases).
-The [1.0.2 verification report](docs/releases/1.0.2-verification.md) records this
-release's checks, publication status and remaining findings. The historical
+The [1.0.2 verification report](docs/releases/1.0.2-verification.md) records the
+tagged local checks and remaining findings. The
+[publication follow-up](docs/releases/1.0.2-publication.md) records successful
+hosted workflows, verified public assets/image and preserved local deployment.
+The historical
 [1.0.1 report](docs/releases/1.0.1-verification.md) retains its original evidence.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
