@@ -4,6 +4,10 @@ A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and 
 
 > **Unofficial.** Sonarr Pro is not affiliated with, endorsed by, or supported by the Sonarr project. Please don't raise Sonarr Pro problems on Sonarr's issue tracker, forums, or Discord — they can't help with code they didn't write. Report them [here](https://github.com/KakarottoCake/Sonarr-Pro/issues) instead.
 
+This repository is [Matt's source fork](https://github.com/gaboy498-byte/Sonarr-Pro) of [upstream Sonarr-Pro](https://github.com/KakarottoCake/Sonarr-Pro), which builds on official Sonarr. The September enhancements and Windows validation described below extend those projects' work. The original background and feature descriptions are retained here; their first-person authorship and maintenance statements describe upstream Sonarr-Pro.
+
+**Source baseline:** `sonarr-pro-matt-2026.09` records September development validated on Windows on October 13, 2026. It is an annotated source tag, not a binary release or a certification of Linux/Docker deployment. The upstream container commands below do not install this fork's custom September changes.
+
 ## Built with AI, and not quiet about it
 
 This fork was written with **Claude Opus 5**. Not "AI-assisted" as a hedge — written with it, most of it, and I'd rather say so up front than have you find out from the commit trailers.
@@ -46,6 +50,66 @@ Sonarr Pro keeps everything upstream does and adds a way around each of those.
 
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
+## Feature origins and September enhancements
+
+### Inherited functionality
+
+**Official Sonarr:** Release Profiles and their Must Contain / Must Not Contain title restrictions are inherited. Reject Unaired Releases, Air Date Grace Period, and season-pack air-date controls are present in official Sonarr **v5 development**; they are not original work of this fork. This attribution does not imply availability in every older Sonarr release.
+
+**Upstream Sonarr-Pro:** additional metadata sources, selectable episode orderings and ordering improvements, initial multi-season support, optional pack trimming, and initial fake-release torrent-content inspection come from upstream Sonarr-Pro. The feature descriptions above explain that inherited foundation.
+
+### Custom September development
+
+The following changes extend the inherited functionality:
+
+- Hardened fake-release submission routes, including dangerous executable and script release-title filtering.
+- Magnet metadata inspection before submission when supported, and HTTP redirect-to-magnet inspection with strict rejection when the required inspection cannot complete.
+- Improved explicit multi-season range parsing, episode mapping, and automatic import behavior.
+- Legacy grab membership reconciliation, so import decisions retain the intended episode membership.
+- Per-episode import progress reporting.
+- Regression coverage for multi-season size decisions.
+
+### Security scope and limitations
+
+These protections do not provide complete malware protection. A Release Profile restriction such as `.exe` checks the **release title**, not every downloaded file's contents. Torrent-submission inspection depends on available metadata and the applicable settings. Direct and fallback magnet compatibility exceptions remain; the strict redirect-inspection behavior does not mean every magnet is rejected when metadata is unavailable.
+
+Explicit interactive grabs may proceed despite Release Profile rejection decisions. Applicable torrent-submission security protections still operate on those routes. Use the profile restrictions and content inspection together, while recognizing their different scopes.
+
+### Dependency security
+
+The validated integration upgrades **SixLabors.ImageSharp from 3.1.12 to 4.1.3**. It also resolves the Windows NuGet `NU1510` warning by removing the redundant direct `System.Resources.Extensions` 10.0.10 reference supplied by the Windows framework. No application assembly was renamed. ImageSharp's official license validation passed for `Sonarr.Core`; no license file, key, or personal license identifier is published in this repository. Builders must satisfy the dependency's applicable licensing requirements.
+
+### Windows validation — October 13, 2026
+
+| Check | Result |
+|---|---|
+| Complete Windows backend Release build | Passed; zero warnings and zero errors |
+| Production frontend build | Passed |
+| Unique Release regression cases | 2,521 passed, zero failed, one skipped |
+| Debug / Release comparison | Identical sets of 2,522 test IDs and identical outcomes |
+| Available media-cover / ImageSharp tests | All 13 passed, including direct PNG resize and invalid-input cases |
+| NuGet vulnerability audit | 28 projects, including transitive dependencies; zero vulnerable packages reported |
+| September development history | All eight commits preserved |
+
+The skipped test is Linux-specific (`should_return_false_if_unopacking_on_linux`) and could not exercise its platform-specific behavior on Windows. These results **do not establish Linux/Docker runtime deployment, live end-to-end behavior, broader image-format compatibility, or npm vulnerability auditing**. JPEG/EXIF/color-profile behavior, additional formats, concurrency, and resource-stress scenarios were not fully covered. Frontend installation reported deprecation, engine-declaration, and peer-dependency warnings; installation and compilation still passed. The NuGet result is the audit finding on that date, not a guarantee against future advisories.
+
+### Development milestone
+
+The [September source baseline](https://github.com/gaboy498-byte/Sonarr-Pro/tree/sonarr-pro-matt-2026.09) retains these commits without squashing:
+
+| Commit | Enhancement |
+|---|---|
+| [9cd27f4b9](https://github.com/gaboy498-byte/Sonarr-Pro/commit/9cd27f4b9285d466dab933f618e4e9cab46268f3) | Explicit multi-season ranges |
+| [29c1872dc](https://github.com/gaboy498-byte/Sonarr-Pro/commit/29c1872dc98245cf8d63a7c9a11b06c48ab13389) | Safe multi-season automatic import |
+| [9dc787449](https://github.com/gaboy498-byte/Sonarr-Pro/commit/9dc7874490939d6cb7a21dfbb31053057c9171a5) | Legacy grab membership reconciliation |
+| [e37d5a2fe](https://github.com/gaboy498-byte/Sonarr-Pro/commit/e37d5a2fea6f64f94f0e5b99fffc20af10ab7587) | Per-episode import progress |
+| [0d48e2eef](https://github.com/gaboy498-byte/Sonarr-Pro/commit/0d48e2eefc085d0b36f9653472d1077227eb6205) | Multi-season size-decision tests |
+| [79ef6d2b1](https://github.com/gaboy498-byte/Sonarr-Pro/commit/79ef6d2b17fe9dc985527f3062b0fa05363535a7) | Fake-release route hardening |
+| [872d7cf97](https://github.com/gaboy498-byte/Sonarr-Pro/commit/872d7cf9716f8f0d9b543cd645093d71f6281bae) | Magnet metadata inspection |
+| [14eaaebf6](https://github.com/gaboy498-byte/Sonarr-Pro/commit/14eaaebf6267791c60c50a01b6d3109e18ccb53e) | HTTP redirect-to-magnet hardening |
+
+The October integration adds the ImageSharp security upgrade and Windows restore correction, followed by this documentation update. Current upstream synchronization and deployment are separate milestones; this source promotion performs neither.
+
 ## What's removed
 
 Sonarr Pro doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
@@ -61,6 +125,8 @@ But nobody uses that shit anyways.
 ---
 
 ## Getting started
+
+The following Docker instructions and image tags are retained from **upstream Sonarr-Pro**. They describe upstream's container distribution, not a published image of this custom source baseline. No custom binaries or container image accompany the Windows-validated tag.
 
 You need [Docker](https://docs.docker.com/get-docker/). That's the only prerequisite.
 
