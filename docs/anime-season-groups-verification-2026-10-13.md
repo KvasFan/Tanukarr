@@ -219,8 +219,46 @@ database to UID 1000 without widening directory permissions. Nine mocked
 ownership-preflight guard cases and ten controlled cleanup/error cases also
 passed. These changes affect test helpers/scripts only.
 
-The GitHub rerun is **pending** at this checkpoint. The successful local
-cross-UID checks do not establish that the hosted rerun or publication passed.
+At that local checkpoint, the GitHub rerun had not completed. The successful
+local cross-UID checks alone did not establish hosted success; the later
+checkpoint below records the completed rerun and publication separately.
+
+## Hosted verification and publication for 9c66ac5
+
+For exact source commit
+[`9c66ac5a164f64b158c71e7a851574b5a1adc1ec`](https://github.com/KvasExert/Tanukarr/commit/9c66ac5a164f64b158c71e7a851574b5a1adc1ec),
+[CI run 38393388891](https://github.com/KvasExert/Tanukarr/actions/runs/38393388891)
+and [Docker run 38393389113](https://github.com/KvasExert/Tanukarr/actions/runs/38393389113)
+completed successfully. CI built the solution with zero warnings/errors and
+passed **7,089 Linux backend tests**: Core 6,746, API 190, HTTP 57 and selected
+Common 96, with 27 Core skips. Its compression worker passed **29 cases**,
+including three actual generated-media FFmpeg tests. The frontend passed
+**71 tests**, full lint/stylelint, type checking and the Vite build.
+
+The Docker workflow's downloaded verification artifact records **71 runtime
+checks** against one tested image: smoke 12, functional/security 16, grouping 21,
+synthetic Nyaa RSS 9 and multi-season packs 13. Both database-seeding fixtures
+passed on hosted UID/GID 1001 and restored app/config/database UID 1000 after
+restart. These were disposable local catalogue/RSS fixtures, with no private
+account synchronization, owner-library import or media acquisition. The earlier
+failed run remains a separate failure checkpoint.
+
+The registry push completed, and an independent pull verified the published
+**linux/amd64** image's OCI revision against that exact source commit. Its
+registry manifest digest is
+`sha256:4f38d78dc445a152961aa6b68d6721c18cf356661659ce3e525712d6d46172d5`.
+The workflow's tested image configuration digest is
+`sha256:86d85616972659f7f7b1ad7eb1716db1666e062a257b43ee9a47fef322f53e1f`;
+the published manifest's `config.digest` equals it exactly. These describe the
+manifest and its configuration respectively, rather than different app builds.
+This publishes the post-release main/edge source; it does not replace the
+immutable `v1.0.0` tag or create a new stable release.
+
+Trivy 0.75 also scanned the actual published image with the retained local
+vulnerability database and exited successfully. It still reports **0 CRITICAL
+and three distinct HIGH advisories** for inherited ImageSharp 3.1.12:
+CVE-2026-106110, CVE-2026-106113 and CVE-2026-106115. Scanner completion is not a
+claim of zero vulnerabilities, and the remaining limitations below still apply.
 
 ## Security scope and remaining limitations
 
