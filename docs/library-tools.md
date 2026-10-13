@@ -1,6 +1,9 @@
 # Library tools
 
 Library tools provide optional search, import, storage and access controls.
+Shared controls serve TV series and anime; options tied to AniList or anime-pack
+searches retain their provider/content scope. Choose metadata per title using
+the [metadata provider guide](metadata-providers.md).
 The automation pause, hardlink-only imports, external-ID checks and anime-pack
 preference start disabled. Retaining replaced versions is enabled per show.
 For feature provenance and contributor credits, see

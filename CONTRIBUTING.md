@@ -42,6 +42,18 @@ output directory. On Linux, prepare the packaged test probe:
 chmod +x _tests/net10.0/ffprobe
 ```
 
+`yarn test:queue-details` includes queue/episode/provider-identity cases and the
+Add New Series modal regressions. To focus on recommended Series Type,
+persisted defaults, explicit user selection and settings-rerender behavior, run:
+
+```sh
+yarn test:add-series-modal
+```
+
+The modal cases mount the actual React component with the real settings
+selector and mocked API/UI dependencies; they do not contact metadata providers
+or modify an existing library.
+
 ## Backend tests
 
 Run tests after a solution build, using `--no-build`. For example:

@@ -43,6 +43,13 @@ const SOURCE_DESCRIPTIONS: Record<MetadataSource, string> = {
   myAnimeList: 'MetadataSourceMyAnimeListDescription',
 };
 
+const SOURCE_SEARCH_EXAMPLES: Record<MetadataSource, string> = {
+  tvdb: 'eg. Breaking Bad, tvdb:####',
+  tmdb: 'eg. Breaking Bad, One Piece',
+  aniList: 'eg. One Piece',
+  myAnimeList: 'eg. One Piece',
+};
+
 function AddNewSeries() {
   const { term: initialTerm = '' } = useQueryParams<{ term: string }>();
   const hasSeries = useHasSeries();
@@ -125,11 +132,7 @@ function AddNewSeries() {
               className={styles.searchInput}
               name="seriesLookup"
               value={term}
-              placeholder={
-                metadataSource === 'tvdb'
-                  ? 'eg. Breaking Bad, tvdb:####'
-                  : 'eg. One Piece'
-              }
+              placeholder={SOURCE_SEARCH_EXAMPLES[metadataSource]}
               autoFocus={true}
               onChange={handleSearchInputChange}
             />

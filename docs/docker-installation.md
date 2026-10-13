@@ -157,10 +157,14 @@ or address clients send in the Host header. If using a reverse proxy, configure
 its host and URL base consistently, enable HTTPS, and require authentication.
 Do not expose an unauthenticated instance directly to the Internet.
 
-Add root folders, indexers and download clients before starting searches. For
-TMDB metadata or episode groups, configure your own key under
-**Settings -> Metadata Source**. AniList, TheTVDB and MyAnimeList/Jikan do not use
-that TMDB key. AniList account-list status, anime release status and custom-list
+Add root folders, indexers and download clients for your TV/anime library before
+starting searches. Select a metadata source per title in Add New Series:
+TheTVDB/TMDB offer TV catalogue entries, while AniList/MyAnimeList/Jikan offer
+anime catalogue entries. For TMDB metadata or episode groups, configure a TMDB
+v3 API key under **Settings -> Metadata Source**; import-list access tokens are
+different credentials. See [Metadata providers](metadata-providers.md) for
+catalogue coverage and the implemented access requirements.
+AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
 Version 1.0.0 lets you include several AniList custom lists and veto entries by
 custom-list membership or list state. For Jellyfin, configure the dedicated

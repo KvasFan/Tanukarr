@@ -40,7 +40,10 @@ local commit makes their original author name unreachable from HEAD.
   SonarrWeeb 0.0.1 and 0.1.0 release packaging/installation documentation and the
   subsequent dedicated Jellyfin refresh integration and AniList multiple-list
   inclusion/exclusion controls, AniList HTTP 429 recovery, Nyaa query encoding
-  and Tanukarr 1.0.0 branding, packaging and documentation.
+  and Tanukarr 1.0.0 branding, packaging and documentation. Subsequent work
+  includes balanced TV/anime provider documentation, metadata-workflow and
+  ordering-integration audits, and preserving the recommended series type in
+  the Add New Series modal on initial settings mount.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -50,6 +53,7 @@ local commit makes their original author name unreachable from HEAD.
 | Work | Recorded model/tool | Evidence and limitation |
 | --- | --- | --- |
 | Local integration, SonarrWeeb 0.0.1/0.1.0 and Tanukarr 1.0.0 packaging/documentation, Jellyfin refresh, AniList controls and request-limit recovery, Nyaa query encoding and Tanuki asset integration | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
+| TV/anime positioning and provider guide, metadata workflow/ordering audit, Add New Series recommended-type correction and regression checks | OpenAI Codex, based on GPT-6 | Same local coding session; the post-release correction does not change the immutable 1.0.0 tag |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -115,6 +119,20 @@ Local checks decode the generated channels and compare their bytes with the
 supplied artwork. Actual macOS Finder/AppKit rendering was not executed here.
 
 ## Feature-to-contributor register
+
+### Shared TV/anime metadata workflows and recommended series type
+
+**Mark McDowall** authored the upstream Add New Series TypeScript conversion in
+[87c840974](https://github.com/Sonarr/Sonarr/commit/87c840974b3350e60a06c70a36071103369470a1),
+including `AddNewSeriesModalContent.tsx` and its settings initialization. That
+inherited component remains credited to its original source author.
+**OpenAI Codex, based on GPT-6**, performed the local metadata/catalogue audit,
+updated the English TV/anime positioning and provider guide, and corrected the
+modal's initial settings mount so it preserves a nonstandard recommended series
+type. Provider credentials, metadata ownership and ordering limits are explained
+in [Metadata providers](docs/metadata-providers.md). These changes follow the
+immutable Tanukarr 1.0.0 release; historical source and test attribution are
+preserved.
 
 Original source links identify provenance, not a claim that commits were
 cherry-picked unchanged. Local adaptations are recorded by their own commit IDs.

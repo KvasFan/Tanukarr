@@ -9,6 +9,13 @@ automatic acquisition: complete monitored seasons are skipped, and approved pack
 are preferred before individual episodes. Explicit manual searches retain the
 normal upgrade rules.
 
+Tanukarr supports episodic TV and anime through the same library, monitoring,
+search, download-client and import workflows. Provider selection follows the
+catalogue entry for each title: TheTVDB/TMDB cover TV catalogues, while
+AniList/MyAnimeList/Jikan cover anime catalogues. Episode ordering is selected
+separately where alternatives are available. [Metadata providers](docs/metadata-providers.md)
+documents coverage, credentials and the preserved provider identity.
+
 Originally forked from upstream `v5-develop` at `7e627f6`.
 Rebased through `698bb1dbb` on 2026-10-12. The upstream quality-rank migration
 remains numbered 236 here; the upstream import-list tag migration is numbered
@@ -43,39 +50,46 @@ tested-image and remaining-finding details in the
 
 ## Turn-on checklist
 
-Three things need doing before the new features do anything.
+Configure the services and optional tools needed for your library.
 
-1. **TMDB API key** — Settings → Metadata Source. Free from
-   <https://www.themoviedb.org/settings/api>. Without it, TMDB metadata and
-   episode groups are silently unavailable; everything else works.
-2. **IMDb index** — System → Tasks → Refresh Imdb Dataset, run once. Downloads
-   the published episode dataset and builds a local index; sizes vary. Until then IMDb ordering does not
-   appear in the dropdown. After that it refreshes itself monthly. The scheduled
-   run deliberately does nothing until the index exists, so the download only
-   ever happens because someone asked for it.
+1. **Metadata provider access** — select a catalogue appropriate to each title
+   and configure its required access under Settings → Metadata Source.
+   See the [provider guide](docs/metadata-providers.md); selecting a provider does
+   not configure its credentials or guarantee catalogue coverage.
+2. **Supported episode ordering** — choose a TMDB group only for a TMDB-owned
+   series, or keep Default. The inherited IMDb task/index and UI choices are
+   present, but the current backend does not apply IMDb ordering; initializing
+   its dataset does not make those choices functional. See the
+   [ordering limitations](docs/metadata-providers.md#episode-ordering-is-a-separate-choice).
 3. **Skip Unmonitored Episodes In Packs** — Settings → Media Management, off by
    default. See below for why.
 
-Nothing else needs configuring.
+Root folders, indexers, download clients and integrations need their own
+configuration. Pack trimming is optional.
 
 ---
 
 ## Metadata sources
 
-Upstream resolves every series through SkyHook, which is a proxy in front of
-TheTVDB. This fork adds three more sources and lets a series be owned by any of
-them, chosen from the dropdown above the search box on the Add New Series page.
+This fork lets each series be owned by one of four metadata providers, selected
+from the dropdown above the search box on the Add New Series page. TheTVDB and
+TMDB contain TV catalogues that can include anime. AniList and MyAnimeList/Jikan
+contain anime catalogues; they are not general TV databases. Each selected entry
+retains its owning provider; catalogue coverage and service availability vary.
 
-| Source | Good for | Needs |
-|---|---|---|
-| TheTVDB | Default. Scene mappings, which the indexer ecosystem is built on | nothing |
-| TMDB | Artwork, episode groups, IMDb ids | API key |
-| AniList | Anime. Lists recuts, OVAs and specials separately, and knows every alternative title | nothing |
-| MyAnimeList (via Jikan) | Anime with per-episode titles, which AniList does not publish | nothing |
+| Source | Catalogue and metadata |
+| --- | --- |
+| TheTVDB | TV series, including anime present in its catalogue; compatible scene/XEM mappings where available |
+| TMDB | TV catalogue, artwork, external IDs and episode groups where available |
+| AniList | Anime entries, alternative titles, release status and user-list integration |
+| MyAnimeList (via Jikan) | Anime entries and episode titles where exposed by Jikan |
 
-Jikan is a free public mirror of MyAnimeList, with no key and no account.
+The [provider guide](docs/metadata-providers.md) records current access
+requirements. A provider's available titles and episode detail can differ from
+another provider's. An unavailable source does not authorize changing a series'
+metadata owner automatically.
 
-It answers from its own cache where it can and asks MyAnimeList otherwise, and
+Jikan answers from its own cache where it can and asks MyAnimeList otherwise, and
 that second path frequently times out with a 504. Two consequences worth
 knowing, both handled:
 
@@ -99,11 +113,14 @@ episodes a series has, episode rows would be created and deleted on every
 refresh, which detaches episode files and makes Sonarr re-download content it
 already has. Silent, gradual, and hard to reverse.
 
-### Series that TheTVDB does not list
+### Entries available in another catalogue
 
-TheTVDB's editors sometimes decline to list content separately, folding a recut
-or spin-off into its parent series, while TMDB and AniList list it in its own
-right. Upstream cannot add such a series at all.
+TV series, anime editions, recuts, spin-offs and specials can be represented
+differently across catalogues. A title absent as a separate entry in TheTVDB can
+be added from TMDB, AniList or MyAnimeList/Jikan when that catalogue has the
+desired entry and the provider is configured. This preserves the selected
+entry's identity; it does not infer that differently listed titles are the same
+series.
 
 Here it is added with a placeholder TVDB id, allocated as a negative number.
 Every TVDB-specific behaviour tests for a positive id, so those paths skip
@@ -114,12 +131,17 @@ mapping, and shows no TheTVDB link. All three are fallbacks Sonarr already uses.
 
 ## Episode ordering
 
-TMDB publishes alternate numbering schemes per series, and IMDb's dumps carry
-another. When a series has more than one, a dropdown appears on the add dialog.
+TMDB publishes alternate episode groups for some TV/anime entries. The current
+backend applies those groups to **TMDB-owned series only**. Use **Default** in
+the Episode Ordering selector for TheTVDB, AniList and MyAnimeList owners;
+choosing a TMDB group for those owners is ignored. The inherited IMDb dataset
+and UI options remain present, but their ordering application is not wired into
+the current refresh/import path. IMDb is not a fifth metadata provider and its
+ordering choices are not currently functional.
 
-The one that motivates this: **TMDB group type 2 is "Absolute"** — one
-continuous run with no seasons, which is how long-running anime is released and
-discussed. Selecting it produces a continuous season 1; exact counts depend on
+**TMDB group type 2 is "Absolute"** — one continuous run with no seasons, useful
+when a TV or anime release set uses continuous episode numbers. Selecting it
+produces a continuous season 1; exact counts depend on
 the provider catalogue and chosen group. Every other ordering TMDB publishes appears in
 the same list, so DVD order, story arcs and streaming-service orders come along
 at no extra cost.
@@ -189,7 +211,8 @@ Files already held at equal or better quality were already protected upstream.
 Series lookup ranking now folds the many ways a season is written — `2nd
 Season`, `S2`, `Part 2`, `II` all read as "season 2" — strips accents and
 articles, and scores with Jaro-Winkler or word overlap. Upstream allowed a
-single character of difference, which is useless for anime. Where two entries
+single character of difference. The ranking supports alternate title and season
+notations used by TV and anime releases. Where two entries
 match a name equally well, which happens across a franchise that shares an
 abbreviation, the more widely rated one comes first.
 

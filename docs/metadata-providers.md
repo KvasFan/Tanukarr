@@ -1,0 +1,150 @@
+# Metadata providers for TV series and anime
+
+Tanukarr manages episodic **TV series and anime** with shared library,
+monitoring, search, download-client and import workflows. Choose a metadata
+catalogue for each title, then select an appropriate episode ordering where
+alternatives are available. Provider choice, catalogue coverage and numbering
+are related decisions with distinct responsibilities.
+
+## Choose the source when adding a series
+
+Open **Add New Series** and use the source dropdown above the search box.
+Its four sources are **TheTVDB**, **TMDB**, **AniList** and **MyAnimeList**;
+TheTVDB is the default. Search within the selected catalogue and confirm the
+entry that represents your TV series, anime, edition, recut or special.
+Set the root folder, quality profile and monitoring options before adding it.
+Check **Series Type** as well: Standard uses season/episode release conventions,
+Daily uses date-based conventions and Anime enables the corresponding anime
+search/numbering behavior. A catalogue's genre and this parsing/search setting
+are different concepts.
+
+AniList and Jikan results default to Anime; TMDB results default to Standard,
+including anime catalogue entries. TheTVDB normally defaults to Standard in
+this fork. Choose Daily manually for date-based releases; automatic daily-series
+classification is not a reliable setup step here. Existing user-selected Series
+Type is retained during refresh.
+
+The separate **Library Import** workflow currently searches TheTVDB and does
+not offer this four-provider selector. For a folder whose intended metadata
+owner is TMDB, AniList or MyAnimeList, use Add New Series, select the correct
+catalogue entry and use the appropriate existing root/folder. Review the
+generated path and episode matches before importing files. This is a per-series
+workflow, not a claim of bulk import through all four providers.
+
+Different catalogues can group seasons, recuts, specials or editions differently.
+Check the selected entry's episode list and numbering against your releases.
+A title missing from one catalogue may be available in another configured
+source; no provider is guaranteed to cover every title or genre.
+
+## Catalogue coverage and current access requirements
+
+| Source | Catalogue | Access used by this fork |
+| --- | --- | --- |
+| TheTVDB | TV series, including anime present in its catalogue | Metadata search/details use Sonarr's SkyHook TheTVDB proxy. This fork does not expose a personal TheTVDB API-key setting for those requests. |
+| TMDB | TV catalogue, including listed anime; artwork, external IDs and episode groups where available | Configure a **TMDB v3 API key** under **Settings → Metadata Source**. The metadata client sends it as `api_key`; a TMDB API Read Access Token is a different credential. |
+| AniList | Anime catalogue, alternative titles, release status and list membership | Public catalogue lookup uses AniList GraphQL without OAuth. Authenticated account-list import is a separate connection and requires its configured OAuth fields. |
+| MyAnimeList | Anime catalogue, accessed through Jikan | Public metadata lookup uses Jikan's MyAnimeList API; the client does not require a MyAnimeList account or API key. Available episode detail depends on Jikan/MyAnimeList responses. |
+
+The current metadata clients use `https://skyhook.sonarr.tv/v2/tvdb`,
+`https://api.themoviedb.org/3`, `https://graphql.anilist.co` and
+`https://api.jikan.moe/v4`. These describe the implemented access paths, not a
+promise of uptime, exhaustive coverage or authorization for every account-list
+feature. Metadata credentials do not configure indexers, download clients,
+Jellyfin or other integrations.
+
+The current access distinctions align with the official
+[TMDB application-authentication reference](https://developer.themoviedb.org/docs/authentication-application),
+[AniList authentication guide](https://docs.anilist.co/guide/auth/) and
+[Jikan REST documentation](https://github.com/jikan-me/jikan-rest). In particular,
+TMDB's v3 key and Read Access Token are different credential forms, AniList's
+public data and account-authorized operations have different access rules, and
+Jikan serves public metadata rather than authenticated MyAnimeList account
+operations.
+
+The TMDB import-list providers described in [Library tools](library-tools.md)
+use a TMDB API Read Access Token. Keep that import-list token separate from the
+v3 key used by the metadata/episode-group client.
+
+## The selected provider owns the series
+
+One metadata source owns each added series. Its provider/source and native
+foreign ID form the identity used by refresh, import-list preview/sync,
+existing-series matching, searches, exclusions and cleanup. Providers are
+selected rather than automatically merged. A service outage does not silently
+switch an existing series to another registered metadata provider.
+
+External cross-reference IDs can link related catalogue entries without changing
+that ownership. A negative compatibility `tvdbId` on a native TMDB/AniList/MAL
+series is an internal placeholder, not a real TheTVDB entry. A missing entry in
+one catalogue does not authorize replacing a separate recut or edition with a
+parent entry from another catalogue.
+
+Failed or incomplete list retrieval does not authorize destructive list cleanup.
+AniList watching states, anime release states and custom-list membership remain
+separate filters, with exclusion precedence. See
+[AniList list configuration](library-tools.md#anilist-lists).
+
+## Episode ordering is a separate choice
+
+Metadata ownership identifies the catalogue entry. Episode ordering determines
+the season/episode numbers stored for that series and used to match imports.
+Where the add dialog offers alternatives, compare them with the release naming
+you use. TV and anime releases can use seasonal, absolute, DVD, broadcast or
+other available numbering; a genre alone does not determine the correct order.
+
+The current backend applies **TMDB episode groups to TMDB-owned series only**.
+Choose **Default** for TheTVDB, AniList and MyAnimeList owners. A TMDB group can
+appear in a selector because an entry has a cross-reference ID, but choosing
+that group for another metadata owner does not apply it.
+
+**IMDb is not a fifth metadata provider and its ordering options are not
+currently functional.** The inherited **Refresh Imdb Dataset** task can build
+a local index and expose choices, but the production refresh path does not
+apply its ordering, and the selector's episode request is not a working IMDb
+ordering pipeline. Successful projector/index fixture tests do not establish
+that this production path is wired. For a TMDB-owned title, choosing `imdb` can
+also be sent to a TMDB episode-group endpoint and fail. Keep Default rather than
+selecting IMDb.
+
+The selected ordering is fixed when a series is added. Changing it later can
+affect stored episode numbers, file/folder naming and matches; the current
+workflow requires removing and adding the series again to choose another
+ordering. Review existing files and backups before doing so.
+
+## Current limitations and source checkpoints
+
+- The four-provider selector belongs to Add New Series; Library Import remains
+  TheTVDB-only.
+- TMDB groups apply only to TMDB-owned titles. Non-TMDB group choices are
+  ignored, and IMDb ordering choices are not applied by the current backend.
+- Daily parsing should be selected manually for date-based releases.
+- The published immutable 1.0.0 add dialog can reset a nonstandard recommended
+  Series Type while mounting settings. Check the final field before saving.
+  The main source correction preserves the metadata result's recommended type
+  on initial mount and is covered by actual-component regression cases. Use a
+  build containing the correction after its publishing workflow completes; it
+  does not change the metadata owner,
+  ordering implementation or immutable 1.0.0 image.
+
+Current audit evidence is recorded in
+[metadata validation](metadata-validation-2026-10-13.md). Historical release and
+feature reports retain their original source/image identities and test results;
+their focused tests are not proof of the incomplete ordering integration above.
+
+## Shared tools and provider-specific features
+
+Root folders, quality profiles, monitoring, indexers, download clients,
+interactive searches, imports, retained versions and the selected-library
+[Jellyfin refresh](jellyfin.md) serve TV and anime libraries. Configure those
+services for the content and release formats you actually use.
+
+AniList custom lists and Jikan metadata target anime catalogue entries. Nyaa's
+anime searches and absolute-number matching address particular release formats;
+they do not limit the whole application to anime. Provider-specific features
+retain their catalogue and indexer limits.
+
+The [fork design](../FORK.md) explains identity/numbering decisions;
+[CONTRIBUTORS.md](../CONTRIBUTORS.md) preserves original authors and AI provenance.
+The current English guide update used **OpenAI Codex based on GPT-6**. Dated
+verification reports retain their original scope, and documentation positioning
+does not establish new runtime coverage or change the 1.0.0 release artifacts.

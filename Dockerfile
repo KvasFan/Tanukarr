@@ -142,7 +142,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/app/Sonarr", "-nobrowser", "-data=/config"]
 
 LABEL org.opencontainers.image.title="Tanukarr" \
-      org.opencontainers.image.description="A fork of Sonarr with TMDB, IMDb, AniList and MyAnimeList metadata, selectable episode orderings, absolute numbering, multi-season packs and fake release filtering." \
+      org.opencontainers.image.description="TV series and anime management with per-series TheTVDB, TMDB, AniList and MyAnimeList (Jikan) metadata, episode ordering options, multi-season packs and library integrations." \
       org.opencontainers.image.source="${TANUKARR_SOURCE}" \
       org.opencontainers.image.version="${TANUKARR_VERSION}" \
       org.opencontainers.image.revision="${TANUKARR_REVISION}" \

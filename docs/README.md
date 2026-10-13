@@ -8,8 +8,9 @@ original content.
 
 | Document | Purpose |
 | --- | --- |
-| [Project README](../README.md) | Tanukarr features, release links, Docker quick start and toolchain |
+| [Project README](../README.md) | Shared TV/anime features, release links, Docker quick start and toolchain |
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
+| [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
 | [Tanukarr 1.0.0](releases/1.0.0.md) | Rename, Tanuki artwork, retained features, upgrade guidance and release limits |
 | [1.0.0 release verification](releases/1.0.0-verification.md) | Executed checks, exact source/image identity, remaining findings and publication |
 | [Compatibility and backups](compatibility-and-backups.md) | v3/v5 APIs, preserved core/configuration names, safe migration and backup/restore limits |
@@ -43,6 +44,7 @@ original content.
 | [AniList filter verification](anilist-filters-verification-2026-10-13.md) | Post-release inclusion/exclusion precedence, pagination, compatible settings and UI checks |
 | [AniList request-limit verification](anilist-rate-limit-verification-2026-10-13.md) | Post-0.1.0 custom-list sync failure, shared request pacing, cooldown and bounded recovery |
 | [Nyaa verification](nyaa-verification-2026-10-13.md) | Native RSS searches, reserved-title encoding and search-only container verification |
+| [Metadata validation](metadata-validation-2026-10-13.md) | Current TV/anime source selection, credentials, series-type behavior and ordering integration limits |
 
 Tanukarr 1.0.0 continues SonarrWeeb under a new name and supplied Tanuki branding.
 It includes the selected-library Jellyfin connection, AniList multiple-list

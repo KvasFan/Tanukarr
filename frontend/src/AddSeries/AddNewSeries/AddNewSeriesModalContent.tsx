@@ -148,6 +148,10 @@ function AddNewSeriesModalContent({
 
   const handleInputChange = useCallback(
     ({ name, value }: InputChanged<string | number | boolean | number[]>) => {
+      if (name === 'seriesType') {
+        setSeriesType(value as SeriesType);
+      }
+
       setAddSeriesOption(name as keyof AddSeriesOptions, value);
     },
     []
@@ -199,10 +203,6 @@ function AddNewSeriesModalContent({
     tags,
     addSeries,
   ]);
-
-  useEffect(() => {
-    setSeriesType(seriesTypeSetting.value);
-  }, [seriesTypeSetting]);
 
   return (
     <ModalContent onModalClose={onModalClose}>

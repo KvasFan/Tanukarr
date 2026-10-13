@@ -2,7 +2,8 @@
 
 <img src="frontend/src/Content/Images/logo.svg" alt="Tanukarr Tanuki logo" width="160" />
 
-**Tanukarr 1.0.0** is the renamed continuation of **SonarrWeeb**. It includes
+**Tanukarr 1.0.0** manages **TV series and anime** in one Sonarr-derived application.
+It is the renamed continuation of **SonarrWeeb** and includes
 selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
 shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
 search encoding for titles containing reserved characters. It retains Sonarr
@@ -27,7 +28,9 @@ image identities; they do not claim that later release packaging reran every
 suite. The [initial Docker report](docs/docker-validation-2026-10-12.md) preserves
 the first packaging checkpoint.
 
-A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
+A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series and anime,
+with a metadata provider selected per title, flexible episode orderings and
+shared library, search, download and import tools in a single Docker image.
 
 > **Unofficial.** Tanukarr is not affiliated with, endorsed by, or supported by the Sonarr project. Report Tanukarr problems in [this repository](https://github.com/KvasExert/Tanukarr/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
 
@@ -56,19 +59,42 @@ upstream legal notices. This fork accepts AI contributions under its own
 
 ---
 
-## Why this exists
+## TV series and anime in one library
 
-Sonarr resolves every series through TheTVDB. That works well for weekly Western television and poorly for everything else — a 1,100-episode anime becomes twenty-odd invented seasons, a recut that TheTVDB folds into its parent can't be added at all, and an `S01-S05` pack is rejected outright.
+Tanukarr keeps Sonarr's shared library, monitoring, indexer, download-client and
+import workflows for episodic TV and anime. Choose the catalogue that identifies
+each title and check its numbering against the releases you intend to import.
+TheTVDB and TMDB cover TV series, including anime listed in those catalogues;
+AniList and MyAnimeList/Jikan provide anime-specific catalogues.
 
-Tanukarr retains the upstream application and adds ways to handle those cases.
+The metadata provider is selected for each series when adding it. Episode
+ordering is a separate choice: TMDB-owned series can use available TMDB episode
+groups. Use **Default** for TheTVDB, AniList and MyAnimeList owners; selecting a
+TMDB group for those owners is not applied. The inherited IMDb choices are also
+not applied by the current backend. IMDb is not a fifth metadata source. See the
+[metadata provider guide](docs/metadata-providers.md) for selection, identity,
+configuration and catalogue limits.
 
 ## What's added
 
-**Four metadata sources, picked per series** — TheTVDB, TMDB, AniList, and MyAnimeList (via Jikan), chosen from a dropdown above the search box when adding a series. Only TMDB needs a key; the rest need no account.
+**Four metadata sources, picked per series** — TheTVDB and TMDB for their TV
+catalogues, plus AniList and MyAnimeList/Jikan for anime. Choose a source from the
+dropdown above the Add New Series search box and confirm the matching entry.
+The selected provider owns that series' metadata; sources are not automatically
+merged. Provider setup and credential requirements are described in the
+[metadata provider guide](docs/metadata-providers.md).
 
-**Selectable episode orderings** — TMDB publishes alternate numbering schemes per series, and IMDb's dumps carry another. Where a series has more than one, you pick at add time. TMDB's *Absolute* order produces continuous numbering in season 1; episode counts depend on the provider's current catalogue. DVD order, story arcs and streaming orders use the same selection. IMDb supplies ordering data, not an additional series metadata owner.
+**TMDB episode groups** — for a TMDB-owned series, choose an available group
+when adding it. TMDB's *Absolute* group produces continuous numbering in season
+1; DVD, broadcast or other groups depend on what TMDB lists for that title.
+This does not change the metadata owner. Non-TMDB owners should use **Default**;
+IMDb options are present in inherited UI/data but are not functional ordering
+choices in the current backend. See the [ordering limits](docs/metadata-providers.md#episode-ordering-is-a-separate-choice).
 
-**Series TheTVDB won't list separately** — recuts and spin-offs that TheTVDB folds into a parent series can be added from TMDB or AniList. Upstream can't add these at all.
+**Provider-specific catalogue entries** — a title or separate edition missing
+from one catalogue can be added from another configured provider when that
+provider lists it. Choose the entry that represents your TV series, anime,
+special or recut; coverage and episode detail vary between catalogues.
 
 **Absolute numbering that still matches season releases** — a series on ordinary season ordering accepts absolute-numbered releases too. `Tensei Shitara Slime Datta Ken - 88` resolves to S04E16.
 
@@ -86,7 +112,11 @@ for scope, dry-run usage and validation.
 
 **Season pack trimming** — skip episodes you deliberately left unmonitored instead of importing the whole pack. Off by default.
 
-**Anime-aware search matching** — `2nd Season`, `S2`, `Part 2` and `II` all read as "season 2"; accents and articles are stripped; scoring uses Jaro-Winkler rather than upstream's single-character tolerance. Release-to-series matching also compares against every title a provider knows, so a release using a series' English title still matches when it's stored under the romaji one.
+**Alternative titles and season matching** — lookup handles season labels such
+as `2nd Season`, `S2`, `Part 2` and `II`, and ranks titles using normalized names
+and Jaro-Winkler scoring. Release matching can use alternative titles supplied
+by the owning provider, including English and romaji names for anime; matching
+still follows the configured series and episode numbering.
 
 **AniList custom lists** — target your own custom lists alongside Planning and
 Watching. Tanukarr 1.0.0 supports multiple included lists, excluded lists and
@@ -259,9 +289,18 @@ and [container checks](docker/tests/README.md). The optional
 
 ## First-run setup
 
-**Add a TMDB API key** if you want TMDB metadata or episode groups — Settings → Metadata Source. It's free from [themoviedb.org](https://www.themoviedb.org/settings/api). Nothing else needs a key, and the other three sources work without it.
+**Choose metadata per title.** The Add New Series source selector offers
+TheTVDB, TMDB, AniList and MyAnimeList. TheTVDB/TMDB supply TV catalogue entries,
+including anime they list; AniList/MyAnimeList supply anime entries. Configure
+TMDB's v3 API key under **Settings → Metadata Source** when using TMDB metadata
+or episode groups. Public AniList/Jikan lookup and authenticated AniList list
+imports have different requirements; see [Metadata providers](docs/metadata-providers.md).
 
-**Build the IMDb index** if you want IMDb orderings — System → Tasks → *Refresh Imdb Dataset*. It downloads the published episode dataset and builds a local index; dataset and index sizes vary. After initialization it refreshes monthly. Until it runs, IMDb does not appear in the ordering dropdown.
+**Check ordering support before adding a series.** TMDB episode groups apply
+to TMDB-owned entries. Use **Default** for TheTVDB/AniList/MyAnimeList entries.
+The inherited **Refresh Imdb Dataset** task can build its local index and expose
+choices, but the current backend does not apply IMDb ordering; building that
+index does not make the option functional.
 
 One thing worth knowing before you add a long series: **the episode ordering is fixed when the series is added.** Season and episode numbers go into file and folder names, so changing it afterwards would rename your library on disk. To change it, remove the series and add it again.
 
