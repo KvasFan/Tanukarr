@@ -14,7 +14,15 @@ interface SeasonInteractiveSearchModalProps
 function SeasonInteractiveSearchModal(
   props: SeasonInteractiveSearchModalProps
 ) {
-  const { isOpen, episodeCount, seriesId, seasonNumber, onModalClose } = props;
+  const {
+    isOpen,
+    episodeCount,
+    seriesId,
+    seasonNumber,
+    displaySeasonNumber,
+    seasonPacksOnly,
+    onModalClose,
+  } = props;
 
   return (
     <Modal
@@ -28,6 +36,8 @@ function SeasonInteractiveSearchModal(
         episodeCount={episodeCount}
         seriesId={seriesId}
         seasonNumber={seasonNumber}
+        displaySeasonNumber={displaySeasonNumber}
+        seasonPacksOnly={seasonPacksOnly}
         onModalClose={onModalClose}
       />
     </Modal>

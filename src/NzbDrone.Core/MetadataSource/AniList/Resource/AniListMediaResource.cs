@@ -5,6 +5,12 @@ namespace NzbDrone.Core.MetadataSource.AniList.Resource
     public class AniListMediaResponse
     {
         public AniListMediaData Data { get; set; }
+        public List<AniListGraphQlErrorResource> Errors { get; set; }
+    }
+
+    public class AniListGraphQlErrorResource
+    {
+        public string Message { get; set; }
     }
 
     public class AniListMediaData
@@ -60,6 +66,19 @@ namespace NzbDrone.Core.MetadataSource.AniList.Resource
         public string BannerImage { get; set; }
         public AniListStudioConnection Studios { get; set; }
         public AniListAiringScheduleConnection AiringSchedule { get; set; }
+        public string Type { get; set; }
+        public AniListRelationConnection Relations { get; set; }
+    }
+
+    public class AniListRelationConnection
+    {
+        public List<AniListRelationEdge> Edges { get; set; }
+    }
+
+    public class AniListRelationEdge
+    {
+        public string RelationType { get; set; }
+        public AniListMediaResource Node { get; set; }
     }
 
     public class AniListTitleResource

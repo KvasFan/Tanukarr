@@ -21,7 +21,7 @@ namespace NzbDrone.Core.Organizer
         {
             ruleBuilder.SetValidator(new NotEmptyValidator(null));
             ruleBuilder.SetValidator(new IllegalCharactersValidator());
-
+            ruleBuilder.SetValidator(new ValidAnimeGroupTokensValidator());
             return ruleBuilder.SetValidator(new ValidStandardEpisodeFormatValidator());
         }
 
@@ -29,7 +29,7 @@ namespace NzbDrone.Core.Organizer
         {
             ruleBuilder.SetValidator(new NotEmptyValidator(null));
             ruleBuilder.SetValidator(new IllegalCharactersValidator());
-
+            ruleBuilder.SetValidator(new ValidAnimeGroupTokensValidator());
             return ruleBuilder.SetValidator(new ValidDailyEpisodeFormatValidator());
         }
 
@@ -37,7 +37,7 @@ namespace NzbDrone.Core.Organizer
         {
             ruleBuilder.SetValidator(new NotEmptyValidator(null));
             ruleBuilder.SetValidator(new IllegalCharactersValidator());
-
+            ruleBuilder.SetValidator(new ValidAnimeGroupTokensValidator());
             return ruleBuilder.SetValidator(new ValidAnimeEpisodeFormatValidator());
         }
 
@@ -70,6 +70,38 @@ namespace NzbDrone.Core.Organizer
             ruleBuilder.SetValidator(new IllegalColonCharactersValidator());
 
             return ruleBuilder.SetValidator(new IllegalCharactersValidator());
+        }
+
+        public static IRuleBuilderOptions<T, string> ValidAnimeGroupFolderFormat<T>(this IRuleBuilder<T, string> ruleBuilder, AnimeGroupFolderFormatKind kind)
+        {
+            return ruleBuilder.SetValidator(new ValidAnimeGroupFolderFormatValidator(kind));
+        }
+    }
+
+    public class ValidAnimeGroupTokensValidator : PropertyValidator
+    {
+        protected override string GetDefaultMessageTemplate() => "Group numbers support up to six zero placeholders; group titles support a length from 1 to 180";
+
+        protected override bool IsValid(PropertyValidatorContext context)
+        {
+            return AnimeGroupNamingFormat.HasValidGroupTokens(context.PropertyValue as string);
+        }
+    }
+
+    public class ValidAnimeGroupFolderFormatValidator : PropertyValidator
+    {
+        private readonly AnimeGroupFolderFormatKind _kind;
+
+        public ValidAnimeGroupFolderFormatValidator(AnimeGroupFolderFormatKind kind)
+        {
+            _kind = kind;
+        }
+
+        protected override string GetDefaultMessageTemplate() => "Use a single folder component with its group title, group season, series title or group movie token; paths and unsupported tokens are not allowed";
+
+        protected override bool IsValid(PropertyValidatorContext context)
+        {
+            return AnimeGroupNamingFormat.IsValid(context.PropertyValue as string, _kind);
         }
     }
 

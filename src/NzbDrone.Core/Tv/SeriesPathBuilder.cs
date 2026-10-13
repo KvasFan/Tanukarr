@@ -16,12 +16,14 @@ namespace NzbDrone.Core.Tv
     {
         private readonly IBuildFileNames _fileNameBuilder;
         private readonly IRootFolderService _rootFolderService;
+        private readonly IAnimeGroupPathBuilder _animeGroupPathBuilder;
         private readonly Logger _logger;
 
-        public SeriesPathBuilder(IBuildFileNames fileNameBuilder, IRootFolderService rootFolderService, Logger logger)
+        public SeriesPathBuilder(IBuildFileNames fileNameBuilder, IRootFolderService rootFolderService, IAnimeGroupPathBuilder animeGroupPathBuilder, Logger logger)
         {
             _fileNameBuilder = fileNameBuilder;
             _rootFolderService = rootFolderService;
+            _animeGroupPathBuilder = animeGroupPathBuilder;
             _logger = logger;
         }
 
@@ -36,6 +38,11 @@ namespace NzbDrone.Core.Tv
             {
                 var relativePath = GetExistingRelativePath(series);
                 return Path.Combine(series.RootFolderPath, relativePath);
+            }
+
+            if (AnimeGroupPathBuilder.IsGroupedMemberPath(series))
+            {
+                return _animeGroupPathBuilder.BuildPath(series);
             }
 
             return Path.Combine(series.RootFolderPath, _fileNameBuilder.GetSeriesFolder(series));

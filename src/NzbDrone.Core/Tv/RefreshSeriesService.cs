@@ -12,6 +12,7 @@ using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.Tv.Commands;
 using NzbDrone.Core.Tv.Events;
 
@@ -20,6 +21,7 @@ namespace NzbDrone.Core.Tv
     public class RefreshSeriesService : IExecute<RefreshSeriesCommand>
     {
         private readonly IMetadataProviderFactory _metadataProviderFactory;
+        private readonly IAnimeGroupingService _animeGroupingService;
         private readonly ISeriesService _seriesService;
         private readonly ISeriesTranslationService _seriesTranslationService;
         private readonly IRefreshEpisodeService _refreshEpisodeService;
@@ -31,6 +33,7 @@ namespace NzbDrone.Core.Tv
         private readonly Logger _logger;
 
         public RefreshSeriesService(IMetadataProviderFactory metadataProviderFactory,
+                                    IAnimeGroupingService animeGroupingService,
                                     ISeriesService seriesService,
                                     ISeriesTranslationService seriesTranslationService,
                                     IRefreshEpisodeService refreshEpisodeService,
@@ -42,6 +45,7 @@ namespace NzbDrone.Core.Tv
                                     Logger logger)
         {
             _metadataProviderFactory = metadataProviderFactory;
+            _animeGroupingService = animeGroupingService;
             _seriesService = seriesService;
             _seriesTranslationService = seriesTranslationService;
             _refreshEpisodeService = refreshEpisodeService;
@@ -136,6 +140,27 @@ namespace NzbDrone.Core.Tv
             }
 
             series.Seasons = UpdateSeasons(series, seriesInfo);
+
+            if (series.AnimeGroupId.IsNullOrWhiteSpace())
+            {
+                _animeGroupingService.Apply(series);
+
+                try
+                {
+                    AnimeGroupingValidator.Validate(series, _seriesService.GetAllSeries());
+                }
+                catch (FluentValidation.ValidationException ex)
+                {
+                    // Discovery must not block refresh or occupy another season's slot.
+                    _logger.Debug(ex, "Unable to assign an anime season group for {0}", series.Title);
+                    series.AnimeGroupId = null;
+                    series.AnimeGroupTitle = null;
+                    series.AnimeGroupSeasonNumber = null;
+                    series.AnimeGroupMovieNumber = null;
+                    series.AnimeGroupFolder = null;
+                    series.AnimeGroupMemberFolder = null;
+                }
+            }
 
             _seriesService.UpdateSeries(series, publishUpdatedEvent: false);
             _seriesTranslationService.UpdateTranslations(series.Id, seriesInfo.Translations);

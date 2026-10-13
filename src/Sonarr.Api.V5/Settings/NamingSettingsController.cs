@@ -33,6 +33,11 @@ public class NamingSettingsController : RestController<NamingSettingsResource>
         SharedValidator.RuleFor(c => c.SeriesFolderFormat).ValidSeriesFolderFormat();
         SharedValidator.RuleFor(c => c.SeasonFolderFormat).ValidSeasonFolderFormat();
         SharedValidator.RuleFor(c => c.SpecialsFolderFormat).ValidSpecialsFolderFormat();
+        SharedValidator.RuleFor(c => c.AnimeGroupFolderFormat).ValidAnimeGroupFolderFormat(AnimeGroupFolderFormatKind.Group).When(c => c.AnimeGroupFolderFormat != null);
+        SharedValidator.RuleFor(c => c.AnimeGroupSeasonFolderFormat).ValidAnimeGroupFolderFormat(AnimeGroupFolderFormatKind.Season).When(c => c.AnimeGroupSeasonFolderFormat != null);
+        SharedValidator.RuleFor(c => c.AnimeGroupArcFolderFormat).ValidAnimeGroupFolderFormat(AnimeGroupFolderFormatKind.Arc).When(c => c.AnimeGroupArcFolderFormat != null);
+        SharedValidator.RuleFor(c => c.AnimeGroupMovieFolderFormat).ValidAnimeGroupFolderFormat(AnimeGroupFolderFormatKind.MovieTitle).When(c => c.AnimeGroupMovieFolderFormat != null);
+        SharedValidator.RuleFor(c => c.AnimeGroupMovieSagaFolderFormat).ValidAnimeGroupFolderFormat(AnimeGroupFolderFormatKind.MovieNumber).When(c => c.AnimeGroupMovieSagaFolderFormat != null);
         SharedValidator.RuleFor(c => c.CustomColonReplacementFormat).ValidCustomColonReplacement().When(c => c.ColonReplacementFormat == (int)ColonReplacementFormat.Custom);
     }
 
@@ -52,7 +57,7 @@ public class NamingSettingsController : RestController<NamingSettingsResource>
     [Consumes("application/json")]
     public Results<Accepted<NamingSettingsResource>, NotFound> UpdateNamingConfig([FromBody] NamingSettingsResource resource)
     {
-        var nameSpec = resource.ToModel();
+        var nameSpec = resource.ToModel(_namingConfigService.GetConfig());
         ValidateFormatResult(nameSpec);
 
         _namingConfigService.Save(nameSpec);
@@ -69,7 +74,7 @@ public class NamingSettingsController : RestController<NamingSettingsResource>
             settings = GetResourceById(1);
         }
 
-        var nameSpec = settings.ToModel();
+        var nameSpec = settings.ToModel(_namingConfigService.GetConfig());
         var sampleResource = new NamingExampleResource();
 
         var singleEpisodeSampleResult = _filenameSampleService.GetStandardSample(nameSpec);
@@ -110,11 +115,20 @@ public class NamingSettingsController : RestController<NamingSettingsResource>
             ? null
             : _filenameSampleService.GetSpecialsFolderSample(nameSpec);
 
+        sampleResource.AnimeGroupFolderExample = _filenameSampleService.GetAnimeGroupFolderSample(nameSpec);
+        sampleResource.AnimeGroupSeasonFolderExample = _filenameSampleService.GetAnimeGroupSeasonFolderSample(nameSpec);
+        sampleResource.AnimeGroupArcFolderExample = _filenameSampleService.GetAnimeGroupArcFolderSample(nameSpec);
+        sampleResource.AnimeGroupMovieFolderExample = _filenameSampleService.GetAnimeGroupMovieFolderSample(nameSpec);
+        sampleResource.AnimeGroupMovieSagaFolderExample = _filenameSampleService.GetAnimeGroupMovieSagaFolderSample(nameSpec);
+        var movieSample = _filenameSampleService.GetAnimeGroupMovieSample(nameSpec);
+        sampleResource.AnimeGroupMovieEpisodeExample = _filenameValidationService.ValidateAnimeFilename(movieSample) == null ? movieSample.FileName : null;
+
         return TypedResults.Ok(sampleResource);
     }
 
     private void ValidateFormatResult(NamingConfig nameSpec)
     {
+        var animeGroupMovieSampleResult = _filenameSampleService.GetAnimeGroupMovieSample(nameSpec);
         var singleEpisodeSampleResult = _filenameSampleService.GetStandardSample(nameSpec);
         var multiEpisodeSampleResult = _filenameSampleService.GetMultiEpisodeSample(nameSpec);
         var dailyEpisodeSampleResult = _filenameSampleService.GetDailySample(nameSpec);
@@ -134,6 +148,7 @@ public class NamingSettingsController : RestController<NamingSettingsResource>
         validationFailures.AddIfNotNull(dailyEpisodeValidationResult);
         validationFailures.AddIfNotNull(animeEpisodeValidationResult);
         validationFailures.AddIfNotNull(animeMultiEpisodeValidationResult);
+        validationFailures.AddIfNotNull(_filenameValidationService.ValidateAnimeFilename(animeGroupMovieSampleResult));
 
         if (validationFailures.Any())
         {

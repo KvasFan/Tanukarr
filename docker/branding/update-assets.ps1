@@ -84,6 +84,7 @@ try {
     Write-Logo 'frontend/src/Content/Images/404.png' 638 805
     Write-Logo 'frontend/src/Content/Images/error.png' 1205 556
     Write-Logo 'frontend/src/Content/Images/poster-dark.png' 168 247 $true
+    Write-Logo 'frontend/src/Content/Images/banner-dark.png' 379 70 $true
     Write-Logo 'distribution/windows/setup/inno/WizModernImage.bmp' 164 314 $true
     Write-Logo 'distribution/windows/setup/inno/WizModernSmallImage.bmp' 55 55 $true
     Write-Icon "$iconDirectory/favicon.ico"

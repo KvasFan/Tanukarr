@@ -2,6 +2,9 @@ import { throttle } from 'lodash';
 import React, { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import useMeasure from 'Helpers/Hooks/useMeasure';
+import AnimeGroupSummary, {
+  AnimeGroupViewProps,
+} from 'Series/Grouping/AnimeGroupSummary';
 import Series from 'Series/Series';
 import { useSeriesOverviewOptions } from 'Series/seriesOptionsStore';
 import dimensions from 'Styles/Variables/dimensions';
@@ -16,7 +19,7 @@ const bodyPaddingSmallScreen = dimensions.pageContentBodyPaddingSmallScreen;
 
 const POSTER_PROGRESS_GAP = 6;
 
-interface RowItemData {
+interface RowItemData extends AnimeGroupViewProps {
   items: Series[];
   sortKey: string;
   posterWidth: number;
@@ -25,7 +28,7 @@ interface RowItemData {
   isSelectMode: boolean;
 }
 
-interface SeriesIndexOverviewsProps {
+interface SeriesIndexOverviewsProps extends AnimeGroupViewProps {
   items: Series[];
   sortKey: string;
   sortDirection?: string;
@@ -37,17 +40,28 @@ interface SeriesIndexOverviewsProps {
 }
 
 function Row({ index, style, data }: ListChildComponentProps<RowItemData>) {
-  const { items, ...otherData } = data;
+  const { items, groupsByRepresentativeId, ...otherData } = data;
 
   if (index >= items.length) {
     return null;
   }
 
   const series = items[index];
+  const group = groupsByRepresentativeId?.get(series.id);
 
   return (
     <div style={style}>
-      <SeriesIndexOverview seriesId={series.id} {...otherData} />
+      {group ? (
+        <AnimeGroupSummary
+          group={group}
+          view="overview"
+          isSelectMode={otherData.isSelectMode}
+          posterWidth={otherData.posterWidth}
+          posterHeight={otherData.posterHeight}
+        />
+      ) : (
+        <SeriesIndexOverview seriesId={series.id} {...otherData} />
+      )}
     </div>
   );
 }
@@ -64,6 +78,7 @@ function SeriesIndexOverviews(props: SeriesIndexOverviewsProps) {
     scrollerRef,
     isSelectMode,
     isSmallScreen,
+    groupsByRepresentativeId,
   } = props;
 
   const { size: posterSize, detailedProgressBar } = useSeriesOverviewOptions();
@@ -194,6 +209,7 @@ function SeriesIndexOverviews(props: SeriesIndexOverviewsProps) {
           posterHeight,
           rowHeight,
           isSelectMode,
+          groupsByRepresentativeId,
         }}
       >
         {Row}

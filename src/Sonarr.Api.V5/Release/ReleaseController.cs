@@ -103,7 +103,7 @@ public class ReleaseController : RestController<ReleaseResource>
         }
 
         if (release.SearchInfo?.CompleteSeries == true &&
-            (remoteEpisode.Series?.Id != release.SearchInfo.SeriesId || remoteEpisode.ParsedEpisodeInfo?.IsCompleteSeries != true))
+            !CompleteSeriesReleaseParser.HasMappedSeasonCoverage(remoteEpisode, release.SearchInfo.SeriesId.GetValueOrDefault()))
         {
             throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
         }
@@ -212,11 +212,16 @@ public class ReleaseController : RestController<ReleaseResource>
 
     [HttpGet]
     [Produces("application/json")]
-    public async Task<Results<Ok<List<ReleaseResource>>, BadRequest>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber, bool completeSeries = false)
+    public async Task<Results<Ok<List<ReleaseResource>>, BadRequest>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber, bool completeSeries = false, bool seasonPacksOnly = false)
     {
+        if (seasonPacksOnly && (!seriesId.HasValue || seriesId <= 0 || !seasonNumber.HasValue || seasonNumber <= 0 || episodeId.HasValue || completeSeries))
+        {
+            throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Season-pack search requires only a positive seriesId and seasonNumber.");
+        }
+
         if (completeSeries)
         {
-            if (!seriesId.HasValue || episodeId.HasValue || seasonNumber.HasValue)
+            if (!seriesId.HasValue || seriesId <= 0 || episodeId.HasValue || seasonNumber.HasValue)
             {
                 throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Complete-series search requires only seriesId.");
             }
@@ -231,7 +236,7 @@ public class ReleaseController : RestController<ReleaseResource>
 
         if (seriesId.HasValue && seasonNumber.HasValue)
         {
-            return TypedResults.Ok(await GetSeasonReleases(seriesId.Value, seasonNumber.Value));
+            return TypedResults.Ok(await GetSeasonReleases(seriesId.Value, seasonNumber.Value, seasonPacksOnly));
         }
 
         if (seriesId.HasValue || seasonNumber.HasValue)
@@ -277,11 +282,13 @@ public class ReleaseController : RestController<ReleaseResource>
         }
     }
 
-    private async Task<List<ReleaseResource>> GetSeasonReleases(int seriesId, int seasonNumber)
+    private async Task<List<ReleaseResource>> GetSeasonReleases(int seriesId, int seasonNumber, bool seasonPacksOnly)
     {
         try
         {
-            var decisions = await _releaseSearchService.SeasonSearch(seriesId, seasonNumber, false, false, true, true);
+            var decisions = seasonPacksOnly
+                ? await _releaseSearchService.SeasonPackSearch(seriesId, seasonNumber, true, true)
+                : await _releaseSearchService.SeasonSearch(seriesId, seasonNumber, false, false, true, true);
             var prioritizedDecisions = _prioritizeDownloadDecision.PrioritizeDecisions(decisions);
             var history = _historyService.GetBySeason(seriesId, seasonNumber, null);
 

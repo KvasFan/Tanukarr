@@ -57,6 +57,7 @@ interface TokenFlags {
   daily: boolean;
   anime: boolean;
   additional: boolean;
+  group: boolean;
 }
 
 type SeparatorInputOption = Omit<SelectInputOption, 'key'> & {
@@ -332,6 +333,7 @@ function getNamingTokenGroups({
   daily,
   anime,
   additional,
+  group,
 }: TokenFlags): TokenGroup[] {
   const groups: TokenGroup[] = [];
 
@@ -363,6 +365,19 @@ function getNamingTokenGroups({
   });
 
   groups.push({ legend: translate('SeriesID'), tokens: seriesIdTokens });
+
+  if (group || episode) {
+    groups.push({
+      legend: translate('AnimeGroupNamingTokens'),
+      caption: translate('AnimeGroupNamingTokenHelp'),
+      tokens: [
+        { token: '{Group Title}', example: 'Generated anime group' },
+        { token: '{Group Arc Title}', example: 'War Of Three Titans Arc' },
+        { token: '{Group Season:00}', example: '02' },
+        { token: '{Group Movie:00}', example: '01' },
+      ],
+    });
+  }
 
   if (season || seasonTitle) {
     groups.push({
@@ -434,6 +449,11 @@ export interface NamingModalOptions {
     | 'seriesFolderFormat'
     | 'seasonFolderFormat'
     | 'specialsFolderFormat'
+    | 'animeGroupFolderFormat'
+    | 'animeGroupSeasonFolderFormat'
+    | 'animeGroupArcFolderFormat'
+    | 'animeGroupMovieFolderFormat'
+    | 'animeGroupMovieSagaFolderFormat'
   >;
   season?: boolean;
   seasonTitle?: boolean;
@@ -441,6 +461,7 @@ export interface NamingModalOptions {
   daily?: boolean;
   anime?: boolean;
   additional?: boolean;
+  group?: boolean;
 }
 
 interface NamingModalProps extends NamingModalOptions {
@@ -461,6 +482,7 @@ function NamingModal(props: NamingModalProps) {
     daily = false,
     anime = false,
     additional = false,
+    group = false,
     onInputChange,
     onModalClose,
   } = props;
@@ -522,14 +544,38 @@ function NamingModal(props: NamingModalProps) {
     [name, value, selectionEnd, selectionStart, onInputChange]
   );
 
-  const tokenGroups = getNamingTokenGroups({
+  let tokenGroups = getNamingTokenGroups({
     season,
     seasonTitle,
     episode,
     daily,
     anime,
     additional,
+    group,
   });
+
+  if (group) {
+    const allowedTokens = new Set([
+      '{Group Title}',
+      '{Group Arc Title}',
+      '{Series Title}',
+      '{Series Year}',
+      ...(name === 'animeGroupSeasonFolderFormat' ? ['{Group Season:00}'] : []),
+      ...(name === 'animeGroupMovieFolderFormat' ||
+      name === 'animeGroupMovieSagaFolderFormat'
+        ? ['{Group Movie:00}']
+        : []),
+    ]);
+
+    tokenGroups = tokenGroups
+      .map((tokenGroup) => ({
+        ...tokenGroup,
+        tokens: tokenGroup.tokens.filter(({ token }) =>
+          allowedTokens.has(token)
+        ),
+      }))
+      .filter((tokenGroup) => tokenGroup.tokens.length > 0);
+  }
 
   if (name === 'seriesFolderFormat') {
     tokenGroups.unshift({

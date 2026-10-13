@@ -5,6 +5,7 @@ interface EpisodeSearchPayload {
 interface SeasonSearchPayload {
   seriesId: number;
   seasonNumber: number;
+  seasonPacksOnly?: true;
 }
 
 interface CompleteSeriesSearchPayload {

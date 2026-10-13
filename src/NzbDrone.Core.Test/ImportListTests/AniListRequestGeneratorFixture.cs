@@ -33,6 +33,8 @@ namespace NzbDrone.Core.Test.ImportListTests
             variables.GetProperty("page").GetInt32().Should().Be(3);
             variables.GetProperty("statusType").EnumerateArray().Select(status => status.GetString()).Should().Equal("COMPLETED");
             json.RootElement.GetProperty("query").GetString().Should().Contain("type: ANIME").And.Contain("perPage: 50");
+            json.RootElement.GetProperty("query").GetString().Should().Contain("customLists")
+                .And.Contain("customListEntries: customLists(asArray: true)");
         }
     }
 }

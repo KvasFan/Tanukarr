@@ -12,6 +12,7 @@ using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.SeriesStats;
 using NzbDrone.Core.Tv;
@@ -40,6 +41,7 @@ namespace Sonarr.Api.V3.Series
         private readonly ISeriesService _seriesService;
         private readonly ISeriesTranslationService _seriesTranslationService;
         private readonly IAddSeriesService _addSeriesService;
+        private readonly IAnimeGroupingService _animeGroupingService;
         private readonly ISeriesStatisticsService _seriesStatisticsService;
         private readonly ISceneMappingService _sceneMappingService;
         private readonly IMapCoversToLocal _coverMapper;
@@ -49,6 +51,7 @@ namespace Sonarr.Api.V3.Series
                             ISeriesService seriesService,
                             ISeriesTranslationService seriesTranslationService,
                             IAddSeriesService addSeriesService,
+                            IAnimeGroupingService animeGroupingService,
                             ISeriesStatisticsService seriesStatisticsService,
                             ISceneMappingService sceneMappingService,
                             IMapCoversToLocal coverMapper,
@@ -67,6 +70,7 @@ namespace Sonarr.Api.V3.Series
             _seriesService = seriesService;
             _seriesTranslationService = seriesTranslationService;
             _addSeriesService = addSeriesService;
+            _animeGroupingService = animeGroupingService;
             _seriesStatisticsService = seriesStatisticsService;
             _sceneMappingService = sceneMappingService;
 
@@ -198,6 +202,16 @@ namespace Sonarr.Api.V3.Series
         public ActionResult<SeriesResource> UpdateSeries([FromBody] SeriesResource seriesResource, [FromQuery] bool moveFiles = false)
         {
             var series = _seriesService.GetSeries(seriesResource.Id);
+            var originalGroupingMode = series.AnimeGroupingMode;
+            var originalGroupId = series.AnimeGroupId;
+            var originalGroupTitle = series.AnimeGroupTitle;
+            var originalGroupSeason = series.AnimeGroupSeasonNumber;
+            var originalGroupFolder = series.AnimeGroupFolder;
+            var originalMemberKind = series.AnimeGroupMemberKind;
+            var originalGroupKind = series.AnimeGroupKind;
+            var originalMovieNumber = series.AnimeGroupMovieNumber;
+            var originalMovieStyle = series.AnimeGroupMovieFolderStyle;
+            var originalMemberFolder = series.AnimeGroupMemberFolder;
             var sourcePath = series.Path;
             var destinationPath = seriesResource.Path;
 
@@ -205,6 +219,23 @@ namespace Sonarr.Api.V3.Series
             var language = series.Language;
 
             var model = seriesResource.ToModel(series);
+
+            if (model.AnimeGroupingMode == AnimeGroupingMode.Automatic)
+            {
+                var preserve = originalGroupingMode == AnimeGroupingMode.Automatic;
+                model.AnimeGroupId = preserve ? originalGroupId : null;
+                model.AnimeGroupTitle = preserve ? originalGroupTitle : null;
+                model.AnimeGroupSeasonNumber = preserve ? originalGroupSeason : null;
+                model.AnimeGroupFolder = preserve ? originalGroupFolder : null;
+                model.AnimeGroupMemberKind = preserve ? originalMemberKind : AnimeGroupMemberKind.Season;
+                model.AnimeGroupKind = preserve ? originalGroupKind : AnimeGroupKind.Series;
+                model.AnimeGroupMovieNumber = preserve ? originalMovieNumber : null;
+                model.AnimeGroupMovieFolderStyle = preserve ? originalMovieStyle : AnimeGroupMovieFolderStyle.Automatic;
+                model.AnimeGroupMemberFolder = preserve ? originalMemberFolder : null;
+            }
+
+            _animeGroupingService.Apply(model);
+            AnimeGroupingValidator.Validate(model, _seriesService.GetAllSeries());
 
             // Don't change the season type for an existing series
             model.SeasonType = seasonType;

@@ -305,11 +305,11 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
-        public void should_keep_null_custom_data_compatible_without_exclusions()
+        public void should_keep_null_custom_data_compatible_without_custom_filters_but_fail_unknown_inclusions()
         {
             new AniListParser(_settings).ParseResponse(Response(Entry(1))).Should().ContainSingle();
             _settings.IncludedCustomLists = new[] { "Seasonal" };
-            new AniListParser(_settings).ParseResponse(Response(Entry(1))).Should().BeEmpty();
+            Assert.Throws<ImportListException>(() => new AniListParser(_settings).ParseResponse(Response(Entry(1))));
         }
 
         [TestCase(true)]

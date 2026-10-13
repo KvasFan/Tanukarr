@@ -16,7 +16,12 @@ namespace NzbDrone.Core.Organizer
             AnimeEpisodeFormat = "{Series Title} - S{season:00}E{episode:00} - {Episode Title} {Quality Full}",
             SeriesFolderFormat = "{Series Title}",
             SeasonFolderFormat = "Season {season}",
-            SpecialsFolderFormat = "Specials"
+            SpecialsFolderFormat = "Specials",
+            AnimeGroupFolderFormat = "{Group Title}",
+            AnimeGroupSeasonFolderFormat = "Season {Group Season:00}",
+            AnimeGroupArcFolderFormat = "{Group Arc Title}",
+            AnimeGroupMovieFolderFormat = "{Series Title}",
+            AnimeGroupMovieSagaFolderFormat = "Film {Group Movie:00}"
         };
 
         public bool RenameEpisodes { get; set; }
@@ -30,5 +35,10 @@ namespace NzbDrone.Core.Organizer
         public string SeriesFolderFormat { get; set; }
         public string SeasonFolderFormat { get; set; }
         public string SpecialsFolderFormat { get; set; }
+        public string AnimeGroupFolderFormat { get; set; }
+        public string AnimeGroupSeasonFolderFormat { get; set; }
+        public string AnimeGroupArcFolderFormat { get; set; }
+        public string AnimeGroupMovieFolderFormat { get; set; }
+        public string AnimeGroupMovieSagaFolderFormat { get; set; }
     }
 }

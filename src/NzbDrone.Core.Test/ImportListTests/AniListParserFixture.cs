@@ -103,9 +103,17 @@ namespace NzbDrone.Core.Test.ImportListTests
         [Test]
         public void should_exclude_entries_with_no_custom_lists_at_all()
         {
-            var json = Json.Replace(@"""customLists"": { ""Seasonal"": true, ""Rewatch"": false },", string.Empty);
+            var json = Json.Replace(@"""customLists"": { ""Seasonal"": true, ""Rewatch"": false }", @"""customLists"": {}");
 
             ParserWithCustomList("Seasonal").ParseResponse(Response(json)).Should().BeEmpty();
+        }
+
+        [Test]
+        public void should_retain_the_previous_list_when_required_inclusion_membership_is_missing()
+        {
+            var json = Json.Replace(@"""customLists"": { ""Seasonal"": true, ""Rewatch"": false },", string.Empty);
+
+            Assert.Throws<ImportListException>(() => ParserWithCustomList("Seasonal").ParseResponse(Response(json)));
         }
 
         [Test]

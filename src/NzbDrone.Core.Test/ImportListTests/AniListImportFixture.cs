@@ -98,6 +98,30 @@ namespace NzbDrone.Core.Test.ImportListTests
             settings.ExcludedCustomLists = new[] { "Excluded" };
         }
 
+        private static string ArrayMembershipPage(int currentPage, bool hasNextPage, bool excluded, int mediaId)
+        {
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                data = new
+                {
+                    Page = new
+                    {
+                        pageInfo = new { currentPage, hasNextPage },
+                        mediaList = new[]
+                        {
+                            new
+                            {
+                                status = "CURRENT",
+                                customLists = (object)null,
+                                customListEntries = new[] { new { name = "Seasonal", enabled = true }, new { name = "Excluded", enabled = excluded } },
+                                media = new { id = mediaId, status = "FINISHED", title = new { userPreferred = "Generated anime" } }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         private void GivenRateLimit(int seconds)
         {
             Mocker.GetMock<IAniListRequestService>()
@@ -283,7 +307,7 @@ namespace NzbDrone.Core.Test.ImportListTests
 
             var result = _subject.Test();
 
-            result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("No results");
+            result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("Connected to AniList").And.Contain("no entries match");
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
         }
 
@@ -298,6 +322,43 @@ namespace NzbDrone.Core.Test.ImportListTests
 
             result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("previous list will be retained");
             Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_veto_watching_duplicates_across_pages_with_null_map_and_explicit_array(bool excludedFirst)
+        {
+            GivenCustomExclusions();
+            GivenResponses(ArrayMembershipPage(1, true, excludedFirst, 1), ArrayMembershipPage(2, false, !excludedFirst, 1));
+
+            var result = _subject.Fetch();
+
+            result.AnyFailure.Should().BeFalse();
+            result.Series.Should().BeEmpty();
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(It.IsAny<HttpRequest>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public void connection_test_should_accept_null_map_with_explicit_nonmember_array_flags()
+        {
+            GivenCustomExclusions();
+            GivenResponses(ArrayMembershipPage(1, false, false, 1));
+
+            _subject.Test().IsValid.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_retain_previous_list_when_a_later_array_flag_is_unknown()
+        {
+            GivenCustomExclusions();
+            var incomplete = ArrayMembershipPage(2, false, false, 9253).Replace("\"enabled\":false", "\"enabled\":null");
+            GivenResponses(ArrayMembershipPage(1, true, false, 1), incomplete);
+
+            _subject.Fetch().AnyFailure.Should().BeTrue();
+
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(10), Times.Never());
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordFailure(10, TimeSpan.Zero), Times.Once());
             ExceptionVerification.ExpectedWarns(1);
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FizzWare.NBuilder;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Extensions;
@@ -11,6 +12,7 @@ using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Core.Tv;
 using NzbDrone.Core.Tv.Commands;
@@ -63,6 +65,56 @@ namespace NzbDrone.Core.Test.TvTests
         {
             _metadataProvider.Setup(s => s.GetSeriesInfo(It.Is<Series>(v => v.TvdbId == _series.TvdbId)))
                              .Returns(new Tuple<Series, List<Episode>>(series, new List<Episode>()));
+        }
+
+        [Test]
+        public void should_discover_a_group_for_an_existing_entry_without_changing_path_or_native_season()
+        {
+            _series.Path = Path.Combine(TempFolder, "Existing Anime");
+            _series.AnimeGroupingMode = AnimeGroupingMode.Automatic;
+            _series.AnimeGroupId = null;
+            _series.AnimeGroupTitle = null;
+            _series.AnimeGroupSeasonNumber = null;
+            _series.AnimeGroupFolder = null;
+            var originalPath = _series.Path;
+            GivenNewSeriesInfo(_series.JsonClone());
+            Mocker.GetMock<IAnimeGroupingService>().Setup(g => g.Apply(_series)).Callback<Series>(series =>
+            {
+                series.AnimeGroupId = "anilist:100";
+                series.AnimeGroupTitle = "Canonical anime";
+                series.AnimeGroupSeasonNumber = 2;
+                series.AnimeGroupFolder = "Canonical anime";
+            });
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            _series.Path.Should().Be(originalPath);
+            _series.Seasons.Should().ContainSingle().Which.SeasonNumber.Should().Be(1);
+            _series.AnimeGroupSeasonNumber.Should().Be(2);
+        }
+
+        [Test]
+        public void should_decline_an_occupied_discovered_group_without_failing_metadata_refresh()
+        {
+            _series.AnimeGroupingMode = AnimeGroupingMode.Automatic;
+            _series.AnimeGroupId = null;
+            GivenNewSeriesInfo(_series.JsonClone());
+            Mocker.GetMock<IAnimeGroupingService>().Setup(g => g.Apply(_series)).Callback<Series>(series =>
+            {
+                series.AnimeGroupId = "anilist:100";
+                series.AnimeGroupTitle = "Canonical anime";
+                series.AnimeGroupSeasonNumber = 2;
+                series.AnimeGroupFolder = "Canonical anime";
+            });
+            Mocker.GetMock<ISeriesService>().Setup(s => s.GetAllSeries()).Returns(new List<Series>
+            {
+                new Series { Id = _series.Id + 100, AnimeGroupId = "anilist:100", AnimeGroupSeasonNumber = 2 }
+            });
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            _series.AnimeGroupId.Should().BeNull();
+            Mocker.GetMock<ISeriesService>().Verify(s => s.UpdateSeries(_series, It.IsAny<bool>(), false), Times.Once());
         }
 
         [Test]

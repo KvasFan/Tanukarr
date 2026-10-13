@@ -13,6 +13,7 @@ using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.SeriesStats;
@@ -40,6 +41,7 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
 {
     private readonly ISeriesService _seriesService;
     private readonly IAddSeriesService _addSeriesService;
+    private readonly IAnimeGroupingService _animeGroupingService;
     private readonly ISeriesStatisticsService _seriesStatisticsService;
     private readonly ISceneMappingService _sceneMappingService;
     private readonly ISeriesTranslationService _seriesTranslationService;
@@ -51,6 +53,7 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
     public SeriesController(IBroadcastSignalRMessage signalRBroadcaster,
                         ISeriesService seriesService,
                         IAddSeriesService addSeriesService,
+                        IAnimeGroupingService animeGroupingService,
                         ISeriesStatisticsService seriesStatisticsService,
                         ISceneMappingService sceneMappingService,
                         ISeriesTranslationService seriesTranslationService,
@@ -70,6 +73,7 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
     {
         _seriesService = seriesService;
         _addSeriesService = addSeriesService;
+        _animeGroupingService = animeGroupingService;
         _seriesStatisticsService = seriesStatisticsService;
         _sceneMappingService = sceneMappingService;
         _seriesTranslationService = seriesTranslationService;
@@ -232,10 +236,37 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
     public Results<Accepted<SeriesResource>, NotFound> UpdateSeries([FromBody] SeriesResource seriesResource, [FromQuery] bool moveFiles = false)
     {
         var series = _seriesService.GetSeries(seriesResource.Id);
+        var originalGroupingMode = series.AnimeGroupingMode;
+        var originalGroupId = series.AnimeGroupId;
+        var originalGroupTitle = series.AnimeGroupTitle;
+        var originalGroupSeason = series.AnimeGroupSeasonNumber;
+        var originalGroupFolder = series.AnimeGroupFolder;
+        var originalMemberKind = series.AnimeGroupMemberKind;
+        var originalGroupKind = series.AnimeGroupKind;
+        var originalMovieNumber = series.AnimeGroupMovieNumber;
+        var originalMovieStyle = series.AnimeGroupMovieFolderStyle;
+        var originalMemberFolder = series.AnimeGroupMemberFolder;
         var sourcePath = series.Path;
         var destinationPath = seriesResource.Path;
 
         var model = seriesResource.ToModel(series);
+
+        if (model.AnimeGroupingMode == AnimeGroupingMode.Automatic)
+        {
+            var preserve = originalGroupingMode == AnimeGroupingMode.Automatic;
+            model.AnimeGroupId = preserve ? originalGroupId : null;
+            model.AnimeGroupTitle = preserve ? originalGroupTitle : null;
+            model.AnimeGroupSeasonNumber = preserve ? originalGroupSeason : null;
+            model.AnimeGroupFolder = preserve ? originalGroupFolder : null;
+            model.AnimeGroupMemberKind = preserve ? originalMemberKind : AnimeGroupMemberKind.Season;
+            model.AnimeGroupKind = preserve ? originalGroupKind : AnimeGroupKind.Series;
+            model.AnimeGroupMovieNumber = preserve ? originalMovieNumber : null;
+            model.AnimeGroupMovieFolderStyle = preserve ? originalMovieStyle : AnimeGroupMovieFolderStyle.Automatic;
+            model.AnimeGroupMemberFolder = preserve ? originalMemberFolder : null;
+        }
+
+        _animeGroupingService.Apply(model);
+        AnimeGroupingValidator.Validate(model, _seriesService.GetAllSeries());
 
         _seriesService.UpdateSeries(model, sourcePath, destinationPath, moveFiles);
 

@@ -59,9 +59,17 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 throw new ImportListException(importListResponse, "AniList returned an entry without a valid list status needed for exclusions. The previous list will be retained.");
             }
 
+            NormalizeCustomListMembership(page.MediaList, importListResponse);
+
             if (_settings.ExcludedCustomLists?.Any() == true && page.MediaList.Any(item => item.CustomLists == null))
             {
                 throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for exclusions. The previous list will be retained.");
+            }
+
+            if ((_settings.IncludedCustomLists?.Any() == true || _settings.CustomList.IsNotNullOrWhiteSpace()) &&
+                page.MediaList.Any(item => item.CustomLists == null))
+            {
+                throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for inclusion filters. The previous list will be retained.");
             }
 
             foreach (var item in page.MediaList)
@@ -95,6 +103,32 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
             pageInfo = page.PageInfo;
             return result.Where(item => !ExcludedMediaIds.Contains(item.AniListId)).ToList();
+        }
+
+        private static void NormalizeCustomListMembership(IEnumerable<MediaList> entries, ImportListResponse response)
+        {
+            foreach (var item in entries)
+            {
+                // Preserve the map's explicit flags and names when available,
+                // including compatibility with older responses without the alias.
+                if (item.CustomLists != null || item.CustomListEntries == null)
+                {
+                    continue;
+                }
+
+                var membership = new Dictionary<string, bool>(StringComparer.Ordinal);
+
+                foreach (var entry in item.CustomListEntries)
+                {
+                    if (entry == null || entry.Name.IsNullOrWhiteSpace() || !entry.Enabled.HasValue ||
+                        !membership.TryAdd(entry.Name, entry.Enabled.Value))
+                    {
+                        throw new ImportListException(response, "AniList returned invalid custom list membership. The previous list will be retained.");
+                    }
+                }
+
+                item.CustomLists = membership;
+            }
         }
 
         /// <summary>

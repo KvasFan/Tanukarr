@@ -31,6 +31,34 @@ interface NamingProps {
   }) => void;
 }
 
+const GROUP_FOLDER_FORMATS = [
+  {
+    name: 'animeGroupFolderFormat',
+    label: 'AnimeGroupFolderFormat',
+    example: 'animeGroupFolderExample',
+  },
+  {
+    name: 'animeGroupSeasonFolderFormat',
+    label: 'AnimeGroupSeasonFolderFormat',
+    example: 'animeGroupSeasonFolderExample',
+  },
+  {
+    name: 'animeGroupArcFolderFormat',
+    label: 'AnimeGroupArcFolderFormat',
+    example: 'animeGroupArcFolderExample',
+  },
+  {
+    name: 'animeGroupMovieFolderFormat',
+    label: 'AnimeGroupMovieFolderFormat',
+    example: 'animeGroupMovieFolderExample',
+  },
+  {
+    name: 'animeGroupMovieSagaFolderFormat',
+    label: 'AnimeGroupMovieSagaFolderFormat',
+    example: 'animeGroupMovieSagaFolderExample',
+  },
+] as const;
+
 function Naming({ setChildSave, onChildStateChange }: NamingProps) {
   const advancedSettings = useShowAdvancedSettings();
   const {
@@ -124,6 +152,40 @@ function Naming({ setChildSave, onChildStateChange }: NamingProps) {
       seasonTitle: true,
     });
   }, [setNamingModalOpen, setNamingModalOptions]);
+  const handleGroupNamingModalOpenClick = useCallback(
+    (name: (typeof GROUP_FOLDER_FORMATS)[number]['name']) => {
+      setNamingModalOpen();
+      setNamingModalOptions({ name, group: true });
+    },
+    [setNamingModalOpen, setNamingModalOptions]
+  );
+  const handleGroupRootNamingOpen = useCallback(
+    () => handleGroupNamingModalOpenClick('animeGroupFolderFormat'),
+    [handleGroupNamingModalOpenClick]
+  );
+  const handleGroupSeasonNamingOpen = useCallback(
+    () => handleGroupNamingModalOpenClick('animeGroupSeasonFolderFormat'),
+    [handleGroupNamingModalOpenClick]
+  );
+  const handleGroupArcNamingOpen = useCallback(
+    () => handleGroupNamingModalOpenClick('animeGroupArcFolderFormat'),
+    [handleGroupNamingModalOpenClick]
+  );
+  const handleGroupMovieNamingOpen = useCallback(
+    () => handleGroupNamingModalOpenClick('animeGroupMovieFolderFormat'),
+    [handleGroupNamingModalOpenClick]
+  );
+  const handleGroupMovieSagaNamingOpen = useCallback(
+    () => handleGroupNamingModalOpenClick('animeGroupMovieSagaFolderFormat'),
+    [handleGroupNamingModalOpenClick]
+  );
+  const onGroupNamingCallbacks = {
+    animeGroupFolderFormat: handleGroupRootNamingOpen,
+    animeGroupSeasonFolderFormat: handleGroupSeasonNamingOpen,
+    animeGroupArcFolderFormat: handleGroupArcNamingOpen,
+    animeGroupMovieFolderFormat: handleGroupMovieNamingOpen,
+    animeGroupMovieSagaFolderFormat: handleGroupMovieSagaNamingOpen,
+  };
 
   const renameEpisodes = hasSettings && settings.renameEpisodes.value;
   const replaceIllegalCharacters =
@@ -215,6 +277,14 @@ function Naming({ setChildSave, onChildStateChange }: NamingProps) {
       animeEpisodeFormatErrors.push({
         message: translate('MultiEpisodeInvalidFormat'),
       });
+    }
+
+    if (examples.animeGroupMovieEpisodeExample) {
+      animeEpisodeFormatHelpTexts.push(
+        `${translate('AnimeGroupMovie')}: ${
+          examples.animeGroupMovieEpisodeExample
+        }`
+      );
     }
 
     if (examples.seriesFolderExample) {
@@ -505,6 +575,40 @@ function Naming({ setChildSave, onChildStateChange }: NamingProps) {
               {...settings.multiEpisodeStyle}
             />
           </FormRow>
+
+          {GROUP_FOLDER_FORMATS.map(({ name, label, example }) => (
+            <FormRow key={name} size={sizes.MEDIUM}>
+              <FormLabel>{translate(label)}</FormLabel>
+              <FormInputHelpText
+                text={translate('AnimeGroupNamingFormatHelp')}
+              />
+              <FormInputHelpText
+                text={
+                  examples?.[example]
+                    ? `${translate('Example')}: ${examples[example]}`
+                    : undefined
+                }
+              />
+              <FormInput
+                inputClassName={styles.namingInput}
+                type={inputTypes.TEXT}
+                name={name}
+                buttons={
+                  <FormInputButton onPress={onGroupNamingCallbacks[name]}>
+                    ?
+                  </FormInputButton>
+                }
+                onChange={handleInputChange}
+                {...settings[name]}
+                errors={[
+                  ...(settings[name]?.errors ?? []),
+                  ...(examplesPopulated && !examples?.[example]
+                    ? [{ message: translate('InvalidFormat') }]
+                    : []),
+                ]}
+              />
+            </FormRow>
+          ))}
 
           {namingModalOptions ? (
             <NamingModal

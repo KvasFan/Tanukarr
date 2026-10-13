@@ -6,6 +6,7 @@ using NUnit.Framework;
 using NzbDrone.Core.Indexers.Nyaa;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Test.Framework;
+using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.Test.IndexerTests.NyaaTests
 {
@@ -189,6 +190,55 @@ namespace NzbDrone.Core.Test.IndexerTests.NyaaTests
 
             ReadQueryParameters(request.Url.Query)["term"].Should().Be("Naruto Shippuuden Special Episode");
             request.Url.Fragment.Should().BeEmpty();
+        }
+
+        [Test]
+        public void should_query_complete_and_individual_season_packs_without_episode_queries()
+        {
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                IncludeSeasonPacks = true,
+                SceneTitles = new List<string> { "Fixture TV" },
+                Episodes = new List<Episode>
+                {
+                    new Episode { SeasonNumber = 1, EpisodeNumber = 1 },
+                    new Episode { SeasonNumber = 2, EpisodeNumber = 1 },
+                    new Episode { SeasonNumber = 3, EpisodeNumber = 1 }
+                }
+            };
+
+            var terms = Subject.GetSearchRequests(criteria).GetAllTiers()
+                .Select(r => ReadQueryParameters(r.First().Url.Query)["term"]).ToList();
+
+            terms.Should().BeEquivalentTo(new[] { "Fixture TV", "Fixture TV S01-S03", "Fixture TV complete", "Fixture TV S01", "Fixture TV S02", "Fixture TV S03" });
+        }
+
+        [Test]
+        public void should_bound_and_deduplicate_complete_search_aliases()
+        {
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                SceneTitles = new List<string> { "Fixture TV", "Fixture.TV", "Alias 1", "Alias 2", "Alias 3", "Alias 4" },
+                Episodes = new List<Episode> { new Episode { SeasonNumber = 1 } }
+            };
+
+            criteria.QueryTitles.Should().HaveCount(3);
+            criteria.SeasonPackQueryTitles.Should().BeEmpty();
+            var terms = Subject.GetSearchRequests(criteria).GetAllTiers()
+                .Select(r => ReadQueryParameters(r.First().Url.Query)["term"]).ToList();
+            terms.Should().OnlyHaveUniqueItems();
+        }
+
+        [Test]
+        public void should_use_a_bare_pack_title_with_standard_format_disabled_in_pack_only_mode()
+        {
+            Subject.Settings.AnimeStandardFormatSearch = false;
+            _animeSeasonSearchCriteria.PackSearchOnly = true;
+
+            var terms = Subject.GetSearchRequests(_animeSeasonSearchCriteria).GetAllTiers()
+                .Select(r => ReadQueryParameters(r.First().Url.Query)["term"]).ToList();
+
+            terms.Should().Contain("Naruto Shippuuden");
         }
 
         private static Dictionary<string, string> ReadQueryParameters(string query)

@@ -9,6 +9,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.MetadataSource.Jikan.Resource;
 using NzbDrone.Core.Tv;
 
@@ -23,13 +24,13 @@ namespace NzbDrone.Core.MetadataSource.Jikan
     /// rate limited accordingly.
     /// </para>
     /// </summary>
-    public class JikanProxy : IMetadataProvider
+    public class JikanProxy : IMetadataProvider, IAnimeRelationProvider
     {
         private const string BaseUrl = "https://api.jikan.moe/v4";
         private const int MaxEpisodePages = 30;
         private const int MaxSearchResults = 20;
 
-        private static readonly Regex DurationRegex = new Regex(@"(?<minutes>\d+)\s*min", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex DurationRegex = new Regex(@"(?<value>\d+)\s*(?<unit>hr|min)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IHttpClient _httpClient;
         private readonly IJikanRateLimiter _rateLimiter;
@@ -43,6 +44,41 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         }
 
         public MetadataSourceType Source => MetadataSourceType.MyAnimeList;
+
+        public AnimeRelationNode GetAnimeRelations(string foreignId)
+        {
+            if (!int.TryParse(foreignId, out var id) || id <= 0)
+            {
+                return null;
+            }
+
+            // The full catalogue endpoint includes typed relations. Reuse the existing
+            // Jikan limiter and canonical cache-friendly URL; no episode pages are read.
+            var anime = Get<JikanAnimeResponse>($"/anime/{id}/full")?.Data;
+
+            if (anime == null)
+            {
+                return null;
+            }
+
+            var relations = anime.Relations ?? new List<JikanRelationResource>();
+            return new AnimeRelationNode
+            {
+                ForeignId = anime.MalId.ToString(),
+                Title = anime.TitleEnglish.IsNotNullOrWhiteSpace() ? anime.TitleEnglish : anime.Title,
+                Format = anime.Type?.ToUpperInvariant().Replace(' ', '_'),
+                PrequelIds = RelationIds(relations, "Prequel"),
+                SequelIds = RelationIds(relations, "Sequel")
+            };
+        }
+
+        private static List<string> RelationIds(List<JikanRelationResource> relations, string type)
+        {
+            return relations.Where(r => r.Relation == type)
+                .SelectMany(r => r.Entry ?? new List<JikanRelationEntryResource>())
+                .Where(e => e.Type == "anime" && e.MalId > 0)
+                .Select(e => e.MalId.ToString()).ToList();
+        }
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(Series series)
         {
@@ -128,7 +164,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         /// </summary>
         private List<Episode> FillMissingEpisodes(List<Episode> episodes, JikanAnimeResource anime, int runtime)
         {
-            var declared = anime.Episodes ?? 0;
+            var declared = anime.Type == "Movie" ? Math.Max(anime.Episodes ?? 0, 1) : anime.Episodes ?? 0;
 
             if (declared <= episodes.Count)
             {
@@ -192,10 +228,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 Title = anime.TitleEnglish.IsNotNullOrWhiteSpace() ? anime.TitleEnglish : anime.Title,
                 Overview = anime.Synopsis,
                 SeriesType = SeriesTypes.Anime,
+                AnimeGroupMemberKind = anime.Type == "Movie" ? AnimeGroupMemberKind.Movie : AnimeGroupMemberKind.Season,
                 SeasonType = SeasonType.Official,
                 SeasonTypes = new List<SeasonType>
                 {
-                    new SeasonType { Name = "Official", Type = SeasonType.Official, SeasonNumbers = new List<int> { 1 }, EpisodeCount = anime.Episodes ?? 0 }
+                    new SeasonType { Name = "Official", Type = SeasonType.Official, SeasonNumbers = new List<int> { 1 }, EpisodeCount = anime.Type == "Movie" ? Math.Max(anime.Episodes ?? 0, 1) : anime.Episodes ?? 0 }
                 },
                 Status = MapStatus(anime.Status),
                 Genres = anime.Genres?.Select(g => g.Name).ToList() ?? new List<string>(),
@@ -266,9 +303,16 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 return 0;
             }
 
-            var match = DurationRegex.Match(duration);
+            long minutes = 0;
+            foreach (Match match in DurationRegex.Matches(duration))
+            {
+                if (int.TryParse(match.Groups["value"].Value, out var value))
+                {
+                    minutes += (long)value * (match.Groups["unit"].Value.Equals("hr", StringComparison.OrdinalIgnoreCase) ? 60 : 1);
+                }
+            }
 
-            return match.Success && int.TryParse(match.Groups["minutes"].Value, out var minutes) ? minutes : 0;
+            return minutes <= int.MaxValue ? (int)minutes : 0;
         }
 
         private static SeriesStatusType MapStatus(string status)

@@ -12,8 +12,8 @@ namespace NzbDrone.Core.Parser
         private static readonly Regex SeasonRange = new Regex(@"\b(?:s|seasons?|series)\s*(?<first>\d{1,3})\s*(?:-|–|—|to)\s*(?:s|seasons?|series)?\s*(?<last>\d{1,3})(?![a-z0-9])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Season = new Regex(@"\b(?:s|seasons?|series)\s*(?<season>\d{1,3})(?![a-z0-9])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Complete = new Regex(@"^(?:the\s+)?(?:complete(?:\s+(?:series|collection))?|(?:entire|full)\s+series|all\s+seasons|box\s*set)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex Episode = new Regex(@"\bs\d+\s*e\d+|\b\d+x\d+\b|\b(?:episodes?|parts?|volumes?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AbsoluteRange = new Regex(@"^\s*(?<first>\d{1,4})\s*(?:-|\u2013|\u2014|to)\s*(?<last>\d{1,4})(?![\p{L}\p{N}])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex Episode = new Regex(@"\bs\d+\s*e\d+|\b\d+x\d+\b|\b(?:episodes?|parts?|volumes?|cours?)(?=\b|\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AbsoluteRange = new Regex(@"^\s*(?<first>\d{1,4})\s*(?:-|~|\u2013|\u2014|to)\s*(?<last>\d{1,4})(?![\p{L}\p{N}])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public static ParsedEpisodeInfo Parse(string title, CompleteSeriesSearchCriteria criteria)
         {
@@ -67,7 +67,8 @@ namespace NzbDrone.Core.Parser
 
             // A longer, different series title must not match a shorter alias prefix.
             if (!Complete.IsMatch(description) && !Season.IsMatch(description.Split(' ')[0]) &&
-                !Regex.IsMatch(description, @"^(?:seasons?|series)\s+\d+|^\d+\s*-\s*\d+", RegexOptions.IgnoreCase))
+                !Regex.IsMatch(description, @"^(?:seasons?|series)\s+\d+", RegexOptions.IgnoreCase) &&
+                !(criteria.Series.SeriesType == SeriesTypes.Anime && AbsoluteRange.IsMatch(description)))
             {
                 return null;
             }
@@ -101,12 +102,16 @@ namespace NzbDrone.Core.Parser
             }
 
             // Explicit season coverage takes precedence over a misleading COMPLETE label.
+            var coveredSeasons = expectedSeasons;
             if (seasons.Count > 0)
             {
-                if (!expectedSeasons.All(seasons.Contains))
+                if (seasons.Any(season => !expectedSeasons.Contains(season)) ||
+                    (!criteria.IncludeSeasonPacks && !expectedSeasons.All(seasons.Contains)))
                 {
                     return null;
                 }
+
+                coveredSeasons = seasons.OrderBy(season => season).ToArray();
             }
             else if (absoluteRange?.Success == true)
             {
@@ -121,7 +126,7 @@ namespace NzbDrone.Core.Parser
             // advertised coverage only within this complete-series search context.
             // Keep the actual alias and explicit year: replacing them with the library
             // title can resolve a namesake through a different series' scene mapping.
-            var parsed = Parser.ParseTitle($"{matchedTitle} S{expectedSeasons[0]:00}");
+            var parsed = Parser.ParseTitle($"{matchedTitle} S{coveredSeasons[0]:00}");
             if (parsed == null)
             {
                 return null;
@@ -132,10 +137,21 @@ namespace NzbDrone.Core.Parser
             parsed.Quality = QualityParser.ParseQuality(title);
             parsed.Languages = LanguageParser.ParseLanguages(suffix);
             parsed.ReleaseGroup = ReleaseGroupParser.ParseReleaseGroup(title);
-            parsed.SeasonNumbers = expectedSeasons.ToList();
+            parsed.SeasonNumbers = coveredSeasons.ToList();
             parsed.FullSeason = true;
-            parsed.IsCompleteSeries = true;
+            parsed.IsCompleteSeries = coveredSeasons.SequenceEqual(expectedSeasons);
             return parsed;
+        }
+
+        public static bool HasMappedSeasonCoverage(RemoteEpisode remoteEpisode, int seriesId)
+        {
+            var parsed = remoteEpisode.ParsedEpisodeInfo;
+            return remoteEpisode.Series?.Id == seriesId && parsed is { FullSeason: true, IsPartialSeason: false } &&
+                   parsed.EpisodeNumbers.Length == 0 && parsed.AbsoluteEpisodeNumbers.Length == 0 &&
+                   parsed.SeasonNumbers.Count > 0 && parsed.SeasonNumbers.All(season => season > 0) &&
+                   remoteEpisode.Episodes?.Count > 0 && remoteEpisode.Episodes.All(episode =>
+                       episode.Id > 0 && episode.SeriesId == seriesId && parsed.SeasonNumbers.Contains(episode.SeasonNumber)) &&
+                   parsed.SeasonNumbers.All(season => remoteEpisode.Episodes.Any(episode => episode.SeasonNumber == season));
         }
     }
 }

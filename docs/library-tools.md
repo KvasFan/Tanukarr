@@ -13,6 +13,7 @@ links the integration and validation reports.
 | What you want to do | Where to find it |
 | --- | --- |
 | Select a drive and combine anime, monitored or missing filters | Library: **Filter by path** and **Combine filters** |
+| Present related anime entries as one anime with seasons and movies | Add/edit a title's grouping controls; library toolbar **Group anime seasons**; see [Anime season and movie groups](anime-season-groups.md) for post-1.0.0 folders, naming and manual overrides |
 | Pause automatic searches, RSS grabs and list additions | **System → Library tools → Pause automation**; use the banner to resume |
 | Understand why a search skipped releases | Interactive search score details, and **System → Library tools → Recent searches** |
 | Test all indexers and see individual failures | **Settings → Indexers → Test All** |
@@ -31,6 +32,21 @@ links the integration and validation reports.
 | Search missing episodes in Calendar's displayed dates | Calendar's missing-episode search button |
 
 ## Imports and existing files
+
+[Anime season and movie groups](anime-season-groups.md) retain each member's native
+provider identity, episodes and filenames. Newly generated member paths can
+use a canonical root with a configured season, strict story-arc or movie leaf;
+assigning a group to an existing series keeps
+its explicit registered path. Use the normal series path/move workflow to
+arrange an existing library deliberately. A group season is a display/folder
+position, not an episode-number remapping for import matching or Jellyfin.
+
+The five group/member folder expressions and optional group filename tokens
+are under **Settings > Media Management > Episode Naming**. Existing stored
+leaves do not change when a format changes. Native episode tokens stay in
+filenames; a grouped movie can still use `S01E01` inside its movie-title or
+`Film NN` folder. See the linked guide for manual style overrides and collision
+checks.
 
 **Pause automation** stops new automatic searches, RSS grabs and import-list
 additions. Manual searches and imports, current downloads and compression
@@ -88,6 +104,15 @@ rejected by the quality profile, seed requirement, episode matching or other
 configured rules. See the [Nyaa verification report](nyaa-verification-2026-10-13.md)
 for the queries and checks actually executed.
 
+Post-release `main` adds **Search Season Packs** on a native season and grouped
+season entry. It uses the member's native series ID/season number and filters
+interactive results to packs; regular interactive search still shows individual
+episodes. A logical group season does not replace the native search number.
+The owner's earlier deployed-image `Baki-dou` search-only checkpoint returned
+11 complete-series releases in approximately 3.16 seconds and 17 episode-search
+releases in approximately 2.27 seconds. Those RSS snapshots predate the new
+pack-only filter; they did not acquire media or verify the later grouping build.
+
 ## Lists, rules and keys
 
 TMDB account, discovery, list and person providers use a TMDB API Read Access
@@ -143,6 +168,14 @@ more names. Spaces, commas and other punctuation are part of the name, so
 `Seasonal, favorites` is one name, not two. The editor trims name boundaries;
 direct API array values retain their spelling, including boundary whitespace.
 
+Post-release `main` organizes the editor into account, membership statuses,
+release statuses, custom lists and explicit exclusions. **Load custom lists**
+reads the target account's defined list names and offers autocomplete for the
+included/excluded tags. It does not save the connection or start a sync. Manual
+typing, unknown saved names, OAuth controls and the legacy advanced name remain
+available. Enter the AniList username, rather than a custom-list name, in the
+account field.
+
 An exact custom-list name takes precedence. A case-insensitive fallback is
 accepted only when it identifies a single list, so distinct names differing
 only in case are not merged. Membership requires a `true` flag; a list name
@@ -152,6 +185,16 @@ previous successful list rather than guessing. Missing custom-list data while
 custom-list exclusions are configured, pagination failures and GraphQL errors
 also retain the previous successful list. An excluded AniList media ID cannot be reintroduced
 by a duplicate accepted entry on another response page.
+
+The post-release importer requests both AniList's normal membership map and the
+documented `customLists(asArray: true)` shape. If the map is unavailable, only an
+explicit, valid array of names and boolean membership flags can replace it;
+an empty array means known empty membership. Null or missing data in both shapes,
+malformed flags and GraphQL errors retain the previous successful list when a
+membership-dependent filter is configured. This does not turn an unknown
+membership response into an empty list. AniList documents the nullable
+[MediaList field and array argument](https://github.com/AniList/docs/blob/master/docs/reference/object/medialist.md)
+and [GraphQL errors](https://github.com/AniList/docs/blob/master/docs/guide/graphql/errors.md).
 
 These filters apply to this saved AniList connection and its previews. They do
 not create a global exclusion for another import-list connection or prevent

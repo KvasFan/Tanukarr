@@ -3,6 +3,9 @@ import React, { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
 import useMeasure from 'Helpers/Hooks/useMeasure';
 import { SortDirection } from 'Helpers/Props/sortDirections';
+import AnimeGroupSummary, {
+  AnimeGroupViewProps,
+} from 'Series/Grouping/AnimeGroupSummary';
 import SeriesIndexPoster from 'Series/Index/Posters/SeriesIndexPoster';
 import Series from 'Series/Series';
 import { useSeriesPosterOptions } from 'Series/seriesOptionsStore';
@@ -21,7 +24,7 @@ const ADDITIONAL_COLUMN_COUNT: Record<string, number> = {
   large: 1,
 };
 
-interface CellItemData {
+interface CellItemData extends AnimeGroupViewProps {
   layout: {
     columnCount: number;
     padding: number;
@@ -33,7 +36,7 @@ interface CellItemData {
   isSelectMode: boolean;
 }
 
-interface SeriesIndexPostersProps {
+interface SeriesIndexPostersProps extends AnimeGroupViewProps {
   items: Series[];
   sortKey: string;
   sortDirection?: SortDirection;
@@ -50,7 +53,8 @@ function Cell({
   style,
   data,
 }: GridChildComponentProps<CellItemData>) {
-  const { layout, items, sortKey, isSelectMode } = data;
+  const { layout, items, sortKey, isSelectMode, groupsByRepresentativeId } =
+    data;
   const { columnCount, padding, posterWidth, posterHeight } = layout;
   const index = rowIndex * columnCount + columnIndex;
 
@@ -59,6 +63,7 @@ function Cell({
   }
 
   const series = items[index];
+  const group = groupsByRepresentativeId?.get(series.id);
 
   return (
     <div
@@ -67,13 +72,23 @@ function Cell({
         ...style,
       }}
     >
-      <SeriesIndexPoster
-        seriesId={series.id}
-        sortKey={sortKey}
-        isSelectMode={isSelectMode}
-        posterWidth={posterWidth}
-        posterHeight={posterHeight}
-      />
+      {group ? (
+        <AnimeGroupSummary
+          group={group}
+          view="posters"
+          isSelectMode={isSelectMode}
+          posterWidth={posterWidth}
+          posterHeight={posterHeight}
+        />
+      ) : (
+        <SeriesIndexPoster
+          seriesId={series.id}
+          sortKey={sortKey}
+          isSelectMode={isSelectMode}
+          posterWidth={posterWidth}
+          posterHeight={posterHeight}
+        />
+      )}
     </div>
   );
 }
@@ -89,6 +104,7 @@ export default function SeriesIndexPosters({
   jumpToCharacter,
   isSelectMode,
   isSmallScreen,
+  groupsByRepresentativeId,
 }: SeriesIndexPostersProps) {
   const {
     detailedProgressBar,
@@ -293,6 +309,7 @@ export default function SeriesIndexPosters({
           items,
           sortKey,
           isSelectMode,
+          groupsByRepresentativeId,
         }}
       >
         {Cell}

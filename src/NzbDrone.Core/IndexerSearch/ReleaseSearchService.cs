@@ -28,6 +28,7 @@ namespace NzbDrone.Core.IndexerSearch
         Task<List<DownloadDecision>> EpisodeSearch(Episode episode, bool userInvokedSearch, bool interactiveSearch);
         Task<List<DownloadDecision>> SeasonSearch(int seriesId, int seasonNumber, bool missingOnly, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch);
         Task<List<DownloadDecision>> SeasonSearch(int seriesId, int seasonNumber, List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch);
+        Task<List<DownloadDecision>> SeasonPackSearch(int seriesId, int seasonNumber, bool userInvokedSearch, bool interactiveSearch);
     }
 
     public class ReleaseSearchService : ISearchForReleases
@@ -77,10 +78,44 @@ namespace NzbDrone.Core.IndexerSearch
             }
 
             var criteria = Get<CompleteSeriesSearchCriteria>(series, episodes, !interactiveSearch, userInvokedSearch, interactiveSearch);
-            criteria.SceneTitles = criteria.SceneTitles.Concat(series.AlternateTitles ?? new List<string>())
+            criteria.IncludeSeasonPacks = interactiveSearch;
+            criteria.SceneTitles = new[] { series.Title }.Concat(criteria.SceneTitles).Concat(series.AlternateTitles ?? new List<string>())
                 .Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             return DeDupeDecisions(await Dispatch(indexer => indexer.Fetch(criteria), criteria));
+        }
+
+        public async Task<List<DownloadDecision>> SeasonPackSearch(int seriesId, int seasonNumber, bool userInvokedSearch, bool interactiveSearch)
+        {
+            var series = _seriesService.GetSeries(seriesId);
+            var episodes = _episodeService.GetEpisodesBySeason(seriesId, seasonNumber);
+            if (episodes.Empty())
+            {
+                return new List<DownloadDecision>();
+            }
+
+            var decisions = new List<DownloadDecision>();
+            foreach (var mapping in GetSceneSeasonMappings(series, episodes))
+            {
+                if (series.SeriesType == SeriesTypes.Anime)
+                {
+                    var criteria = Get<AnimeSeasonSearchCriteria>(series, mapping, !interactiveSearch, userInvokedSearch, interactiveSearch);
+                    criteria.SeasonNumber = mapping.SeasonNumber;
+                    criteria.CatalogueEpisodes = episodes;
+                    criteria.PackSearchOnly = true;
+                    criteria.SceneTitles = criteria.SceneTitles.Concat(series.AlternateTitles ?? new List<string>())
+                        .Where(t => t.IsNotNullOrWhiteSpace()).Distinct(StringComparer.OrdinalIgnoreCase).Take(3).ToList();
+                    decisions.AddRange(await Dispatch(indexer => indexer.Fetch(criteria), criteria));
+                }
+                else
+                {
+                    var criteria = Get<SeasonSearchCriteria>(series, mapping, !interactiveSearch, userInvokedSearch, interactiveSearch);
+                    criteria.SeasonNumber = mapping.SeasonNumber;
+                    decisions.AddRange(await Dispatch(indexer => indexer.Fetch(criteria), criteria));
+                }
+            }
+
+            return DeDupeDecisions(decisions.Where(d => d.RemoteEpisode?.ParsedEpisodeInfo?.FullSeason == true).ToList());
         }
 
         public async Task<List<DownloadDecision>> EpisodeSearch(int episodeId, bool userInvokedSearch, bool interactiveSearch)

@@ -84,6 +84,22 @@ AniList watching states, anime release states and custom-list membership remain
 separate filters, with exclusion precedence. See
 [AniList list configuration](library-tools.md#anilist-lists).
 
+Post-release [anime season and movie groups](anime-season-groups.md) can present related
+AniList/MyAnimeList entries together using official prequel/sequel links or a
+manual assignment. Manual controls are available for every owner; automatic
+relations are limited to AniList/MyAnimeList. Each member keeps this same
+provider/native-ID ownership. Season/movie labels and generated season, arc or
+movie directory positions are separate
+from the member's native episode numbers and configured filenames. Automatic
+grouping does not merge owners or replace a TheTVDB/TMDB entry that already
+contains multiple native seasons.
+
+AniList/MyAnimeList anime movie entries can retain their own native episode
+records inside a mixed anime group or numbered Movie Saga. This does not add
+TMDB's movie API or a general movie catalogue to the TV integrations. Group
+folder expressions and native filename tokens are documented in the linked
+guide; an arc subtitle is a naming choice, rather than a metadata-owner change.
+
 ## Episode ordering is a separate choice
 
 Metadata ownership identifies the catalogue entry. Episode ordering determines

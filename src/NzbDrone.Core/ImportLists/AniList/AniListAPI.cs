@@ -16,6 +16,15 @@ namespace NzbDrone.Core.ImportLists.AniList
         public const int PageSize = 50;
         public const int MaxPages = 5000 / PageSize;
 
+        public const string CustomListNamesQuery = @"
+            query ($username: String!) {
+                User(name: $username) {
+                    mediaListOptions {
+                        animeList { customLists }
+                    }
+                }
+            }";
+
         // The maximum items anilist will return is 50 per request.
         // Therefore, pagination must be used to retrieve the full list.
         private const string QueryList = @"
@@ -29,6 +38,7 @@ namespace NzbDrone.Core.ImportLists.AniList
                         status
                         progress
                         customLists
+                        customListEntries: customLists(asArray: true)
                         media {
                             id
                             idMal
@@ -129,6 +139,17 @@ namespace NzbDrone.Core.ImportLists.AniList
         /// absence and false both mean "not on that list".
         /// </summary>
         public Dictionary<string, bool> CustomLists { get; set; }
+
+        // The documented array shape provides explicit membership when the map
+        // is unavailable. Null is unknown; a complete empty array is known empty.
+        public List<AniListCustomListEntry> CustomListEntries { get; set; }
+    }
+
+    public class AniListCustomListEntry
+    {
+        public string Name { get; set; }
+
+        public bool? Enabled { get; set; }
     }
 
     public class MediaPage

@@ -28,6 +28,7 @@ interface ProviderFieldFormGroupProps<T> {
   warnings: Failure[];
   selectOptions?: FieldSelectOption<T>[];
   selectOptionsProviderAction?: string;
+  tagSuggestions?: string[];
   onChange: (change: InputChanged<T>) => void;
 }
 
@@ -48,6 +49,7 @@ function ProviderFieldFormGroup<T>({
   warnings,
   selectOptions,
   selectOptionsProviderAction,
+  tagSuggestions,
   onChange,
   ...otherProps
 }: ProviderFieldFormGroupProps<T>) {
@@ -134,7 +136,11 @@ function ProviderFieldFormGroup<T>({
         includeFiles={providerType === 'filePath' ? true : undefined}
         {...(otherProps.provider === 'importList' &&
         (name === 'includedCustomLists' || name === 'excludedCustomLists')
-          ? { preserveTagText: true }
+          ? {
+              preserveTagText: true,
+              tagSuggestions,
+              minQueryLength: tagSuggestions ? 0 : 1,
+            }
           : {})}
         onChange={onChange}
         {...otherProps}

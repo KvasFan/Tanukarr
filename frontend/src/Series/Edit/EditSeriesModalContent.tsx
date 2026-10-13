@@ -24,8 +24,11 @@ import {
   sizes,
   tooltipPositions,
 } from 'Helpers/Props';
+import { canConfigureAnimeGrouping } from 'Series/Grouping/animeGrouping';
+import AnimeGroupingOptions from 'Series/Grouping/AnimeGroupingOptions';
+import useAnimeGroupingPreview from 'Series/Grouping/useAnimeGroupingPreview';
 import MoveSeriesModal from 'Series/MoveSeries/MoveSeriesModal';
-import Series, { Statistics } from 'Series/Series';
+import Series, { AnimeGroupingFields, Statistics } from 'Series/Series';
 import SeriesMovePending from 'Series/SeriesMovePending';
 import { useSaveSeries, useSingleSeries } from 'Series/useSeries';
 import { InputChanged } from 'typings/inputs';
@@ -163,6 +166,32 @@ function EditSeriesModalContent({
     },
     [setPendingChange]
   );
+  const groupingSeries = { ...series, ...pendingChanges };
+  const canGroup = canConfigureAnimeGrouping(groupingSeries);
+  const { data: groupingPreview, isFetching: isGroupingFetching } =
+    useAnimeGroupingPreview(
+      series.metadataSource,
+      series.foreignId,
+      canGroup &&
+        groupingSeries.animeGroupingMode !== 'manual' &&
+        groupingSeries.animeGroupingMode !== 'disabled'
+    );
+  const handleGroupingChange = useCallback(
+    (value: AnimeGroupingFields) => {
+      setPendingChange('animeGroupingMode', value.animeGroupingMode);
+      setPendingChange('animeGroupId', value.animeGroupId);
+      setPendingChange('animeGroupTitle', value.animeGroupTitle);
+      setPendingChange('animeGroupSeasonNumber', value.animeGroupSeasonNumber);
+      setPendingChange('animeGroupMemberKind', value.animeGroupMemberKind);
+      setPendingChange('animeGroupMovieNumber', value.animeGroupMovieNumber);
+      setPendingChange('animeGroupKind', value.animeGroupKind);
+      setPendingChange(
+        'animeGroupMovieFolderStyle',
+        value.animeGroupMovieFolderStyle
+      );
+    },
+    [setPendingChange]
+  );
 
   const handleRootFolderPress = useCallback(() => {
     setIsRootFolderModalOpen(true);
@@ -297,6 +326,17 @@ function EditSeriesModalContent({
               onChange={handleInputChange}
             />
           </FormRow>
+
+          {canGroup ? (
+            <AnimeGroupingOptions
+              series={series}
+              value={groupingSeries}
+              preview={groupingPreview}
+              isFetching={isGroupingFetching}
+              isEditing={true}
+              onChange={handleGroupingChange}
+            />
+          ) : null}
 
           <FormRow size={sizes.MEDIUM}>
             <FormLabel>{translate('Language')}</FormLabel>

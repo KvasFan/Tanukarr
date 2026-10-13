@@ -13,6 +13,7 @@ using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MetadataSource.AniList.Resource;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.MetadataSource.AniList
@@ -26,7 +27,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
     /// otherwise be added at all.
     /// </para>
     /// </summary>
-    public class AniListProxy : IMetadataProvider
+    public class AniListProxy : IMetadataProvider, IAnimeRelationProvider
     {
         // Long series need several schedule pages. Keep the work per refresh bounded;
         // the shared request service enforces AniList's current rate limits.
@@ -45,6 +46,48 @@ namespace NzbDrone.Core.MetadataSource.AniList
         }
 
         public MetadataSourceType Source => MetadataSourceType.AniList;
+
+        public AnimeRelationNode GetAnimeRelations(string foreignId)
+        {
+            if (!int.TryParse(foreignId, out var id) || id <= 0)
+            {
+                return null;
+            }
+
+            var response = Query<AniListMediaResponse>(AniListQueries.RelationsById, new { id });
+            var media = response?.Data?.Media;
+
+            // GraphQL can report partial data with HTTP 200. A missing relationship field
+            // must not be mistaken for an empty, authoritative chain or a single branch.
+            if (response?.Errors?.Count > 0 || media == null || media.Id != id || media.Type != "ANIME" ||
+                media.Format.IsNullOrWhiteSpace() || media.Relations?.Edges == null)
+            {
+                return null;
+            }
+
+            var edges = media.Relations.Edges;
+            if (edges.Any(e => e == null || e.RelationType.IsNullOrWhiteSpace() || e.Node == null ||
+                               e.Node.Id <= 0 || e.Node.Type.IsNullOrWhiteSpace() ||
+                               (e.Node.Type == "ANIME" && e.Node.Format.IsNullOrWhiteSpace())))
+            {
+                return null;
+            }
+
+            return new AnimeRelationNode
+            {
+                ForeignId = media.Id.ToString(),
+                Title = AniListEpisodeMapper.GetAllTitles(media).FirstOrDefault(),
+                Format = media.Format,
+                PrequelIds = edges.Where(e => e.RelationType == "PREQUEL" && e.Node?.Type == "ANIME" && e.Node.Id > 0)
+                    .Select(e => e.Node.Id.ToString()).ToList(),
+                SequelIds = edges.Where(e => e.RelationType == "SEQUEL" && e.Node?.Type == "ANIME" && e.Node.Id > 0)
+                    .Select(e => e.Node.Id.ToString()).ToList(),
+                RelationFormats = edges.Where(e => (e.RelationType == "PREQUEL" || e.RelationType == "SEQUEL") &&
+                                                   e.Node?.Type == "ANIME" && e.Node.Id > 0)
+                    .GroupBy(e => e.Node.Id.ToString())
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.Node.Format).Distinct().Count() == 1 ? g.First().Node.Format : null)
+            };
+        }
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(Series series)
         {
@@ -127,10 +170,11 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 // AniList entries are single-run anime, which is what SeriesTypes.Anime
                 // means to the rest of Sonarr: absolute numbering, anime release parsing.
                 SeriesType = SeriesTypes.Anime,
+                AnimeGroupMemberKind = media.Format == "MOVIE" ? AnimeGroupMemberKind.Movie : AnimeGroupMemberKind.Season,
                 SeasonType = SeasonType.Official,
                 SeasonTypes = new List<SeasonType>
                 {
-                    new SeasonType { Name = "Official", Type = SeasonType.Official, SeasonNumbers = new List<int> { 1 }, EpisodeCount = media.Episodes ?? 0 }
+                    new SeasonType { Name = "Official", Type = SeasonType.Official, SeasonNumbers = new List<int> { 1 }, EpisodeCount = media.Format == "MOVIE" ? Math.Max(media.Episodes ?? 0, 1) : media.Episodes ?? 0 }
                 },
                 Status = MapStatus(media.Status),
                 Genres = media.Genres ?? new List<string>(),

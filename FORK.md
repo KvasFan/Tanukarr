@@ -158,6 +158,44 @@ season 0 when the selected group omits them.
 
 ---
 
+## Anime season and movie groups
+
+The post-1.0.0 main feature groups separate AniList/MyAnimeList catalogue entries
+using explicit, supported prequel/sequel chains, including linear movie members.
+Manual membership is available for every catalogue owner and Series Type. Disabled
+mode let the user correct or decline those assignments. TheTVDB/TMDB entries
+that already contain multiple native seasons retain their existing behavior;
+there is no automatic cross-provider title merge.
+
+Membership is additional per-series data. Each member keeps its metadata
+source, foreign ID, episode records, native numbering and acquisition history.
+The library can display one anime with season and movie members, or a movie-only
+saga, without creating a new
+metadata owner. A group-season label is not an episode-ordering projection.
+
+Automatically generated new paths use a sanitized group folder and a distinct
+member leaf, with `SeasonFolder` disabled to avoid nested native-season
+folders. Explicit paths and existing files stay in place. Existing membership
+is preserved rather than silently renumbered after a catalogue correction;
+manual assignments remain authoritative. Season/movie ordinals are separate;
+duplicate slots within the same member kind,
+unsafe generated paths and overlaps with registered series directories are
+rejected. Folder rearrangement uses the existing explicit path/move workflow.
+
+Five naming expressions configure the group, numbered season, story arc,
+movie-title and numbered-film folders. Automatic story-arc naming requires the
+exact canonical title prefix plus a colon/dash and a terminal Arc/hen/Chapter
+subtitle; it never fuzzy-matches a metadata identity. Numbered and Title styles
+override that folder choice. Stored leaves remain fixed when expressions change.
+The group-title/arc/season/movie filename tokens keep mandatory native episode
+tokens, and sample validation rejects additional fabricated season numbers.
+
+Configured filenames retain their native member numbering, so a group season 2
+member can still be native `S01E01`. This protects matching and does not promise
+that a media server interprets every group as a shared TheTVDB/TMDB season list.
+See [Anime season groups](docs/anime-season-groups.md) for catalogue rules,
+controls, folder examples and the post-release verification checkpoint.
+
 ## Downloading
 
 ### Fake release filtering — on by default

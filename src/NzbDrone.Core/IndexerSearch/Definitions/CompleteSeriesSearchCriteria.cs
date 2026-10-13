@@ -1,12 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.IndexerSearch.Definitions
 {
     public class CompleteSeriesSearchCriteria : SearchCriteriaBase
     {
-        public string[] QueryTitles => CleanSceneTitles.Select(t => t.Replace('+', ' ')).ToArray();
+        // Interactive searches also show complete season packs. Automatic complete-
+        // series acquisition keeps the stricter whole-series coverage requirement.
+        public bool IncludeSeasonPacks { get; set; }
+
+        public string[] QueryTitles => CleanSceneTitles.Select(t => t.Replace('+', ' '))
+            .Distinct(StringComparer.OrdinalIgnoreCase).Take(3).ToArray();
+
+        public string[] SeasonPackQueryTitles => IncludeSeasonPacks
+            ? (Episodes ?? new List<Episode>()).Where(e => e.SeasonNumber > 0)
+                .Select(e => e.SeasonNumber).Distinct().OrderBy(s => s)
+                .Select(s => $"{QueryTitles.FirstOrDefault()} S{s:00}").ToArray()
+            : Array.Empty<string>();
 
         // A bare title is ambiguous on text-only indexers that return newest matches first
         // (e.g. "House" pages fill with unrelated episodes). Targeted pack queries reach

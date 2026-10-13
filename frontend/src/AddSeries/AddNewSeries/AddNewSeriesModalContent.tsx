@@ -27,7 +27,13 @@ import { getValidationFailures } from 'Helpers/Hooks/useApiMutation';
 import { icons, inputTypes, kinds, tooltipPositions } from 'Helpers/Props';
 import Language, { DEFAULT_LANGUAGE } from 'Language/Language';
 import { useLanguageById } from 'Language/useLanguages';
-import { SeriesType } from 'Series/Series';
+import {
+  canConfigureAnimeGrouping,
+  hasAnimeGroup,
+} from 'Series/Grouping/animeGrouping';
+import AnimeGroupingOptions from 'Series/Grouping/AnimeGroupingOptions';
+import useAnimeGroupingPreview from 'Series/Grouping/useAnimeGroupingPreview';
+import { AnimeGroupingFields, SeriesType } from 'Series/Series';
 import SeriesPoster from 'Series/SeriesPoster';
 import { useMetadataSourceSettingsValues } from 'Settings/MetadataSource/useMetadataSourceSettings';
 import { useIsWindows } from 'System/Status/useSystemStatus';
@@ -107,6 +113,32 @@ function AddNewSeriesModalContent({
   // An empty string is the default ordering. The select cannot carry null, so it is
   // translated back on submit.
   const [orderingId, setOrderingId] = useState('');
+  const [grouping, setGrouping] = useState<AnimeGroupingFields>({
+    animeGroupingMode: series.animeGroupingMode ?? 'automatic',
+    animeGroupId: series.animeGroupId,
+    animeGroupTitle: series.animeGroupTitle,
+    animeGroupSeasonNumber: series.animeGroupSeasonNumber,
+    animeGroupMemberKind: series.animeGroupMemberKind,
+    animeGroupMovieNumber: series.animeGroupMovieNumber,
+    animeGroupKind: series.animeGroupKind,
+    animeGroupMovieFolderStyle: series.animeGroupMovieFolderStyle,
+  });
+  const canGroup = canConfigureAnimeGrouping({ ...series, seriesType });
+  const { data: groupingPreview, isFetching: isGroupingFetching } =
+    useAnimeGroupingPreview(
+      series.metadataSource,
+      series.foreignId,
+      canGroup && grouping.animeGroupingMode === 'automatic'
+    );
+  let resolvedGrouping: AnimeGroupingFields | undefined =
+    grouping.animeGroupingMode === 'automatic' ? groupingPreview : undefined;
+
+  if (grouping.animeGroupingMode === 'manual') {
+    resolvedGrouping = grouping;
+  }
+
+  const isGrouped = canGroup && hasAnimeGroup(resolvedGrouping ?? {});
+  const generatesGroupedPath = isGrouped && !series.path?.trim();
 
   const { data: orderings } = useEpisodeOrderings(series.tmdbId, series.imdbId);
 
@@ -145,6 +177,13 @@ function AddNewSeriesModalContent({
   const folder =
     folders.find((f) => f.language.id === language.id)?.folder ??
     originalFolder;
+  const folderPreview = generatesGroupedPath
+    ? resolvedGrouping?.animeGroupFolder &&
+      resolvedGrouping?.animeGroupMemberFolder &&
+      `${resolvedGrouping.animeGroupFolder}${isWindows ? '\\' : '/'}${
+        resolvedGrouping.animeGroupMemberFolder
+      }`
+    : folder;
 
   const handleInputChange = useCallback(
     ({ name, value }: InputChanged<string | number | boolean | number[]>) => {
@@ -174,6 +213,7 @@ function AddNewSeriesModalContent({
   const handleAddSeriesPress = useCallback(() => {
     addSeries({
       ...series,
+      ...(canGroup ? grouping : {}),
       rootFolderPath: rootFolderPath.value,
       addOptions: {
         monitor: monitor.value,
@@ -184,12 +224,15 @@ function AddNewSeriesModalContent({
       seriesType,
       seasonType,
       language,
-      seasonFolder: seasonFolder.value,
+      seasonFolder: generatesGroupedPath ? false : seasonFolder.value,
       tags: tags.value,
       orderingId: orderingId || null,
     });
   }, [
     series,
+    canGroup,
+    grouping,
+    generatesGroupedPath,
     seriesType,
     seasonType,
     orderingId,
@@ -236,19 +279,23 @@ function AddNewSeriesModalContent({
               <FormRow>
                 <FormLabel>{translate('RootFolder')}</FormLabel>
                 <FormInputHelpText
-                  text={translate('AddNewSeriesRootFolderHelpText', {
-                    folder,
-                  })}
+                  text={
+                    folderPreview
+                      ? translate('AddNewSeriesRootFolderHelpText', {
+                          folder: folderPreview,
+                        })
+                      : undefined
+                  }
                 />
                 <FormInput
                   type={inputTypes.ROOT_FOLDER_SELECT}
                   name="rootFolderPath"
                   valueOptions={{
-                    seriesFolder: folder,
+                    seriesFolder: folderPreview,
                     isWindows,
                   }}
                   selectedValueOptions={{
-                    seriesFolder: folder,
+                    seriesFolder: folderPreview,
                     isWindows,
                   }}
                   onChange={handleInputChange}
@@ -313,6 +360,8 @@ function AddNewSeriesModalContent({
                   name="seasonFolder"
                   onChange={handleInputChange}
                   {...seasonFolder}
+                  value={generatesGroupedPath ? false : seasonFolder.value}
+                  isDisabled={generatesGroupedPath}
                 />
               </FormRow>
 
@@ -349,6 +398,16 @@ function AddNewSeriesModalContent({
                   value={seriesType}
                 />
               </FormRow>
+
+              {canGroup ? (
+                <AnimeGroupingOptions
+                  series={series}
+                  value={grouping}
+                  preview={groupingPreview}
+                  isFetching={isGroupingFetching}
+                  onChange={setGrouping}
+                />
+              ) : null}
 
               <FormRow>
                 <FormLabel>{translate('Language')}</FormLabel>

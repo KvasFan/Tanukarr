@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -9,8 +10,10 @@ using NUnit.Framework;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Indexers.Nyaa;
+using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Test.Framework;
+using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.Test.IndexerTests.NyaaTests
 {
@@ -58,6 +61,33 @@ namespace NzbDrone.Core.Test.IndexerTests.NyaaTests
             torrentInfo.Peers.Should().Be(2 + 1);
             torrentInfo.Seeders.Should().Be(1);
         }*/
+
+        [Test]
+        public async Task should_avoid_supplemental_queries_when_the_bare_feed_already_contains_all_packs()
+        {
+            ((NyaaSettings)Subject.Definition.Settings).BaseUrl = "https://fixture.invalid";
+            var titles = new[] { "Fixture TV S01 1080p", "Fixture TV S02 1080p", "Fixture TV S01-S02 1080p" };
+            var items = titles.Select((title, i) => $"<item><title>{title}</title><guid>fixture-{i}</guid><link>https://fixture.invalid/{i}.torrent</link><pubDate>Mon, 12 Oct 2026 12:00:00 +0000</pubDate><size>1 GiB</size><infoHash>0123456789abcdef0123456789abcdef01234567</infoHash><seeders>5</seeders><leechers>0</leechers></item>");
+            var xml = "<rss version=\"2.0\"><channel><title>Fixture</title>" + string.Concat(items) + "</channel></rss>";
+            Mocker.GetMock<IHttpClient>().Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest r, CancellationToken _) => new HttpResponse(r, new HttpHeader(), xml));
+            var criteria = new CompleteSeriesSearchCriteria
+            {
+                Series = new Series { Title = "Fixture TV" },
+                SceneTitles = new List<string> { "Fixture TV" },
+                IncludeSeasonPacks = true,
+                Episodes = new List<Episode>
+                {
+                    new Episode { SeasonNumber = 1, EpisodeNumber = 1 },
+                    new Episode { SeasonNumber = 2, EpisodeNumber = 1 }
+                }
+            };
+
+            var reports = await Subject.Fetch(criteria);
+
+            reports.Should().HaveCount(3);
+            Mocker.GetMock<IHttpClient>().Verify(c => c.ExecuteAsync(It.IsAny<HttpRequest>()), Times.Once());
+        }
 
         [Test]
         public async Task should_parse_2021_recent_feed_from_Nyaa()

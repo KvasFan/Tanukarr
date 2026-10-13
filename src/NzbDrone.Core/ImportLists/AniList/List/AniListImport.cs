@@ -2,11 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text.Json;
 using FluentValidation.Results;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
+using NzbDrone.Common.Serializer;
 using NzbDrone.Core.AniList;
+using NzbDrone.Core.Annotations;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Http.CloudFlare;
 using NzbDrone.Core.ImportLists.Exceptions;
@@ -36,6 +40,86 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         }
 
         public override string Name => _localizationService.GetLocalizedString("TypeOfList", new Dictionary<string, object> { { "typeOfList", "AniList" } });
+
+        public override object RequestAction(string action, IDictionary<string, string> query)
+        {
+            if (action == "getCustomLists")
+            {
+                return new { options = GetCustomListOptions() };
+            }
+
+            return base.RequestAction(action, query);
+        }
+
+        private List<FieldSelectStringOption> GetCustomListOptions()
+        {
+            if (Settings.Username.IsNullOrWhiteSpace())
+            {
+                throw new ImportListException(null, "Enter the AniList username before loading custom lists.");
+            }
+
+            // This reads only names, without fetching entries, refreshing OAuth, saving
+            // provider settings or starting an import. The endpoint is fixed.
+            var request = new HttpRequest("https://graphql.anilist.co", HttpAccept.Json)
+            {
+                Method = HttpMethod.Post,
+                RateLimit = RateLimit
+            };
+            request.Headers.ContentType = "application/json";
+            request.SetContent(Json.ToJson(new
+            {
+                query = AniListAPI.CustomListNamesQuery,
+                variables = new { username = Settings.Username.Trim() }
+            }));
+            if (Settings.AccessToken.IsNotNullOrWhiteSpace())
+            {
+                request.Headers.Add("Authorization", "Bearer " + Settings.AccessToken);
+            }
+
+            var response = _aniListRequestService.Execute(request);
+            using var document = ParseCustomListNames(response.Content);
+            var root = document.RootElement;
+            if (response.HasHttpError || root.ValueKind != JsonValueKind.Object ||
+                (root.TryGetProperty("errors", out var errors) && errors.ValueKind != JsonValueKind.Null &&
+                 (errors.ValueKind != JsonValueKind.Array || errors.GetArrayLength() > 0)) ||
+                !root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object ||
+                !data.TryGetProperty("User", out var user) || user.ValueKind != JsonValueKind.Object ||
+                !user.TryGetProperty("mediaListOptions", out var options) || options.ValueKind != JsonValueKind.Object ||
+                !options.TryGetProperty("animeList", out var animeList) || animeList.ValueKind != JsonValueKind.Object ||
+                !animeList.TryGetProperty("customLists", out var names) || names.ValueKind != JsonValueKind.Array)
+            {
+                throw new ImportListException(null, "AniList did not return custom list names. Check the username and authentication, or enter the names manually.");
+            }
+
+            var result = new List<FieldSelectStringOption>();
+            foreach (var item in names.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.String || item.GetString().IsNullOrWhiteSpace())
+                {
+                    throw new ImportListException(null, "AniList returned an invalid custom list name. Existing selections have been retained.");
+                }
+
+                var name = item.GetString();
+                if (!result.Any(option => string.Equals(option.Value, name, StringComparison.Ordinal)))
+                {
+                    result.Add(new FieldSelectStringOption { Value = name, Name = name });
+                }
+            }
+
+            return result;
+        }
+
+        private static JsonDocument ParseCustomListNames(string content)
+        {
+            try
+            {
+                return JsonDocument.Parse(content);
+            }
+            catch (JsonException)
+            {
+                throw new ImportListException(null, "AniList did not return valid list options. Existing selections have been retained; try again or enter the names manually.");
+            }
+        }
 
         public override AniListRequestGenerator GetRequestGenerator()
         {
@@ -243,7 +327,7 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 if (matchingIds.Count == 0)
                 {
                     return new NzbDroneValidationFailure(string.Empty,
-                            "No results were returned from your import list, please check your settings and the log for details.")
+                            "Connected to AniList, but no entries match the selected list statuses, release statuses and custom-list filters. Adjust these filters if you expected entries.")
                         { IsWarning = true };
                 }
             }

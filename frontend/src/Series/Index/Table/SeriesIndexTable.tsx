@@ -3,6 +3,9 @@ import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import Column from 'Components/Table/Column';
 import VirtualTable from 'Components/Table/VirtualTable';
 import { SortDirection } from 'Helpers/Props/sortDirections';
+import AnimeGroupSummary, {
+  AnimeGroupViewProps,
+} from 'Series/Grouping/AnimeGroupSummary';
 import Series from 'Series/Series';
 import {
   useSeriesOption,
@@ -13,14 +16,14 @@ import SeriesIndexRow from './SeriesIndexRow';
 import SeriesIndexTableHeader from './SeriesIndexTableHeader';
 import styles from './SeriesIndexTable.module.css';
 
-interface RowItemData {
+interface RowItemData extends AnimeGroupViewProps {
   items: Series[];
   sortKey: string;
   columns: Column[];
   isSelectMode: boolean;
 }
 
-interface SeriesIndexTableProps {
+interface SeriesIndexTableProps extends AnimeGroupViewProps {
   items: Series[];
   sortKey: string;
   sortDirection?: SortDirection;
@@ -32,13 +35,15 @@ interface SeriesIndexTableProps {
 }
 
 function Row({ index, style, data }: ListChildComponentProps<RowItemData>) {
-  const { items, sortKey, columns, isSelectMode } = data;
+  const { items, sortKey, columns, isSelectMode, groupsByRepresentativeId } =
+    data;
 
   if (index >= items.length) {
     return null;
   }
 
   const series = items[index];
+  const group = groupsByRepresentativeId?.get(series.id);
 
   return (
     <div
@@ -49,12 +54,20 @@ function Row({ index, style, data }: ListChildComponentProps<RowItemData>) {
       }}
       className={styles.row}
     >
-      <SeriesIndexRow
-        seriesId={series.id}
-        sortKey={sortKey}
-        columns={columns}
-        isSelectMode={isSelectMode}
-      />
+      {group ? (
+        <AnimeGroupSummary
+          group={group}
+          view="table"
+          isSelectMode={isSelectMode}
+        />
+      ) : (
+        <SeriesIndexRow
+          seriesId={series.id}
+          sortKey={sortKey}
+          columns={columns}
+          isSelectMode={isSelectMode}
+        />
+      )}
     </div>
   );
 }
@@ -67,6 +80,7 @@ function SeriesIndexTable({
   isSelectMode,
   isSmallScreen,
   scrollerRef,
+  groupsByRepresentativeId,
 }: SeriesIndexTableProps) {
   const columns = useSeriesOption('columns');
   const { showBanners } = useSeriesTableOptions();
@@ -114,6 +128,7 @@ function SeriesIndexTable({
         sortKey,
         columns,
         isSelectMode,
+        groupsByRepresentativeId,
       }}
       isSmallScreen={isSmallScreen}
       listRef={listRef}

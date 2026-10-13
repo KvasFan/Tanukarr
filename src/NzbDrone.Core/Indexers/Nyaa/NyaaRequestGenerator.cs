@@ -10,6 +10,22 @@ namespace NzbDrone.Core.Indexers.Nyaa
     {
         public NyaaSettings Settings { get; set; }
 
+        public virtual IndexerPageableRequestChain GetSearchRequests(CompleteSeriesSearchCriteria searchCriteria)
+        {
+            return GetTitleRequests(searchCriteria.QueryTitles.Concat(searchCriteria.PackQueryTitles).Concat(searchCriteria.SeasonPackQueryTitles));
+        }
+
+        public IndexerPageableRequestChain GetTitleRequests(IEnumerable<string> titles)
+        {
+            var requests = new IndexerPageableRequestChain();
+            foreach (var title in titles.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                requests.Add(GetPagedRequests(PrepareQuery(title)));
+            }
+
+            return requests;
+        }
+
         public virtual IndexerPageableRequestChain GetRecentRequests()
         {
             var pageableRequests = new IndexerPageableRequestChain();
@@ -100,6 +116,10 @@ namespace NzbDrone.Core.Indexers.Nyaa
                 else if (Settings.AnimeStandardFormatSearch && searchCriteria.SeasonNumber > 0)
                 {
                     pageableRequests.Add(GetPagedRequests($"{searchTitle}+s{searchCriteria.SeasonNumber:00}"));
+                }
+                else if (searchCriteria.PackSearchOnly)
+                {
+                    pageableRequests.Add(GetPagedRequests(searchTitle));
                 }
             }
 

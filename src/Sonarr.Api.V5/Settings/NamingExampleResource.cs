@@ -12,6 +12,12 @@ public class NamingExampleResource
     public string? SeriesFolderExample { get; set; }
     public string? SeasonFolderExample { get; set; }
     public string? SpecialsFolderExample { get; set; }
+    public string? AnimeGroupFolderExample { get; set; }
+    public string? AnimeGroupSeasonFolderExample { get; set; }
+    public string? AnimeGroupArcFolderExample { get; set; }
+    public string? AnimeGroupMovieFolderExample { get; set; }
+    public string? AnimeGroupMovieSagaFolderExample { get; set; }
+    public string? AnimeGroupMovieEpisodeExample { get; set; }
 }
 
 public static class NamingConfigResourceMapper
@@ -32,11 +38,16 @@ public static class NamingConfigResourceMapper
             AnimeEpisodeFormat = model.AnimeEpisodeFormat,
             SeriesFolderFormat = model.SeriesFolderFormat,
             SeasonFolderFormat = model.SeasonFolderFormat,
-            SpecialsFolderFormat = model.SpecialsFolderFormat
+            SpecialsFolderFormat = model.SpecialsFolderFormat,
+            AnimeGroupFolderFormat = model.AnimeGroupFolderFormat,
+            AnimeGroupSeasonFolderFormat = model.AnimeGroupSeasonFolderFormat,
+            AnimeGroupArcFolderFormat = model.AnimeGroupArcFolderFormat,
+            AnimeGroupMovieFolderFormat = model.AnimeGroupMovieFolderFormat,
+            AnimeGroupMovieSagaFolderFormat = model.AnimeGroupMovieSagaFolderFormat
         };
     }
 
-    public static NamingConfig ToModel(this NamingSettingsResource resource)
+    public static NamingConfig ToModel(this NamingSettingsResource resource, NamingConfig? existing = null)
     {
         return new NamingConfig
         {
@@ -52,7 +63,12 @@ public static class NamingConfigResourceMapper
             AnimeEpisodeFormat = resource.AnimeEpisodeFormat,
             SeriesFolderFormat = resource.SeriesFolderFormat,
             SeasonFolderFormat = resource.SeasonFolderFormat,
-            SpecialsFolderFormat = resource.SpecialsFolderFormat
+            SpecialsFolderFormat = resource.SpecialsFolderFormat,
+            AnimeGroupFolderFormat = resource.AnimeGroupFolderFormat ?? existing?.AnimeGroupFolderFormat ?? NamingConfig.Default.AnimeGroupFolderFormat,
+            AnimeGroupSeasonFolderFormat = resource.AnimeGroupSeasonFolderFormat ?? existing?.AnimeGroupSeasonFolderFormat ?? NamingConfig.Default.AnimeGroupSeasonFolderFormat,
+            AnimeGroupArcFolderFormat = resource.AnimeGroupArcFolderFormat ?? existing?.AnimeGroupArcFolderFormat ?? NamingConfig.Default.AnimeGroupArcFolderFormat,
+            AnimeGroupMovieFolderFormat = resource.AnimeGroupMovieFolderFormat ?? existing?.AnimeGroupMovieFolderFormat ?? NamingConfig.Default.AnimeGroupMovieFolderFormat,
+            AnimeGroupMovieSagaFolderFormat = resource.AnimeGroupMovieSagaFolderFormat ?? existing?.AnimeGroupMovieSagaFolderFormat ?? NamingConfig.Default.AnimeGroupMovieSagaFolderFormat
         };
     }
 }

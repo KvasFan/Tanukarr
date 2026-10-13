@@ -18,6 +18,11 @@ The [1.0.0 verification report](docs/releases/1.0.0-verification.md) records the
 published image, checks, remaining findings and local deployment.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
+Post-release `main` adds [anime season and movie groups](docs/anime-season-groups.md):
+official prequel/sequel discovery, manual overrides and one anime presentation
+with configurable season, story-arc and movie folders for newly generated paths.
+It also adds native season-pack search and clearer AniList list settings. Use a build containing
+that feature; the immutable 1.0.0 release images retain their original scope.
 See the [documentation index](docs/README.md),
 [integration report](docs/integration-2026-10-12.md)
 and the [ikatun feature and validation report](docs/ikatun-integration-2026-10-12.md).
@@ -96,6 +101,16 @@ from one catalogue can be added from another configured provider when that
 provider lists it. Choose the entry that represents your TV series, anime,
 special or recut; coverage and episode detail vary between catalogues.
 
+**Anime season and movie groups (post-1.0.0 main)** — AniList/MyAnimeList entries can use
+official linear prequel/sequel relations, manual season/movie assignments or
+Disabled mode. Related members appear together in library views. Newly
+generated paths use configurable season, strict story-arc or movie leaves under
+one canonical group. Movie-only sagas can use `Film NN`. Manual grouping is
+available for all catalogue owners. Existing paths and native
+provider episode numbering remain unchanged. See the
+[grouping guide](docs/anime-season-groups.md) for supported formats, ambiguity,
+individual actions and media-server numbering limits.
+
 **Absolute numbering that still matches season releases** — a series on ordinary season ordering accepts absolute-numbered releases too. `Tensei Shitara Slime Datta Ken - 88` resolves to S04E16.
 
 **Multi-season packs** — `Series.S01-S05` is accepted and mapped to every season it contains, rather than refused. On by default.
@@ -107,6 +122,11 @@ Scene/library numbering is checked before acquiring or importing ambiguous files
 manual episode choices remain available. Queue coverage follows each episode's
 actual season. See the [ikatun integration report](docs/ikatun-integration-2026-10-12.md)
 for scope, dry-run usage and validation.
+
+**Interactive season packs (post-1.0.0 main)** — search pack-only results from a
+native season or grouped season panel. The request uses that member's native
+series ID and season number, while the usual interactive search retains episode
+results. Searching does not acquire a release.
 
 **Fake release filtering** — the `.torrent` file is inspected before it reaches your download client, rejecting `Episode.mkv.exe`, bare executables and installers, and password-protected archives containing no video. Split RAR sets pass, because those are normal and legitimate. On by default, and every rejection is logged with a specific reason.
 
@@ -123,6 +143,12 @@ Watching. Tanukarr 1.0.0 supports multiple included lists, excluded lists and
 explicit exclusions for all six list-membership states. Matching any included
 list is sufficient; exclusions take precedence even when an anime is Watching.
 ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
+
+Post-release `main` adds grouped AniList settings and **Load custom lists** name
+autocomplete while preserving manual names and OAuth. A typed-array membership
+fallback accepts explicit valid flags when AniList's normal map is unavailable;
+unknown membership retains the previous list. Loading names or testing unsaved
+settings does not save or sync the connection.
 
 AniList account-list membership (Watching/Planning/Completed/etc.), anime release
 status (Releasing/Finished/etc.) and custom-list membership are separate filters.

@@ -60,6 +60,16 @@ namespace Sonarr.Api.V3.Series
         public DateTime? FirstAired { get; set; }
         public DateTime? LastAired { get; set; }
         public SeriesTypes SeriesType { get; set; }
+        public AnimeGroupingMode? AnimeGroupingMode { get; set; }
+        public string AnimeGroupId { get; set; }
+        public string AnimeGroupTitle { get; set; }
+        public int? AnimeGroupSeasonNumber { get; set; }
+        public string AnimeGroupFolder { get; set; }
+        public AnimeGroupMemberKind? AnimeGroupMemberKind { get; set; }
+        public AnimeGroupKind? AnimeGroupKind { get; set; }
+        public AnimeGroupMovieFolderStyle? AnimeGroupMovieFolderStyle { get; set; }
+        public int? AnimeGroupMovieNumber { get; set; }
+        public string AnimeGroupMemberFolder { get; set; }
         public string CleanTitle { get; set; }
         public string OriginalTitle { get; set; }
         public string CleanOriginalTitle { get; set; }
@@ -139,6 +149,16 @@ namespace Sonarr.Api.V3.Series
                        FirstAired = model.FirstAired,
                        LastAired = model.LastAired,
                        SeriesType = model.SeriesType,
+                       AnimeGroupingMode = model.AnimeGroupingMode,
+                       AnimeGroupId = model.AnimeGroupId,
+                       AnimeGroupTitle = model.AnimeGroupTitle,
+                       AnimeGroupSeasonNumber = model.AnimeGroupSeasonNumber,
+                       AnimeGroupFolder = model.AnimeGroupFolder,
+                       AnimeGroupMemberKind = model.AnimeGroupMemberKind,
+                       AnimeGroupKind = model.AnimeGroupKind,
+                       AnimeGroupMovieFolderStyle = model.AnimeGroupMovieFolderStyle,
+                       AnimeGroupMovieNumber = model.AnimeGroupMovieNumber,
+                       AnimeGroupMemberFolder = model.AnimeGroupMemberFolder,
                        CleanTitle = model.CleanTitle,
                        OriginalTitle = model.OriginalTitle,
                        CleanOriginalTitle = model.CleanOriginalTitle,
@@ -210,6 +230,14 @@ namespace Sonarr.Api.V3.Series
                        TmdbId = resource.TmdbId,
                        FirstAired = resource.FirstAired,
                        SeriesType = resource.SeriesType,
+                       AnimeGroupingMode = resource.AnimeGroupingMode ?? AnimeGroupingMode.Automatic,
+                       AnimeGroupId = resource.AnimeGroupId,
+                       AnimeGroupTitle = resource.AnimeGroupTitle,
+                       AnimeGroupSeasonNumber = resource.AnimeGroupSeasonNumber,
+                       AnimeGroupMemberKind = resource.AnimeGroupMemberKind ?? AnimeGroupMemberKind.Season,
+                       AnimeGroupKind = resource.AnimeGroupKind ?? AnimeGroupKind.Series,
+                       AnimeGroupMovieFolderStyle = resource.AnimeGroupMovieFolderStyle ?? AnimeGroupMovieFolderStyle.Automatic,
+                       AnimeGroupMovieNumber = resource.AnimeGroupMovieNumber,
                        CleanTitle = resource.CleanTitle,
                        OriginalTitle = resource.OriginalTitle,
                        CleanOriginalTitle = resource.CleanOriginalTitle,
@@ -229,6 +257,28 @@ namespace Sonarr.Api.V3.Series
         public static NzbDrone.Core.Tv.Series ToModel(this SeriesResource resource, NzbDrone.Core.Tv.Series series)
         {
             var updatedSeries = resource.ToModel();
+
+            if (resource.AnimeGroupingMode == null)
+            {
+                updatedSeries.AnimeGroupingMode = series.AnimeGroupingMode;
+                updatedSeries.AnimeGroupId = series.AnimeGroupId;
+                updatedSeries.AnimeGroupTitle = series.AnimeGroupTitle;
+                updatedSeries.AnimeGroupSeasonNumber = series.AnimeGroupSeasonNumber;
+                updatedSeries.AnimeGroupMemberKind = series.AnimeGroupMemberKind;
+                updatedSeries.AnimeGroupKind = series.AnimeGroupKind;
+                updatedSeries.AnimeGroupMovieFolderStyle = series.AnimeGroupMovieFolderStyle;
+                updatedSeries.AnimeGroupMovieNumber = series.AnimeGroupMovieNumber;
+            }
+            else
+            {
+                updatedSeries.AnimeGroupMemberKind = resource.AnimeGroupMemberKind ?? series.AnimeGroupMemberKind;
+                updatedSeries.AnimeGroupKind = resource.AnimeGroupKind ?? series.AnimeGroupKind;
+                updatedSeries.AnimeGroupMovieFolderStyle = resource.AnimeGroupMovieFolderStyle ?? series.AnimeGroupMovieFolderStyle;
+                if (resource.AnimeGroupMemberKind == null && resource.AnimeGroupMovieNumber == null)
+                {
+                    updatedSeries.AnimeGroupMovieNumber = series.AnimeGroupMovieNumber;
+                }
+            }
 
             series.ApplyChanges(updatedSeries);
 

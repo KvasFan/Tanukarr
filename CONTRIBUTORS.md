@@ -43,7 +43,9 @@ local commit makes their original author name unreachable from HEAD.
   and Tanukarr 1.0.0 branding, packaging and documentation. Subsequent work
   includes balanced TV/anime provider documentation, metadata-workflow and
   ordering-integration audits, and preserving the recommended series type in
-  the Add New Series modal on initial settings mount.
+  the Add New Series modal on initial settings mount. It also implements the
+  subsequent official-relation/manual anime season groups, library presentation,
+  generated season directories and English feature documentation.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -54,6 +56,7 @@ local commit makes their original author name unreachable from HEAD.
 | --- | --- | --- |
 | Local integration, SonarrWeeb 0.0.1/0.1.0 and Tanukarr 1.0.0 packaging/documentation, Jellyfin refresh, AniList controls and request-limit recovery, Nyaa query encoding and Tanuki asset integration | OpenAI Codex, based on GPT-6 | Explicit identity of the coding session; no more specific variant is established |
 | TV/anime positioning and provider guide, metadata workflow/ordering audit, Add New Series recommended-type correction and regression checks | OpenAI Codex, based on GPT-6 | Same local coding session; the post-release correction does not change the immutable 1.0.0 tag |
+| Post-release official-relation/manual anime season and movie groups, configurable season/arc/movie folders and native group-file tokens, per-member library presentation, pack-only season search, AniList name autocomplete/typed membership compatibility, regression checks and English guides | OpenAI Codex, based on GPT-6 | Same local coding session; AniList/Jikan relationship data and original provider authors remain separately credited |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -119,6 +122,37 @@ Local checks decode the generated channels and compare their bytes with the
 supplied artwork. Actual macOS Finder/AppKit rendering was not executed here.
 
 ## Feature-to-contributor register
+
+### Official-relation and manual anime season and movie groups
+
+**OpenAI Codex, based on GPT-6**, added the local post-1.0.0 grouping layer,
+Automatic/Manual/Disabled controls, grouped library presentation and generated
+member-season/movie directories. The same local work adds five configurable
+group/member folder expressions, strict story-arc subtitle naming, group tokens
+in native filename expressions, pack-only interactive season search and AniList
+custom-list name autocomplete/typed-array membership compatibility. Each
+original catalogue entry retains its provider
+identity and native episode numbering. The feature does not copy another
+franchise-grouping implementation or claim authorship of provider data.
+
+The filename validation adaptation preserves the original authorship of
+Sonarr's validator, including Ion Bazan's
+[multi-season parsing change](https://github.com/Sonarr/Sonarr/commit/b0bde26f81cfc7937a0f1a6eb21d145ab989221a).
+Its inherited season-membership check was present unchanged before this work;
+the local group-token adaptation checks exact native sample season sets so a
+display group number cannot introduce an extra parsed season. This is not an
+attribution of the inherited behavior to this fork's earlier contributors.
+
+The relation schema references are the official
+[AniList relation definitions](https://github.com/AniList/docs/blob/master/docs/reference/enum/mediarelation.md),
+[AniList relationship edge schema](https://github.com/AniList/docs/blob/master/docs/reference/object/mediaedge.md)
+and [Jikan relations resource](https://github.com/jikan-me/jikan-rest/blob/master/app/Http/Resources/V4/AnimeRelationsResource.php).
+The inherited AniList/Jikan provider implementations are credited below;
+upstream Sonarr supplies the series, episode, path and import workflows this
+layer preserves. See [Anime season groups](docs/anime-season-groups.md) and its
+[verification checkpoint](docs/anime-season-groups-verification-2026-10-13.md)
+for behavior and executed evidence. This addition does not change the immutable
+1.0.0 source tag or release image.
 
 ### Shared TV/anime metadata workflows and recommended series type
 

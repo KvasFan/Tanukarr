@@ -39,6 +39,37 @@ namespace NzbDrone.Core.Test.MetadataSource.AniList
             result.Should().OnlyContain(e => e.SeasonNumber == 1);
         }
 
+        [TestCase(null)]
+        [TestCase(0)]
+        public void should_keep_one_native_episode_for_an_explicit_movie_without_a_declared_count(int? count)
+        {
+            var media = Media(count);
+            media.Format = "MOVIE";
+            var episode = AniListEpisodeMapper.MapEpisodes(media).Should().ContainSingle().Subject;
+            episode.ForeignId.Should().Be("21:1");
+            episode.SeasonNumber.Should().Be(1);
+            episode.EpisodeNumber.Should().Be(1);
+            episode.AbsoluteEpisodeNumber.Should().Be(1);
+        }
+
+        [TestCase("TV")]
+        [TestCase("OVA")]
+        [TestCase(null)]
+        public void should_not_invent_an_episode_for_other_formats_without_counts_or_schedules(string format)
+        {
+            var media = Media(null);
+            media.Format = format;
+            AniListEpisodeMapper.MapEpisodes(media).Should().BeEmpty();
+        }
+
+        [Test]
+        public void should_preserve_a_positive_movie_count_and_catalogue_episode_identities()
+        {
+            var media = Media(2);
+            media.Format = "MOVIE";
+            AniListEpisodeMapper.MapEpisodes(media).Select(e => e.ForeignId).Should().Equal("21:1", "21:2");
+        }
+
         [Test]
         public void should_set_absolute_numbers_to_match_episode_numbers()
         {

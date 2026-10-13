@@ -67,6 +67,9 @@ namespace NzbDrone.Api.Test.Release
             Mocker.GetMock<ISearchForReleases>()
                 .Setup(s => s.SeasonSearch(NativeSeriesId, 1, false, false, true, true))
                 .ReturnsAsync(() => _normalDecisions);
+            Mocker.GetMock<ISearchForReleases>()
+                .Setup(s => s.SeasonPackSearch(NativeSeriesId, 1, true, true))
+                .ReturnsAsync(() => _normalDecisions);
         }
 
         private static RemoteEpisode CreateRemote(int seriesId, bool complete)
@@ -192,10 +195,97 @@ namespace NzbDrone.Api.Test.Release
             {
                 new DownloadDecision(CreateRemote(wrongSeries ? ForeignSeriesId : NativeSeriesId, wrongSeries))
             };
+            if (!wrongSeries)
+            {
+                _completeDecisions[0].RemoteEpisode.ParsedEpisodeInfo.FullSeason = false;
+            }
+
             await SearchComplete(version);
 
             Assert.ThrowsAsync<NzbDroneClientException>(async () => await Grab(version, true));
             Mocker.GetMock<IDownloadService>().VerifyNoOtherCalls();
+        }
+
+        [TestCase(3)]
+        [TestCase(5)]
+        public async Task interactive_complete_search_can_grab_a_verified_season_subset_without_claiming_complete_series(int version)
+        {
+            _complete.ParsedEpisodeInfo.IsCompleteSeries = false;
+            _complete.Episodes[1].SeasonNumber = 2;
+            _complete.Episodes = _complete.Episodes.Take(1).ToList();
+            await SearchComplete(version);
+            await SearchSeason(version);
+            await Grab(version, true);
+            Mocker.GetMock<IDownloadService>().Verify(s => s.DownloadReport(_complete, null), Times.Once());
+            _complete.ParsedEpisodeInfo.IsCompleteSeries.Should().BeFalse();
+        }
+
+        [TestCase(3, "foreignEpisode")]
+        [TestCase(5, "foreignEpisode")]
+        [TestCase(3, "unknownSeason")]
+        [TestCase(5, "unknownSeason")]
+        [TestCase(3, "missingCoverage")]
+        [TestCase(5, "missingCoverage")]
+        [TestCase(3, "episodeRelease")]
+        [TestCase(5, "episodeRelease")]
+        public async Task complete_context_grab_must_reject_inconsistent_cached_pack_coverage(int version, string defect)
+        {
+            switch (defect)
+            {
+                case "foreignEpisode": _complete.Episodes[0].SeriesId = ForeignSeriesId; break;
+                case "unknownSeason": _complete.ParsedEpisodeInfo.SeasonNumbers.Add(99); break;
+                case "missingCoverage": _complete.Episodes.Clear(); break;
+                case "episodeRelease": _complete.ParsedEpisodeInfo.EpisodeNumbers = new[] { 1 }; break;
+            }
+
+            await SearchComplete(version);
+            Assert.ThrowsAsync<NzbDroneClientException>(async () => await Grab(version, true));
+            Mocker.GetMock<IDownloadService>().VerifyNoOtherCalls();
+        }
+
+        [TestCase(3)]
+        [TestCase(5)]
+        public async Task season_pack_flag_must_use_the_dedicated_pack_search_without_changing_normal_search(int version)
+        {
+            if (version == 3)
+            {
+                await Mocker.Resolve<V3.ReleaseController>().GetReleases(NativeSeriesId, null, 1, false, true);
+            }
+            else
+            {
+                await Mocker.Resolve<V5.ReleaseController>().GetReleases(NativeSeriesId, null, 1, false, true);
+            }
+
+            Mocker.GetMock<ISearchForReleases>().Verify(s => s.SeasonPackSearch(NativeSeriesId, 1, true, true), Times.Once());
+            Mocker.GetMock<ISearchForReleases>().Verify(s => s.SeasonSearch(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never());
+            await SearchSeason(version);
+            Mocker.GetMock<ISearchForReleases>().Verify(s => s.SeasonSearch(NativeSeriesId, 1, false, false, true, true), Times.Once());
+        }
+
+        [TestCase(3, null, null, null, false)]
+        [TestCase(5, null, null, null, false)]
+        [TestCase(3, 0, null, 1, false)]
+        [TestCase(5, 0, null, 1, false)]
+        [TestCase(3, NativeSeriesId, null, 0, false)]
+        [TestCase(5, NativeSeriesId, null, 0, false)]
+        [TestCase(3, NativeSeriesId, 1, 1, false)]
+        [TestCase(5, NativeSeriesId, 1, 1, false)]
+        [TestCase(3, NativeSeriesId, null, 1, true)]
+        [TestCase(5, NativeSeriesId, null, 1, true)]
+        public void season_pack_flag_must_require_unambiguous_positive_season_scope(int version, int? seriesId, int? episodeId, int? season, bool complete)
+        {
+            Assert.ThrowsAsync<NzbDroneClientException>(async () =>
+            {
+                if (version == 3)
+                {
+                    await Mocker.Resolve<V3.ReleaseController>().GetReleases(seriesId, episodeId, season, complete, true);
+                }
+                else
+                {
+                    await Mocker.Resolve<V5.ReleaseController>().GetReleases(seriesId, episodeId, season, complete, true);
+                }
+            });
+            Mocker.GetMock<ISearchForReleases>().VerifyNoOtherCalls();
         }
 
         [TestCase(3)]

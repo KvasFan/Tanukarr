@@ -9,6 +9,7 @@ using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Parser;
 
@@ -25,6 +26,8 @@ namespace NzbDrone.Core.Tv
         private readonly ISeriesService _seriesService;
         private readonly IMetadataProviderFactory _metadataProviderFactory;
         private readonly IAllocateSyntheticSeriesIds _syntheticSeriesIds;
+        private readonly IAnimeGroupingService _animeGroupingService;
+        private readonly IAnimeGroupPathBuilder _animeGroupPathBuilder;
         private readonly IBuildFileNames _fileNameBuilder;
         private readonly IAddSeriesValidator _addSeriesValidator;
         private readonly Logger _logger;
@@ -32,6 +35,8 @@ namespace NzbDrone.Core.Tv
         public AddSeriesService(ISeriesService seriesService,
                                 IMetadataProviderFactory metadataProviderFactory,
                                 IAllocateSyntheticSeriesIds syntheticSeriesIds,
+                                IAnimeGroupingService animeGroupingService,
+                                IAnimeGroupPathBuilder animeGroupPathBuilder,
                                 IBuildFileNames fileNameBuilder,
                                 IAddSeriesValidator addSeriesValidator,
                                 Logger logger)
@@ -39,6 +44,8 @@ namespace NzbDrone.Core.Tv
             _seriesService = seriesService;
             _metadataProviderFactory = metadataProviderFactory;
             _syntheticSeriesIds = syntheticSeriesIds;
+            _animeGroupingService = animeGroupingService;
+            _animeGroupPathBuilder = animeGroupPathBuilder;
             _fileNameBuilder = fileNameBuilder;
             _addSeriesValidator = addSeriesValidator;
             _logger = logger;
@@ -78,6 +85,7 @@ namespace NzbDrone.Core.Tv
                 {
                     var series = AddSkyhookData(s);
                     series = SetPropertiesAndValidate(series);
+                    AnimeGroupingValidator.ValidateSlot(series, seriesToAdd);
                     series.Added = added;
                     if (existingSeriesTvdbIds.ContainsValue(series.TvdbId))
                     {
@@ -116,6 +124,13 @@ namespace NzbDrone.Core.Tv
 
         private Series AddSkyhookData(Series newSeries)
         {
+            // Automatic facts are resolved by the server, including import-list additions.
+            // A lookup/preview response must not let a new client manufacture membership.
+            if (newSeries.AnimeGroupingMode == AnimeGroupingMode.Automatic)
+            {
+                ClearAutomaticGroup(newSeries);
+            }
+
             Tuple<Series, List<Episode>> tuple;
 
             try
@@ -137,6 +152,11 @@ namespace NzbDrone.Core.Tv
 
             var series = tuple.Item1;
 
+            if (newSeries.AnimeGroupingMode == AnimeGroupingMode.Automatic)
+            {
+                ClearAutomaticGroup(series, preserveProviderMemberKind: true);
+            }
+
             // If seasons were passed in on the new series use them, otherwise use the seasons from Skyhook
             newSeries.Seasons = newSeries.Seasons != null && newSeries.Seasons.Any() ? newSeries.Seasons : series.Seasons;
 
@@ -147,6 +167,7 @@ namespace NzbDrone.Core.Tv
             // ordering is the user's and is fixed for the life of the series, because season
             // and episode numbers appear in file and folder names.
             series.OrderingId = newSeries.OrderingId;
+            _animeGroupingService.Apply(series);
 
             // A series the provider could not map to TheTVDB still needs a distinct value
             // here, since the column is uniquely indexed and lookups expect a single match.
@@ -160,10 +181,20 @@ namespace NzbDrone.Core.Tv
 
         private Series SetPropertiesAndValidate(Series newSeries)
         {
+            AnimeGroupingValidator.Validate(newSeries, _seriesService.GetAllSeries());
+
             if (string.IsNullOrWhiteSpace(newSeries.Path))
             {
-                var folderName = _fileNameBuilder.GetSeriesFolder(newSeries);
-                newSeries.Path = Path.Combine(newSeries.RootFolderPath, folderName);
+                if (AnimeGroupingValidator.HasGroup(newSeries))
+                {
+                    newSeries.Path = _animeGroupPathBuilder.BuildPath(newSeries);
+                    newSeries.SeasonFolder = false;
+                }
+                else
+                {
+                    var folderName = _fileNameBuilder.GetSeriesFolder(newSeries);
+                    newSeries.Path = Path.Combine(newSeries.RootFolderPath, folderName);
+                }
             }
 
             newSeries.CleanTitle = newSeries.Title.CleanSeriesTitle();
@@ -183,6 +214,23 @@ namespace NzbDrone.Core.Tv
             }
 
             return newSeries;
+        }
+
+        private static void ClearAutomaticGroup(Series series, bool preserveProviderMemberKind = false)
+        {
+            series.AnimeGroupId = null;
+            series.AnimeGroupTitle = null;
+            series.AnimeGroupSeasonNumber = null;
+            series.AnimeGroupMovieNumber = null;
+            series.AnimeGroupFolder = null;
+            series.AnimeGroupMemberFolder = null;
+            if (!preserveProviderMemberKind)
+            {
+                series.AnimeGroupMemberKind = AnimeGroupMemberKind.Season;
+            }
+
+            series.AnimeGroupKind = AnimeGroupKind.Series;
+            series.AnimeGroupMovieFolderStyle = AnimeGroupMovieFolderStyle.Automatic;
         }
     }
 }

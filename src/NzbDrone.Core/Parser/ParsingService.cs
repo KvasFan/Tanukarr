@@ -423,7 +423,7 @@ namespace NzbDrone.Core.Parser
             if (searchCriteria is CompleteSeriesSearchCriteria && searchCriteria.Series.Id == series.Id && parsedEpisodeInfo.FullSeason)
             {
                 // The complete-series parser validates advertised coverage against this library.
-                return searchCriteria.Episodes;
+                return searchCriteria.Episodes.Where(episode => parsedEpisodeInfo.SeasonNumbers.Contains(episode.SeasonNumber)).ToList();
             }
 
             if (parsedEpisodeInfo.FullSeason)
@@ -606,8 +606,11 @@ namespace NzbDrone.Core.Parser
 
         private static bool MatchesNativeCompleteSeries(ParsedEpisodeInfo parsedEpisodeInfo, int tvdbId, int tvRageId, string imdbId, SearchCriteriaBase searchCriteria)
         {
-            if (searchCriteria is not CompleteSeriesSearchCriteria ||
-                parsedEpisodeInfo is not { IsCompleteSeries: true, FullSeason: true } ||
+            if (searchCriteria is not CompleteSeriesSearchCriteria completeSeries ||
+                parsedEpisodeInfo is not { FullSeason: true } ||
+                (!parsedEpisodeInfo.IsCompleteSeries && (!completeSeries.IncludeSeasonPacks ||
+                    parsedEpisodeInfo.SeasonNumbers.Count == 0 || parsedEpisodeInfo.SeasonNumbers.Any(season =>
+                        !completeSeries.Episodes.Any(episode => episode.SeasonNumber == season)))) ||
                 searchCriteria.Series.MetadataSource == MetadataSourceType.Tvdb || searchCriteria.Series.TvdbId >= 0 ||
                 tvdbId > 0 ||
                 (tvRageId > 0 && tvRageId != searchCriteria.Series.TvRageId) ||

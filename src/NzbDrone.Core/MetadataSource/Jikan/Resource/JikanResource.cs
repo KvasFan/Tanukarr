@@ -28,6 +28,8 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
         public string TitleJapanese { get; set; }
 
         public List<JikanTitleResource> Titles { get; set; }
+        public string Type { get; set; }
+        public List<JikanRelationResource> Relations { get; set; }
         public string Synopsis { get; set; }
         public int? Episodes { get; set; }
         public string Status { get; set; }
@@ -48,6 +50,19 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
     {
         public string Type { get; set; }
         public string Title { get; set; }
+    }
+
+    public class JikanRelationResource
+    {
+        public string Relation { get; set; }
+        public List<JikanRelationEntryResource> Entry { get; set; }
+    }
+
+    public class JikanRelationEntryResource
+    {
+        [JsonProperty("mal_id")]
+        public int MalId { get; set; }
+        public string Type { get; set; }
     }
 
     public class JikanAiredResource

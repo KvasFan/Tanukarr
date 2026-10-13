@@ -15,5 +15,10 @@ namespace Sonarr.Api.V3.Config
         public string SeriesFolderFormat { get; set; }
         public string SeasonFolderFormat { get; set; }
         public string SpecialsFolderFormat { get; set; }
+        public string AnimeGroupFolderFormat { get; set; }
+        public string AnimeGroupSeasonFolderFormat { get; set; }
+        public string AnimeGroupArcFolderFormat { get; set; }
+        public string AnimeGroupMovieFolderFormat { get; set; }
+        public string AnimeGroupMovieSagaFolderFormat { get; set; }
     }
 }

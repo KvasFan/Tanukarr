@@ -17,6 +17,12 @@ namespace NzbDrone.Core.Organizer
         string GetSeriesFolderSample(NamingConfig nameSpec);
         string GetSeasonFolderSample(NamingConfig nameSpec);
         string GetSpecialsFolderSample(NamingConfig nameSpec);
+        string GetAnimeGroupFolderSample(NamingConfig nameSpec);
+        string GetAnimeGroupSeasonFolderSample(NamingConfig nameSpec);
+        string GetAnimeGroupArcFolderSample(NamingConfig nameSpec);
+        string GetAnimeGroupMovieFolderSample(NamingConfig nameSpec);
+        string GetAnimeGroupMovieSagaFolderSample(NamingConfig nameSpec);
+        SampleResult GetAnimeGroupMovieSample(NamingConfig nameSpec);
     }
 
     public class FileNameSampleService : IFilenameSampleService
@@ -97,6 +103,13 @@ namespace NzbDrone.Core.Organizer
                     }
                 }
             };
+
+            _animeSeries.AnimeGroupingMode = AnimeGroupingMode.Manual;
+            _animeSeries.AnimeGroupId = "manual:naming-sample";
+            _animeSeries.AnimeGroupTitle = "The Anime Group Title";
+            _animeSeries.AnimeGroupMemberKind = AnimeGroupMemberKind.Season;
+            _animeSeries.AnimeGroupKind = AnimeGroupKind.Series;
+            _animeSeries.AnimeGroupSeasonNumber = 2;
 
             _episode1 = new Episode
             {
@@ -310,6 +323,76 @@ namespace NzbDrone.Core.Organizer
         public string GetSpecialsFolderSample(NamingConfig nameSpec)
         {
             return _buildFileNames.GetSeasonFolder(_standardSeries, 0, nameSpec);
+        }
+
+        public string GetAnimeGroupFolderSample(NamingConfig nameSpec)
+        {
+            return BuildGroupFolderSample(GroupSample(false), nameSpec, true);
+        }
+
+        public string GetAnimeGroupSeasonFolderSample(NamingConfig nameSpec)
+        {
+            return BuildGroupFolderSample(GroupSample(false), nameSpec, false);
+        }
+
+        public string GetAnimeGroupMovieFolderSample(NamingConfig nameSpec)
+        {
+            return BuildGroupFolderSample(GroupSample(true), nameSpec, false);
+        }
+
+        public string GetAnimeGroupArcFolderSample(NamingConfig nameSpec)
+        {
+            var series = GroupSample(false);
+            series.Title = series.AnimeGroupTitle + ": War of Three Titans Arc";
+            return BuildGroupFolderSample(series, nameSpec, false);
+        }
+
+        public string GetAnimeGroupMovieSagaFolderSample(NamingConfig nameSpec)
+        {
+            return BuildGroupFolderSample(GroupSample(true, true), nameSpec, false);
+        }
+
+        public SampleResult GetAnimeGroupMovieSample(NamingConfig nameSpec)
+        {
+            var movie = GroupSample(true);
+            return new SampleResult
+            {
+                FileName = BuildSample(_singleEpisode, movie, _animeEpisodeFile, nameSpec, _customFormats),
+                Series = movie,
+                Episodes = _singleEpisode,
+                EpisodeFile = _animeEpisodeFile
+            };
+        }
+
+        private static Series GroupSample(bool movie, bool saga = false)
+        {
+            return new Series
+            {
+                Title = movie ? "The Movie Title" : "The Series Title's!",
+                Year = 2010,
+                SeriesType = SeriesTypes.Anime,
+                AnimeGroupingMode = AnimeGroupingMode.Manual,
+                AnimeGroupId = "manual:naming-sample",
+                AnimeGroupTitle = saga ? "The Movie Saga" : "The Anime Group Title",
+                AnimeGroupMemberKind = movie ? AnimeGroupMemberKind.Movie : AnimeGroupMemberKind.Season,
+                AnimeGroupKind = saga ? AnimeGroupKind.MovieSaga : AnimeGroupKind.Series,
+                AnimeGroupMovieFolderStyle = AnimeGroupMovieFolderStyle.Automatic,
+                AnimeGroupSeasonNumber = movie ? null : 2,
+                AnimeGroupMovieNumber = movie ? 2 : null,
+                Seasons = new List<Season> { new Season { SeasonNumber = 1 } }
+            };
+        }
+
+        private string BuildGroupFolderSample(Series series, NamingConfig nameSpec, bool root)
+        {
+            try
+            {
+                return root ? _buildFileNames.GetAnimeGroupFolder(series, nameSpec) : _buildFileNames.GetAnimeGroupMemberFolder(series, nameSpec);
+            }
+            catch (NamingFormatException)
+            {
+                return string.Empty;
+            }
         }
 
         private string BuildSample(List<Episode> episodes, Series series, EpisodeFile episodeFile, NamingConfig nameSpec, List<CustomFormat> customFormats)

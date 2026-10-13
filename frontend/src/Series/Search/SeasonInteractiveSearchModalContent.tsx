@@ -1,10 +1,12 @@
 import React, { useRef } from 'react';
+import Alert from 'Components/Alert';
 import Button from 'Components/Link/Button';
 import ModalBody from 'Components/Modal/ModalBody';
 import ModalContent from 'Components/Modal/ModalContent';
 import ModalFooter from 'Components/Modal/ModalFooter';
 import ModalHeader from 'Components/Modal/ModalHeader';
 import InteractiveSearch from 'InteractiveSearch/InteractiveSearch';
+import InteractiveSearchPayload from 'InteractiveSearch/InteractiveSearchPayload';
 import { useClearReleasesOnUnmount } from 'InteractiveSearch/useReleases';
 import formatSeason from 'Season/formatSeason';
 import translate from 'Utilities/String/translate';
@@ -14,6 +16,8 @@ export interface SeasonInteractiveSearchModalContentProps {
   episodeCount: number;
   seriesId: number;
   seasonNumber: number;
+  displaySeasonNumber?: number;
+  seasonPacksOnly?: true;
   onModalClose(): void;
 }
 
@@ -21,9 +25,16 @@ function SeasonInteractiveSearchModalContent({
   episodeCount,
   seriesId,
   seasonNumber,
+  displaySeasonNumber = seasonNumber,
+  seasonPacksOnly,
   onModalClose,
 }: SeasonInteractiveSearchModalContentProps) {
-  useClearReleasesOnUnmount({ seriesId, seasonNumber });
+  const searchPayload: InteractiveSearchPayload = {
+    seriesId,
+    seasonNumber,
+    ...(seasonPacksOnly ? { seasonPacksOnly: true } : {}),
+  };
+  useClearReleasesOnUnmount(searchPayload);
   const modalBodyRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -32,17 +43,17 @@ function SeasonInteractiveSearchModalContent({
         {seasonNumber === null
           ? translate('InteractiveSearchModalHeader')
           : translate('InteractiveSearchModalHeaderSeason', {
-              season: formatSeason(seasonNumber) as string,
+              season: formatSeason(displaySeasonNumber) as string,
             })}
       </ModalHeader>
 
       <ModalBody ref={modalBodyRef} innerClassName={styles.modalBody}>
+        {seasonPacksOnly ? (
+          <Alert>{translate('SearchSeasonPacksHelpText')}</Alert>
+        ) : null}
         <InteractiveSearch
           type="season"
-          searchPayload={{
-            seriesId,
-            seasonNumber,
-          }}
+          searchPayload={searchPayload}
           scrollerRef={modalBodyRef}
         />
       </ModalBody>

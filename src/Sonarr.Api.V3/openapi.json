@@ -27,6 +27,41 @@
     }
   ],
   "paths": {
+    "/api/v3/series/grouping": {
+      "get": {
+        "tags": [
+          "AnimeGrouping"
+        ],
+        "parameters": [
+          {
+            "name": "metadataSource",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MetadataSourceType"
+            }
+          },
+          {
+            "name": "foreignId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimeGroupingResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api": {
       "get": {
         "tags": [
@@ -5266,6 +5301,41 @@
             }
           },
           {
+            "name": "animeGroupFolderFormat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "animeGroupSeasonFolderFormat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "animeGroupArcFolderFormat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "animeGroupMovieFolderFormat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "animeGroupMovieSagaFolderFormat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "id",
             "in": "query",
             "schema": {
@@ -6435,6 +6505,14 @@
           },
           {
             "name": "completeSeries",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "seasonPacksOnly",
             "in": "query",
             "schema": {
               "type": "boolean",
@@ -8086,6 +8164,101 @@
           }
         },
         "additionalProperties": false
+      },
+      "AnimeGroupKind": {
+        "enum": [
+          "series",
+          "movieSaga"
+        ],
+        "type": "string"
+      },
+      "AnimeGroupMemberKind": {
+        "enum": [
+          "season",
+          "movie"
+        ],
+        "type": "string"
+      },
+      "AnimeGroupMovieFolderStyle": {
+        "enum": [
+          "automatic",
+          "numbered",
+          "title"
+        ],
+        "type": "string"
+      },
+      "AnimeGroupingMode": {
+        "enum": [
+          "automatic",
+          "manual",
+          "disabled"
+        ],
+        "type": "string"
+      },
+      "AnimeGroupingResult": {
+        "type": "object",
+        "properties": {
+          "animeGroupingMode": {
+            "$ref": "#/components/schemas/AnimeGroupingMode"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnimeGroupingStatus"
+          },
+          "animeGroupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupSeasonNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "animeGroupFolder": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupMemberKind": {
+            "$ref": "#/components/schemas/AnimeGroupMemberKind"
+          },
+          "animeGroupKind": {
+            "$ref": "#/components/schemas/AnimeGroupKind"
+          },
+          "animeGroupMovieFolderStyle": {
+            "$ref": "#/components/schemas/AnimeGroupMovieFolderStyle"
+          },
+          "animeGroupMovieNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "animeGroupMemberFolder": {
+            "type": "string",
+            "nullable": true
+          },
+          "isResolved": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnimeGroupingStatus": {
+        "enum": [
+          "resolved",
+          "existing",
+          "manual",
+          "disabled",
+          "unrelated",
+          "unsupported",
+          "ambiguous",
+          "unavailable",
+          "limitReached"
+        ],
+        "type": "string"
       },
       "ApiInfoResource": {
         "type": "object",
@@ -10730,6 +10903,26 @@
           "specialsFolderFormat": {
             "type": "string",
             "nullable": true
+          },
+          "animeGroupFolderFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupSeasonFolderFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupArcFolderFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupMovieFolderFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupMovieSagaFolderFormat": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12486,6 +12679,44 @@
           "seriesType": {
             "$ref": "#/components/schemas/SeriesTypes"
           },
+          "animeGroupingMode": {
+            "$ref": "#/components/schemas/AnimeGroupingMode"
+          },
+          "animeGroupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupSeasonNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "animeGroupFolder": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupMemberKind": {
+            "$ref": "#/components/schemas/AnimeGroupMemberKind"
+          },
+          "animeGroupKind": {
+            "$ref": "#/components/schemas/AnimeGroupKind"
+          },
+          "animeGroupMovieFolderStyle": {
+            "$ref": "#/components/schemas/AnimeGroupMovieFolderStyle"
+          },
+          "animeGroupMovieNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "animeGroupMemberFolder": {
+            "type": "string",
+            "nullable": true
+          },
           "cleanTitle": {
             "type": "string",
             "nullable": true
@@ -13161,6 +13392,9 @@
     }
   ],
   "tags": [
+    {
+      "name": "AnimeGrouping"
+    },
     {
       "name": "ApiInfo"
     },

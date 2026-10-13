@@ -15,6 +15,7 @@ using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.MediaInfo;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Tv;
 
@@ -28,6 +29,8 @@ namespace NzbDrone.Core.Organizer
         string GetSeriesFolder(Series series, NamingConfig namingConfig = null);
         string GetSeriesFolder(Series series, string title, NamingConfig namingConfig = null);
         string GetSeasonFolder(Series series, int seasonNumber, NamingConfig namingConfig = null);
+        string GetAnimeGroupFolder(Series series, NamingConfig namingConfig = null);
+        string GetAnimeGroupMemberFolder(Series series, NamingConfig namingConfig = null);
         bool RequiresEpisodeTitle(Series series, List<Episode> episodes);
         bool RequiresAbsoluteEpisodeNumber();
     }
@@ -50,7 +53,7 @@ namespace NzbDrone.Core.Organizer
         private readonly IProOptionsService _proOptions;
         private readonly IEpisodeService _episodes;
 
-        private static readonly Regex TitleRegex = new Regex(@"(?<escaped>\{\{|\}\})|\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))?)(?::(?<customFormat>[ ,a-z0-9+-]+(?<![- ])))?(?<suffix>[- ._)\]]*)\}",
+        internal static readonly Regex TitleRegex = new Regex(@"(?<escaped>\{\{|\}\})|\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))*)(?::(?<customFormat>[ ,a-z0-9+-]+(?<![- ])))?(?<suffix>[- ._)\]]*)\}",
                                                              RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         public static readonly Regex EpisodeRegex = new Regex(@"(?<episode>\{episode(?:\:0+)?})",
@@ -253,6 +256,13 @@ namespace NzbDrone.Core.Organizer
         {
             var path = series.Path;
 
+            // Grouped entries already own their member directory. Native episode
+            // numbers remain unchanged without adding another season folder.
+            if (seasonNumber > 0 && AnimeGroupPathBuilder.IsGroupedMemberPath(series))
+            {
+                return path;
+            }
+
             if (series.SeasonFolder)
             {
                 var seasonFolder = GetSeasonFolder(series, seasonNumber);
@@ -326,6 +336,91 @@ namespace NzbDrone.Core.Organizer
             folderName = folderName.Replace("{ellipsis}", "...");
 
             return folderName;
+        }
+
+        public string GetAnimeGroupFolder(Series series, NamingConfig namingConfig = null)
+        {
+            namingConfig ??= _namingConfigService.GetConfig();
+            return BuildAnimeGroupFolder(
+                series,
+                namingConfig.AnimeGroupFolderFormat ?? NamingConfig.Default.AnimeGroupFolderFormat,
+                AnimeGroupFolderFormatKind.Group,
+                namingConfig);
+        }
+
+        public string GetAnimeGroupMemberFolder(Series series, NamingConfig namingConfig = null)
+        {
+            namingConfig ??= _namingConfigService.GetConfig();
+            if (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Season)
+            {
+                var useArc = series.AnimeGroupMovieFolderStyle == AnimeGroupMovieFolderStyle.Title ||
+                             (series.AnimeGroupMovieFolderStyle == AnimeGroupMovieFolderStyle.Automatic && GetMemberArcTitle(series, true) != null);
+                if (useArc)
+                {
+                    return BuildAnimeGroupFolder(
+                        series,
+                        namingConfig.AnimeGroupArcFolderFormat ?? NamingConfig.Default.AnimeGroupArcFolderFormat,
+                        AnimeGroupFolderFormatKind.Arc,
+                        namingConfig);
+                }
+
+                return BuildAnimeGroupFolder(
+                    series,
+                    namingConfig.AnimeGroupSeasonFolderFormat ?? NamingConfig.Default.AnimeGroupSeasonFolderFormat,
+                    AnimeGroupFolderFormatKind.Season,
+                    namingConfig);
+            }
+
+            var numbered = series.AnimeGroupMovieFolderStyle == AnimeGroupMovieFolderStyle.Numbered ||
+                           (series.AnimeGroupMovieFolderStyle == AnimeGroupMovieFolderStyle.Automatic && series.AnimeGroupKind == AnimeGroupKind.MovieSaga);
+            return BuildAnimeGroupFolder(
+                series,
+                numbered ? namingConfig.AnimeGroupMovieSagaFolderFormat ?? NamingConfig.Default.AnimeGroupMovieSagaFolderFormat
+                         : namingConfig.AnimeGroupMovieFolderFormat ?? NamingConfig.Default.AnimeGroupMovieFolderFormat,
+                numbered ? AnimeGroupFolderFormatKind.MovieNumber : AnimeGroupFolderFormatKind.MovieTitle,
+                namingConfig);
+        }
+
+        private string BuildAnimeGroupFolder(Series series, string format, AnimeGroupFolderFormatKind kind, NamingConfig namingConfig)
+        {
+            if (!AnimeGroupNamingFormat.IsValid(format, kind))
+            {
+                throw new NamingFormatException("Invalid anime group folder format");
+            }
+
+            if ((kind == AnimeGroupFolderFormatKind.Group && string.IsNullOrWhiteSpace(series.AnimeGroupTitle)) ||
+                (kind == AnimeGroupFolderFormatKind.Season && series.AnimeGroupSeasonNumber is not > 0) ||
+                ((kind == AnimeGroupFolderFormatKind.MovieTitle || kind == AnimeGroupFolderFormatKind.Arc) && string.IsNullOrWhiteSpace(series.Title)) ||
+                (kind == AnimeGroupFolderFormatKind.MovieNumber && series.AnimeGroupMovieNumber is not > 0))
+            {
+                throw new NamingFormatException("The anime group folder requires an assigned title or member number");
+            }
+
+            var handlers = new Dictionary<string, Func<TokenMatch, string>>(FileNameBuilderTokenEqualityComparer.Instance);
+            AddSeriesTokens(handlers, series, series.Title ?? series.AnimeGroupTitle ?? string.Empty);
+            var rendered = ReplaceTokens(format, handlers, namingConfig);
+            return AnimeGroupingService.CreateGroupFolder(rendered);
+        }
+
+        public static string GetMemberArcTitle(Series series, bool requireArcSuffix = false)
+        {
+            var title = series.Title?.Trim() ?? string.Empty;
+            var canonical = series.AnimeGroupTitle?.Trim();
+            if (!string.IsNullOrEmpty(canonical) && title.StartsWith(canonical, StringComparison.OrdinalIgnoreCase))
+            {
+                var remainder = title.Substring(canonical.Length).TrimStart();
+                if (remainder.Length > 1 && remainder[0] is ':' or '-' or '\u2013' or '\u2014')
+                {
+                    var subtitle = remainder.Substring(1).Trim();
+                    if (subtitle.Length > 0)
+                    {
+                        return !requireArcSuffix || Regex.IsMatch(subtitle, @"(?:^|[\s-])(?:arc|hen|chapter)\z", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+                            ? subtitle : null;
+                    }
+                }
+            }
+
+            return requireArcSuffix ? null : title;
         }
 
         public static string CleanTitle(string title)
@@ -494,6 +589,14 @@ namespace NzbDrone.Core.Organizer
             tokenHandlers["{Series CleanTitleTheWithoutYear}"] = m => Truncate(CleanTitleThe(TitleWithoutYear(title)), m.CustomFormat);
             tokenHandlers["{Series TitleFirstCharacter}"] = m => Truncate(TitleFirstCharacter(TitleThe(title)), m.CustomFormat);
             tokenHandlers["{Series Year}"] = m => series.Year.ToString();
+            tokenHandlers["{Group Title}"] = m => series.AnimeGroupingMode != AnimeGroupingMode.Disabled
+                ? Truncate(series.AnimeGroupTitle ?? string.Empty, m.CustomFormat) : string.Empty;
+            tokenHandlers["{Group Arc Title}"] = m => series.AnimeGroupingMode != AnimeGroupingMode.Disabled && !string.IsNullOrWhiteSpace(series.AnimeGroupId)
+                ? Truncate(GetMemberArcTitle(series), m.CustomFormat) : string.Empty;
+            tokenHandlers["{Group Season}"] = m => series.AnimeGroupingMode != AnimeGroupingMode.Disabled && series.AnimeGroupMemberKind == AnimeGroupMemberKind.Season && series.AnimeGroupSeasonNumber is > 0
+                ? series.AnimeGroupSeasonNumber.Value.ToString(m.CustomFormat, CultureInfo.InvariantCulture) : string.Empty;
+            tokenHandlers["{Group Movie}"] = m => series.AnimeGroupingMode != AnimeGroupingMode.Disabled && series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie && series.AnimeGroupMovieNumber is > 0
+                ? series.AnimeGroupMovieNumber.Value.ToString(m.CustomFormat, CultureInfo.InvariantCulture) : string.Empty;
         }
 
         private string AddSeasonEpisodeNumberingTokens(string pattern, Dictionary<string, Func<TokenMatch, string>> tokenHandlers, List<Episode> episodes, NamingConfig namingConfig)

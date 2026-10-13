@@ -64,6 +64,7 @@ export interface ParsedInfo {
   releaseGroup: string;
   releaseHash: string;
   fullSeason: boolean;
+  isCompleteSeries?: boolean;
   seasonNumber: number | null;
   seriesTitle: string;
   episodeNumbers: number[];

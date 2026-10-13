@@ -26,6 +26,7 @@ import { SelectedSchema } from 'Settings/useProviderSchema';
 import { EnhancedSelectInputChanged, InputChanged } from 'typings/inputs';
 import formatShortTimeSpan from 'Utilities/Date/formatShortTimeSpan';
 import translate from 'Utilities/String/translate';
+import AniListFieldGroups from './AniListFieldGroups';
 import tagExistingOptions from './tagExistingOptions';
 import { useManageImportList } from './useImportLists';
 import styles from './EditImportListModalContent.module.css';
@@ -287,18 +288,26 @@ function EditImportListModalContent({
             </FormRow>
           </ModalSection>
 
-          {fields?.map((field) => {
-            return (
-              <ProviderFieldFormGroup
-                key={field.name}
-                advancedSettings={showAdvancedSettings}
-                provider="importList"
-                providerData={item}
-                {...field}
-                onChange={handleFieldChange}
-              />
-            );
-          })}
+          {item.implementation?.value === 'AniListImport' ? (
+            <AniListFieldGroups
+              providerData={item}
+              advancedSettings={showAdvancedSettings}
+              onChange={handleFieldChange}
+            />
+          ) : (
+            fields?.map((field) => {
+              return (
+                <ProviderFieldFormGroup
+                  key={field.name}
+                  advancedSettings={showAdvancedSettings}
+                  provider="importList"
+                  providerData={item}
+                  {...field}
+                  onChange={handleFieldChange}
+                />
+              );
+            })
+          )}
 
           <FormRow>
             <FormLabel>{translate('SonarrTags')}</FormLabel>

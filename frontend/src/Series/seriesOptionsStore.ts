@@ -11,6 +11,7 @@ export interface SeriesOptions {
   sortKey: string;
   sortDirection: 'ascending' | 'descending';
   view: string;
+  groupAnimeSeasons: boolean;
   columns: Column[];
   posterOptions: {
     detailedProgressBar: boolean;
@@ -56,6 +57,7 @@ const { useOptions, useOption, setOptions, setOption, setSort, getOptions } =
       secondarySortKey: 'sortTitle',
       secondarySortDirection: 'ascending',
       view: 'posters',
+      groupAnimeSeasons: true,
       posterOptions: {
         detailedProgressBar: false,
         size: 'large',

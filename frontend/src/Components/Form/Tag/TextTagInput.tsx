@@ -16,6 +16,7 @@ export interface TextTagInputProps
   name: string;
   value: string | string[];
   preserveTagText?: boolean;
+  tagSuggestions?: string[];
   onChange: (change: InputChanged<string[]>) => unknown;
 }
 
@@ -23,6 +24,7 @@ function TextTagInput({
   name,
   value,
   preserveTagText = false,
+  tagSuggestions,
   onChange,
   ...otherProps
 }: TextTagInputProps) {
@@ -48,10 +50,13 @@ function TextTagInput({
 
         return result;
       }, []),
-      tagList: [],
+      tagList: (tagSuggestions ?? []).map((suggestion) => ({
+        id: suggestion,
+        name: suggestion,
+      })),
       valueArray: tagsArray,
     };
-  }, [preserveTagText, value]);
+  }, [preserveTagText, tagSuggestions, value]);
 
   const handleTagAdd = useCallback(
     (newTag: TextTag) => {
@@ -66,7 +71,10 @@ function TextTagInput({
           : split(newTag.name);
 
       newTags.forEach((newTag) => {
-        const newTagValue = newTag.trim();
+        const newTagValue =
+          preserveTagText && tagSuggestions?.includes(newTag)
+            ? newTag
+            : newTag.trim();
 
         if (newTagValue) {
           newValue.push(newTagValue);
@@ -75,7 +83,7 @@ function TextTagInput({
 
       onChange({ name, value: newValue });
     },
-    [name, preserveTagText, valueArray, onChange]
+    [name, preserveTagText, tagSuggestions, valueArray, onChange]
   );
 
   const handleTagDelete = useCallback(

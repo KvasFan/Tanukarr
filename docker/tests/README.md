@@ -5,6 +5,144 @@ is recorded in [CONTRIBUTORS.md](../../CONTRIBUTORS.md); the
 [documentation index](../../docs/README.md) links the build, integration and
 security reports.
 
+## Anime season grouping
+
+For a main-source build containing the post-1.0.0 grouping feature, run from a
+Linux/WSL host with Python 3, OpenSSL, FFmpeg with `libx264` and Docker available:
+
+```sh
+docker pull python:3.13-alpine
+python3 docker/tests/anime-groups.py --image tanukarr:local \
+  --mock-image python:3.13-alpine --report anime-groups-report.json
+```
+
+The script requires both images to be available locally and does not build or
+pull them. It creates an internal Docker network and a Python HTTPS sidecar
+whose DNS alias is `graphql.anilist.co`. A generated CA is installed only in the
+disposable application's normal trust store; TLS validation stays enabled. The
+mock returns synthetic catalogue entries and typed official-relation payloads.
+It does not forward requests, contact public AniList/Jikan, authenticate an
+account or configure indexers/download clients. The application API binds to a
+random port on `127.0.0.1` through a third, fixed-destination TCP relay. The app
+and mock remain solely on the internal network; only the relay also joins the
+separate API bridge. The relay forwards only the fixture application's port and
+does not expose an arbitrary HTTP proxy.
+
+Checks cover authenticated v3/v5 preview and rejected API keys, a three-entry
+official TV chain, mixed TV/movie/TV chain, movie-only saga, special/spin-off
+exclusions, a preferred TV spine beside an ambiguous parallel movie, and true
+TV/TV branches, server-owned folder generation, manual
+existing/new groups, reserved-name movies and same-kind duplicate rejection,
+explicit-path preservation and legacy v3 updates. FFmpeg generates a tiny video;
+the application imports and rescans its native `S01E01` filename inside the
+group's `Season 02` leaf without nesting another `Season 01` or changing native
+episode identity. Generated movie files also import/rescan inside a title leaf
+and `Film 02` without an extra native-season folder. Strict Tokyo story-arc and
+Apothecary Season 3 cases exercise the title/number distinction. Five naming
+expressions, native group-file token samples and legacy naming PUTs are checked.
+Grouping edits and restart preserve the imported bytes. This
+does not establish media-server season remapping or a real-library migration.
+
+The local mock also supplies synthetic custom-list names, a null membership map
+with valid typed-array flags/known empty membership, and a response with both
+membership shapes unknown. The real unsaved AniList provider Test and name action
+must accept the known response, reject unknown membership conservatively and
+leave saved import-list settings unchanged. Generated test credentials do not
+authenticate a real account. A fresh-schema run does not itself prove an upgrade
+from an older migration; actual migration fixtures provide separate evidence.
+
+Only this invocation's three containers, two networks and temporary data are removed in
+cleanup. `--keep` retains them for inspection; disposable API and CA keys remain
+in those temporary files and are not printed. `--openssl` and `--ffmpeg` can
+select external executables. Run where the temporary and repository bind paths
+are visible to the Linux Docker daemon, as described below. See the
+[feature guide](../../docs/anime-season-groups.md) and
+[dated verification report](../../docs/anime-season-groups-verification-2026-10-13.md)
+for the build and executed results rather than inferring a pass from this script.
+
+## Native Nyaa search metadata
+
+Use an already built image to exercise native v5/v3 complete-series searches and
+a v5 absolute episode search in a separate, disposable instance:
+
+```sh
+python3 docker/tests/nyaa-search.py --image tanukarr:local \
+  --title 'Baki-dou' --episode-count 13 --report nyaa-baki-dou-report.json
+```
+
+The script seeds a synthetic AniList-owned native season directly in its own
+SQLite database. `--episode-count` supplies the known catalogue count used for
+matching; repeat `--alias 'Exact catalogue alternate title'` only for aliases
+actually belonging to that title. These supplied values do not verify a live
+provider's metadata ingestion or ordering. The fixture is one native identity,
+rather than a merged parent anime; complete-series search uses that identity.
+An RSS snapshot can return valid but rejected or unmatched releases, and live
+RSS availability/counts can change.
+
+The script saves debug request URLs and parsed release metadata, keeps queue
+and history empty and configures no download client. It does not acquire
+torrents or media. `--fixture` instead runs a local synthetic RSS response to
+verify that `&`, `#` and `+` remain part of the generated search term. That mode
+does not contact public Nyaa. Neither mode verifies a real owner library,
+automatic downloads or media-server catalogue remapping.
+
+## Deterministic native multi-season pack searches
+
+The independent `series-packs.py` fixture exercises a Standard TV entry with
+six native episodes across Seasons 1, 2 and 3. It uses a fixed local RSS sidecar,
+without an AniList dependency or live indexer requests:
+
+```sh
+docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+python3 docker/tests/series-packs.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --report series-packs-report.json
+```
+
+Both v3/v5 complete-series routes must return the individual S01, S02 and S03
+packs together with an S01-S03 pack. The six per-season `seasonPacksOnly` calls
+must retain pack results and exclude individual-episode decoys. Native IDs,
+episode counts and multi-season boundaries remain unchanged. The receipt records
+each API call's actual RSS queries and elapsed time to expose episode-search
+fanout. Nothing is grabbed: download clients, queue/history, acquisition
+commands and torrent/media requests remain empty.
+
+The API binds to a random loopback port. The RSS sidecar publishes no host ports
+and joins only its owned network. Cleanup removes both owned containers, that
+network and temporary data; `--keep` retains them for inspection. The synthetic
+database is separate from an existing deployment and does not verify live TVDB
+metadata ingestion or a real library.
+
+## Docker workflow fixture prerequisites
+
+The Docker workflow runs smoke, functional/security, grouping/naming/AniList,
+reserved-title RSS and multi-season pack checks before publishing its tested
+image. The additional runtime checks use locally generated catalogue/RSS data;
+live AniList/Jikan/Nyaa responses and private account credentials are not
+required. They remain distinct from optional public-provider investigation.
+
+On Debian/Ubuntu, install the host media/certificate utilities and pull the
+pinned Python fixture image before reproducing the checks:
+
+```sh
+sudo apt-get update
+sudo apt-get install --yes --no-install-recommends openssl ffmpeg
+docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+python3 docker/tests/anime-groups.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report groups-report.json
+python3 docker/tests/nyaa-search.py --image tanukarr:local --fixture \
+  --report nyaa-fixture-report.json
+python3 docker/tests/series-packs.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --report series-packs-report.json
+```
+
+OpenSSL creates the grouping fixture's test CA. FFmpeg with `libx264` generates
+its tiny import videos. The pack/RSS checks need Python 3 and Docker but do not
+generate videos. Dependency installation and image pulls still require their
+package registries; the statement about local fixtures concerns provider data.
+
 ## Jellyfin integration test
 
 For development main's dedicated Jellyfin connection, run:

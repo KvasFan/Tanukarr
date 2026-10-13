@@ -6,6 +6,7 @@ namespace NzbDrone.Core.IndexerSearch.Definitions
 {
     public class AnimeSeasonSearchCriteria : SearchCriteriaBase
     {
+        public bool PackSearchOnly { get; set; }
         public int SeasonNumber { get; set; }
         public List<NzbDrone.Core.Tv.Episode> CatalogueEpisodes { get; set; }
         public List<string> SeasonSceneTitles { get; set; } = [];

@@ -15,6 +15,7 @@ using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.MetadataSource.AniList;
 using NzbDrone.Core.Test.Framework;
+using NzbDrone.Core.Tv;
 using NzbDrone.Test.Common;
 
 namespace NzbDrone.Core.Test.MetadataSource.AniList
@@ -78,6 +79,22 @@ namespace NzbDrone.Core.Test.MetadataSource.AniList
                     Times.Once());
             Mocker.GetMock<IHttpClient>()
                 .Verify(client => client.Post(It.IsAny<HttpRequest>()), Times.Never());
+        }
+
+        [Test]
+        public void should_keep_the_catalogue_movie_identity_and_one_episode_without_a_declared_count()
+        {
+            GivenResponses("{\"data\":{\"Media\":{\"id\":253,\"format\":\"MOVIE\",\"title\":{\"english\":\"Catalogue Movie\"},\"episodes\":null,\"duration\":90}}}");
+            var result = Subject.GetSeriesInfo(253);
+            result.Item1.ForeignId.Should().Be("253");
+            result.Item1.MetadataSource.Should().Be(MetadataSourceType.AniList);
+            result.Item1.AnimeGroupMemberKind.Should().Be(AnimeGroupMemberKind.Movie);
+            result.Item1.SeasonTypes.Should().ContainSingle().Which.EpisodeCount.Should().Be(1);
+            var episode = result.Item2.Should().ContainSingle().Which;
+            episode.ForeignId.Should().Be("253:1");
+            episode.SeasonNumber.Should().Be(1);
+            episode.EpisodeNumber.Should().Be(1);
+            episode.Runtime.Should().Be(90);
         }
 
         [Test]

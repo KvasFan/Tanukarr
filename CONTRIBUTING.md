@@ -54,6 +54,42 @@ The modal cases mount the actual React component with the real settings
 selector and mocked API/UI dependencies; they do not contact metadata providers
 or modify an existing library.
 
+For the grouped library model, mounted Add/Edit controls and season/movie
+selection cases, use `yarn test:anime-grouping`. These cases are also included
+in `yarn test:queue-details`; they use mocked API dependencies. The generated
+video Docker check in [Container verification](docker/tests/README.md#anime-season-grouping)
+exercises actual backend add/edit/import/rescan behavior with a local trusted
+catalogue fixture, separately from frontend component tests.
+
+The main frontend command also includes naming-token/search payload and AniList
+custom-list autocomplete cases. Those mocked component checks remain separate
+from the real Docker API import/list action checks.
+
+To reproduce the Docker workflow's new deterministic provider/search checks,
+use an already built image and the pinned Python fixture image. On Debian/Ubuntu:
+
+```sh
+sudo apt-get update
+sudo apt-get install --yes --no-install-recommends openssl ffmpeg
+docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+python3 docker/tests/anime-groups.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report groups-report.json
+python3 docker/tests/nyaa-search.py --image tanukarr:local --fixture \
+  --report nyaa-fixture-report.json
+python3 docker/tests/series-packs.py --image tanukarr:local \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --report series-packs-report.json
+```
+
+These scripts own disposable data and use synthetic local AniList/RSS responses;
+mandatory CI does not need a live public catalogue/indexer response or private
+provider credentials. OpenSSL and FFmpeg with `libx264` support the generated
+grouping catalogue/media test; Python 3 and Docker support the pack fixture.
+The separate multi-season fixture verifies v3/v5 complete and per-season
+pack-only results without downloads. See the
+[container prerequisites and scope](docker/tests/README.md#docker-workflow-fixture-prerequisites).
+
 ## Backend tests
 
 Run tests after a solution build, using `--no-build`. For example:
@@ -76,6 +112,27 @@ Automation needs Chrome and a matching ChromeDriver. The project-pinned driver c
 differ from the installed browser; the October 12 run supplied an external matching
 ChromeDriver 154. Browser tests use their own instances. Optional Playwright checks
 are described in the [container test guide](docker/tests/README.md).
+
+For [anime season groups](docs/anime-season-groups.md), exercise relationship
+resolution, stored membership and generated paths after the solution build:
+
+```sh
+dotnet test src/NzbDrone.Core.Test/Sonarr.Core.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~AnimeGroup|FullyQualifiedName~BuildFilePathFixture"
+```
+
+Include mixed TV/movie chains, movie-only sagas, branches/cycles, unsupported
+formats, request failures, manual and Disabled modes, same-kind duplicate slots
+and generated-path overlaps. Exercise all five naming expressions, strict arc
+subtitle selection, style overrides, malformed tokens and native filenames that
+must not parse a fabricated logical season. API checks must
+cover both v3 and v5 and older clients that omit grouping fields. Native
+catalogue IDs, episode counts/numbers and existing explicit paths must survive
+refresh and edits. A grouped-view test is separate from proving that native
+filenames import and rescan correctly under generated season and movie leaves;
+test legacy naming fields and typed custom-list membership through the real
+unsaved AniList Test/action routes without saving a provider. Record
+which kind actually ran in the
+[grouping verification checkpoint](docs/anime-season-groups-verification-2026-10-13.md).
 
 ## Compression and container tests
 

@@ -57,6 +57,17 @@ namespace NzbDrone.Core.Tv
         /// names on disk.
         /// </summary>
         public string OrderingId { get; set; }
+
+        public AnimeGroupingMode AnimeGroupingMode { get; set; }
+        public string AnimeGroupId { get; set; }
+        public string AnimeGroupTitle { get; set; }
+        public int? AnimeGroupSeasonNumber { get; set; }
+        public string AnimeGroupFolder { get; set; }
+        public AnimeGroupMemberKind AnimeGroupMemberKind { get; set; }
+        public AnimeGroupKind AnimeGroupKind { get; set; }
+        public AnimeGroupMovieFolderStyle AnimeGroupMovieFolderStyle { get; set; }
+        public int? AnimeGroupMovieNumber { get; set; }
+        public string AnimeGroupMemberFolder { get; set; }
         public HashSet<int> MalIds { get; set; }
         public HashSet<int> AniListIds { get; set; }
         public string Title { get; set; }
@@ -135,6 +146,41 @@ namespace NzbDrone.Core.Tv
 
             Language = otherSeries.Language;
             SeasonType = otherSeries.SeasonType;
+
+            var previousGroupingMode = AnimeGroupingMode;
+            var previousGroupId = AnimeGroupId;
+            AnimeGroupingMode = otherSeries.AnimeGroupingMode;
+
+            if (AnimeGroupingMode == AnimeGroupingMode.Manual)
+            {
+                var previousMemberKind = AnimeGroupMemberKind;
+                AnimeGroupId = otherSeries.AnimeGroupId;
+                AnimeGroupTitle = otherSeries.AnimeGroupTitle;
+                AnimeGroupMemberKind = otherSeries.AnimeGroupMemberKind;
+                AnimeGroupKind = otherSeries.AnimeGroupKind;
+                AnimeGroupMovieFolderStyle = otherSeries.AnimeGroupMovieFolderStyle;
+                AnimeGroupSeasonNumber = AnimeGroupMemberKind == AnimeGroupMemberKind.Season ? otherSeries.AnimeGroupSeasonNumber : null;
+                AnimeGroupMovieNumber = AnimeGroupMemberKind == AnimeGroupMemberKind.Movie ? otherSeries.AnimeGroupMovieNumber : null;
+
+                if (previousGroupId != AnimeGroupId)
+                {
+                    AnimeGroupFolder = null;
+                }
+
+                if (previousGroupId != AnimeGroupId || previousMemberKind != AnimeGroupMemberKind)
+                {
+                    AnimeGroupMemberFolder = null;
+                }
+            }
+            else if (AnimeGroupingMode == AnimeGroupingMode.Disabled || previousGroupingMode != AnimeGroupingMode)
+            {
+                AnimeGroupId = null;
+                AnimeGroupTitle = null;
+                AnimeGroupSeasonNumber = null;
+                AnimeGroupFolder = null;
+                AnimeGroupMovieNumber = null;
+                AnimeGroupMemberFolder = null;
+            }
         }
     }
 }

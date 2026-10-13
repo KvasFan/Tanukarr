@@ -85,7 +85,7 @@ namespace Sonarr.Api.V3.Indexers
             }
 
             if (release.CompleteSeries &&
-                (remoteEpisode.Series?.Id != release.SeriesId || remoteEpisode.ParsedEpisodeInfo?.IsCompleteSeries != true))
+                !CompleteSeriesReleaseParser.HasMappedSeasonCoverage(remoteEpisode, release.SeriesId.Value))
             {
                 throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
             }
@@ -182,11 +182,16 @@ namespace Sonarr.Api.V3.Indexers
 
         [HttpGet]
         [Produces("application/json")]
-        public async Task<List<ReleaseResource>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber, bool completeSeries = false)
+        public async Task<List<ReleaseResource>> GetReleases(int? seriesId, int? episodeId, int? seasonNumber, bool completeSeries = false, bool seasonPacksOnly = false)
         {
+            if (seasonPacksOnly && (!seriesId.HasValue || seriesId <= 0 || !seasonNumber.HasValue || seasonNumber <= 0 || episodeId.HasValue || completeSeries))
+            {
+                throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Season-pack search requires only a positive seriesId and seasonNumber.");
+            }
+
             if (completeSeries)
             {
-                if (!seriesId.HasValue || episodeId.HasValue || seasonNumber.HasValue)
+                if (!seriesId.HasValue || seriesId <= 0 || episodeId.HasValue || seasonNumber.HasValue)
                 {
                     throw new NzbDroneClientException(HttpStatusCode.BadRequest, "Complete-series search requires only seriesId.");
                 }
@@ -201,7 +206,7 @@ namespace Sonarr.Api.V3.Indexers
 
             if (seriesId.HasValue && seasonNumber.HasValue)
             {
-                return await GetSeasonReleases(seriesId.Value, seasonNumber.Value);
+                return await GetSeasonReleases(seriesId.Value, seasonNumber.Value, seasonPacksOnly);
             }
 
             if (seriesId.HasValue || seasonNumber.HasValue)
@@ -257,11 +262,13 @@ namespace Sonarr.Api.V3.Indexers
             }
         }
 
-        private async Task<List<ReleaseResource>> GetSeasonReleases(int seriesId, int seasonNumber)
+        private async Task<List<ReleaseResource>> GetSeasonReleases(int seriesId, int seasonNumber, bool seasonPacksOnly)
         {
             try
             {
-                var decisions = await _releaseSearchService.SeasonSearch(seriesId, seasonNumber, false, false, true, true);
+                var decisions = seasonPacksOnly
+                    ? await _releaseSearchService.SeasonPackSearch(seriesId, seasonNumber, true, true)
+                    : await _releaseSearchService.SeasonSearch(seriesId, seasonNumber, false, false, true, true);
                 var prioritizedDecisions = _prioritizeDownloadDecision.PrioritizeDecisions(decisions);
 
                 return MapDecisions(prioritizedDecisions);

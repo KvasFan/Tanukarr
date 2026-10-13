@@ -95,7 +95,7 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             await Subject.CompleteSeriesSearch(_xemSeries.Id);
 
             _mockIndexer.Verify(s => s.Fetch(It.Is<CompleteSeriesSearchCriteria>(c =>
-                c.InteractiveSearch && !c.MonitoredEpisodesOnly &&
+                c.InteractiveSearch && c.IncludeSeasonPacks && !c.MonitoredEpisodesOnly &&
                 c.SceneTitles.Contains("Anime Alias") && c.Episodes.All(e => e.SeasonNumber > 0))),
                 Times.Once());
             usenet.Verify(s => s.Fetch(It.IsAny<CompleteSeriesSearchCriteria>()), Times.Never());
@@ -121,12 +121,42 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             await Subject.CompleteSeriesSearch(_xemSeries.Id, userInvoked, false);
 
             _mockIndexer.Verify(s => s.Fetch(It.Is<CompleteSeriesSearchCriteria>(c =>
-                !c.InteractiveSearch && c.MonitoredEpisodesOnly && c.UserInvokedSearch == userInvoked &&
+                !c.InteractiveSearch && !c.IncludeSeasonPacks && c.MonitoredEpisodesOnly && c.UserInvokedSearch == userInvoked &&
                 c.Episodes.Count == _xemEpisodes.Count - 1 && c.Episodes.Any(e => !e.Monitored) &&
                 c.Episodes.All(e => e.SeasonNumber > 0))),
                 Times.Once());
             usenet.Verify(s => s.Fetch(It.IsAny<CompleteSeriesSearchCriteria>()), Times.Never());
             Mocker.GetMock<IIndexerFactory>().Verify(s => s.InteractiveSearchEnabled(It.IsAny<bool>()), Times.Never());
+        }
+
+        [Test]
+        public async Task interactive_anime_season_pack_search_should_not_fan_out_to_episode_requests()
+        {
+            WithEpisodes();
+            _xemSeries.SeriesType = SeriesTypes.Anime;
+            _xemSeries.AlternateTitles = new List<string> { "Known anime alias" };
+            Mocker.GetMock<IIndexerFactory>().Setup(s => s.InteractiveSearchEnabled(true))
+                .Returns(new List<IIndexer> { _mockIndexer.Object });
+            var allCriteria = WatchForSearchCriteria();
+
+            await Subject.SeasonPackSearch(_xemSeries.Id, 1, true, true);
+
+            allCriteria.OfType<AnimeSeasonSearchCriteria>().Should().ContainSingle()
+                .Which.PackSearchOnly.Should().BeTrue();
+            allCriteria.OfType<AnimeEpisodeSearchCriteria>().Should().BeEmpty();
+            allCriteria.OfType<AnimeSeasonSearchCriteria>().Single().CatalogueEpisodes
+                .Should().OnlyContain(e => e.SeasonNumber == 1);
+        }
+
+        [Test]
+        public async Task a_season_without_catalogue_episodes_should_not_dispatch_any_pack_requests()
+        {
+            var allCriteria = WatchForSearchCriteria();
+
+            var results = await Subject.SeasonPackSearch(_xemSeries.Id, 99, true, true);
+
+            results.Should().BeEmpty();
+            allCriteria.Should().BeEmpty();
         }
 
         private void WithEpisode(int seasonNumber, int episodeNumber, int? sceneSeasonNumber, int? sceneEpisodeNumber, string airDate = null)

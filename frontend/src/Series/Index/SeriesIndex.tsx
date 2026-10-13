@@ -20,6 +20,7 @@ import TableOptionsModal from 'Components/Table/TableOptions/TableOptionsModal';
 import { useCustomFiltersList } from 'Filters/useCustomFilters';
 import { icons, kinds } from 'Helpers/Props';
 import { DESCENDING } from 'Helpers/Props/sortDirections';
+import { groupAnimeSeries } from 'Series/Grouping/animeGrouping';
 import NoSeries from 'Series/NoSeries';
 import Series from 'Series/Series';
 import {
@@ -93,10 +94,20 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
     sortKey,
     sortDirection,
     view,
+    groupAnimeSeasons,
     columns,
     pathFilter,
   } = useSeriesOptions();
   const filters = FILTERS;
+  const { displayItems, groupsByRepresentativeId } = useMemo(
+    () => groupAnimeSeries(data, groupAnimeSeasons),
+    [data, groupAnimeSeasons]
+  );
+  const hasGroups = data.some((series) => !!series.animeGroupId);
+  const onGroupingToggle = useCallback(() => {
+    setSeriesOption('groupAnimeSeasons', !groupAnimeSeasons);
+    scrollerRef.current?.scrollTo(0, 0);
+  }, [groupAnimeSeasons]);
 
   const customFilters = useCustomFiltersList('series');
 
@@ -263,21 +274,24 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
       };
     }
 
-    const characters = data.reduce((acc: Record<string, number>, item) => {
-      let char = item.sortTitle.charAt(0);
+    const characters = displayItems.reduce(
+      (acc: Record<string, number>, item) => {
+        let char = item.sortTitle.charAt(0);
 
-      if (!isNaN(Number(char))) {
-        char = '#';
-      }
+        if (!isNaN(Number(char))) {
+          char = '#';
+        }
 
-      if (char in acc) {
-        acc[char] = acc[char] + 1;
-      } else {
-        acc[char] = 1;
-      }
+        if (char in acc) {
+          acc[char] = acc[char] + 1;
+        } else {
+          acc[char] = 1;
+        }
 
-      return acc;
-    }, {});
+        return acc;
+      },
+      {}
+    );
 
     const order = Object.keys(characters).sort();
 
@@ -290,7 +304,7 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
       characters,
       order,
     };
-  }, [data, sortKey, sortDirection]);
+  }, [displayItems, sortKey, sortDirection]);
   const showJumpBar = isLoaded && !!jumpBarItems.order.length;
 
   const ViewComponent = useMemo(() => getViewComponent(view), [view]);
@@ -357,6 +371,19 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
 
         <PageToolbarSpacer />
 
+        {hasGroups ? (
+          <ToolbarItem
+            id="anime-groups"
+            priority={2}
+            groupId="right"
+            label={translate(
+              groupAnimeSeasons ? 'ShowIndividualSeries' : 'ShowAnimeGroups'
+            )}
+            iconName={groupAnimeSeasons ? icons.UNGROUP : icons.GROUP}
+            onPress={onGroupingToggle}
+          />
+        ) : null}
+
         <ToolbarItem
           id="options"
           priority={2}
@@ -422,7 +449,8 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
             <div className={styles.contentBodyContainer}>
               <ViewComponent
                 scrollerRef={scrollerRef}
-                items={data}
+                items={displayItems}
+                groupsByRepresentativeId={groupsByRepresentativeId}
                 sortKey={sortKey}
                 sortDirection={sortDirection}
                 jumpToCharacter={jumpToCharacter}

@@ -1,0 +1,610 @@
+﻿{
+    "data":  {
+                 "Page":  {
+                              "media":  [
+                                            {
+                                                "id":  161645,
+                                                "idMal":  54492,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "The Apothecary Diaries",
+                                                              "romaji":  "Kusuriya no Hitorigoto"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  99026,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "NOVEL",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "ALTERNATIVE",
+                                                                                    "node":  {
+                                                                                                 "id":  99022,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "ALTERNATIVE",
+                                                                                    "node":  {
+                                                                                                 "id":  113322,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries: Maomao\u0027s Notes from the Inner Palace",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto: Maomao no Koukyuu Nazotoki Techou"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SIDE_STORY",
+                                                                                    "node":  {
+                                                                                                 "id":  170508,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "ONA",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Maomao no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  176301,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries Season 2",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto 2nd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  176301,
+                                                "idMal":  58514,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "The Apothecary Diaries Season 2",
+                                                              "romaji":  "Kusuriya no Hitorigoto 2nd Season"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  99026,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "NOVEL",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "PREQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  161645,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SIDE_STORY",
+                                                                                    "node":  {
+                                                                                                 "id":  186148,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "ONA",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Maomao no Hitorigoto 2nd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  195516,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries Season 3",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto 3rd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "ALTERNATIVE",
+                                                                                    "node":  {
+                                                                                                 "id":  99022,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  195516,
+                                                "idMal":  61987,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "The Apothecary Diaries Season 3",
+                                                              "romaji":  "Kusuriya no Hitorigoto 3rd Season"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  99026,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "NOVEL",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "PREQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  176301,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries Season 2",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto 2nd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  200927,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto 3rd Season Part 2"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SIDE_STORY",
+                                                                                    "node":  {
+                                                                                                 "id":  200929,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "MOVIE",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries: The Late Lady’s Treasure",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto: Bouhi no Hihou"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "ALTERNATIVE",
+                                                                                    "node":  {
+                                                                                                 "id":  99022,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  170508,
+                                                "idMal":  56975,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  null,
+                                                              "romaji":  "Maomao no Hitorigoto"
+                                                          },
+                                                "format":  "ONA",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "PARENT",
+                                                                                    "node":  {
+                                                                                                 "id":  161645,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  186148,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "ONA",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Maomao no Hitorigoto 2nd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  200929,
+                                                "idMal":  62844,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "The Apothecary Diaries: The Late Lady’s Treasure",
+                                                              "romaji":  "Kusuriya no Hitorigoto: Bouhi no Hihou"
+                                                          },
+                                                "format":  "MOVIE",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "PARENT",
+                                                                                    "node":  {
+                                                                                                 "id":  195516,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries Season 3",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto 3rd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  200927,
+                                                "idMal":  62841,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  null,
+                                                              "romaji":  "Kusuriya no Hitorigoto 3rd Season Part 2"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "PREQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  195516,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries Season 3",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto 3rd Season"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  99026,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "NOVEL",
+                                                                                                 "title":  {
+                                                                                                               "english":  "The Apothecary Diaries",
+                                                                                                               "romaji":  "Kusuriya no Hitorigoto"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  120120,
+                                                "idMal":  42249,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "Tokyo Revengers",
+                                                              "romaji":  "Tokyo Revengers"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  102988,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo卍Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SPIN_OFF",
+                                                                                    "node":  {
+                                                                                                 "id":  132467,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "ONA",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Tokyo Revengers: Chibi Reve"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  142853,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers Season 2",
+                                                                                                               "romaji":  "Tokyo Revengers: Seiya Kessen-hen"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "CHARACTER",
+                                                                                    "node":  {
+                                                                                                 "id":  214263,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "ONA",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Coffee Kousou"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  163329,
+                                                "idMal":  54918,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "Tokyo Revengers Season 2 Part 2",
+                                                              "romaji":  "Tokyo Revengers: Tenjiku-hen"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  102988,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo卍Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "PREQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  142853,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers Season 2",
+                                                                                                               "romaji":  "Tokyo Revengers: Seiya Kessen-hen"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  178083,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers: War of the Three Titans Arc",
+                                                                                                               "romaji":  "Tokyo Revengers: Santen Sensou-hen"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  178083,
+                                                "idMal":  59088,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "Tokyo Revengers: War of the Three Titans Arc",
+                                                              "romaji":  "Tokyo Revengers: Santen Sensou-hen"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "PREQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  163329,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers Season 2 Part 2",
+                                                                                                               "romaji":  "Tokyo Revengers: Tenjiku-hen"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  102988,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo卍Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SPIN_OFF",
+                                                                                    "node":  {
+                                                                                                 "id":  178084,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "ONA",
+                                                                                                 "title":  {
+                                                                                                               "english":  null,
+                                                                                                               "romaji":  "Douwa Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  142853,
+                                                "idMal":  50608,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  "Tokyo Revengers Season 2",
+                                                              "romaji":  "Tokyo Revengers: Seiya Kessen-hen"
+                                                          },
+                                                "format":  "TV",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "SOURCE",
+                                                                                    "node":  {
+                                                                                                 "id":  102988,
+                                                                                                 "type":  "MANGA",
+                                                                                                 "format":  "MANGA",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo卍Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "PREQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  120120,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "OTHER",
+                                                                                    "node":  {
+                                                                                                 "id":  162529,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "MUSIC",
+                                                                                                 "title":  {
+                                                                                                               "english":  "It Might Be Painful, but I Still Love It.",
+                                                                                                               "romaji":  "Kizutsukedo, Aishiteru."
+                                                                                                           }
+                                                                                             }
+                                                                                },
+                                                                                {
+                                                                                    "relationType":  "SEQUEL",
+                                                                                    "node":  {
+                                                                                                 "id":  163329,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers Season 2 Part 2",
+                                                                                                               "romaji":  "Tokyo Revengers: Tenjiku-hen"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  132467,
+                                                "idMal":  48735,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  null,
+                                                              "romaji":  "Tokyo Revengers: Chibi Reve"
+                                                          },
+                                                "format":  "ONA",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "PARENT",
+                                                                                    "node":  {
+                                                                                                 "id":  120120,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            },
+                                            {
+                                                "id":  214263,
+                                                "idMal":  57751,
+                                                "type":  "ANIME",
+                                                "title":  {
+                                                              "english":  null,
+                                                              "romaji":  "Coffee Kousou"
+                                                          },
+                                                "format":  "ONA",
+                                                "relations":  {
+                                                                  "edges":  [
+                                                                                {
+                                                                                    "relationType":  "CHARACTER",
+                                                                                    "node":  {
+                                                                                                 "id":  120120,
+                                                                                                 "type":  "ANIME",
+                                                                                                 "format":  "TV",
+                                                                                                 "title":  {
+                                                                                                               "english":  "Tokyo Revengers",
+                                                                                                               "romaji":  "Tokyo Revengers"
+                                                                                                           }
+                                                                                             }
+                                                                                }
+                                                                            ]
+                                                              }
+                                            }
+                                        ]
+                          }
+             },
+    "source":  "https://graphql.anilist.co",
+    "recordedUtc":  "2026-10-13T08:50:32.8546120Z"
+}

@@ -30,6 +30,10 @@ namespace NzbDrone.Core.MetadataSource.AniList
             // more episodes than the declared count, so take whichever is larger to avoid
             // truncating the list mid-season.
             var count = Math.Max(media.Episodes ?? 0, airDates.Count == 0 ? 0 : airDates.Keys.Max());
+            if (media.Format == "MOVIE")
+            {
+                count = Math.Max(count, 1);
+            }
 
             var episodes = new List<Episode>(count);
 

@@ -20,6 +20,11 @@ export interface NamingSettingsModel {
   seriesFolderFormat: string;
   seasonFolderFormat: string;
   specialsFolderFormat: string;
+  animeGroupFolderFormat: string;
+  animeGroupSeasonFolderFormat: string;
+  animeGroupArcFolderFormat: string;
+  animeGroupMovieFolderFormat: string;
+  animeGroupMovieSagaFolderFormat: string;
 }
 
 export interface NamingExamples {
@@ -31,6 +36,12 @@ export interface NamingExamples {
   seriesFolderExample: string;
   seasonFolderExample: string;
   specialsFolderExample: string;
+  animeGroupFolderExample?: string;
+  animeGroupSeasonFolderExample?: string;
+  animeGroupArcFolderExample?: string;
+  animeGroupMovieFolderExample?: string;
+  animeGroupMovieSagaFolderExample?: string;
+  animeGroupMovieEpisodeExample?: string;
 }
 
 export const useNamingSettings = () => {

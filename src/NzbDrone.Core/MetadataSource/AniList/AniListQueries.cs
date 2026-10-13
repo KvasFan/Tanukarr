@@ -4,6 +4,23 @@ namespace NzbDrone.Core.MetadataSource.AniList
     {
         public const string BaseUrl = "https://graphql.anilist.co";
 
+        public const string RelationsById = @"
+            query ($id: Int) {
+                Media(id: $id, type: ANIME) {
+                    id
+                    type
+                    format
+                    title { romaji english native userPreferred }
+                    relations {
+                        edges {
+                            relationType(version: 2)
+                            node { id type format }
+                        }
+                    }
+                }
+            }
+        ";
+
         /// <summary>
         /// Full detail for one anime. perPage on airingSchedule is capped at AniList's
         /// maximum of 50 per page; long-running series need paging, which

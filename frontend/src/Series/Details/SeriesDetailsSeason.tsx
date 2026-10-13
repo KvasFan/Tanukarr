@@ -31,6 +31,7 @@ import InteractiveImportModal from 'InteractiveImport/InteractiveImportModal';
 import OrganizePreviewModal from 'Organize/OrganizePreviewModal';
 import SeriesHistoryModal from 'Series/History/SeriesHistoryModal';
 import SeasonInteractiveSearchModal from 'Series/Search/SeasonInteractiveSearchModal';
+import SeasonReleaseSearchButton from 'Series/Search/SeasonReleaseSearchButton';
 import { Statistics } from 'Series/Series';
 import { useSingleSeries, useToggleSeasonMonitored } from 'Series/useSeries';
 import { TableOptionsChangePayload } from 'typings/Table';
@@ -347,6 +348,12 @@ function SeriesDetailsSeason({
           />
           {isSmallScreen ? null : <span>&nbsp;</span>}
         </Link>
+
+        <SeasonReleaseSearchButton
+          seriesId={seriesId}
+          seasonNumber={seasonNumber}
+          episodeCount={totalEpisodeCount}
+        />
 
         {isSmallScreen ? (
           <Menu
