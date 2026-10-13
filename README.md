@@ -212,9 +212,10 @@ and release notes for available tags, architectures and digests.
 | `edge` | Every commit to `main` after workflow tests and the container smoke test. Development builds may still change behavior. |
 | `sha-<full commit>` | Build tag identifying one source commit; use a digest to pin the exact image. |
 
-The inherited release workflow can build `linux/amd64` and `linux/arm64`. Published
-architecture availability and executed validation belong to each release's notes;
-earlier local runtime verification covered `linux/amd64`.
+The current release workflow publishes **`linux/amd64`**. Dockerfile support for
+another architecture does not establish a published or tested image; additional
+architectures require their own verified artifacts. Release notes identify the
+actual image architecture, digest and executed checks.
 
 Historical SonarrWeeb 0.0.1 and 0.1.0 assets keep their original image namespace
 `ghcr.io/kvasexert/sonarrweeb`, filenames and immutable tags. The stable 0.1.0
