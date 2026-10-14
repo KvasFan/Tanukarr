@@ -1,7 +1,7 @@
 # Install Tanukarr 1.0.3 with Docker
 
 Tanukarr is an independent Sonarr fork. Its source and release notes are on
-[GitHub](https://github.com/KvasExert/Tanukarr). The **1.0.3**
+[GitHub](https://github.com/KvasExpert/Tanukarr). The **1.0.3**
 [release notes](releases/1.0.3.md) describe hourly quality-size controls, mixed
 profile summaries, guarded global edits and codec-aware size decisions. The
 exclusion-veto list controls and complete AniList membership recovery introduced
@@ -13,12 +13,13 @@ Sonarr and fork contributors, including recorded AI tool/model attribution, are
 listed in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
 GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
-below uses `ghcr.io/kvasexert/tanukarr:1.0.3`; the GitHub repository itself is source
+below uses `ghcr.io/kvasexpert/tanukarr:1.0.3`; the GitHub repository itself is source
 code, not a Docker image. Check the release notes and
-[package page](https://github.com/users/KvasExert/packages/container/package/tanukarr) for
-the published architectures and image digest. Use only a tag that has finished
-publishing. **1.0.3 publication is pending until the gated workflows complete
-successfully.** A configured workflow does not establish that an image is available.
+[package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr) for
+the published architectures and image digest. The
+[1.0.3 publication follow-up](releases/1.0.3-publication.md) verifies anonymous
+pulls, exact source/image identities and the nine downloadable release assets.
+Use the digest in that report when pinning a deployment.
 
 ## Prerequisites
 
@@ -42,7 +43,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasexert/tanukarr:1.0.3
+    image: ghcr.io/kvasexpert/tanukarr:1.0.3
     container_name: tanukarr
     restart: unless-stopped
     ports:
@@ -90,10 +91,10 @@ Open **http://localhost:6970**. The named volume holds the database, `config.xml
 settings and logs. Recreating the container retains this volume. Avoid
 `docker compose down -v`, which deletes it.
 
-Once the [1.0.3 release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.3)
-has finished publishing, its ready-to-use
-[`compose.yaml`](https://github.com/KvasExert/Tanukarr/releases/download/v1.0.3/compose.yaml)
-with bind-mounted `./config` and `./media` defaults is an alternative to the
+The published [1.0.3 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.3)
+provides ready-to-use
+[`compose.yaml`](https://github.com/KvasExpert/Tanukarr/releases/download/v1.0.3/compose.yaml)
+with bind-mounted `./config` and `./media` defaults. It is an alternative to the
 named-volume example. Download that file into a new
 installation directory, create those two directories with the correct permissions,
 and run the same Compose commands above. Its `TANUKARR_*` variables also allow
@@ -197,7 +198,7 @@ setting for the new instance.
 A **public** GHCR package supports anonymous pulls:
 
 ```sh
-docker pull ghcr.io/kvasexert/tanukarr:1.0.3
+docker pull ghcr.io/kvasexpert/tanukarr:1.0.3
 ```
 
 If GitHub reports `denied` or `unauthorized`, confirm that the tag exists and that
@@ -221,7 +222,7 @@ tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
 
 ```yaml
-    image: ghcr.io/kvasexert/tanukarr@sha256:REPLACE_WITH_RELEASE_DIGEST
+    image: ghcr.io/kvasexpert/tanukarr@sha256:REPLACE_WITH_RELEASE_DIGEST
 ```
 
 Release workflows also produce `latest` for release builds, `edge` for untagged
@@ -248,7 +249,7 @@ location when a rollback requires it. Never overwrite your only backup.
 ## Release archive fallback
 
 If a release includes a Docker image archive, download that archive and its
-checksum from the [GitHub release](https://github.com/KvasExert/Tanukarr/releases/tag/v1.0.3).
+checksum from the [GitHub release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.3).
 Choose an architecture compatible with your Docker host. Verify the filename
 listed in the release's checksum file before loading it:
 
@@ -296,9 +297,11 @@ establish that an equivalent 1.0.3 asset has been published or tested.
 To build the tagged source instead of pulling the published image:
 
 ```sh
-git clone --branch v1.0.3 --depth 1 https://github.com/KvasExert/Tanukarr.git
+git clone --branch v1.0.3 --depth 1 https://github.com/KvasExpert/Tanukarr.git
 cd Tanukarr
-docker build --progress=plain -t tanukarr:1.0.3 .
+docker build --progress=plain \
+  --build-arg TANUKARR_SOURCE=https://github.com/KvasExpert/Tanukarr \
+  -t tanukarr:1.0.3 .
 ```
 
 Use `image: tanukarr:1.0.3` in the standalone Compose example above and run
@@ -306,8 +309,11 @@ Use `image: tanukarr:1.0.3` in the standalone Compose example above and run
 the checks encoded in the Dockerfile. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The `v1.0.3` checkout command requires that the release tag has been pushed.
-Before that happens, clone `main` and check the repository's `VERSION` file.
+The explicit source argument uses the current canonical repository URL. The
+tagged Dockerfile retains its original compatibility fallback URL, which redirects
+to the renamed account; changing that immutable source is not required to build.
+The `v1.0.3` tag is published. To build development code instead, clone `main`
+and check the repository's `VERSION` file.
 An untagged main checkout can include changes added after a release, so record
 the full Git commit when reproducing a build.
 
@@ -320,7 +326,7 @@ their configuration mount and Compose project identity when changing images.
 ## Upgrading an existing installation
 
 The repository and product are now named **Tanukarr**. New installations use
-`ghcr.io/kvasexert/tanukarr:1.0.3`. Historical
+`ghcr.io/kvasexpert/tanukarr:1.0.3`. Historical
 [0.0.1](https://github.com/KvasExert/Tanukarr/releases/tag/v0.0.1) and
 [0.1.0](https://github.com/KvasExert/Tanukarr/releases/tag/v0.1.0) releases retain
 the image paths and filenames recorded in their manifests. A GitHub repository
@@ -378,7 +384,7 @@ the outstanding raw-XML restore limitation and PostgreSQL backup requirements.
 
 Use `docker compose logs` and the application logs for diagnosis, removing keys,
 passwords, private account data and sensitive paths before sharing. Report this
-release's problems in the [Tanukarr issue tracker](https://github.com/KvasExert/Tanukarr/issues).
+release's problems in the [Tanukarr issue tracker](https://github.com/KvasExpert/Tanukarr/issues).
 For vulnerabilities, follow [SECURITY.md](../SECURITY.md). The
 [container test guide](../docker/tests/README.md) describes tests with disposable
 data, and the [documentation index](README.md) links the dated validation reports.

@@ -179,9 +179,10 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr). The **1.0.3** release target uses
-planned Git tag `v1.0.3` and container tag `ghcr.io/kvasexert/tanukarr:1.0.3`.
-Publication is pending until the gated workflows complete successfully.
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The published **1.0.3** release uses
+Git tag `v1.0.3` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.3`.
+Its [publication follow-up](docs/releases/1.0.3-publication.md) records actual
+hosted checks, artifact identities and remaining findings.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
@@ -228,7 +229,7 @@ is excluded, or apply an old report's results to an untested new build.
 ## Reports and suggestions
 
 Report Tanukarr issues to
-[this project's tracker](https://github.com/KvasExert/Tanukarr/issues). Include the
+[this project's tracker](https://github.com/KvasExpert/Tanukarr/issues). Include the
 Tanukarr release version, commit/image digest, internal runtime version,
 provider, series/release involved, expected behavior and sanitized logs. The
 original [Sonarr Pro repository](https://github.com/KakarottoCake/Sonarr-Pro) is a

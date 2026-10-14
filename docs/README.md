@@ -20,8 +20,9 @@ repeat past verification or rename existing releases, volumes or tools.
 | [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
 | [Quality sizes and video codecs](quality-and-codec-size.md) | Hourly size editors, mixed profile summaries, global-save scope, heuristic codec factors and unchanged API units |
 | [Series, anime and movie groups](anime-season-groups.md) | 1.0.1 official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
-| [Tanukarr 1.0.3](releases/1.0.3.md) | Quality/codec changes, fresh upstream review and release preparation scope |
-| [1.0.3 release verification](releases/1.0.3-verification.md) | New checks and exact source/image/publication identities, recorded only when executed |
+| [Tanukarr 1.0.3](releases/1.0.3.md) | Published quality/codec changes, upstream review and upgrade guidance |
+| [1.0.3 release verification](releases/1.0.3-verification.md) | Preserved preparation ledger, original candidate checks and limits |
+| [1.0.3 publication follow-up](releases/1.0.3-publication.md) | Verified tag reports, nine assets/public digest, published browser checks, late upstream review, security and deployment evidence |
 | [Tanukarr 1.0.2](releases/1.0.2.md) | Final list selection/exclusion behavior, provider-specific list capabilities, simplified controls and upgrade guidance |
 | [1.0.2 release verification](releases/1.0.2-verification.md) | Newly executed source/image checks, provider coverage, remaining findings and publication checkpoint |
 | [1.0.2 publication follow-up](releases/1.0.2-publication.md) | Completed hosted workflows, verified nine assets/registry digest, owner-data preservation and remaining live-provider/security limits |
@@ -83,9 +84,10 @@ the intermediate inclusion-first development checkpoint remains historical.
 
 Tanukarr 1.0.3 adds readable hourly quality limits, mixed-profile summaries,
 guarded partial global edits and fixed codec-aware size comparisons. Its source
-and runtime verification belong to the new release report. Publication remains
-pending until the gated workflows complete successfully; historical counts are
-not reused to verify the new image.
+and runtime preparation remain in the original ledger. The publication follow-up
+records verified distribution, successful latest CI/main/tag attempts and
+subsequent checks, retaining the earlier main fixture failure and deployment
+rollback. Historical counts are not reused to verify the new image.
 
 The release contains upstream Sonarr `develop` through `57816c149`. The
 initial integration report's `698bb1dbb` remains a historical checkpoint; later

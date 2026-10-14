@@ -13,12 +13,13 @@ search encoding for titles containing reserved characters. It retains Sonarr
 and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
-Get the source from [KvasExert/Tanukarr](https://github.com/KvasExert/Tanukarr)
+Get the source from [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr)
 and read the [release notes for 1.0.3](docs/releases/1.0.3.md). Published versions
-and assets are listed on the [GitHub releases page](https://github.com/KvasExert/Tanukarr/releases).
-The [1.0.3 verification report](docs/releases/1.0.3-verification.md) records
-newly executed checks and publication state. Publication remains pending until
-the gated workflows complete successfully. The historical
+and assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
+The [1.0.3 verification report](docs/releases/1.0.3-verification.md) preserves
+the preparation checkpoint. The [publication follow-up](docs/releases/1.0.3-publication.md)
+records the verified release, public image, hosted checks and deployment status.
+The historical
 [1.0.2 publication follow-up](docs/releases/1.0.2-publication.md) records that
 release's hosted workflows, verified assets/image and preserved deployment.
 The historical
@@ -52,7 +53,7 @@ A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series and anime,
 with a metadata provider selected per title, flexible episode orderings and
 shared library, search, download and import tools in a single Docker image.
 
-> **Unofficial.** Tanukarr is not affiliated with, endorsed by, or supported by the Sonarr project. Report Tanukarr problems in [this repository](https://github.com/KvasExert/Tanukarr/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
+> **Unofficial.** Tanukarr is not affiliated with, endorsed by, or supported by the Sonarr project. Report Tanukarr problems in [this repository](https://github.com/KvasExpert/Tanukarr/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
 
 ## Contributors and AI attribution
 
@@ -246,12 +247,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexert/tanukarr:1.0.3
+docker pull ghcr.io/kvasexpert/tanukarr:1.0.3
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexert/tanukarr:1.0.3
+  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.0.3
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -305,13 +306,13 @@ also avoids unnecessary Remote Path Mappings.
 
 ### Publishing workflow tags
 
-The release image path is `ghcr.io/kvasexert/tanukarr`. Check the
-[package page](https://github.com/users/KvasExert/packages/container/package/tanukarr)
+The release image path is `ghcr.io/kvasexpert/tanukarr`. Check the
+[package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr)
 and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `1.0.3` | Hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions. Use after publication completes. |
+| `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |
 | `1.0.2` | Published list-control/provider checkpoint: exclusion vetoes, complete AniList membership recovery, combined TMDB/Trakt/MDBList sources and direct MAL account status/tag filters. |
 | `1.0.1` | Historical grouping, season-pack searches, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; retains its original list controls. |
 | `1.0.0` | Historical first Tanukarr release with Jellyfin refresh, AniList include/exclude controls and request-limit recovery, and corrected Nyaa query encoding. |
@@ -399,7 +400,7 @@ What's asked instead:
 - Run the solution build, relevant backend tests and all frontend checks listed
   in [CONTRIBUTING.md](CONTRIBUTING.md). Document skipped or unavailable checks.
 
-Suggestions and bug reports are welcome — [open a Tanukarr issue](https://github.com/KvasExert/Tanukarr/issues).
+Suggestions and bug reports are welcome — [open a Tanukarr issue](https://github.com/KvasExpert/Tanukarr/issues).
 
 ### Building locally
 

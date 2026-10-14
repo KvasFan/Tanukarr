@@ -49,7 +49,8 @@ external services if moving an installation directory.
 
 For an existing Tanukarr Docker deployment, stop the container, save a
 consistent configuration backup and change the image to
-`ghcr.io/kvasexert/tanukarr:1.0.3` after verified publication. Preserve the
+`ghcr.io/kvasexpert/tanukarr:1.0.3`; its [publication follow-up](releases/1.0.3-publication.md)
+records the verified digest and deployment evidence. Preserve the
 original `/config` volume or bind mount, media mounts, Compose project/volume
 identity and client categories.
 A new volume name selects new storage and can make the application appear empty.

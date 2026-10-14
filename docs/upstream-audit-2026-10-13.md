@@ -1,5 +1,10 @@
 # Upstream compatibility audit - October 13, 2026
 
+This original checkpoint is preserved. The later
+[publication-stage recheck](releases/1.0.3-publication.md#late-upstream-recheck-and-dependency-decision)
+records the subsequently advanced gaboy main head and actual isolated dependency
+prototype; those later results do not replace the source observations below.
+
 This is a fresh read-only review for the Tanukarr 1.0.3 work. It compares public
 GitHub branch heads, the accepted integration ledgers and Tanukarr history at
 `a1652467ba0c2bf3a9c9d03147a6bee89aaa8c49`. It records source inspection, not a

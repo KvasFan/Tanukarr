@@ -133,5 +133,6 @@ The numeric quality/source ranking, independent per-profile editing, supported
 v3/v5 route names and inherited internal Sonarr version are retained. There is
 no v4 API route. See [compatibility and backups](compatibility-and-backups.md)
 before changing an existing deployment, and the
-[1.0.3 verification report](releases/1.0.3-verification.md) for checks actually
-executed against this implementation.
+[1.0.3 preparation ledger](releases/1.0.3-verification.md) and
+[publication follow-up](releases/1.0.3-publication.md) for executed checks and
+verified artifact identities.

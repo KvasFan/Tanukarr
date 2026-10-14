@@ -28,6 +28,11 @@ local commit makes their original author name unreachable from HEAD.
   seasons, mobile/path controls, compression and library-tools implementations.
 - **Matt Flowers**, author in the **gaboy498-byte** repository: the adopted
   season-range, scene-mapping and torrent-filter enhancements.
+  The later [publication-stage review](docs/releases/1.0.3-publication.md#late-upstream-recheck-and-dependency-decision)
+  credits his ImageSharp/Windows-reference proposal `39f919970c0ea9652055fcbf88603429d85082f0`,
+  provenance update `1312455c49fd9d7c3861b3b1674cbe44f6a1a799` and manual-only
+  workflow `f33ce343adf005ef3b29eef31710b597598d6c06`. Reviewed proposals are
+  distinguished from adopted features and Tanukarr's own executed checks.
 - **Codex**, recorded author of 23 source-only **ikatun** commits: complete
   searches, pack decisions, queue/numbering work and build changes. The
   source commits do not record an exact model.
@@ -81,15 +86,16 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The current release target is **Tanukarr 1.0.3**, with planned Git tag
+The current published release is **Tanukarr 1.0.3**, with Git tag
 `v1.0.3`, under the GitHub profile
-[KvasExert](https://github.com/KvasExert/Tanukarr). The publishing account
+[KvasExpert](https://github.com/KvasExpert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/1.0.3.md), [verification report](docs/releases/1.0.3-verification.md) and
+[release notes](docs/releases/1.0.3.md), [preparation ledger](docs/releases/1.0.3-verification.md),
+[publication follow-up](docs/releases/1.0.3-publication.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
 The historical [0.0.1](docs/releases/0.0.1.md) and
