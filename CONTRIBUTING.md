@@ -24,7 +24,7 @@ in repository documentation.
 
 ## Tools and build
 
-Use .NET SDK **10.0.401** from [global.json](global.json), Node.js **24**, Yarn
+Use .NET SDK **10.0.402** from [global.json](global.json), Node.js **24**, Yarn
 Classic **1.22**, Python 3, and Docker Engine with Linux containers. FFmpeg and
 FFprobe are needed for generated-media worker integration tests.
 

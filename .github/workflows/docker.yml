@@ -234,7 +234,10 @@ jobs:
             ${{ runner.temp }}/tanukarr-download-client-folders.json
             ${{ runner.temp }}/tanukarr-jellyfin-refresh.json
             ${{ runner.temp }}/tanukarr-collections-browser.json
-            ${{ runner.temp }}/tanukarr-collections-browser-browser/
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-anime-desktop.png
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-mixed-desktop.png
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-native-desktop.png
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-mixed-mobile.png
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry

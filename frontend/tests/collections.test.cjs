@@ -51,6 +51,7 @@ const common = {
   'Components/Form/CheckInput': (props) => React.createElement('input', { name: props.name, type: 'checkbox', checked: props.value, onChange: (event) => props.onChange({ value: event.target.checked }) }),
   'Helpers/Props': { align: { RIGHT: 'right' }, kinds: { DANGER: 'danger', INFO: 'info', PRIMARY: 'primary' }, sizes: { EXTRA_EXTRA_LARGE: 'xxlarge' }, icons: {} },
   'Utilities/String/translate': translate,
+  'react-lazyload': { forceCheck: () => undefined },
   'Helpers/Hooks/useApiQuery': () => ({ data: undefined }),
   './collectionPresentation': presentation,
   './CollectionPage.module.css': {}
@@ -422,8 +423,12 @@ test('collection artwork falls back to a real member cover and advances after fa
 test('collection page renders a scrolling hero and separate season/movie/special sections with refresh for all native members', () => {
   const items = [member(2, 2, { images: [{ coverType: 'fanart', url: '/MediaCover/2/fanart.jpg' }] }), member(1, 1, { overview: '' }), member(3, null, { animeGroupMemberKind: 'movie', animeGroupMovieNumber: 1, seasons: [{ seasonNumber: 0, statistics: { totalEpisodeCount: 1 } }, { seasonNumber: 1 }] })];
   const commands = [];
+  let coverChecks = 0;
   const Component = load('Series/Grouping/CollectionPage.tsx', {
     ...common,
+    'react-lazyload': { forceCheck: () => {
+      coverChecks++;
+    } },
     'react-router': { useParams: () => ({ collectionId: 'group:anilist:900' }) },
     'Commands/CommandNames': { RefreshSeries: 'RefreshSeries' },
     'Commands/useCommands': { useExecuteCommand: () => (payload) => commands.push(payload) },
@@ -442,6 +447,8 @@ test('collection page renders a scrolling hero and separate season/movie/special
   assert.deepEqual(renderer.root.findAllByProps({ 'data-anime-group-section': 'specials' }).length, 1);
   assert.match(JSON.stringify(renderer.toJSON()), /Overview 2/);
   assert.match(JSON.stringify(renderer.toJSON()), /fanart.jpg/);
+  TestRenderer.act(() => renderer.root.findByType(body).props.onScroll({ scrollTop: 566, scrollLeft: 0 }));
+  assert.equal(coverChecks, 1, 'nested page scroll reevaluates below-fold covers without a window scroll event');
   press(renderer, 'RefreshAndScan');
   assert.deepEqual(commands, [{ name: 'RefreshSeries', seriesIds: [1, 2, 3] }]);
   assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /Each entry keeps/);

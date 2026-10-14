@@ -60,6 +60,7 @@ async function main(input) {
   };
   const context = await createContext();
   const page = await context.newPage();
+  let diagnosticPage = page;
   let failure = null;
   const api = async (resource) => {
     const response = await context.request.get(input.baseUrl + '/api/v5/' + resource, { headers: { 'X-Api-Key': input.apiKey } });
@@ -283,6 +284,7 @@ async function main(input) {
     for (const dpr of [1, 2, 3]) {
       const dpiContext = await createContext({ deviceScaleFactor: dpr, storageState });
       const dpiPage = await dpiContext.newPage();
+      diagnosticPage = dpiPage;
       await dpiPage.goto(input.baseUrl + nativeRoute);
       const covers = await visibleCovers(dpiPage);
       const expectedHeight = dpr === 1 ? 250 : 500;
@@ -290,16 +292,19 @@ async function main(input) {
       assert.ok(covers.every((cover) => cover.height === expectedHeight));
       observations.devicePixelRatios.push({ dpr, covers });
       await dpiContext.close();
+      diagnosticPage = page;
     }
     checks.push('actual Chromium decodes only supported 250/500px cover sizes at device pixel ratios 1, 2 and 3');
 
     const retryContext = await createContext({ deviceScaleFactor: 3, storageState });
     await retryContext.route('**/MediaCover/100/poster-500.jpg*', async (route) => route.fulfill({ status: 404, body: 'controlled missing thumbnail' }));
     const retryPage = await retryContext.newPage();
+    diagnosticPage = retryPage;
     await retryPage.goto(input.baseUrl + nativeRoute);
     const retryCovers = await visibleCovers(retryPage);
     assert.ok(retryCovers.every((cover) => cover.src.endsWith('/poster.jpg') && cover.width > 0));
     await retryContext.close();
+    diagnosticPage = page;
     checks.push('a controlled missing thumbnail recovers through the existing original cached image before showing a placeholder');
 
     await page.setViewportSize({ width: 390, height: 844 });
@@ -324,8 +329,23 @@ async function main(input) {
     checks.push('browser preserves native identities and paths, has no JavaScript errors or outside requests, and performs no acquisition mutation');
   } catch (error) {
     failure = redact(error.message);
-    await screenshot('collection-browser-failure.png').catch(() => {});
-    fs.writeFileSync(path.join(directory, 'collection-browser-failure.txt'), redact(await page.locator('body').innerText().catch(() => '')), 'utf8');
+    observations.failurePage = await diagnosticPage.evaluate(() => ({
+      pathname: location.pathname,
+      dpr: window.devicePixelRatio,
+      covers: [...document.querySelectorAll('article[data-native-season]')].map((card) => ({
+        seriesId: card.getAttribute('data-anime-group-series-id'), season: card.getAttribute('data-native-season'),
+        bounds: card.getBoundingClientRect().toJSON(), images: [...card.querySelectorAll('img')].map((image) => ({
+          src: new URL(image.src).pathname, complete: image.complete, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight,
+          bounds: image.getBoundingClientRect().toJSON(),
+        })),
+      })),
+      scrollers: [...document.querySelectorAll('*')].filter((node) => node.scrollHeight > node.clientHeight && ['auto', 'scroll'].includes(getComputedStyle(node).overflowY)).map((node) => ({
+        tag: node.tagName, className: node.className, clientHeight: node.clientHeight, scrollHeight: node.scrollHeight, scrollTop: node.scrollTop,
+        bounds: node.getBoundingClientRect().toJSON(),
+      })),
+    })).catch(() => null);
+    await screenshot('collection-browser-failure.png', diagnosticPage).catch(() => {});
+    fs.writeFileSync(path.join(directory, 'collection-browser-failure.txt'), redact(await diagnosticPage.locator('body').innerText().catch(() => '')), 'utf8');
   } finally {
     await Promise.allSettled(contexts.map((item) => item.close()));
     await browser.close();

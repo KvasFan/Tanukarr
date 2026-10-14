@@ -29,7 +29,7 @@ RUN yarn test:queue-details && yarn lint && yarn stylelint && yarn typecheck && 
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0.401-noble AS backend
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS backend
 
 ARG TARGETARCH
 WORKDIR /src
@@ -93,7 +93,7 @@ RUN set -eux; \
 # ---------------------------------------------------------------------------
 # Runtime
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.13-noble AS runtime
 
 ARG SONARRWEEB_VERSION=1.1.0
 ARG SONARRWEEB_SOURCE=https://github.com/KvasExpert/Tanukarr

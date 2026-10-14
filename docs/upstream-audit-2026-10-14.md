@@ -41,3 +41,12 @@ The new collection presentation, alternate-source artwork and custom quality
 work in 1.1.0 are local contributions by OpenAI Codex based on GPT-6. Their
 verification is recorded separately in the release ledger. Existing source
 authors and inherited model declarations remain in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
+
+The fresh hosted restore also identified October 13 Microsoft Pkcs/SignalR
+security advisories in the inherited dependency graph. The local release aligns
+the SDK/runtime and Microsoft package patch versions to .NET 10.0.13/SDK
+10.0.402 and explicitly overrides the vulnerable Pkcs transitive minimum.
+The [release ledger](releases/1.1.0-verification.md#fresh-hosted-security-checkpoint)
+links Microsoft's advisories and records the required fresh verification.
+This is a dependency security update, rather than a new commit from the four
+source repositories above.

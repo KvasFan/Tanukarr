@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { forceCheck } from 'react-lazyload';
 import { useParams } from 'react-router';
 import CommandNames from 'Commands/CommandNames';
 import { useExecuteCommand } from 'Commands/useCommands';
@@ -123,6 +124,7 @@ function CollectionPage() {
       <PageContentBody
         innerClassName={styles.body}
         scrollPositionKey={`collection:${collection.id}`}
+        onScroll={forceCheck}
       >
         <header className={styles.hero} data-collection-id={collection.id}>
           {backdrop ? (
