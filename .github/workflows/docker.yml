@@ -99,6 +99,7 @@ jobs:
             sudo apt-get install --yes --no-install-recommends openssl ffmpeg
           fi
           docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+          docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
 
       - name: Isolated group, naming and AniList checks
         run: |
@@ -150,6 +151,18 @@ jobs:
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-quality-codecs.json"
 
+      - name: Isolated backup task timestamps, archive integrity and failure recovery
+        run: |
+          python3 docker/tests/backup-tasks.py --image tanukarr:verified \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-backup-tasks.json"
+
+      - name: Real disposable Jellyfin watched state and monitoring synchronization
+        run: |
+          python3 docker/tests/jellyfin-watched.py --image tanukarr:verified \
+            --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
+            --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-jellyfin-watched.json"
+
       - name: Upload verification reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -167,6 +180,8 @@ jobs:
             ${{ runner.temp }}/tanukarr-list-set-operations.json
             ${{ runner.temp }}/tanukarr-simkl-reliability.json
             ${{ runner.temp }}/tanukarr-quality-codecs.json
+            ${{ runner.temp }}/tanukarr-backup-tasks.json
+            ${{ runner.temp }}/tanukarr-jellyfin-watched.json
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry
@@ -221,6 +236,8 @@ jobs:
             --verification-report "${RUNNER_TEMP}/tanukarr-list-set-operations.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-simkl-reliability.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-quality-codecs.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-backup-tasks.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-jellyfin-watched.json" \
             --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets

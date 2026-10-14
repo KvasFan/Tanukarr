@@ -25,6 +25,8 @@ namespace Sonarr.Api.V5.Episodes
         public EpisodeFileResource? EpisodeFile { get; set; }
         public bool HasFile { get; set; }
         public bool Monitored { get; set; }
+        public bool Watched { get; set; }
+        public DateTime? WatchedAtUtc { get; set; }
         public int? AbsoluteEpisodeNumber { get; set; }
         public int? SceneAbsoluteEpisodeNumber { get; set; }
         public int? SceneEpisodeNumber { get; set; }
@@ -66,6 +68,8 @@ namespace Sonarr.Api.V5.Episodes
 
                 HasFile = model.HasFile,
                 Monitored = model.Monitored,
+                Watched = model.Watched,
+                WatchedAtUtc = model.WatchedAtUtc,
                 AbsoluteEpisodeNumber = model.AbsoluteEpisodeNumber,
                 SceneAbsoluteEpisodeNumber = model.SceneAbsoluteEpisodeNumber,
                 SceneEpisodeNumber = model.SceneEpisodeNumber,

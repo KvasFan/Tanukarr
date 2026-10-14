@@ -19,6 +19,8 @@ repeat past verification or rename existing releases, volumes or tools.
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
 | [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
 | [Quality sizes and video codecs](quality-and-codec-size.md) | Hourly size editors, mixed profile summaries, global-save scope, heuristic codec factors and unchanged API units |
+| [Tanukarr 1.0.4](releases/1.0.4.md) | Locally verified candidate for optional Jellyfin watched state, originating-account progress and corrected backup timing; publication pending |
+| [1.0.4 release verification](releases/1.0.4-verification.md) | Newly executed evidence and pending build, publication, security and deployment checks |
 | [Series, anime and movie groups](anime-season-groups.md) | 1.0.1 official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
 | [Tanukarr 1.0.3](releases/1.0.3.md) | Published quality/codec changes, upstream review and upgrade guidance |
 | [1.0.3 release verification](releases/1.0.3-verification.md) | Preserved preparation ledger, original candidate checks and limits |
@@ -38,6 +40,7 @@ repeat past verification or rename existing releases, volumes or tools.
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |
 | [Library tools](library-tools.md) | Filters, pause, lists, retained versions, restore and companion keys |
 | [Jellyfin refresh](jellyfin.md) | Selected-library refresh on import, conditional ticks and persistent retries |
+| [Jellyfin watched status](jellyfin-watched.md) | Selected user/library, physical-file matching, monitoring ownership, source-account capability matrix and queued progress |
 | [Tanuki repository artwork](../resources/branding/README.md) | Supplied logo provenance, README image and GitHub social-preview setup |
 | [Compression worker](../docker/compression/README.md) | Optional host worker, presets, dependencies and filesystem safeguards |
 | [Container checks](../docker/tests/README.md) | Disposable smoke, API/security and optional Chromium verification |
@@ -95,10 +98,17 @@ upstream checkpoints, including `59c22e859`, already present in Git are identifi
 in the contributor register. A recorded snapshot is not a continuously updated
 upstream-version promise.
 
+Tanukarr 1.0.4 has a locally verified candidate with separate opt-ins for Jellyfin
+played-state reading, monitoring changes and supported originating-account
+writes. Thirteen canonical reports passed 231 checks; separate browsers verified
+Backup, live watched counters and quality controls. Hosted publication and
+owner deployment are pending. The preceding 1.0.3 reports retain
+their immutable source, numeric evidence and deployment limits.
+
 The October 12 security-validation checkpoint records its Linux amd64
 `<recorded-local-image-reference>` image, digest, export checksum and runtime version in the
 final validation report. The historical 0.0.1 release uses
-[the historical 0.0.1 image](https://github.com/KvasExert/Tanukarr/releases/tag/v0.0.1) and a release manifest with its own artifact
+[the historical 0.0.1 image](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.0.1) and a release manifest with its own artifact
 identity. Earlier test results do not imply every suite was repeated for release
 packaging. Only Linux amd64 is included in the initial release.
 

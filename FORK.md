@@ -39,7 +39,7 @@ routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [current release notes](docs/releases/1.0.3.md) for packaging
+configuration and [current release notes](docs/releases/1.0.4.md) for packaging
 scope. Version 1.0.1 also includes the later grouping and AniList/browser
 reliability work; the immutable 1.0.0 source and assets remain unchanged.
 Version 1.0.2 adds the simplified list controls, final exclusion-veto selection
@@ -49,6 +49,9 @@ Version 1.0.3 adds hourly quality-size editors, summaries of actual profile limi
 and fixed codec-normalized size decisions. The fresh
 [upstream audit](docs/upstream-audit-2026-10-13.md) found no newer accepted
 default heads; an inherited save-error feedback gap is adapted to the modern UI.
+Version 1.0.4 adds opt-in Jellyfin watched state and guarded originating-account
+progress, plus successful manual-backup task timing. Its verification and
+publication status remain separate from the preceding release.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -448,6 +451,37 @@ refresh. Jellyfin queues scans asynchronously; accepting the request does not
 establish that the scan finished. See [Jellyfin refresh](docs/jellyfin.md) for
 configuration, trigger semantics, Docker networking and limitations. The
 immutable historical 0.0.1 release predates this addition.
+
+## Jellyfin watched status and originating accounts
+
+The watched reader uses one selected Jellyfin user and library. Complete
+authenticated snapshots match registered physical files, with optional explicit
+path-prefix translation; metadata titles or group-season display numbers never
+establish a match. Watched state, unmonitoring, remonitoring and source-account
+progress are distinct policies. All new opt-ins default to off.
+
+Remonitoring requires an ownership marker from this connection's previous
+unmonitor action, as well as a monitored series/season. An explicit manual
+monitoring edit relinquishes that ownership. Missing remote items and failed
+snapshots cannot clear local watched state. The public episode API exposes the
+played flag/date, while private source and monitoring-authority fingerprints
+remain internal. Migrations 248/249 persist local and queued remote progress.
+
+Account writes require an enabled originating list (Enable Automatic Add),
+current stored originating-list membership, two opt-ins,
+compatible native numbering and verified own-account authorization. Scalar
+AniList/MAL progress advances only a continuous watched prefix; Trakt/SIMKL use
+explicit episode identities/history. Unsupported mappings and public/foreign
+accounts remain read-only. Local progress is retained independently of remote
+acknowledgement. Tanukarr does not send list-status, rating or custom-membership
+changes; a provider can apply its own account rules when progress/history changes.
+See [Jellyfin watched status](docs/jellyfin-watched.md) for the capability table,
+retry limits and the reviewed Unmonitarr concept/source credit.
+
+Successful manual backups now update task timing and restart the configured
+cadence. They still create manual archives; unsuccessful backups retain the last
+successful timing and command error. Task persistence precedes API SignalR sync.
+This corrects inherited upstream behavior, not a demonstrated fork regression.
 
 ## Notes for whoever works on this next
 

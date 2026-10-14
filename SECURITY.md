@@ -19,6 +19,11 @@ and release manifest record
 the artifact being distributed. Source Kakarotto, gaboy or ikatun images can
 contain different code and require reports to their own maintainers.
 
+The 1.0.4 candidate adds selected-user Jellyfin state and opt-in account writes.
+Its [fresh verification ledger](docs/releases/1.0.4-verification.md) distinguishes
+pending source/image checks from executed evidence. Neither a configured gate nor
+the preceding release's scan establishes the candidate's security result.
+
 For a defect confirmed to affect upstream Sonarr, follow the
 [upstream security policy](https://github.com/Sonarr/Sonarr/blob/develop/SECURITY.md).
 Upstream maintainers do not support fork-only behavior. This fork does not promise
@@ -38,6 +43,13 @@ public reports. Do not test against third-party services, another user's instanc
 or a real media library without authorization.
 
 ## Recorded verification
+
+For watched synchronization, report the chosen connection policy and catalogue
+identity using disposable accounts/data. Include whether the failing snapshot
+was complete and whether the list write was opted in. Keep usernames, API tokens,
+played item paths and private queue data out of public reports. The authority
+fingerprint is not an episode API field; missing/failed remote data must not
+silently clear local watched history. See the [watched guide](docs/jellyfin-watched.md).
 
 The [1.0.3 verification report](docs/releases/1.0.3-verification.md) records new
 checks when executed. Earlier scan results do not verify the new package or

@@ -51,6 +51,7 @@ function getSeasonStatistics(episodes: Episode[]) {
   let episodeFileCount = 0;
   let totalEpisodeCount = 0;
   let monitoredEpisodeCount = 0;
+  let watchedEpisodeCount = 0;
   let hasMonitoredEpisodes = false;
   const sizeOnDisk = 0;
 
@@ -72,6 +73,10 @@ function getSeasonStatistics(episodes: Episode[]) {
     }
 
     totalEpisodeCount++;
+
+    if (episode.watched) {
+      watchedEpisodeCount++;
+    }
   });
 
   return {
@@ -79,6 +84,7 @@ function getSeasonStatistics(episodes: Episode[]) {
     episodeFileCount,
     totalEpisodeCount,
     monitoredEpisodeCount,
+    watchedEpisodeCount,
     hasMonitoredEpisodes,
     sizeOnDisk,
   };
@@ -130,6 +136,7 @@ function SeriesDetailsSeason({
     episodeFileCount,
     totalEpisodeCount,
     monitoredEpisodeCount,
+    watchedEpisodeCount,
     hasMonitoredEpisodes,
   } = getSeasonStatistics(items);
 
@@ -324,6 +331,21 @@ function SeriesDetailsSeason({
               }
               position={tooltipPositions.BOTTOM}
             />
+
+            {watchedEpisodeCount ? (
+              <Label
+                className={styles.seasonStatsLabel}
+                kind="success"
+                size="large"
+                icon={icons.VIEW}
+                title={translate('EpisodeWatchedSource')}
+              >
+                {translate('SeasonWatchedCount', {
+                  watched: watchedEpisodeCount,
+                  total: totalEpisodeCount,
+                })}
+              </Label>
+            ) : null}
 
             {sizeOnDisk ? (
               <Label

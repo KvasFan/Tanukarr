@@ -208,7 +208,7 @@ namespace NzbDrone.Core.Notifications.Jellyfin
             return string.Equals(location.TrimEnd('/'), itemPath.TrimEnd('/'), StringComparison.Ordinal);
         }
 
-        private static HttpRequestBuilder BuildRequest(string path, JellyfinSettings settings)
+        internal static HttpRequestBuilder BuildRequest(string path, JellyfinSettings settings)
         {
             var request = new HttpRequestBuilder(settings.UseSsl, settings.Host, settings.Port, settings.UrlBase)
             {
@@ -224,7 +224,7 @@ namespace NzbDrone.Core.Notifications.Jellyfin
             return request.Resource(path);
         }
 
-        private static void EnsureSuccess(HttpResponse response)
+        internal static void EnsureSuccess(HttpResponse response)
         {
             var statusCode = (int)response.StatusCode;
 

@@ -115,7 +115,7 @@ namespace NzbDrone.Host
                     License = new OpenApiLicense
                     {
                         Name = "GPL-3.0",
-                        Url = new Uri("https://github.com/KvasExert/Tanukarr/blob/main/LICENSE.md")
+                        Url = new Uri("https://github.com/KvasExpert/Tanukarr/blob/main/LICENSE.md")
                     }
                 });
 
@@ -127,7 +127,7 @@ namespace NzbDrone.Host
                     License = new OpenApiLicense
                     {
                         Name = "GPL-3.0",
-                        Url = new Uri("https://github.com/KvasExert/Tanukarr/blob/main/LICENSE.md")
+                        Url = new Uri("https://github.com/KvasExpert/Tanukarr/blob/main/LICENSE.md")
                     }
                 });
 

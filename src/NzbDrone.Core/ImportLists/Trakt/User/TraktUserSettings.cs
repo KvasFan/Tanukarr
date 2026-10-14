@@ -46,6 +46,9 @@ namespace NzbDrone.Core.ImportLists.Trakt.User
         [FieldDefinition(5, Label = "ImportListsTraktSettingsYears", HelpText = "ImportListsTraktSettingsYearsSeriesHelpText")]
         public string Years { get; set; }
 
+        [FieldDefinition(6, Label = "ImportListsSyncWatchedProgress", Type = FieldType.Checkbox, HelpText = "ImportListsSyncWatchedProgressHelpText")]
+        public bool SyncWatchedProgress { get; set; }
+
         public override NzbDroneValidationResult Validate()
         {
             return new NzbDroneValidationResult(Validator.Validate(this));

@@ -39,6 +39,11 @@ local commit makes their original author name unreachable from HEAD.
 - **Ivo Katunaric (ikatun)**: targeted pack queries, Docker checks, UMASK,
   pack-first bulk searches and default monitoring of specials; his five
   source commits declare Claude Opus 5.5 as co-author.
+- **Baretsky (baretsky/Unmonitarr)**: requested Jellyfin watched-to-monitoring
+  concept, reviewed at MIT-licensed source
+  [`ec60a3084888e859e6c35fbac9891bcdfc011b95`](https://github.com/baretsky/Unmonitarr/commit/ec60a3084888e859e6c35fbac9891bcdfc011b95).
+  Tanukarr uses a new authenticated polling implementation; no source is copied
+  and no exact AI model is established for the reviewed Unmonitarr work.
 - **Local OpenAI Codex assistant, based on GPT-6**: this integration,
   AniList lifecycle fixes, compatibility adaptations, test/runtime work,
   security hardening, the English documentation/contributor audit and
@@ -75,6 +80,7 @@ local commit makes their original author name unreachable from HEAD.
 | Tanukarr 1.0.1 group-slot collision recovery, regression coverage, release packaging/documentation and GitHub repository Tanuki branding | OpenAI Codex, based on GPT-6 | Same local coding session; executed checks and publication state belong to the 1.0.1 verification report |
 | Tanukarr 1.0.2 final exclusion-veto selection, simplified/compatible list controls, complete AniList membership recovery, provider capability audit, direct MyAnimeList account-list adaptation and release documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original providers/authors remain credited and fresh execution/publication evidence belongs to the 1.0.2 verification report |
 | Tanukarr 1.0.3 hourly quality-size editors, mixed-profile summaries, guarded global size updates, heuristic codec-size decisions, inherited save-error adaptation, upstream audit and English documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original Sonarr quality UI/backend and parsing authors remain credited below; new execution/publication evidence belongs to the 1.0.3 report |
+| Tanukarr 1.0.4 inherited manual-backup timing correction, selected-user Jellyfin watched state, monitoring ownership, native-account progress writers, persistent retries, disposable runtime fixtures and English release documentation | OpenAI Codex, based on GPT-6 | Actual local session identity; original Sonarr/provider implementations and Baretsky's Unmonitarr concept remain separately credited; execution/publication evidence belongs to the new 1.0.4 ledger |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -86,7 +92,13 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The current published release is **Tanukarr 1.0.3**, with Git tag
+The **Tanukarr 1.0.4** candidate is being prepared under
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), targeting `v1.0.4`
+and `ghcr.io/kvasexpert/tanukarr:1.0.4`. Its
+[release notes](docs/releases/1.0.4.md) and
+[verification ledger](docs/releases/1.0.4-verification.md) distinguish pending
+publication from newly executed tests. The preceding published release is
+**Tanukarr 1.0.3**, with Git tag
 `v1.0.3`, under the GitHub profile
 [KvasExpert](https://github.com/KvasExpert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
@@ -149,6 +161,34 @@ Local checks decode the generated channels and compare their bytes with the
 supplied artwork. Actual macOS Finder/AppKit rendering was not executed here.
 
 ## Feature-to-contributor register
+
+### Jellyfin watched synchronization, account progress and manual backup timing
+
+- **Original application lifecycle, Backup command/service and task/API/UI
+  authors:** the preserved Sonarr contributors. Comparison with accepted
+  `develop@57816c149d02f95543973fefb4780c4495f8121c` found the manual-backup
+  scheduling exclusion unchanged in the fork; it is inherited behavior.
+- **Baretsky:** the reviewed
+  [Unmonitarr snapshot](https://github.com/baretsky/Unmonitarr/tree/ec60a3084888e859e6c35fbac9891bcdfc011b95)
+  supplies the requested watched-to-monitoring concept. Its commit author and
+  original [MIT license](https://github.com/baretsky/Unmonitarr/blob/ec60a3084888e859e6c35fbac9891bcdfc011b95/LICENSE)
+  remain attributed. No Unmonitarr source is transplanted into Tanukarr.
+- **Original Sonarr/fork list-provider and Jellyfin integration authors:**
+  their inherited authentication, identity, notification and import mechanisms
+  remain the implementation baseline, credited in the existing feature groups.
+- **Local OpenAI Codex, based on GPT-6:** authenticated one-user/library polling,
+  exact imported-file matching and optional boundary-checked path translation,
+  public watched flag/date with private source authority, reversible owned
+  monitoring changes, migrations 248/249 and guarded AniList/MAL/Trakt/SIMKL
+  account progress. It also implements retry/idempotency guards, successful
+  manual-backup task updates ordered before SignalR broadcasts, regression/runtime
+  fixtures and English documentation. These attribution statements do not imply
+  that all candidate checks or live private-account writes passed.
+
+See [Jellyfin watched status](docs/jellyfin-watched.md) and
+[1.0.4 verification](docs/releases/1.0.4-verification.md) for behavior and
+actually executed evidence. All earlier source authors, Git identity counts,
+release hashes and historical AI declarations below remain unchanged.
 
 ### Quality-size editors, codec policy and save feedback
 

@@ -154,7 +154,7 @@ async function main(input) {
       await page.locator('#root').waitFor({ state: 'visible' });
       const runtime = await api('/api/v5/system/status');
       assert.equal(runtime.productName, 'Tanukarr');
-      assert.equal(runtime.productVersion, '1.0.3');
+      assert.equal(runtime.productVersion, '1.0.4');
       observations.runtime = Object.fromEntries(['productName', 'productVersion', 'version', 'runtimeVersion', 'migrationVersion']
         .map((key) => [key, runtime[key]]));
       assert.deepEqual(await api('/api/v5/series'), []);

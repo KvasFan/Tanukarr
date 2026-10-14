@@ -136,7 +136,7 @@ not a published registry manifest or a claimed final Git commit.
 | All six isolated runtime gates | **83 checks passed**: smoke 12 + functional/security 16 + grouping 21 + reserved-title Nyaa 9 + multi-season packs 13 + AniList quota/resume 12 |
 | Current-instance deployment | Final image running at `http://localhost:6970`; private consistent backup retained, all 35 protected tables and the configuration XML hash preserved exactly |
 | Deployed data and API identity | 11 series, one import list, 11 list items and zero global exclusions retained; authenticated v3/v5 product/release identity checks passed |
-| GitHub publication | Future stage; follow the repository [Actions](https://github.com/KvasExert/Tanukarr/actions) and [Docker workflow](https://github.com/KvasExert/Tanukarr/actions/workflows/docker.yml); no unexecuted hosted run or registry digest claimed here |
+| GitHub publication | Future stage; follow the repository [Actions](https://github.com/KvasExpert/Tanukarr/actions) and [Docker workflow](https://github.com/KvasExpert/Tanukarr/actions/workflows/docker.yml); no unexecuted hosted run or registry digest claimed here |
 
 The quota fixture first saved **one series and three filtered list items**
 after three terminal metadata-429 attempts. A later automatic sync reached

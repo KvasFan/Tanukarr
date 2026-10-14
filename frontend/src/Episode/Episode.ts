@@ -20,6 +20,8 @@ interface Episode extends ModelBase {
   episodeFile?: object;
   hasFile: boolean;
   monitored: boolean;
+  watched?: boolean;
+  watchedAtUtc?: string;
   grabbed?: boolean;
   unverifiedSceneNumbering: boolean;
   series?: Series;

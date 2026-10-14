@@ -83,6 +83,9 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
         [FieldDefinition(10, Label = "ImportListsMyAnimeListSettingsScore", HelpText = "ImportListsMyAnimeListSettingsScoreHelpText")]
         public int MinimumScore { get; set; } = 0;
 
+        [FieldDefinition(11, Label = "ImportListsSyncWatchedProgress", Type = FieldType.Checkbox, HelpText = "ImportListsSyncWatchedProgressHelpText")]
+        public bool SyncWatchedProgress { get; set; }
+
         [FieldDefinition(0, Label = "ImportListsSettingsAccessToken", Type = FieldType.Textbox, Privacy = PrivacyLevel.ApiKey, Hidden = HiddenType.Hidden)]
         public string AccessToken { get; set; }
 

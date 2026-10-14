@@ -95,8 +95,8 @@ RUN set -eux; \
 # ---------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS runtime
 
-ARG SONARRWEEB_VERSION=1.0.3
-ARG SONARRWEEB_SOURCE=https://github.com/KvasExert/Tanukarr
+ARG SONARRWEEB_VERSION=1.0.4
+ARG SONARRWEEB_SOURCE=https://github.com/KvasExpert/Tanukarr
 ARG SONARRWEEB_REVISION
 ARG SONARRWEEB_CREATED
 # Legacy build arguments remain valid; Tanukarr arguments take precedence.

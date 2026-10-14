@@ -1,6 +1,6 @@
 # Compatibility, migration and backups
 
-**Tanukarr 1.0.3** continues the earlier releases. The Tanukarr name, supplied
+**Tanukarr 1.0.4** continues the earlier releases. The Tanukarr name, supplied
 Tanuki logos, GitHub repository and release image namespace introduced in 1.0.0
 remain in use; the
 Sonarr-derived storage and API identifiers remain intentional compatibility
@@ -28,7 +28,7 @@ missing/wrong API keys with 401 and returned branded calendar data for a valid
 key. See the [release verification](releases/1.0.0-verification.md) for the exact
 tested image identity; no downstream-client compatibility claim is implied.
 
-The product version is **1.0.3**. Sonarr's inherited internal assembly version
+The product version is **1.0.4**. Sonarr's inherited internal assembly version
 remains `10.0.0.*`; it is not a second Tanukarr release number. The `Sonarr`
 executable/core names, `config.xml`, SQLite `sonarr.db`, migration history,
 provider identities and container port **8989** remain unchanged. The default
@@ -48,9 +48,11 @@ can remain unchanged. Review absolute paths used by scripts, bind mounts and
 external services if moving an installation directory.
 
 For an existing Tanukarr Docker deployment, stop the container, save a
-consistent configuration backup and change the image to
-`ghcr.io/kvasexpert/tanukarr:1.0.3`; its [publication follow-up](releases/1.0.3-publication.md)
-records the verified digest and deployment evidence. Preserve the
+consistent configuration backup and change the image to the newly verified
+`ghcr.io/kvasexpert/tanukarr:1.0.4` after publication. Its
+[verification ledger](releases/1.0.4-verification.md) tracks the current state;
+the [1.0.3 publication follow-up](releases/1.0.3-publication.md) retains the
+preceding release's verified digest and deployment evidence. Preserve the
 original `/config` volume or bind mount, media mounts, Compose project/volume
 identity and client categories.
 A new volume name selects new storage and can make the application appear empty.
@@ -80,6 +82,34 @@ For **PostgreSQL**, the native application backup does not include the external
 database. Back up and restore that database separately with the PostgreSQL tools
 appropriate to the deployed server, while maintaining a matching configuration
 checkpoint.
+
+## Manual backup task timing
+
+Starting **Backup** under **System > Tasks** creates the ordinary manual ZIP.
+In 1.0.4 a successful completion also refreshes **Last Execution**, **Last
+Duration** and **Next Execution** through the task API/SignalR update. The next
+scheduled backup interval starts from that successful manual completion. Manual
+archives still use their separate category and retention behavior; they are not
+reclassified as scheduled archives.
+
+A failed or incomplete Backup command keeps its error and the previous successful
+timestamps. It does not advertise that a usable archive was created or defer a
+due backup on the strength of a failed attempt. Check the command/log error and
+the configured writable backup directory before retrying.
+
+This fixes inherited behavior reproduced in a disposable published 1.0.3 instance:
+a real valid ZIP was created while task timing stayed unchanged. The new
+[backup fixture](../docker/tests/backup-tasks.py) verifies actual ZIP CRC/SQLite
+integrity, V3/V5 timing, deliberate unwritable-folder failure, recovery and
+scheduled/manual category separation. Its optional Chromium helper presses the
+actual Tasks button and checks the refreshed cell without page reload. Newly
+executed results belong to [1.0.4 verification](releases/1.0.4-verification.md).
+
+Migrations 248/249 add Jellyfin watched state and the persistent originating-list
+progress queue to the same SQLite database. A standard ZIP includes them with
+the other database rows. It does not include the media or guarantee that a
+separate external provider account has accepted a queued write. See
+[Jellyfin watched status](jellyfin-watched.md).
 
 ## Verified restore behavior and remaining limitation
 

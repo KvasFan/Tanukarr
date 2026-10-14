@@ -264,7 +264,7 @@ metadata ingestion or a real library.
 
 ## Editable quality limits and codec-size decisions
 
-Use a built 1.0.3 image containing the profile-backed quality summary and codec
+Use a built 1.0.3 or newer image containing the profile-backed quality summary and codec
 policy. This fixture reuses the isolated pack harness and pinned local Python
 RSS sidecar; it does not request a public provider or access an owner library:
 
@@ -304,6 +304,64 @@ password fields, and saved library/acquisition settings must remain empty.
 Its browser receipt is separate from the mandatory API/RSS report and the
 mounted frontend tests.
 
+## Backup task timestamps
+
+Run the new 1.0.4 backup fixture on the exact candidate image:
+
+```sh
+python3 docker/tests/backup-tasks.py --image tanukarr:verified \
+  --report /tmp/tanukarr-checks/backup-tasks.json
+```
+
+It creates a fresh Forms-authenticated instance and verifies actual V3/V5 manual
+ZIP backups, archive CRC/SQLite integrity and required configuration content.
+It checks Last Execution/Start/Next timing, an intentionally non-writable owned
+backup path, retained failure details, recovery, the real scheduler's overdue
+backup, manual/scheduled archive categories and restart persistence. Existing
+lists, media and deployment configuration are never accessed.
+
+For optional actual Chromium button verification, supply external tooling:
+
+```sh
+python3 docker/tests/backup-tasks.py --image tanukarr:verified \
+  --browser-node "$(command -v node)" \
+  --playwright-module /tmp/sonarr-ui-audit/node_modules/playwright \
+  --report /tmp/tanukarr-browser-checks/backup-tasks.json
+```
+
+The helper reads generated disposable credentials from stdin, opens the packaged
+Tasks page, presses Backup and observes the SignalR-triggered task response and
+updated Last Execution cell without reloading. It also checks the V3 timestamp,
+browser errors and outbound/acquisition requests. Its `backup-ui.json` is a
+separate browser receipt; Docker publishing does not require external Playwright.
+Use a fresh report path for each attempt so failed evidence is preserved.
+
+## Jellyfin watched state
+
+The 1.0.4 watched fixture uses an actual fresh local Jellyfin server, generated
+media and an independent Tanukarr configuration. Pull the pinned server image
+and run:
+
+```sh
+docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
+docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+python3 docker/tests/jellyfin-watched.py --image tanukarr:verified \
+  --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report /tmp/tanukarr-checks/jellyfin-watched.json
+```
+
+The test selects one local user/library and changes Jellyfin's real Played state,
+rather than assuming that a mocked UserData response proves synchronization.
+Native imported-file paths establish the local episode mapping. Actual observed
+check names, image/runtime identity and cleanup state are recorded in its JSON.
+An owned TLS AniList response service can exercise the configured originating
+account write path; it does not contact an external account. OpenSSL is required
+for that service's private test certificate. The fixture does not use an owner's Jellyfin instance or private AniList/MAL/
+Trakt/SIMKL credentials. Source-account writer unit/response tests and live
+external-account execution remain separate evidence. See the
+[watched guide](../../docs/jellyfin-watched.md) for the opt-in/provider contract.
+
 ## Docker workflow fixture prerequisites
 
 The development Docker workflow runs smoke, functional/security,
@@ -312,9 +370,10 @@ AniList quota/resume checks before publishing its tested image. Version 1.0.2
 also requires the MyAnimeList/Jikan and provider source-set fixtures. The latter
 includes TMDB/Trakt/MDBList selections and complete Plex Watchlist pagination;
 SIMKL V2 has its own additional required fixture. Version 1.0.3 adds the
-editable quality/codec fixture. Smoke and functional/security plus nine
-additional reports form eleven publishing gates. Release packaging
-aggregates the nine additional reports in `provider-verification.json` and
+editable quality/codec fixture. Version 1.0.4 adds actual backup/task timing and
+local Jellyfin watched-state fixtures. Smoke and functional/security plus eleven
+additional reports form thirteen publishing gates. Release packaging
+aggregates the eleven additional reports in `provider-verification.json` and
 records their actual check counts in `release-manifest.json`, using the same
 tested image throughout.
 The additional

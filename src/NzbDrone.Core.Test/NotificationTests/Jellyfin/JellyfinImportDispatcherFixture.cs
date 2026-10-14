@@ -61,7 +61,7 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
             Mocker.SetConstant<IJellyfinRefreshStateRepository>(_repository);
             var refreshService = Mocker.Resolve<JellyfinRefreshService>();
             refreshService.ProcessPending();
-            var notification = new JellyfinNotification(Mocker.GetMock<IJellyfinProxy>().Object, refreshService)
+            var notification = new JellyfinNotification(Mocker.GetMock<IJellyfinProxy>().Object, refreshService, Mocker.GetMock<IJellyfinWatchProxy>().Object, Mocker.GetMock<INotificationRepository>().Object)
             {
                 Definition = _definition
             };

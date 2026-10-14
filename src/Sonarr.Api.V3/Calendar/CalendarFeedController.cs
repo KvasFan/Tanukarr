@@ -44,7 +44,7 @@ namespace Sonarr.Api.V3.Calendar
             var allSeries = _seriesService.GetAllSeries();
             var calendar = new Ical.Net.Calendar
             {
-                ProductId = "-//github.com/KvasExert/Tanukarr//Tanukarr//EN"
+                ProductId = "-//github.com/KvasExpert/Tanukarr//Tanukarr//EN"
             };
 
             var calendarName = BuildInfo.ProductName + " TV Schedule";

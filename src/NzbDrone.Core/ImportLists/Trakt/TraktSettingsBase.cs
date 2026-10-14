@@ -114,10 +114,10 @@ namespace NzbDrone.Core.ImportLists.Trakt
 
         public override string BaseUrl { get; set; } = "https://api.trakt.tv";
 
-        [FieldDefinition(0, Label = "ImportListsSettingsAccessToken", Type = FieldType.Textbox, Hidden = HiddenType.Hidden)]
+        [FieldDefinition(0, Label = "ImportListsSettingsAccessToken", Type = FieldType.Textbox, Privacy = PrivacyLevel.ApiKey, Hidden = HiddenType.Hidden)]
         public string AccessToken { get; set; }
 
-        [FieldDefinition(0, Label = "ImportListsSettingsRefreshToken", Type = FieldType.Textbox, Hidden = HiddenType.Hidden)]
+        [FieldDefinition(0, Label = "ImportListsSettingsRefreshToken", Type = FieldType.Textbox, Privacy = PrivacyLevel.ApiKey, Hidden = HiddenType.Hidden)]
         public string RefreshToken { get; set; }
 
         [FieldDefinition(0, Label = "ImportListsSettingsExpires", Type = FieldType.Textbox, Hidden = HiddenType.Hidden)]

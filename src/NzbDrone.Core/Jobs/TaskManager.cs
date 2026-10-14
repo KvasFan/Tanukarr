@@ -15,6 +15,7 @@ using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.MediaFiles.Commands;
+using NzbDrone.Core.Messaging;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource.Imdb.Commands;
@@ -85,6 +86,12 @@ namespace NzbDrone.Core.Jobs
                     {
                         Interval = 1,
                         TypeName = typeof(ProcessPendingJellyfinRefreshCommand).FullName
+                    },
+
+                    new ScheduledTask
+                    {
+                        Interval = 1,
+                        TypeName = typeof(SyncJellyfinWatchedCommand).FullName
                     },
 
                     new ScheduledTask
@@ -221,8 +228,16 @@ namespace NzbDrone.Core.Jobs
             return interval;
         }
 
+        [EventHandleOrder(EventHandleOrder.First)]
         public void Handle(CommandExecutedEvent message)
         {
+            // A manual backup is also the latest backup, but a failed attempt must
+            // not replace the last successful backup or postpone its scheduled retry.
+            if (message.Command.Body is BackupCommand && message.Command.Status != CommandStatus.Completed)
+            {
+                return;
+            }
+
             var scheduledTask = _scheduledTaskRepository.All().SingleOrDefault(c => c.TypeName == message.Command.Body.GetType().FullName);
 
             if (scheduledTask != null && message.Command.Body.UpdateScheduledTask)

@@ -56,5 +56,16 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
             _repository.All().Count(task => task.TypeName == stored.TypeName).Should().Be(1);
             manager.GetPending().Should().Contain(task => task.TypeName == stored.TypeName);
         }
+
+        [Test]
+        public void should_persist_an_independent_one_minute_watched_task_without_changing_refresh_cadence()
+        {
+            var manager = Mocker.Resolve<TaskManager>();
+            manager.Handle(new ApplicationStartedEvent());
+            var stored = _repository.GetDefinition(typeof(SyncJellyfinWatchedCommand));
+            stored.Id.Should().BePositive();
+            stored.Interval.Should().Be(1);
+            _repository.GetDefinition(typeof(ProcessPendingJellyfinRefreshCommand)).Interval.Should().Be(1);
+        }
     }
 }

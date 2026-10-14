@@ -109,6 +109,32 @@ namespace NzbDrone.Core.Test.ImportListTests
             _settings.AccessToken.Should().Be("previous-access");
         }
 
+        [Test]
+        public void should_request_write_scope_only_after_explicit_watched_progress_opt_in()
+        {
+            _settings.SyncWatchedProgress = true;
+            var start = Start();
+            start["scope"].Should().Be("media:read media:write");
+            var token = Token();
+            token["scope"] = "media:read media:write";
+            GivenResponses(token.ToString(), "{\"account\":{\"id\":123}}");
+            var response = JObject.FromObject(Grant(start["state"]));
+            response["scopeV2"].Value<string>().Should().Be("media:read media:write");
+        }
+
+        [Test]
+        public void should_refuse_a_read_only_grant_when_watched_progress_was_requested()
+        {
+            _settings.SyncWatchedProgress = true;
+            var start = Start();
+            GivenResponses(Token().ToString());
+            Action action = () => Grant(start["state"]);
+            action.Should().Throw<ValidationException>();
+            _settings.AccessToken.Should().Be("previous-access");
+            _settings.ScopeV2.Should().BeNull();
+            _requests.Should().ContainSingle();
+        }
+
         [TestCase("http://example.com/oauth.html")]
         [TestCase("https://example.com/callback")]
         [TestCase("https://user@example.com/oauth.html")]

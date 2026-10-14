@@ -97,6 +97,9 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         [FieldDefinition(15, Label = "ImportListsAniListSettingsExcludedCustomLists", Type = FieldType.Tag, HelpText = "ImportListsAniListSettingsExcludedCustomListsHelpText")]
         public IEnumerable<string> ExcludedCustomLists { get; set; }
 
+        [FieldDefinition(16, Label = "ImportListsSyncWatchedProgress", Type = FieldType.Checkbox, HelpText = "ImportListsSyncWatchedProgressHelpText")]
+        public bool SyncWatchedProgress { get; set; }
+
         public override NzbDroneValidationResult Validate()
         {
             NormalizeLegacyCustomList();

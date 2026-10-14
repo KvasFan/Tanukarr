@@ -33,6 +33,7 @@ namespace NzbDrone.Core.Tv
         List<int> SetMonitored(int seriesId, MonitorTypes monitor, int firstSeason, int lastSeason);
         void SetFileId(Episode episode, int fileId);
         void ClearFileId(Episode episode, bool unmonitor);
+        void SetJellyfinWatched(Episode episode, bool watched, DateTime? watchedAtUtc, string owner, bool unmonitorWatched, bool remonitorUnwatched);
     }
 
     public class EpisodeRepository : BasicRepository<Episode>, IEpisodeRepository
@@ -171,7 +172,8 @@ namespace NzbDrone.Core.Tv
         public void SetMonitoredFlat(Episode episode, bool monitored)
         {
             episode.Monitored = monitored;
-            SetFields(episode, p => p.Monitored);
+            episode.JellyfinUnmonitorOwner = null;
+            SetFields(episode, p => p.Monitored, p => p.JellyfinUnmonitorOwner);
 
             ModelUpdated(episode, true);
         }
@@ -180,7 +182,7 @@ namespace NzbDrone.Core.Tv
         {
             using (var conn = _database.OpenConnection())
             {
-                conn.Execute("UPDATE \"Episodes\" SET \"Monitored\" = @monitored WHERE \"SeriesId\" = @seriesId AND \"SeasonNumber\" = @seasonNumber AND \"Monitored\" != @monitored",
+                conn.Execute("UPDATE \"Episodes\" SET \"Monitored\" = @monitored, \"JellyfinUnmonitorOwner\" = NULL WHERE \"SeriesId\" = @seriesId AND \"SeasonNumber\" = @seasonNumber",
                     new { seriesId = seriesId, seasonNumber = seasonNumber, monitored = monitored });
             }
         }
@@ -188,7 +190,7 @@ namespace NzbDrone.Core.Tv
         public void SetMonitored(IEnumerable<int> ids, bool monitored)
         {
             var episodes = ids.Select(x => new Episode { Id = x, Monitored = monitored }).ToList();
-            SetFields(episodes, p => p.Monitored);
+            SetFields(episodes, p => p.Monitored, p => p.JellyfinUnmonitorOwner);
         }
 
         public List<int> SetMonitored(int seriesId, MonitorTypes monitor, int firstSeason, int lastSeason)
@@ -281,10 +283,45 @@ namespace NzbDrone.Core.Tv
         {
             episode.EpisodeFileId = 0;
             episode.Monitored &= !unmonitor;
+            if (unmonitor)
+            {
+                episode.JellyfinUnmonitorOwner = null;
+            }
 
-            SetFields(episode, ep => ep.EpisodeFileId, ep => ep.Monitored);
+            SetFields(episode, ep => ep.EpisodeFileId, ep => ep.Monitored, ep => ep.JellyfinUnmonitorOwner);
 
             ModelUpdated(episode, true);
+        }
+
+        public void SetJellyfinWatched(Episode episode, bool watched, DateTime? watchedAtUtc, string owner, bool unmonitorWatched, bool remonitorUnwatched)
+        {
+            using var conn = _database.OpenConnection();
+
+            // Evaluate re-monitor ownership against the current row in one update,
+            // so a manual unmonitor after the HTTP snapshot cannot be overwritten.
+            // A renamed/replaced/deleted import is not matched using its stale file id.
+            conn.Execute("UPDATE \"Episodes\" SET \"Watched\" = @watched, " +
+                "\"WatchedSource\" = @owner, " +
+                "\"WatchedAtUtc\" = CASE WHEN @watched THEN CASE WHEN \"WatchedSource\" = @owner " +
+                "THEN COALESCE(\"WatchedAtUtc\", @watchedAtUtc) ELSE @watchedAtUtc END ELSE NULL END, " +
+                "\"Monitored\" = CASE " +
+                "WHEN @watched AND @unmonitorWatched AND \"Monitored\" THEN @unmonitored " +
+                "WHEN NOT @watched AND @remonitorUnwatched AND \"JellyfinUnmonitorOwner\" = @owner " +
+                "AND EXISTS (SELECT 1 FROM \"Series\" WHERE \"Series\".\"Id\" = \"Episodes\".\"SeriesId\" AND \"Series\".\"Monitored\" = @monitored) THEN @monitored " +
+                "ELSE \"Monitored\" END, " +
+                "\"JellyfinUnmonitorOwner\" = CASE " +
+                "WHEN @watched AND @unmonitorWatched AND \"Monitored\" THEN @owner " +
+                "WHEN NOT @watched AND \"JellyfinUnmonitorOwner\" = @owner THEN NULL " +
+                "ELSE \"JellyfinUnmonitorOwner\" END " +
+                "WHERE \"Id\" = @id AND \"EpisodeFileId\" = @fileId",
+                new
+                {
+                    watched, watchedAtUtc, owner, unmonitorWatched, remonitorUnwatched, monitored = true,
+                    unmonitored = false, id = episode.Id, fileId = episode.EpisodeFileId
+                });
+
+            var updated = Get(episode.Id);
+            ModelUpdated(updated, true);
         }
 
         private SqlBuilder EpisodesWithoutFilesBuilder(DateTime currentTime, int startingSeasonNumber, HashSet<int> seriesTags)
@@ -406,7 +443,7 @@ namespace NzbDrone.Core.Tv
             var p = new DynamicParameters(parameters);
             p.Add("monitored", monitored);
 
-            conn.Execute($"UPDATE \"Episodes\" SET \"Monitored\" = @monitored WHERE {whereClause} AND \"Monitored\" <> @monitored", p, tran);
+            conn.Execute($"UPDATE \"Episodes\" SET \"Monitored\" = @monitored, \"JellyfinUnmonitorOwner\" = NULL WHERE {whereClause}", p, tran);
         }
 
         private Episode FindOneByAirDate(int seriesId, string date)

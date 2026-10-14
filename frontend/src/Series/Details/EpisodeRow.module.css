@@ -10,6 +10,10 @@
   width: 42px;
 }
 
+.watchedStatus {
+  margin-left: 8px;
+}
+
 .episodeNumber {
   composes: cell from 'Components/Table/Cells/TableRowCell.module.css';
 

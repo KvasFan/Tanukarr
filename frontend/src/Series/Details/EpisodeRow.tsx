@@ -12,6 +12,7 @@ import EpisodeNumber from 'Episode/EpisodeNumber';
 import EpisodeSearchCell from 'Episode/EpisodeSearchCell';
 import EpisodeStatus from 'Episode/EpisodeStatus';
 import EpisodeTitleLink from 'Episode/EpisodeTitleLink';
+import EpisodeWatchedStatus from 'Episode/EpisodeWatchedStatus';
 import IndexerFlags from 'Episode/IndexerFlags';
 import EpisodeFileLanguages from 'EpisodeFile/EpisodeFileLanguages';
 import { useEpisodeFile } from 'EpisodeFile/EpisodeFileProvider';
@@ -30,6 +31,8 @@ interface EpisodeRowProps {
   seriesId: number;
   episodeFileId?: number;
   monitored: boolean;
+  watched?: boolean;
+  watchedAtUtc?: string;
   seasonNumber: number;
   episodeNumber: number;
   absoluteEpisodeNumber?: number;
@@ -63,6 +66,8 @@ function EpisodeRow({
   seriesId,
   episodeFileId,
   monitored,
+  watched,
+  watchedAtUtc,
   seasonNumber,
   episodeNumber,
   absoluteEpisodeNumber,
@@ -163,6 +168,14 @@ function EpisodeRow({
                 finaleType={finaleType}
                 showOpenSeriesButton={false}
               />
+              {watched ? (
+                <span className={styles.watchedStatus}>
+                  <EpisodeWatchedStatus
+                    watched={watched}
+                    watchedAtUtc={watchedAtUtc}
+                  />
+                </span>
+              ) : null}
             </TableRowCell>
           );
         }

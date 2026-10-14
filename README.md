@@ -4,7 +4,10 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.0.3** manages **TV series and anime** in one Sonarr-derived application.
+**Tanukarr 1.0.4** manages **TV series and anime** in one Sonarr-derived application.
+The local candidate passed 231 checks across thirteen container reports, plus
+separate Backup, watched-counter and quality browser checks. Hosted publication
+and deployment are pending in the [1.0.4 verification ledger](docs/releases/1.0.4-verification.md).
 It continues the earlier releases and includes
 selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
 shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
@@ -14,11 +17,11 @@ and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr)
-and read the [release notes for 1.0.3](docs/releases/1.0.3.md). Published versions
+and read the [release notes for 1.0.4](docs/releases/1.0.4.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
-The [1.0.3 verification report](docs/releases/1.0.3-verification.md) preserves
-the preparation checkpoint. The [publication follow-up](docs/releases/1.0.3-publication.md)
-records the verified release, public image, hosted checks and deployment status.
+The historical [1.0.3 verification report](docs/releases/1.0.3-verification.md)
+and [publication follow-up](docs/releases/1.0.3-publication.md) preserve that
+release's preparation, public image, hosted checks and deployment evidence.
 The historical
 [1.0.2 publication follow-up](docs/releases/1.0.2-publication.md) records that
 release's hosted workflows, verified assets/image and preserved deployment.
@@ -26,7 +29,7 @@ The historical
 [1.0.1 report](docs/releases/1.0.1-verification.md) retains its original evidence.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
-Version 1.0.3 retains [series, anime and movie groups](docs/anime-season-groups.md)
+Version 1.0.4 retains [series, anime and movie groups](docs/anime-season-groups.md)
 introduced in 1.0.1:
 official prequel/sequel discovery, manual overrides and one anime presentation
 with configurable season, story-arc and movie folders for newly generated paths.
@@ -220,7 +223,18 @@ imports survive restarts and failed requests are retried. See the
 [Jellyfin guide](docs/jellyfin.md). New libraries must first complete an initial
 scan in Jellyfin; pending imports are retained until every configured folder is
 indexed. This connection was introduced in historical 0.1.0 and is retained in
-Tanukarr 1.0.3.
+Tanukarr 1.0.4.
+
+**Jellyfin watched status and list progress** — an optional reader records one
+selected user's played episodes by matching registered physical file paths.
+Separate opt-ins can unmonitor watched episodes, restore only monitoring changed
+by this connection, and advance compatible own-account AniList/MAL/Trakt/SIMKL
+progress. Public/foreign lists stay read-only. See the
+[watched-state guide](docs/jellyfin-watched.md) for setup and limitations.
+
+**Successful backup timing** — manual backups update Last Execution and restart
+the configured next-backup interval. Failed backups retain the last successful
+timing and their command error. See [compatibility and backups](docs/compatibility-and-backups.md).
 
 Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
 
@@ -247,12 +261,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexpert/tanukarr:1.0.3
+docker pull ghcr.io/kvasexpert/tanukarr:1.0.4
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.0.3
+  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.0.4
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -312,6 +326,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `1.0.4` | Locally verified candidate: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing; final tagged image, hosted publication and deployment remain pending in the 1.0.4 ledger. |
 | `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |
 | `1.0.2` | Published list-control/provider checkpoint: exclusion vetoes, complete AniList membership recovery, combined TMDB/Trakt/MDBList sources and direct MAL account status/tag filters. |
 | `1.0.1` | Historical grouping, season-pack searches, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; retains its original list controls. |
@@ -325,8 +340,8 @@ another architecture does not establish a published or tested image; additional
 architectures require their own verified artifacts. Release notes identify the
 actual image architecture, digest and executed checks.
 
-Historical [0.0.1](https://github.com/KvasExert/Tanukarr/releases/tag/v0.0.1)
-and [0.1.0](https://github.com/KvasExert/Tanukarr/releases/tag/v0.1.0) assets
+Historical [0.0.1](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.0.1)
+and [0.1.0](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.1.0) assets
 retain their original namespaces, filenames and immutable tags. Obtain their
 exact image references from those releases' manifests. The 0.1.0 image predates
 the AniList request-limit and Nyaa encoding fixes.

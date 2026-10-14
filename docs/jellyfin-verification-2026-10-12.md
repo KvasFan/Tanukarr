@@ -13,14 +13,14 @@ in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
 Verification started on October 12 and finished on October 13, 2026 in
 Europe/Rome; all final receipts are dated October 12 in UTC. The tested source is
-[`2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExert/Tanukarr/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91).
+[`2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExpert/Tanukarr/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91).
 Subsequent documentation-only commits do not change this implementation.
 
 The local Linux amd64 image used for the complete runtime checks was
 `<recorded-local-image-reference>`, image ID
 `sha256:a4f6eac864c12f38ddd5bcef399f6ac5a4c889192cee19d4384fc9e368b7ad81`.
 The independently built GitHub image was published as
-the original image reference for [commit `2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExert/Tanukarr/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91) in the linked publishing receipt,
+the original image reference for [commit `2805532c4c6ebbee6fcdca90f0df746646fbdd91`](https://github.com/KvasExpert/Tanukarr/commit/2805532c4c6ebbee6fcdca90f0df746646fbdd91) in the linked publishing receipt,
 with immutable digest
 `sha256:d3d8cbff3e2858a2db1be158df3d2c5e3ea3c20ad820b9bca7f0421383085d7d`.
 Both images identify the same source revision. The published image was pulled
@@ -28,8 +28,8 @@ anonymously using a fresh Docker configuration, checked with the actual Jellyfin
 settings UI, and deployed to the existing local instance. The immutable
 `v0.0.1` release and its stable image remain unchanged and predate this feature.
 
-The [CI run](https://github.com/KvasExert/Tanukarr/actions/runs/38312658105)
-and [Docker publishing run](https://github.com/KvasExert/Tanukarr/actions/runs/38312658464)
+The [CI run](https://github.com/KvasExpert/Tanukarr/actions/runs/38312658105)
+and [Docker publishing run](https://github.com/KvasExpert/Tanukarr/actions/runs/38312658464)
 both completed successfully for this source revision. The publishing workflow
 runs its container checks against the image before pushing it.
 

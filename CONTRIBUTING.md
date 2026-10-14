@@ -145,6 +145,16 @@ which kind actually ran in the
 
 ## Compression and container tests
 
+For 1.0.4, run [backup/task verification](docker/tests/README.md#backup-task-timestamps)
+and the [real local Jellyfin watched fixture](docker/tests/README.md#jellyfin-watched-state)
+against the exact candidate image. Verify explicit Played increments, V3/V5
+watched resources, native file matching, selected user/library isolation,
+monitoring ownership, opt-out and persistence. Separate controlled provider
+writer tests from private external-account execution. A fake successful mutation
+response does not establish a live account write. The new database-backed backup
+fixture is `FullyQualifiedName~BackupTaskFixture`; its cases must pass after a
+solution build.
+
 For the 1.0.3 quality/codec work, test actual profile-backed global summaries,
 mixed versus unlimited values, omitted versus explicit-null updates and invalid
 batch retention on both API versions. Codec regressions must preserve actual
@@ -170,8 +180,9 @@ public AniList checks; it does not use a private account or start a real downloa
 
 CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tests,
 generated-video worker tests and frontend checks. The Docker workflow builds amd64
-and runs the required disposable runtime fixtures, including the quality/codec
-fixture. Eleven reports identify one tested image before publication. Published architectures and actually executed
+and runs the required disposable runtime fixtures, including quality/codec,
+backup/task integrity and actual local Jellyfin watched checks. Thirteen reports
+identify one tested image before publication. Published architectures and actually executed
 runtime checks are recorded in the release verification report; configured
 support for another architecture is not an executed test or a published artifact.
 A CI pass does not imply that every online or platform suite ran.
@@ -179,14 +190,16 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The published **1.0.3** release uses
-Git tag `v1.0.3` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.3`.
-Its [publication follow-up](docs/releases/1.0.3-publication.md) records actual
-hosted checks, artifact identities and remaining findings.
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The **1.0.4** target
+uses Git tag `v1.0.4` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.4` once
+verified publication completes. Its [verification ledger](docs/releases/1.0.4-verification.md)
+records pending and executed checks separately. The preceding
+[1.0.3 publication follow-up](docs/releases/1.0.3-publication.md) retains that
+release's actual hosted checks, artifact identities and remaining findings.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/1.0.3.md) when changing the published deployment.
+[release notes](docs/releases/1.0.4.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 

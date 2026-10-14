@@ -204,9 +204,9 @@ a Git commit; a hosted image must identify its actual committed source and pass
 its own workflow checks. At this checkpoint, pushing this later source and
 publishing its `edge` image were still pending. The immutable `v1.0.1` tag,
 release assets and historical verification remain unchanged. Check the actual
-[main source](https://github.com/KvasExert/Tanukarr/tree/main),
-[Actions runs](https://github.com/KvasExert/Tanukarr/actions) and
-[GHCR package](https://github.com/users/KvasExert/packages/container/package/tanukarr)
+[main source](https://github.com/KvasExpert/Tanukarr/tree/main),
+[Actions runs](https://github.com/KvasExpert/Tanukarr/actions) and
+[GHCR package](https://github.com/users/KvasExpert/packages/container/package/tanukarr)
 for later source/publication identities rather than treating the local image ID
 above as a future registry digest.
 

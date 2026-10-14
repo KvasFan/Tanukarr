@@ -98,6 +98,7 @@ namespace NzbDrone.Core.ImportLists.Simkl
                     settings.AccessToken = token.AccessToken;
                     settings.RefreshToken = token.RefreshToken;
                     settings.Expires = token.ExpiresUtc;
+                    settings.ScopeV2 = token.Scope;
                 }
 
                 return true;
@@ -142,7 +143,8 @@ namespace NzbDrone.Core.ImportLists.Simkl
                     TimeSpan.FromMinutes(10));
                 var request = new HttpRequestBuilder(AuthorizeUrl)
                     .AddQueryParam("response_type", "code").AddQueryParam("client_id", settings.ClientIdV2.Trim())
-                    .AddQueryParam("redirect_uri", callback).AddQueryParam("state", state).AddQueryParam("scope", "media:read")
+                    .AddQueryParam("redirect_uri", callback).AddQueryParam("state", state)
+                    .AddQueryParam("scope", settings.SyncWatchedProgress ? "media:read media:write" : "media:read")
                     .AddQueryParam("code_challenge", challenge).AddQueryParam("code_challenge_method", "S256").Build();
                 return new { oauthUrl = request.Url.FullUri };
             }
@@ -194,6 +196,7 @@ namespace NzbDrone.Core.ImportLists.Simkl
                 {
                     accessToken = token.AccessToken,
                     refreshToken = token.RefreshToken,
+                    scopeV2 = token.Scope,
                     expires = DateTime.UtcNow.AddSeconds(token.ExpiresIn),
                     authUser = id.ToString(CultureInfo.InvariantCulture)
                 };
@@ -231,7 +234,8 @@ namespace NzbDrone.Core.ImportLists.Simkl
             if (token == null || !IsToken(token.AccessToken) || !IsToken(token.RefreshToken) ||
                 !string.Equals(token.TokenType, "Bearer", StringComparison.OrdinalIgnoreCase) ||
                 token.ExpiresIn <= 0 || token.ExpiresIn > 31536000 ||
-                token.Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("media:read", StringComparer.Ordinal) != true)
+                token.Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("media:read", StringComparer.Ordinal) != true ||
+                (settings.SyncWatchedProgress && token.Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("media:write", StringComparer.Ordinal) != true))
             {
                 throw Failure("Simkl AUTH V2 authentication did not return a valid readable grant. Verify your registered client, secret and callback URL, then authenticate again.");
             }

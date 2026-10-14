@@ -21,6 +21,7 @@ using NzbDrone.Core.Extras.Subtitles;
 using NzbDrone.Core.History;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.Exclusions;
+using NzbDrone.Core.ImportLists.Progress;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Instrumentation;
 using NzbDrone.Core.Jobs;
@@ -64,6 +65,8 @@ namespace NzbDrone.Core.Datastore
             Mapper.Entity<RetainedVersion>("RetainedVersions").RegisterModel();
 
             Mapper.Entity<JellyfinRefreshState>("JellyfinRefreshStates").RegisterModel();
+            Mapper.Entity<JellyfinWatchState>("JellyfinWatchStates").RegisterModel();
+            Mapper.Entity<ImportListProgressState>("ImportListProgressStates").RegisterModel();
 
             Mapper.Entity<RootFolder>("RootFolders").RegisterModel()
                   .Ignore(r => r.Accessible)

@@ -14,14 +14,14 @@ function MoreInfo() {
           {translate('HomePage')}
         </DescriptionListItemTitle>
         <DescriptionListItemDescription>
-          <Link to="https://github.com/KvasExert/Tanukarr">
-            github.com/KvasExert/Tanukarr
+          <Link to="https://github.com/KvasExpert/Tanukarr">
+            github.com/KvasExpert/Tanukarr
           </Link>
         </DescriptionListItemDescription>
 
         <DescriptionListItemTitle>{translate('Wiki')}</DescriptionListItemTitle>
         <DescriptionListItemDescription>
-          <Link to="https://github.com/KvasExert/Tanukarr/blob/main/docs/README.md">
+          <Link to="https://github.com/KvasExpert/Tanukarr/blob/main/docs/README.md">
             Tanukarr documentation
           </Link>
         </DescriptionListItemDescription>
@@ -30,8 +30,8 @@ function MoreInfo() {
           {translate('Source')}
         </DescriptionListItemTitle>
         <DescriptionListItemDescription>
-          <Link to="https://github.com/KvasExert/Tanukarr">
-            github.com/KvasExert/Tanukarr
+          <Link to="https://github.com/KvasExpert/Tanukarr">
+            github.com/KvasExpert/Tanukarr
           </Link>
         </DescriptionListItemDescription>
 
@@ -39,8 +39,8 @@ function MoreInfo() {
           {translate('FeatureRequests')}
         </DescriptionListItemTitle>
         <DescriptionListItemDescription>
-          <Link to="https://github.com/KvasExert/Tanukarr/issues">
-            github.com/KvasExert/Tanukarr/issues
+          <Link to="https://github.com/KvasExpert/Tanukarr/issues">
+            github.com/KvasExpert/Tanukarr/issues
           </Link>
         </DescriptionListItemDescription>
 

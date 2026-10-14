@@ -33,6 +33,10 @@ namespace NzbDrone.Core.Tv
         public DateTime? AirDateUtc { get; set; }
         public string Overview { get; set; }
         public bool Monitored { get; set; }
+        public bool Watched { get; set; }
+        public DateTime? WatchedAtUtc { get; set; }
+        public string WatchedSource { get; set; }
+        public string JellyfinUnmonitorOwner { get; set; }
         public int? AbsoluteEpisodeNumber { get; set; }
         public int? SceneAbsoluteEpisodeNumber { get; set; }
         public int? SceneSeasonNumber { get; set; }

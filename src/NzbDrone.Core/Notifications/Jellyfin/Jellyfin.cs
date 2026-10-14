@@ -11,11 +11,15 @@ namespace NzbDrone.Core.Notifications.Jellyfin
     {
         private readonly IJellyfinProxy _proxy;
         private readonly IJellyfinRefreshService _refreshService;
+        private readonly IJellyfinWatchProxy _watchProxy;
+        private readonly INotificationRepository _notificationRepository;
 
-        public Jellyfin(IJellyfinProxy proxy, IJellyfinRefreshService refreshService)
+        public Jellyfin(IJellyfinProxy proxy, IJellyfinRefreshService refreshService, IJellyfinWatchProxy watchProxy, INotificationRepository notificationRepository)
         {
             _proxy = proxy;
             _refreshService = refreshService;
+            _watchProxy = watchProxy;
+            _notificationRepository = notificationRepository;
         }
 
         public override string Name => "Jellyfin";
@@ -38,6 +42,17 @@ namespace NzbDrone.Core.Notifications.Jellyfin
             try
             {
                 _proxy.TestLibrary(Settings);
+                if (Settings.EnableWatchedSync)
+                {
+                    if (_notificationRepository.All().Any(definition => definition.Id != Definition.Id &&
+                        definition.Implementation == "Jellyfin" && definition.Settings is JellyfinSettings other && other.EnableWatchedSync))
+                    {
+                        return new ValidationResult(new[] { new ValidationFailure("EnableWatchedSync", "Only one Jellyfin connection may synchronize watched status. Disable watched sync on the other connection first.") });
+                    }
+
+                    _watchProxy.GetSnapshot(Settings);
+                }
+
                 return new ValidationResult();
             }
             catch (JellyfinException exception)
@@ -61,6 +76,14 @@ namespace NzbDrone.Core.Notifications.Jellyfin
                         Hint = c.CollectionType
                     });
 
+                return new { options };
+            }
+
+            if (action == "users")
+            {
+                var options = _watchProxy.GetUsers(Settings)
+                    .OrderBy(user => user.Name, StringComparer.InvariantCultureIgnoreCase)
+                    .Select(user => new FieldSelectStringOption { Value = user.Id, Name = user.Name });
                 return new { options };
             }
 

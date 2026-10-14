@@ -1,6 +1,6 @@
 {
   "name": "tanukarr",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Tanukarr manages TV series and anime with per-series TheTVDB, TMDB, AniList and MyAnimeList metadata for Usenet and BitTorrent users",
   "type": "module",
   "scripts": {
@@ -18,7 +18,7 @@
     "lint-fix": "yarn lint --fix",
     "stylelint": "stylelint \"frontend/**/*.css\" --config frontend/.stylelintrc"
   },
-  "repository": "https://github.com/KvasExert/Tanukarr.git",
+  "repository": "https://github.com/KvasExpert/Tanukarr.git",
   "author": "Team Sonarr",
   "license": "GPL-3.0",
   "readmeFilename": "readme.md",

@@ -56,6 +56,12 @@ namespace NzbDrone.Core.ImportLists.Simkl.User
         [FieldDefinition(6, Label = "ImportListsSimklSettingsExcludedCustomLists", Type = FieldType.Tag, SelectOptionsProviderAction = "getCustomLists", HelpText = "ImportListsSimklSettingsExcludedCustomListsHelpText")]
         public IEnumerable<string> ExcludedCustomListIds { get; set; } = Array.Empty<string>();
 
+        [FieldDefinition(7, Label = "ImportListsSyncWatchedProgress", Type = FieldType.Checkbox, HelpText = "ImportListsSimklSyncWatchedProgressHelpText")]
+        public bool SyncWatchedProgress { get; set; }
+
+        [FieldDefinition(0, Label = "ImportListsSettingsOAuthScope", Type = FieldType.Textbox, Hidden = HiddenType.Hidden)]
+        public string ScopeV2 { get; set; }
+
         public override NzbDroneValidationResult Validate()
         {
             ClientIdV2 = ClientIdV2?.Trim();

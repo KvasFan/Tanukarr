@@ -6,6 +6,7 @@ import Column from 'Components/Table/Column';
 import Table from 'Components/Table/Table';
 import TableBody from 'Components/Table/TableBody';
 import Episode from 'Episode/Episode';
+import EpisodeWatchedStatus from 'Episode/EpisodeWatchedStatus';
 import useEpisode, { EpisodeEntity } from 'Episode/useEpisode';
 import { useEpisodeFile } from 'EpisodeFile/EpisodeFileProvider';
 import { useDeleteEpisodeFile } from 'EpisodeFile/useEpisodeFiles';
@@ -82,7 +83,7 @@ function EpisodeSummary({
   const queryClient = useQueryClient();
   const { qualityProfileId, network } = useSingleSeries(seriesId) as Series;
 
-  const { airDateUtc, overview } = useEpisode(
+  const { airDateUtc, overview, watched, watchedAtUtc } = useEpisode(
     episodeId,
     episodeEntity
   ) as Episode;
@@ -135,6 +136,17 @@ function EpisodeSummary({
             <QualityProfileName qualityProfileId={qualityProfileId} />
           </Label>
         </div>
+        {watched ? (
+          <div className={styles.metaItem}>
+            <span className={styles.metaLabel}>
+              {translate('WatchedStatus')}
+            </span>
+            <EpisodeWatchedStatus
+              watched={watched}
+              watchedAtUtc={watchedAtUtc}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className={styles.overview}>

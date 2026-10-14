@@ -12,7 +12,7 @@ credited in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 ## Source and images
 
 The application source verified here is
-[`2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExert/Tanukarr/commit/2f0dcbc653481091028300dd377843c4cb1a075b).
+[`2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExpert/Tanukarr/commit/2f0dcbc653481091028300dd377843c4cb1a075b).
 The later browser-selector correction and documentation updates do not alter
 the application's filtering or frontend behavior. Verification finished on
 October 13 in Europe/Rome; the final deployment receipt is October 12 in UTC.
@@ -24,7 +24,7 @@ set the optional OCI revision argument, so that label is empty; the source
 identity comes from the recorded build checkpoint rather than that label.
 
 GitHub independently built and published
-the original image reference for [commit `2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExert/Tanukarr/commit/2f0dcbc653481091028300dd377843c4cb1a075b) in the linked publishing receipt,
+the original image reference for [commit `2f0dcbc653481091028300dd377843c4cb1a075b`](https://github.com/KvasExpert/Tanukarr/commit/2f0dcbc653481091028300dd377843c4cb1a075b) in the linked publishing receipt,
 with immutable digest
 `sha256:3620cbd0b6e7d28d4291ea0549d79ea4a14a56394bb13391aa2361e2be4221d1`.
 Its OCI revision correctly identifies the source commit. An anonymous pull with
@@ -32,8 +32,8 @@ a fresh Docker configuration succeeded. The published image was tested and
 deployed by digest. The immutable `v0.0.1` release remains unchanged and predates
 these filters; development main and `edge` contain them.
 
-Both the [CI run](https://github.com/KvasExert/Tanukarr/actions/runs/38316134346)
-and [Docker publishing run](https://github.com/KvasExert/Tanukarr/actions/runs/38316134695)
+Both the [CI run](https://github.com/KvasExpert/Tanukarr/actions/runs/38316134346)
+and [Docker publishing run](https://github.com/KvasExpert/Tanukarr/actions/runs/38316134695)
 completed successfully. The publishing workflow verifies its image before
 pushing it.
 

@@ -206,7 +206,7 @@ incomplete because of external throttling; these outcomes are reported separatel
 
 ## GitHub runner ownership checkpoint
 
-[Docker run 38387596048](https://github.com/KvasExert/Tanukarr/actions/runs/38387596048)
+[Docker run 38387596048](https://github.com/KvasExpert/Tanukarr/actions/runs/38387596048)
 passed 12 smoke, 16 functional/security and 21 grouping checks, then stopped on
 the Nyaa fixture's SQLite seed: the UID 1001 host runner could not write the
 config/database owned by app UID 1000. Image publication stopped at that gate.
@@ -226,9 +226,9 @@ checkpoint below records the completed rerun and publication separately.
 ## Hosted verification and publication for 9c66ac5
 
 For exact source commit
-[`9c66ac5a164f64b158c71e7a851574b5a1adc1ec`](https://github.com/KvasExert/Tanukarr/commit/9c66ac5a164f64b158c71e7a851574b5a1adc1ec),
-[CI run 38393388891](https://github.com/KvasExert/Tanukarr/actions/runs/38393388891)
-and [Docker run 38393389113](https://github.com/KvasExert/Tanukarr/actions/runs/38393389113)
+[`9c66ac5a164f64b158c71e7a851574b5a1adc1ec`](https://github.com/KvasExpert/Tanukarr/commit/9c66ac5a164f64b158c71e7a851574b5a1adc1ec),
+[CI run 38393388891](https://github.com/KvasExpert/Tanukarr/actions/runs/38393388891)
+and [Docker run 38393389113](https://github.com/KvasExpert/Tanukarr/actions/runs/38393389113)
 completed successfully. CI built the solution with zero warnings/errors and
 passed **7,089 Linux backend tests**: Core 6,746, API 190, HTTP 57 and selected
 Common 96, with 27 Core skips. Its compression worker passed **29 cases**,

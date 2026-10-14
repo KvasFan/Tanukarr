@@ -1,6 +1,6 @@
 # Quality sizes and video codecs
 
-Tanukarr 1.0.3 shows size limits in **MiB per hour** in both
+Tanukarr 1.0.4 retains the size editors introduced in 1.0.3, showing limits in **MiB per hour** in both
 **Settings > Quality** and each quality profile. A **GiB per hour** preview makes
 the same value easier to read. Minimum rejects undersized releases, maximum
 rejects oversized releases, and preferred size contributes to release ranking.
