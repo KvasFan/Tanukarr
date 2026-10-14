@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAppDimension } from 'App/appStore';
 import Series, { Image } from 'Series/Series';
 import SeriesPoster from 'Series/SeriesPoster';
 import styles from './CollectionPage.module.css';
@@ -20,6 +21,7 @@ function CollectionPoster({
   lazy = true,
   preferredImages,
 }: CollectionPosterProps) {
+  const isSmallScreen = useAppDimension('isSmallScreen');
   const candidates = useMemo(
     () =>
       [preferredImages ?? [], ...members.map((member) => member.images)].filter(
@@ -40,14 +42,14 @@ function CollectionPoster({
     <SeriesPoster
       key={`${
         candidate.find((image) => image.coverType === 'poster')?.url
-      }:${index}`}
+      }:${index}:${lazy && isSmallScreen ? 'window' : 'page'}`}
       className={className}
       style={style}
       images={candidate}
       title={title}
       size={lazy ? 250 : 500}
       lazy={lazy}
-      overflow={true}
+      overflow={!isSmallScreen}
       onError={onError}
     />
   ) : (

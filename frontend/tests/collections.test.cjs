@@ -33,6 +33,7 @@ const button = (props) => React.createElement('button', { disabled: props.isDisa
 const modal = ({ children, isOpen }) => (isOpen ? React.createElement('aside', {}, children) : null);
 const link = (props) => React.createElement('a', { href: props.to }, props.children);
 const common = {
+  'App/appStore': { useAppDimension: () => false },
   'Components/Alert': wrap,
   'Components/Icon': () => null,
   'Components/Link/Button': button,
@@ -417,6 +418,44 @@ test('collection artwork falls back to a real member cover and advances after fa
   assert.equal(renderer.root.findAllByType('img').length, 0);
   assert.equal(renderer.root.findByProps({ role: 'img' }).props['aria-label'], 'Generated collection');
   assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /poster-dark|Tanuki|logo/i);
+  TestRenderer.act(() => renderer.unmount());
+});
+
+test('collection cover observers rebind between the nested desktop scroller and mobile document scrolling', () => {
+  let smallScreen = false;
+  const bindings = [];
+  const unbindings = [];
+
+  function NativePoster(props) {
+    const binding = React.useRef(props.overflow).current;
+    React.useEffect(() => {
+      bindings.push(binding);
+      return () => unbindings.push(binding);
+    }, [binding]);
+    return React.createElement('img', { src: props.images[0].url });
+  }
+
+  NativePoster.propTypes = { overflow: PropTypes.bool, images: PropTypes.array };
+  const Poster = load('Series/Grouping/CollectionPoster.tsx', {
+    ...common,
+    'App/appStore': { useAppDimension: (key) => {
+      assert.equal(key, 'isSmallScreen');
+      return smallScreen;
+    } },
+    'Series/SeriesPoster': NativePoster
+  }).default;
+  const props = { members: [member(1, 1, { images: [{ coverType: 'poster', url: '/MediaCover/1/poster.jpg' }] })], title: 'Generated collection' };
+  const renderer = mount(Poster, props);
+  assert.deepEqual(bindings, [true]);
+  smallScreen = true;
+  TestRenderer.act(() => renderer.update(React.createElement(Poster, props)));
+  assert.deepEqual(unbindings, [true]);
+  assert.deepEqual(bindings, [true, false], 'mobile uses the normal window observer rather than a body overflow observer');
+  smallScreen = false;
+  TestRenderer.act(() => renderer.update(React.createElement(Poster, props)));
+  assert.deepEqual(unbindings, [true, false]);
+  assert.deepEqual(bindings, [true, false, true], 'resizing back installs a fresh nested-scroll observer');
+  assert.equal(renderer.root.findByType('img').props.src, '/MediaCover/1/poster.jpg');
   TestRenderer.act(() => renderer.unmount());
 });
 
