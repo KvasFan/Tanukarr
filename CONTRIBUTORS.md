@@ -26,6 +26,20 @@ the exact reviewed source heads; these local features do not change the original
 authors of retained Sonarr/fork work. The [release ledger](docs/releases/1.1.0-verification.md)
 states which checks actually ran rather than treating fixture code as proof.
 
+The final 1.1.0 source is
+[`3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`](https://github.com/KvasExpert/Tanukarr/commit/3c997ff8ed5e022a04a54a2f1c90b8682eccdc89),
+following local implementation
+[`568ff5ecacca9eacbb3f758daa8f397f1f5249fb`](https://github.com/KvasExpert/Tanukarr/commit/568ff5ecacca9eacbb3f758daa8f397f1f5249fb),
+the Microsoft security update and desktop observer correction
+[`28de356a36aed8b4752bda602da550689d41fb12`](https://github.com/KvasExpert/Tanukarr/commit/28de356a36aed8b4752bda602da550689d41fb12),
+and the mobile observer correction
+[`070c9a9582a58cf70923aab3c21695e5b3cf4aa6`](https://github.com/KvasExpert/Tanukarr/commit/070c9a9582a58cf70923aab3c21695e5b3cf4aa6).
+The final commit warms an inherited test's cold mock dispatch while preserving
+its original timing assertions. These commits and the publication documentation
+use the actual local identity **OpenAI Codex based on GPT-6**. The
+[publication report](docs/releases/1.1.0-publication.md) records the executed
+hosted checks, public assets and image, with the original author credits intact.
+
 - **Sonarr contributors**, including the original NzbDrone work of Mark
   McDowall, Keivan Beigi and Taloth Saldono: the core application and upstream
   maintenance. The integrated history contains `develop@57816c149`, including
@@ -108,7 +122,14 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The **Tanukarr 1.0.5** release is published and deployed under
+The current **Tanukarr 1.1.0** release is published under
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), with annotated
+tag `v1.1.0` and image `ghcr.io/kvasexpert/tanukarr:1.1.0`. Its
+[publication report](docs/releases/1.1.0-publication.md) records the exact source,
+nineteen runtime gates, verified assets/image and deployment checkpoint.
+Post-publication documentation updates leave the release tag and assets intact.
+
+The historical **Tanukarr 1.0.5** release was published and locally deployed under
 [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), with tag `v1.0.5`
 and image `ghcr.io/kvasexpert/tanukarr:1.0.5`. Its
 [publication follow-up](docs/releases/1.0.5-publication.md) identifies source

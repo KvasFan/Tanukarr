@@ -4,15 +4,16 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.1.0 is being verified for release.** It manages TV series, anime
+**Tanukarr 1.1.0 is published.** It manages TV series, anime
 and movie collections in one Sonarr-derived application. This version adds
 full collection pages, reliable artwork fallback, custom quality presets and
 editable codec factors in each quality profile. Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
 
-See the [1.1.0 release notes](docs/releases/1.1.0.md) and
+See the [1.1.0 release notes](docs/releases/1.1.0.md),
+[publication report](docs/releases/1.1.0-publication.md) and
 [verification ledger](docs/releases/1.1.0-verification.md) for executed checks,
-publication status and remaining findings. The [upstream review](docs/upstream-audit-2026-10-14.md)
+exact source/image identities and remaining findings. The [upstream review](docs/upstream-audit-2026-10-14.md)
 records the latest fetched Sonarr, Kakarotto, gaboy and ikatun heads and the
 compatibility decisions. Source attribution remains in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
@@ -318,7 +319,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `1.1.0` | In verification: full collection pages, alternate artwork, custom qualities and editable profile codec factors; see the current release ledger. |
+| `1.1.0` | Published and locally deployed: full collection pages, alternate artwork, custom qualities and editable profile codec factors. Nineteen runtime gates passed (342 checks); public assets/image and the protected upgrade verified. See the publication report for remaining findings. |
 | `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |
 | `1.0.4` | Published and deployed: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. All thirteen hosted gates passed; source/assets, immutable image and protected-data preservation verified. |
 | `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |

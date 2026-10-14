@@ -6,10 +6,11 @@ The [1.1.0 release notes](releases/1.1.0.md) describe full collection pages,
 alternate artwork, custom quality presets and profile codec factors. Existing
 list, import, client, backup and Jellyfin features remain included.
 
-**Publication checkpoint:** 1.1.0 is being verified. Check the
-[verification ledger](releases/1.1.0-verification.md) before selecting its image.
-The previous [1.0.5 publication](releases/1.0.5-publication.md) records its own
-verified source, assets, image and protected upgrade; it does not verify 1.1.0.
+**Publication checkpoint:** 1.1.0 is published and independently verified.
+The [publication follow-up](releases/1.1.0-publication.md) records its exact
+source, assets, public image, runtime checks and remaining security findings.
+The [preparation ledger](releases/1.1.0-verification.md) preserves earlier
+checkpoints. Previous release reports retain their historical upgrade results.
 Original contributors and actual AI identities are recorded in
 [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
@@ -18,10 +19,11 @@ below uses `ghcr.io/kvasexpert/tanukarr:1.1.0`; the GitHub repository itself is 
 code, not a Docker image. Check the release notes and
 [package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr) for
 the published architectures and image digest. The
-[1.0.5 publication follow-up](releases/1.0.5-publication.md) verifies anonymous
-pulls, exact source/image identities and nine downloadable assets. Use its own
-recorded digest when pinning a 1.0.5 deployment; earlier release identities remain
-in their historical reports.
+[1.1.0 publication follow-up](releases/1.1.0-publication.md) verifies anonymous
+pulls, exact source/image identities and nine downloadable assets. The verified
+Linux amd64 manifest is
+`sha256:40b0404c862c9df5fb658d9356f3d2d4a92c04a1786fe2e08c58e23db9f750b0`;
+earlier release identities remain in their historical reports.
 
 ## Prerequisites
 
@@ -137,7 +139,7 @@ runs in another container, mount that same host parent at `/media` there too.
 If its reported path differs, configure a Remote Path Mapping in Tanukarr.
 Remote Path Mapping translates paths; it does not mount storage or fix ownership.
 
-An import-list root must also be under persistent storage. The preserved local
+An import-list root must also be under persistent storage. The historical local
 1.0.5 deployment's read-only check found an accessible import root in the
 container's writable layer and **zero registered media files**. Its settings and
 existing paths were retained; no files were imported or moved. That observation
@@ -184,17 +186,19 @@ AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
 AniList lets you include several custom lists and veto entries by excluded
 custom-list membership, within the enabled Import membership/release statuses.
-Version 1.0.5 retains the 1.0.2 rule: excluded custom-list members are removed, including overlap with
-an included list. It removes the six separate account-status exclusion controls
-and their behavior; the immutable 1.0.1 image retains its original settings.
+Version 1.1.0 retains the 1.0.2 rule: excluded custom-list members are removed,
+including overlap with an included list. The six separate account-status
+exclusion controls and their behavior remain removed; the immutable 1.0.1 image
+retains its original settings.
 Use a verified 1.1.0 image and check its source revision.
 The list-control changes introduced in 1.0.2 also remove the
 duplicate legacy custom-list textbox, moving its saved name into Included
 Custom Lists tags without discarding the filter.
 
-In 1.0.5, supported providers first validate a complete selected-account or
-selected-list snapshot, then apply each import definition's filters. Definitions
-with the same account, grant and request projection can share that read during
+The snapshot import process introduced in 1.0.5 remains in 1.1.0. Supported
+providers first validate a complete selected-account or selected-list snapshot,
+then apply each import definition's filters. Definitions with the same account,
+grant and request projection can share that read during
 one synchronization; a new synchronization or unsaved **Test** gets a fresh
 scope. Private temporary responses are released after the operation. Saved list
 membership and SIMKL's required incremental baseline remain. A failed or
@@ -248,21 +252,23 @@ shell command that saves them in command history.
 
 ## Version pins and updates
 
-`1.0.5` is the Tanukarr release version; the application's inherited internal
+`1.1.0` is the Tanukarr release version; the application's inherited internal
 Sonarr version may use a different numbering scheme. Prefer the exact release
 tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
 
 ```yaml
-    image: ghcr.io/kvasexpert/tanukarr@sha256:3684368104605ca02345e6a002293a99b85334fba8fab4d1734b097caaf730a4
+    image: ghcr.io/kvasexpert/tanukarr@sha256:40b0404c862c9df5fb658d9356f3d2d4a92c04a1786fe2e08c58e23db9f750b0
 ```
 
 This is the verified Linux amd64 **platform manifest**. Its configuration digest
-is `sha256:9db5b44847a99f15a0ac30847a7f7807da2a10bda10d0e815730e847dac8c269`;
+is `sha256:99b21c1d60fd4cdedd8371b78b7154666f928aa4a878aff72be2eccea12b55b5`;
 the hosted verification reports identify that configuration, while the anonymous
-pull and deployed image use the manifest identity above. The publication proof
+pull uses the manifest identity above. The publication proof
 ties both identities to source
-`13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6`. Use the manifest digest in Compose.
+`3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`. Use the manifest digest in Compose.
+The verified published-image v3/v5 status responses report Tanukarr **1.1.0**,
+internal Core **10.0.0.18155**, .NET **10.0.13** and schema **252**.
 
 Release workflows also produce `latest` for release builds, `edge` for untagged
 `main` development builds and `sha-<full-commit>` for a particular build. Tags can
@@ -285,8 +291,13 @@ Recreating the container uses the new image with the existing configuration.
 may prevent downgrading; restore the pre-update backup into a separate configuration
 location when a rollback requires it. Never overwrite your only backup.
 
-The verified local 1.0.4-to-1.0.5 upgrade preserved all old protected columns and
-rows across **37 protected tables**. Migration **250** adds only
+In 1.1.0, migration **251** adds quality criteria and profile codec factors;
+migration **252** adds the native collection display title. These additive
+migrations do not move existing media or change native provider identities.
+Retain the previous image and compatible configuration backup before upgrading.
+
+The historical local 1.0.4-to-1.0.5 upgrade preserved all old protected columns
+and rows across **37 protected tables**. Migration **250** adds only
 `ImportLists.PreferredMetadataSource`, defaulting existing lists to Automatic.
 Raw before/after hashes were retained; this is not a claim of identical database
 bytes or unchanged volatile task data. The post-upgrade V3/V5 status endpoints
@@ -299,13 +310,13 @@ triggered by that owner check. See the
 ## Release archive fallback
 
 If a release includes a Docker image archive, download that archive and its
-checksum from the verified [GitHub release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.5).
+checksum from the verified [GitHub release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.1.0).
 Choose an architecture compatible with your Docker host. Verify the filename
 listed in the release's checksum file before loading it:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-1.0.5-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-1.1.0-linux-amd64-docker.tar.gz
 ```
 
 On Windows, use `Get-FileHash -Algorithm SHA256` and compare its output with
@@ -319,24 +330,29 @@ docker compose up -d --pull never
 ```
 
 Use the actual asset name shown for the release; the command above illustrates
-the 1.0.5 Linux amd64 archive naming convention. This is an offline image import,
+the verified 1.1.0 Linux amd64 archive. This is an offline image import,
 not a source build. Asset availability, architectures, SBOMs, manifests and test
 receipts must be checked on the corresponding release. GitHub source archives
 are source code and cannot be loaded with `docker load`. Source and image assets
 must preserve the project's GPL license and contributor notices.
 
-The verified 1.0.5 release provides `provider-verification.json`, alongside
+The verified 1.1.0 release provides `provider-verification.json`, alongside
 the primary verification/manifest assets, to identify required provider/runtime
-checks for the same tested image. It aggregates twelve additional reports beyond
-smoke and functional/security, for fourteen required publishing gates totaling
-251 checks. The new import-snapshot fixture verifies two definitions sharing one
+checks for the same tested image. It aggregates seventeen additional reports
+beyond smoke and functional/security, for nineteen required publishing gates
+totaling 342 checks. The import-snapshot fixture verifies two definitions sharing one
 complete read, independent local filters, a fresh subsequent sync and account/grant
 isolation through controlled provider endpoints. The
 backup fixture checks actual archive integrity and success/failure task timing;
 the watched fixture changes Played state on a disposable real local Jellyfin.
-Quality/codec checks retain local RSS coverage. The configured
-nine assets comprise the image archive, corresponding source archive, SBOM,
-smoke report, functional/security report, provider aggregate, Compose YAML,
+Custom-quality checks import generated 4K HEVC media; artwork and collection-browser
+checks exercise catalogue fallback and decoded desktop/mobile covers. A genuine
+disposable qBittorrent server verifies client settings and generated collection
+imports, while selected-library Jellyfin refresh uses actual one-minute ticks.
+Quality/codec checks retain local RSS coverage. These controlled fixtures do not
+claim public downloads or access to the owner's library or private accounts.
+The verified nine assets comprise the image archive, corresponding source archive,
+SBOM, smoke report, functional/security report, provider aggregate, Compose YAML,
 release manifest and checksum file. Inspect the actual published asset list,
 checksums and manifest; a configured workflow alone does not prove publication
 or successful execution.
@@ -345,29 +361,32 @@ The initial 0.0.1 release provides an image archive for **Linux amd64** and
 its matching source archive, SBOM, manifest and verification receipts. Its
 immutable assets and dated reports remain historical checkpoints; they do not
 establish that an equivalent later asset has been published or tested. The
-1.0.5 publication has its own proof rather than inheriting those early results.
+1.1.0 publication has its own proof rather than inheriting those early results.
 
 ## Building from the GitHub source
 
 To build the tagged source instead of pulling the published image:
 
 ```sh
-git clone --branch v1.0.5 --depth 1 https://github.com/KvasExpert/Tanukarr.git
+git clone --branch v1.1.0 --depth 1 https://github.com/KvasExpert/Tanukarr.git
 cd Tanukarr
 docker build --progress=plain \
   --build-arg TANUKARR_SOURCE=https://github.com/KvasExpert/Tanukarr \
-  --build-arg TANUKARR_VERSION=1.0.5 \
-  --build-arg TANUKARR_REVISION=13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6 \
-  -t tanukarr:1.0.5 .
+  --build-arg TANUKARR_VERSION=1.1.0 \
+  --build-arg TANUKARR_REVISION=3c997ff8ed5e022a04a54a2f1c90b8682eccdc89 \
+  -t tanukarr:1.1.0 .
 ```
 
-Use `image: tanukarr:1.0.5` in the standalone Compose example above and run
+Use `image: tanukarr:1.1.0` in the standalone Compose example above and run
 `docker compose up -d --pull never`. The build downloads dependencies and runs
-the checks encoded in the Dockerfile. Further test commands are in
+the checks encoded in the Dockerfile, using .NET SDK **10.0.402** and runtime
+**10.0.13**. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 The explicit source argument uses the current canonical repository URL. The
-verified `v1.0.5` tag resolves to `13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6`.
+verified annotated `v1.1.0` tag has object ID
+`97bae6f98b78fc34fba2bb9a2b34a56092836d1d` and resolves to source
+`3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`.
 To build development code instead, clone `main`
 and check the repository's `VERSION` file.
 An untagged main checkout can include changes added after a release, so record

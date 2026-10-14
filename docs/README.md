@@ -16,6 +16,8 @@ repeat past verification or rename existing releases, volumes or tools.
 | Document | Purpose |
 | --- | --- |
 | [Tanukarr 1.1.0](releases/1.1.0.md) | Full collection pages, alternate artwork, custom qualities and editable profile codec factors |
+| [1.1.0 publication and deployment](releases/1.1.0-publication.md) | Exact source/image/assets, nineteen hosted gates, public security findings and protected upgrade evidence |
+| [1.1.0 image-security inventory](releases/1.1.0-image-security.json) | Actual public-image scan summary with exact package/CVE versions, severities and verification limits |
 | [1.1.0 verification ledger](releases/1.1.0-verification.md) | Executed source/container/browser checks, genuine clients and media-server scope, publication status and remaining findings |
 | [October 14 upstream review](upstream-audit-2026-10-14.md) | Fetched source heads, already adapted features and remaining dependency/workflow decisions |
 | [Project README](../README.md) | Shared TV/anime features, release links, Docker quick start and toolchain |
