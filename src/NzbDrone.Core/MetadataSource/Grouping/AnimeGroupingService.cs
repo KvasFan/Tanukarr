@@ -179,6 +179,11 @@ namespace NzbDrone.Core.MetadataSource.Grouping
             {
                 result.AnimeGroupTitle = canonical.AnimeGroupTitle;
                 result.AnimeGroupFolder = canonical.AnimeGroupFolder;
+                if (series.Id == 0 && series.AnimeGroupingMode == AnimeGroupingMode.Automatic)
+                {
+                    result.AnimeGroupMovieFolderStyle = canonical.AnimeGroupMovieFolderStyle;
+                }
+
                 result.AnimeGroupKind = result.AnimeGroupMemberKind == AnimeGroupMemberKind.Season ||
                                        result.AnimeGroupKind == AnimeGroupKind.Series ||
                                        groupMembers.Any(s => s.AnimeGroupMemberKind == AnimeGroupMemberKind.Season || s.AnimeGroupKind == AnimeGroupKind.Series)

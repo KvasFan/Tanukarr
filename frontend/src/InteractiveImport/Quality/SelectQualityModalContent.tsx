@@ -12,8 +12,9 @@ import ModalContent from 'Components/Modal/ModalContent';
 import ModalFooter from 'Components/Modal/ModalFooter';
 import ModalHeader from 'Components/Modal/ModalHeader';
 import { inputTypes, kinds } from 'Helpers/Props';
-import Quality, { QualityModel } from 'Quality/Quality';
+import { QualityModel } from 'Quality/Quality';
 import { useQualityProfileSchema } from 'Settings/Profiles/Quality/useQualityProfiles';
+import { useQualityDefinitions } from 'Settings/Quality/Definition/useQualityDefinitions';
 import { InputChanged } from 'typings/inputs';
 import getQualities from 'Utilities/Quality/getQualities';
 import translate from 'Utilities/String/translate';
@@ -37,9 +38,34 @@ function SelectQualityModalContent(props: SelectQualityModalContentProps) {
   const { schema, isSchemaLoading, isSchemaFetched, schemaError } =
     useQualityProfileSchema(true);
 
+  const schemaItems = useMemo(() => getQualities(schema.items), [schema]);
+  const requiresHistoricalDefinition =
+    isSchemaFetched &&
+    props.qualityId >= 10000 &&
+    !schemaItems.some((item) => item.id === props.qualityId);
+  const {
+    data: definitions,
+    isFetched: definitionsFetched,
+    error: definitionError,
+  } = useQualityDefinitions(requiresHistoricalDefinition);
   const items = useMemo(() => {
-    return getQualities(schema.items);
-  }, [schema]);
+    const available = schemaItems.filter(
+      (item) => !item.isRetired || item.id === props.qualityId
+    );
+    const historical = definitions.find(
+      (definition) => definition.quality.id === props.qualityId
+    );
+    if (
+      historical &&
+      !available.some((item) => item.id === historical.quality.id)
+    )
+      available.push(historical.quality);
+    return available;
+  }, [schemaItems, definitions, props.qualityId]);
+  const loaded =
+    isSchemaFetched && (!requiresHistoricalDefinition || definitionsFetched);
+  const loadError =
+    schemaError || (requiresHistoricalDefinition ? definitionError : undefined);
 
   const qualityOptions = useMemo(() => {
     return items.map(({ id, name }): EnhancedSelectInputValue<number> => {
@@ -72,7 +98,8 @@ function SelectQualityModalContent(props: SelectQualityModalContentProps) {
   );
 
   const onQualitySelectWrapper = useCallback(() => {
-    const quality = items.find((item) => item.id === qualityId) as Quality;
+    const quality = items.find((item) => item.id === qualityId);
+    if (!quality) return;
 
     const revision = {
       version: proper ? 2 : 1,
@@ -91,13 +118,16 @@ function SelectQualityModalContent(props: SelectQualityModalContentProps) {
       <ModalHeader>{modalTitle} - Select Quality</ModalHeader>
 
       <ModalBody>
-        {isSchemaLoading ? <LoadingIndicator /> : null}
+        {isSchemaLoading ||
+        (requiresHistoricalDefinition && !definitionsFetched) ? (
+          <LoadingIndicator />
+        ) : null}
 
-        {!isSchemaLoading && schemaError ? (
+        {!isSchemaLoading && loadError ? (
           <Alert kind={kinds.DANGER}>{translate('QualitiesLoadError')}</Alert>
         ) : null}
 
-        {isSchemaFetched && !schemaError ? (
+        {loaded && !loadError ? (
           <Form>
             <FormRow>
               <FormLabel>{translate('Quality')}</FormLabel>
@@ -136,7 +166,15 @@ function SelectQualityModalContent(props: SelectQualityModalContentProps) {
       <ModalFooter>
         <Button onPress={onModalClose}>Cancel</Button>
 
-        <Button kind={kinds.SUCCESS} onPress={onQualitySelectWrapper}>
+        <Button
+          kind={kinds.SUCCESS}
+          isDisabled={
+            !loaded ||
+            Boolean(loadError) ||
+            !items.some((item) => item.id === qualityId)
+          }
+          onPress={onQualitySelectWrapper}
+        >
           {translate('SelectQuality')}
         </Button>
       </ModalFooter>

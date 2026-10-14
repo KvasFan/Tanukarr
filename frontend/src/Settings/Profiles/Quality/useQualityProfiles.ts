@@ -43,6 +43,7 @@ export interface QualityProfileModel extends ModelBase {
   cutoffFormatScore: number;
   minUpgradeFormatScore: number;
   formatItems: QualityProfileFormatItem[];
+  codecMultipliers?: Record<string, number>;
 }
 
 const PATH = '/qualityprofile';

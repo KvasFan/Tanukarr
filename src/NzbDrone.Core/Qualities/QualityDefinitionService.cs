@@ -6,6 +6,7 @@ using NzbDrone.Common.Cache;
 using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
+using NzbDrone.Core.Profiles.Qualities;
 using NzbDrone.Core.Qualities.Commands;
 
 namespace NzbDrone.Core.Qualities
@@ -17,19 +18,26 @@ namespace NzbDrone.Core.Qualities
         List<QualityDefinition> All();
         QualityDefinition GetById(int id);
         QualityDefinition Get(Quality quality);
+        QualityDefinition Add(QualityDefinition definition, int? copyFromId = null);
+        void Retire(int id);
+        QualityDefinition Restore(int id);
     }
 
-    public class QualityDefinitionService : IQualityDefinitionService, IExecute<ResetQualityDefinitionsCommand>, IHandle<ApplicationStartedEvent>
+    public partial class QualityDefinitionService : IQualityDefinitionService, IExecute<ResetQualityDefinitionsCommand>, IHandle<ApplicationStartedEvent>
     {
         private readonly IQualityDefinitionRepository _repo;
         private readonly ICached<Dictionary<Quality, QualityDefinition>> _cache;
         private readonly Logger _logger;
+        private readonly IQualityProfileRepository _profiles;
+        private readonly IQualityProfileRankService _ranks;
 
-        public QualityDefinitionService(IQualityDefinitionRepository repo, ICacheManager cacheManager, Logger logger)
+        public QualityDefinitionService(IQualityDefinitionRepository repo, ICacheManager cacheManager, IQualityProfileRepository profiles, IQualityProfileRankService ranks, Logger logger)
         {
             _repo = repo;
             _cache = cacheManager.GetCache<Dictionary<Quality, QualityDefinition>>(this.GetType());
             _logger = logger;
+            _profiles = profiles;
+            _ranks = ranks;
         }
 
         private Dictionary<Quality, QualityDefinition> GetAll()
@@ -40,6 +48,7 @@ namespace NzbDrone.Core.Qualities
         public void Update(QualityDefinition qualityDefinition)
         {
             _repo.Update(qualityDefinition);
+            Configure(qualityDefinition);
 
             _cache.Clear();
         }
@@ -47,6 +56,7 @@ namespace NzbDrone.Core.Qualities
         public void UpdateMany(List<QualityDefinition> qualityDefinitions)
         {
             _repo.UpdateMany(qualityDefinitions);
+            qualityDefinitions.ForEach(Configure);
             _cache.Clear();
         }
 
@@ -90,14 +100,16 @@ namespace NzbDrone.Core.Qualities
 
             _repo.InsertMany(insertList);
             _repo.UpdateMany(updateList);
-            _repo.DeleteMany(existingDefinitions);
+            _repo.DeleteMany(existingDefinitions.Where(definition => definition.Quality.Id < Quality.CustomIdStart).ToList());
 
             _cache.Clear();
         }
 
         private static QualityDefinition WithWeight(QualityDefinition definition)
         {
-            definition.Weight = Quality.DefaultQualityDefinitions.Single(d => d.Quality == definition.Quality).Weight;
+            var standard = Quality.DefaultQualityDefinitions.SingleOrDefault(d => d.Quality == definition.Quality);
+            definition.Weight = standard?.Weight ?? 19;
+            Configure(definition);
 
             return definition;
         }
@@ -107,9 +119,18 @@ namespace NzbDrone.Core.Qualities
             _logger.Debug("Setting up default quality config");
 
             InsertMissingDefinitions();
+            All();
         }
 
         public void Execute(ResetQualityDefinitionsCommand message)
+        {
+            lock (CatalogueLock)
+            {
+                ResetDefinitions(message);
+            }
+        }
+
+        private void ResetDefinitions(ResetQualityDefinitionsCommand message)
         {
             var updateList = new List<QualityDefinition>();
 

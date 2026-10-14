@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import { setTranslations } from 'Utilities/String/translate';
 
@@ -14,15 +14,18 @@ export function useTranslations() {
       gcTime: Infinity,
     },
   });
+  const [appliedData, setAppliedData] = useState<TranslationsResponse>();
 
   useEffect(() => {
     if (data) {
       setTranslations(data.strings);
+      setAppliedData(data);
     }
   }, [data]);
 
   return {
     ...result,
+    isFetched: result.isFetched && !!data && appliedData === data,
     data,
   };
 }

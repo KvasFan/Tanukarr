@@ -820,6 +820,40 @@
         }
       }
     },
+    "/api/v5/collection/presentation": {
+      "get": {
+        "tags": [
+          "CollectionPresentation"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesPresentation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
     "/api/v5/command": {
       "post": {
         "tags": [
@@ -6323,6 +6357,27 @@
           }
         }
       },
+      "delete": {
+        "tags": [
+          "QualityDefinition"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
       "get": {
         "tags": [
           "QualityDefinition"
@@ -6407,6 +6462,35 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "QualityDefinition"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityDefinitionResource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityDefinitionResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
       }
     },
     "/api/v5/qualitydefinition/codecs": {
@@ -6443,6 +6527,58 @@
                     "type": "number",
                     "format": "double"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/qualitydefinition/codecdefaults": {
+      "get": {
+        "tags": [
+          "QualityDefinition"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v5/qualitydefinition/{id}/restore": {
+      "post": {
+        "tags": [
+          "QualityDefinition"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityDefinitionResource"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityDefinitionResource"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityDefinitionResource"
                 }
               }
             }
@@ -13085,6 +13221,9 @@
           "resolution": {
             "type": "integer",
             "format": "int32"
+          },
+          "isRetired": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -13106,6 +13245,33 @@
           "weight": {
             "type": "integer",
             "format": "int32"
+          },
+          "source": {
+            "$ref": "#/components/schemas/QualitySource"
+          },
+          "resolution": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "codec": {
+            "type": "string",
+            "nullable": true
+          },
+          "titlePattern": {
+            "type": "string",
+            "nullable": true
+          },
+          "isRetired": {
+            "type": "boolean"
+          },
+          "isCustom": {
+            "type": "boolean"
+          },
+          "copyFromId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "minSize": {
             "type": "number",
@@ -13229,6 +13395,14 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProfileFormatItemResource"
+            },
+            "nullable": true
+          },
+          "codecMultipliers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
             },
             "nullable": true
           }
@@ -14437,6 +14611,20 @@
             "type": "boolean",
             "nullable": true
           },
+          "collectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "animeGroupKind": {
+            "$ref": "#/components/schemas/AnimeGroupKind"
+          },
+          "animeGroupMovieFolderStyle": {
+            "$ref": "#/components/schemas/AnimeGroupMovieFolderStyle"
+          },
           "rootFolderPath": {
             "type": "string",
             "nullable": true
@@ -14481,6 +14669,23 @@
         },
         "additionalProperties": false
       },
+      "SeriesPresentation": {
+        "type": "object",
+        "properties": {
+          "overview": {
+            "type": "string",
+            "nullable": true
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaCover"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SeriesResource": {
         "type": "object",
         "properties": {
@@ -14489,6 +14694,10 @@
             "format": "int32"
           },
           "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "collectionTitle": {
             "type": "string",
             "nullable": true
           },
@@ -15687,6 +15896,9 @@
     },
     {
       "name": "CalendarFeed"
+    },
+    {
+      "name": "CollectionPresentation"
     },
     {
       "name": "Command"

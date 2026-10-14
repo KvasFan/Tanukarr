@@ -277,7 +277,7 @@ namespace NzbDrone.Core.Organizer
 
         public string GetSeriesFolder(Series series, NamingConfig namingConfig = null)
         {
-            return GetSeriesFolder(series, series.Title, namingConfig);
+            return GetSeriesFolder(series, series.CollectionTitle.IsNotNullOrWhiteSpace() ? series.CollectionTitle : series.Title, namingConfig);
         }
 
         public string GetSeriesFolder(Series series, string title, NamingConfig namingConfig = null)

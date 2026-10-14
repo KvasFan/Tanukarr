@@ -28,7 +28,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
     /// otherwise be added at all.
     /// </para>
     /// </summary>
-    public class AniListProxy : IMetadataProvider, IAnimeRelationProvider
+    public class AniListProxy : IMetadataProvider, IAnimeRelationProvider, ISeriesPresentationProvider
     {
         // Long series need several schedule pages. Keep the work per refresh bounded;
         // the shared request service enforces AniList's current rate limits.
@@ -51,6 +51,54 @@ namespace NzbDrone.Core.MetadataSource.AniList
         }
 
         public MetadataSourceType Source => MetadataSourceType.AniList;
+
+        public SeriesPresentation GetPresentation(Series identity)
+        {
+            var id = SeriesPresentationService.SinglePositiveId(identity.AniListIds);
+            var mal = SeriesPresentationService.SinglePositiveId(identity.MalIds);
+            if (id <= 0 && mal <= 0)
+            {
+                return null;
+            }
+
+            var request = new HttpRequestBuilder(AniListQueries.BaseUrl).Build();
+            request.Method = HttpMethod.Post;
+            request.Headers.ContentType = "application/json";
+            request.SuppressHttpError = true;
+            request.RequestTimeout = TimeSpan.FromSeconds(5);
+            request.SetContent(Json.ToJson(new
+            {
+                query = AniListQueries.PresentationById,
+                variables = new { id = id > 0 ? (int?)id : null, idMal = id > 0 ? null : (int?)mal }
+            }));
+
+            var response = new HttpResponse<AniListMediaResponse>(_aniListRequestService.ExecuteOptional(request));
+            var media = response.Resource?.Data?.Media;
+            if (response.HasHttpError || response.Resource?.Errors?.Count > 0 || media?.Type != "ANIME" || media.Id <= 0 ||
+                (id > 0 && media.Id != id) || (id <= 0 && media.IdMal != mal))
+            {
+                if (response.HasHttpError)
+                {
+                    throw new HttpException(request, response);
+                }
+
+                return null;
+            }
+
+            var presentation = new SeriesPresentation { Overview = CleanDescription(media.Description) };
+            var poster = new[] { media.CoverImage?.ExtraLarge, media.CoverImage?.Large }.FirstOrDefault(value => value.IsNotNullOrWhiteSpace());
+            if (poster.IsNotNullOrWhiteSpace())
+            {
+                presentation.Images.Add(new MediaCover.MediaCover(MediaCoverTypes.Poster, poster));
+            }
+
+            if (media.BannerImage.IsNotNullOrWhiteSpace())
+            {
+                presentation.Images.Add(new MediaCover.MediaCover(MediaCoverTypes.Fanart, media.BannerImage));
+            }
+
+            return presentation;
+        }
 
         public AnimeRelationNode GetAnimeRelations(string foreignId)
         {
@@ -303,7 +351,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 Votes = media.Popularity ?? 0
             };
 
-            var poster = media.CoverImage?.ExtraLarge ?? media.CoverImage?.Large;
+            var poster = new[] { media.CoverImage?.ExtraLarge, media.CoverImage?.Large }.FirstOrDefault(value => value.IsNotNullOrWhiteSpace());
 
             if (poster.IsNotNullOrWhiteSpace())
             {

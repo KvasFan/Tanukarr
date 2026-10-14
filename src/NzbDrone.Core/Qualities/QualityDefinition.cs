@@ -8,6 +8,12 @@ namespace NzbDrone.Core.Qualities
 
         public string Title { get; set; }
 
+        public QualitySource? Source { get; set; }
+        public int? Resolution { get; set; }
+        public string Codec { get; set; } = string.Empty;
+        public string TitlePattern { get; set; } = string.Empty;
+        public bool IsRetired { get; set; }
+
         public string GroupName { get; set; }
         public int Weight { get; set; }
 

@@ -12,6 +12,10 @@ namespace Sonarr.Api.V5.Series;
 public class SeriesResource : RestResource
 {
     public string? Title { get; set; }
+    [SwaggerSchema(ReadOnly = true)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Include)]
+    public string? CollectionTitle { get; set; }
     public List<AlternateTitleResource>? AlternateTitles { get; set; }
     public string? SortTitle { get; set; }
     public SeriesStatusType Status { get; set; }
@@ -116,6 +120,7 @@ public static class SeriesResourceMapper
         {
             Id = model.Id,
             Title = model.Title,
+            CollectionTitle = model.CollectionTitle,
             SortTitle = model.SortTitle,
             Status = model.Status,
             Overview = model.Overview,

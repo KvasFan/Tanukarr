@@ -9,6 +9,12 @@ import { useSaveSettings } from 'Settings/useSettings';
 const PATH = '/qualitydefinition';
 const DEFAULT_QUALITY_DEFINITIONS: QualityDefinitionModel[] = [];
 const SIZE_FIELDS = ['minSize', 'preferredSize', 'maxSize'] as const;
+const CRITERIA_FIELDS = [
+  'source',
+  'resolution',
+  'codec',
+  'titlePattern',
+] as const;
 
 export const useQualityCodecMultipliers = () =>
   useApiQuery<Record<string, number>>({ path: `${PATH}/codecs` });
@@ -17,11 +23,17 @@ type QualityDefinitionUpdate = Pick<
   QualityDefinitionModel,
   'id' | 'quality' | 'title' | 'weight'
 > &
-  Partial<Pick<QualityDefinitionModel, (typeof SIZE_FIELDS)[number]>>;
+  Partial<
+    Pick<
+      QualityDefinitionModel,
+      (typeof SIZE_FIELDS)[number] | (typeof CRITERIA_FIELDS)[number]
+    >
+  >;
 
-export const useQualityDefinitions = () => {
+export const useQualityDefinitions = (enabled = true) => {
   const result = useApiQuery<QualityDefinitionModel[]>({
     path: PATH,
+    queryOptions: { enabled },
   });
 
   return {
@@ -101,6 +113,12 @@ export const useManageQualityDefinitions = () => {
       for (const field of SIZE_FIELDS) {
         if (Object.prototype.hasOwnProperty.call(changes, field)) {
           request[field] = updated[field];
+        }
+      }
+
+      for (const field of CRITERIA_FIELDS) {
+        if (Object.prototype.hasOwnProperty.call(changes, field)) {
+          Object.assign(request, { [field]: updated[field] });
         }
       }
 

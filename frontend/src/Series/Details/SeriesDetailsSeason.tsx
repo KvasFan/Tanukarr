@@ -108,6 +108,7 @@ interface SeriesDetailsSeasonProps {
   statistics?: Statistics;
   title?: string;
   isExpanded?: boolean;
+  isAnchorTarget?: boolean;
   onExpandPress: (seasonNumber: number, isExpanded: boolean) => void;
 }
 
@@ -118,6 +119,7 @@ function SeriesDetailsSeason({
   statistics = {} as Statistics,
   title,
   isExpanded,
+  isAnchorTarget,
   onExpandPress,
 }: SeriesDetailsSeasonProps) {
   const executeCommand = useExecuteCommand();
@@ -273,8 +275,11 @@ function SeriesDetailsSeason({
           isAfter(item.airDateUtc) || isAfter(item.airDateUtc, { days: -30 })
       ) || items.every((item) => !item.airDateUtc);
 
-    onExpandPress(seasonNumber, expand && seasonNumber > 0);
-  }, [items, seriesId, seasonNumber, onExpandPress]);
+    onExpandPress(
+      seasonNumber,
+      !!isAnchorTarget || (expand && seasonNumber > 0)
+    );
+  }, [items, seriesId, seasonNumber, onExpandPress, isAnchorTarget]);
 
   useEffect(() => {
     if ((previousEpisodeFileCount ?? 0) > 0 && episodeFileCount === 0) {

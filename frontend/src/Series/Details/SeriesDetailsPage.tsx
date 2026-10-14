@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import NotFound from 'Components/NotFound';
 import usePrevious from 'Helpers/Hooks/usePrevious';
 import useSeries from 'Series/useSeries';
@@ -9,6 +9,12 @@ import SeriesDetails from './SeriesDetails';
 function SeriesDetailsPage() {
   const { data: allSeries } = useSeries();
   const { titleSlug } = useParams<{ titleSlug: string }>();
+  const [searchParams] = useSearchParams();
+  const seasonParameter = searchParams.get('season');
+  const requestedSeason =
+    seasonParameter !== null && /^\d+$/.test(seasonParameter)
+      ? Number(seasonParameter)
+      : undefined;
   const navigate = useNavigate();
 
   const seriesIndex = allSeries.findIndex(
@@ -31,7 +37,12 @@ function SeriesDetailsPage() {
     return <NotFound message={translate('SeriesCannotBeFound')} />;
   }
 
-  return <SeriesDetails seriesId={allSeries[seriesIndex].id} />;
+  return (
+    <SeriesDetails
+      seriesId={allSeries[seriesIndex].id}
+      requestedSeason={requestedSeason}
+    />
+  );
 }
 
 export default SeriesDetailsPage;

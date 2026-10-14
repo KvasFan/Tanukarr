@@ -79,6 +79,33 @@ namespace Sonarr.Api.V3.Qualities
             return new JsonResult(CodecSizeNormalizer.MultiplierCatalog, new JsonSerializerOptions { DictionaryKeyPolicy = null });
         }
 
+        [HttpGet("codecdefaults")]
+        public JsonResult GetCodecDefaults()
+        {
+            return new JsonResult(CodecSizeNormalizer.DefaultMultipliers, new JsonSerializerOptions { DictionaryKeyPolicy = null });
+        }
+
+        [RestPostById]
+        public ActionResult<QualityDefinitionResource> Create([FromBody] QualityDefinitionResource resource)
+        {
+            var model = _qualityDefinitionService.Add(resource.ToModel(), resource.CopyFromId);
+            return Created(model.Id);
+        }
+
+        [RestDeleteById]
+        public IActionResult DeleteDefinition(int id)
+        {
+            _qualityDefinitionService.Retire(id);
+            return NoContent();
+        }
+
+        [HttpPost("{id:int}/restore")]
+        public QualityDefinitionResource Restore(int id)
+        {
+            _qualityDefinitionService.Restore(id);
+            return GetResourceById(id);
+        }
+
         private List<QualityDefinitionResource> GetResources()
         {
             var limits = QualityProfileSizeLimit.Summarize(_qualityProfileService.All());

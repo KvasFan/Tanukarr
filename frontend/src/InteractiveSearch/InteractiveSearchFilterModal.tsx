@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { SetFilter } from 'Components/Filter/Filter';
+import { SelectedFilterKey, SetFilter } from 'Components/Filter/Filter';
 import FilterModal, { FilterModalProps } from 'Components/Filter/FilterModal';
 import InteractiveSearchType from 'InteractiveSearch/InteractiveSearchType';
 import InteractiveSearchPayload from './InteractiveSearchPayload';
@@ -9,18 +9,24 @@ import useReleases, { FILTER_BUILDER, Release } from './useReleases';
 interface InteractiveSearchFilterModalProps extends FilterModalProps<Release> {
   type: InteractiveSearchType;
   searchPayload: InteractiveSearchPayload;
+  localFilterKey?: SelectedFilterKey;
+  onLocalFilterSelect?: (selectedFilterKey: SelectedFilterKey) => void;
 }
 
 export default function InteractiveSearchFilterModal({
   type,
   searchPayload,
+  localFilterKey,
+  onLocalFilterSelect,
   ...otherProps
 }: InteractiveSearchFilterModalProps) {
-  const { data } = useReleases(searchPayload);
+  const { data } = useReleases(searchPayload, '', localFilterKey);
 
   const handleFilterSelect = useCallback(
     (selectedFilter: SetFilter) => {
-      if (type === 'episode') {
+      if (onLocalFilterSelect) {
+        onLocalFilterSelect(selectedFilter.selectedFilterKey);
+      } else if (type === 'episode') {
         setReleaseOption(
           'episodeSelectedFilterKey',
           selectedFilter.selectedFilterKey
@@ -32,7 +38,7 @@ export default function InteractiveSearchFilterModal({
         );
       }
     },
-    [type]
+    [onLocalFilterSelect, type]
   );
 
   return (

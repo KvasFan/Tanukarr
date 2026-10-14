@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Parser.Model;
@@ -72,16 +73,29 @@ namespace NzbDrone.Core.Qualities
                 { "Unknown / mixed / lossless", Multipliers["Unknown"] }
             });
 
+        public static IReadOnlyDictionary<string, decimal> DefaultMultipliers => Multipliers;
+
+        public static string DetectCodec(RemoteEpisode episode)
+        {
+            return StructuredCodec(episode.Release.Codec) ?? TitleCodec(episode);
+        }
+
+        public static bool ValidOverrides(IDictionary<string, decimal> values)
+        {
+            return values != null && values.Count <= Multipliers.Count &&
+                values.All(pair => Multipliers.ContainsKey(pair.Key) && pair.Value >= 0.01m && pair.Value <= 10m);
+        }
+
         public static (string Codec, decimal Multiplier, decimal Size) Normalize(RemoteEpisode episode)
         {
             var release = episode.Release;
-            var codec = StructuredCodec(release.Codec);
-            if (codec == null)
-            {
-                codec = TitleCodec(episode);
-            }
-
+            var codec = DetectCodec(episode);
             var multiplier = Multipliers[codec];
+            var overrides = episode.Series?.QualityProfile?.Value?.CodecMultipliers;
+            if (overrides != null && overrides.TryGetValue(codec, out var configured) && configured >= 0.01m && configured <= 10m)
+            {
+                multiplier = configured;
+            }
 
             // This value is used only in quality-size decisions. The release and
             // its persisted/downloaded size always retain the actual byte count.

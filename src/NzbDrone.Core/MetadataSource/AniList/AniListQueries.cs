@@ -4,6 +4,19 @@ namespace NzbDrone.Core.MetadataSource.AniList
     {
         public const string BaseUrl = "https://graphql.anilist.co";
 
+        public const string PresentationById = @"
+            query ($id: Int, $idMal: Int) {
+                Media(id: $id, idMal: $idMal, type: ANIME) {
+                    id
+                    idMal
+                    type
+                    description(asHtml: false)
+                    coverImage { extraLarge large }
+                    bannerImage
+                }
+            }
+        ";
+
         public const string RelationsById = @"
             query ($id: Int) {
                 Media(id: $id, type: ANIME) {

@@ -1,0 +1,41 @@
+.criteria {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr)) minmax(200px, 2fr);
+  gap: 12px;
+
+  & label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    color: var(--inkMuted);
+    font-size: 12px;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.editor {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--paperWarm);
+}
+
+.name {
+  display: block;
+  margin: 12px 0;
+}
+
+@media (--breakpointSmall) {
+  .criteria {
+    grid-template-columns: 1fr;
+  }
+}

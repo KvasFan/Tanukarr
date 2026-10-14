@@ -21,6 +21,7 @@ function SeasonInteractiveSearchModal(
     seasonNumber,
     displaySeasonNumber,
     seasonPacksOnly,
+    initialSelectedFilterKey,
     onModalClose,
   } = props;
 
@@ -38,6 +39,7 @@ function SeasonInteractiveSearchModal(
         seasonNumber={seasonNumber}
         displaySeasonNumber={displaySeasonNumber}
         seasonPacksOnly={seasonPacksOnly}
+        initialSelectedFilterKey={initialSelectedFilterKey}
         onModalClose={onModalClose}
       />
     </Modal>

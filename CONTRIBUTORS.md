@@ -16,6 +16,16 @@ local commit makes their original author name unreachable from HEAD.
 
 ## Project and source credits
 
+The October 14, 2026 **1.1.0 local contribution** uses OpenAI Codex based on
+GPT-6 for collection pages and native collection display names, bounded public
+presentation enrichment, thumbnail recovery/decoding safeguards, custom quality
+presets and profile codec overrides. It also adds disposable genuine qBittorrent
+and Jellyfin refresh checks, generated imports, API/component tests and English
+documentation. The [upstream review](docs/upstream-audit-2026-10-14.md) records
+the exact reviewed source heads; these local features do not change the original
+authors of retained Sonarr/fork work. The [release ledger](docs/releases/1.1.0-verification.md)
+states which checks actually ran rather than treating fixture code as proof.
+
 - **Sonarr contributors**, including the original NzbDrone work of Mark
   McDowall, Keivan Beigi and Taloth Saldono: the core application and upstream
   maintenance. The integrated history contains `develop@57816c149`, including

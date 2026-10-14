@@ -23,7 +23,7 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
             var qualityIndex = profile.GetIndex(subject.ParsedEpisodeInfo.Quality.Quality);
             var qualityOrGroup = profile.Items[qualityIndex.Index];
 
-            if (!qualityOrGroup.Allowed)
+            if (subject.ParsedEpisodeInfo.Quality.Quality.IsRetired || !qualityOrGroup.Allowed)
             {
                 _logger.Debug("Quality {0} rejected by Series' quality profile", subject.ParsedEpisodeInfo.Quality);
                 return DownloadSpecDecision.Reject(DownloadRejectionReason.QualityNotWanted, "{0} is not wanted in profile", subject.ParsedEpisodeInfo.Quality.Quality);

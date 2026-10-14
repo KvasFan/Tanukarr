@@ -123,5 +123,22 @@ namespace NzbDrone.Core.Test.Qualities
             _saved.Should().BeNull();
             _existing.Title.Should().Be("Existing");
         }
+
+        [Test]
+        public void should_reject_a_title_swap_before_any_profile_write_instead_of_triggering_a_unique_constraint()
+        {
+            var other = new QualityDefinition(Quality.HDTV720p) { Id = 8, Title = "Other" };
+            Mocker.GetMock<IQualityDefinitionService>().Setup(service => service.All()).Returns(new List<QualityDefinition> { _existing, other });
+            Action action = () => Subject.UpdateMany(new List<QualityDefinitionSizeUpdate>
+            {
+                new QualityDefinitionSizeUpdate { Definition = new QualityDefinition { Id = 7, Title = "Other", MinSize = 3 }, UpdateMinSize = true },
+                new QualityDefinitionSizeUpdate { Definition = new QualityDefinition { Id = 8, Title = "Existing" } }
+            });
+            action.Should().Throw<ValidationException>();
+            _saved.Should().BeNull();
+            _limits.Should().BeNull();
+            _existing.Title.Should().Be("Existing");
+            other.Title.Should().Be("Other");
+        }
     }
 }

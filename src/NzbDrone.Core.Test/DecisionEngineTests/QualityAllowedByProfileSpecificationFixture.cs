@@ -64,5 +64,17 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
 
             Subject.IsSatisfiedBy(_remoteEpisode, new()).Accepted.Should().BeFalse();
         }
+
+        [Test]
+        public void should_reject_a_retired_release_quality_even_when_a_legacy_profile_still_marks_it_allowed()
+        {
+            var retired = new Quality { Id = 10077, Name = "Generated retired", IsRetired = true };
+            _remoteEpisode.ParsedEpisodeInfo.Quality.Quality = retired;
+            _remoteEpisode.Series.QualityProfile.Value.Items = new System.Collections.Generic.List<QualityProfileQualityItem>
+            {
+                new QualityProfileQualityItem { Quality = retired, Allowed = true }
+            };
+            Subject.IsSatisfiedBy(_remoteEpisode, new()).Accepted.Should().BeFalse();
+        }
     }
 }

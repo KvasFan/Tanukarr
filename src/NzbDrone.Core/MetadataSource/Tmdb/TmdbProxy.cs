@@ -22,7 +22,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
         List<EpisodeOrdering> GetOrderings(string foreignId);
     }
 
-    public class TmdbProxy : IMetadataProvider, IProvideEpisodeOrderings
+    public class TmdbProxy : IMetadataProvider, IProvideEpisodeOrderings, ISeriesPresentationProvider
     {
         private const string BaseUrl = "https://api.themoviedb.org/3";
         private const string ImageBaseUrl = "https://image.tmdb.org/t/p";
@@ -39,6 +39,33 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
         }
 
         public MetadataSourceType Source => MetadataSourceType.Tmdb;
+
+        public SeriesPresentation GetPresentation(Series identity)
+        {
+            if (identity.TmdbId <= 0)
+            {
+                return null;
+            }
+
+            var resource = Get<TmdbSeriesResource>($"/tv/{identity.TmdbId}", null, TimeSpan.FromSeconds(5));
+            if (resource?.Id != identity.TmdbId)
+            {
+                return null;
+            }
+
+            var presentation = new SeriesPresentation { Overview = resource.Overview };
+            if (resource.PosterPath.IsNotNullOrWhiteSpace())
+            {
+                presentation.Images.Add(new MediaCover.MediaCover(MediaCoverTypes.Poster, ImageBaseUrl + "/original" + resource.PosterPath));
+            }
+
+            if (resource.BackdropPath.IsNotNullOrWhiteSpace())
+            {
+                presentation.Images.Add(new MediaCover.MediaCover(MediaCoverTypes.Fanart, ImageBaseUrl + "/original" + resource.BackdropPath));
+            }
+
+            return presentation;
+        }
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(Series series)
         {
@@ -336,7 +363,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             };
         }
 
-        private T Get<T>(string resource, Dictionary<string, string> query)
+        private T Get<T>(string resource, Dictionary<string, string> query, TimeSpan? timeout = null)
             where T : new()
         {
             var apiKey = _configService.TmdbApiKey;
@@ -360,6 +387,13 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             var request = builder.Build();
             request.AllowAutoRedirect = true;
             request.SuppressHttpError = true;
+
+            if (timeout.HasValue)
+            {
+                request.RequestTimeout = timeout.Value;
+                request.LogHttpError = false;
+                request.LogResponseContent = false;
+            }
 
             var response = _httpClient.Get<T>(request);
 

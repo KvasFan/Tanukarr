@@ -17,6 +17,10 @@
   font-size: 13px;
 }
 
+.details {
+  grid-column: 1 / -1;
+}
+
 .title {
   min-width: 0;
   max-width: 700px;

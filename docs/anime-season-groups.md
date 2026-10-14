@@ -8,16 +8,44 @@ provider, catalogue ID, episodes, monitoring, files and download history. The
 group season is a display and folder position; it does not replace the owning
 catalogue's episode numbering.
 
-This feature is retained in **Tanukarr 1.0.3** and first shipped in 1.0.1 after the
-immutable 1.0.0 release, whose source and image retain their original scope.
-Use 1.0.3 after verified publication or an `edge` image containing these changes.
-Check the image's source revision and the
-[1.0.3 verification report](releases/1.0.3-verification.md) for new checks and
-publication state. The [1.0.2 report](releases/1.0.2-verification.md) records
-its earlier packaged checks separately.
-The [1.0.1 report](releases/1.0.1-verification.md) and original
-[grouping verification report](anime-season-groups-verification-2026-10-13.md)
-retains its earlier source/image checkpoint.
+The grouping model first shipped in 1.0.1. **Tanukarr 1.1.0** adds a full
+collection page for linked catalogue entries and for a native TV entry with
+multiple seasons. Earlier [grouping verification](anime-season-groups-verification-2026-10-13.md)
+retains its original source/image checkpoint; newer release evidence is separate.
+
+## Open and manage a collection
+
+Open a collection from the library to view its backdrop, cover, description and
+separate Seasons, Movies and Specials sections. Each entry links to its native
+details page and expands the selected native season. Season pack search,
+episode search, monitoring and season settings remain available on its card.
+
+**Search Collection** queries every saved native member with episodes using its
+existing complete-series search. Results retain their owning entry, native
+numbering, rejection reasons and explicit grab actions. Progress and errors are
+shown per entry; closing the search aborts outstanding requests. This does not
+introduce a single cross-provider acquisition identity or combine unrelated
+native downloads into one torrent.
+
+Collection settings change the display name, profile, monitoring and season
+folder preference. Linked collections also expose collection type and movie
+folder format. Changing shared grouping fields requires all current members
+and preserves their IDs, episode numbering and existing paths. The shared
+changes become manual grouping choices. A newly added automatic member inherits
+the saved collection movie-folder format; an explicit manual member keeps its
+own choice.
+
+For a native multi-season TV entry, `collectionTitle` is a separate display name
+used when generating future series folders. Its original catalogue title stays
+available for search and episode filenames. Sending an empty `collectionTitle`
+through the bulk-edit API resets that override. Renaming a collection does not rename or move saved folders;
+use the existing path/rename tools deliberately for an existing library.
+
+Canonical AniList/MyAnimeList collection artwork and description can be read
+from the verified root catalogue ID even when only a later season is saved.
+Otherwise the page uses available member artwork and descriptions. Missing
+presentation is supplemented from alternate catalogues only through verified
+native ID mappings; similar titles are not sufficient. See [Metadata providers](metadata-providers.md).
 
 ## Choose how a title is grouped
 

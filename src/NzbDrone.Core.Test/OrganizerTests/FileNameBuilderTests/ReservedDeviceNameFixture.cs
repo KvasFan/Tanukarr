@@ -26,6 +26,7 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
         {
             _series = Builder<Series>
                     .CreateNew()
+                    .With(s => s.CollectionTitle = null)
                     .With(s => s.Title = "South Park")
                     .Build();
 

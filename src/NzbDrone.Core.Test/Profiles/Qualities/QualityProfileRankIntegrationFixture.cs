@@ -21,6 +21,7 @@ namespace NzbDrone.Core.Test.Qualities
         [SetUp]
         public void Setup()
         {
+            Mocker.GetMock<IQualityDefinitionService>().Setup(service => service.All()).Returns(Quality.DefaultQualityDefinitions.ToList());
             Mocker.SetConstant<IQualityProfileRepository>(Mocker.Resolve<QualityProfileRepository>());
             Mocker.SetConstant<IQualityProfileRankRepository>(Mocker.Resolve<QualityProfileRankRepository>());
             Mocker.SetConstant<IQualityProfileRankService>(Mocker.Resolve<QualityProfileRankService>());

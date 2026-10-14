@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Core.Datastore;
@@ -7,10 +8,13 @@ namespace NzbDrone.Core.Qualities
 {
     public class Quality : IEmbeddedDocument, IEquatable<Quality>
     {
+        public const int CustomIdStart = 10000;
+
         public int Id { get; set; }
         public string Name { get; set; }
         public QualitySource Source { get; set; }
         public int Resolution { get; set; }
+        public bool IsRetired { get; set; }
 
         public Quality()
         {
@@ -186,8 +190,25 @@ namespace NzbDrone.Core.Qualities
 
         public static readonly HashSet<QualityDefinition> DefaultQualityDefinitions;
 
+        private static readonly ConcurrentDictionary<int, Quality> ConfiguredQualities = new ConcurrentDictionary<int, Quality>();
+
+        public static void Register(Quality quality)
+        {
+            ConfiguredQualities[quality.Id] = quality;
+        }
+
         public static Quality FindById(int id)
         {
+            if (ConfiguredQualities.TryGetValue(id, out var configured))
+            {
+                return configured;
+            }
+
+            if (id >= CustomIdStart)
+            {
+                return new Quality { Id = id, Name = "Custom quality " + id, Source = QualitySource.Unknown };
+            }
+
             if (id == 0)
             {
                 return Unknown;

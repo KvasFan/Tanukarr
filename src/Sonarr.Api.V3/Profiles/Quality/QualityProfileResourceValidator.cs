@@ -7,6 +7,8 @@ public class QualityProfileResourceValidator : AbstractValidator<QualityProfileR
 {
     public QualityProfileResourceValidator()
     {
+        RuleFor(c => c.CodecMultipliers).Must(values => values == null || CodecSizeNormalizer.ValidOverrides(values))
+            .WithMessage("Codec factors must use supported family names and values from 0.01 to 10.");
         RuleForEach(c => c.Items)
             .SetValidator(new QualityProfileQualityItemResourceValidator());
     }

@@ -18,7 +18,7 @@ using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.MetadataSource.SkyHook
 {
-    public class SkyHookProxy : IProvideSeriesInfo, ISearchForNewSeries, IMetadataProvider
+    public class SkyHookProxy : IProvideSeriesInfo, ISearchForNewSeries, IMetadataProvider, ISeriesPresentationProvider
     {
         public MetadataSourceType Source => MetadataSourceType.Tvdb;
 
@@ -44,6 +44,33 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         public Tuple<Series, List<Episode>> GetSeriesInfo(Series series)
         {
             return GetSeriesInfo(series.TvdbId, series.Language ?? Language.English, series.SeasonType.IsNullOrWhiteSpace() ? SeasonType.Official : series.SeasonType);
+        }
+
+        public SeriesPresentation GetPresentation(Series identity)
+        {
+            if (identity.TvdbId <= 0)
+            {
+                return null;
+            }
+
+            var language = IsoLanguages.Get(identity.Language ?? Language.English) ?? IsoLanguages.Get(Language.English);
+            var seasonType = identity.SeasonType.IsNullOrWhiteSpace() ? SeasonType.Official : identity.SeasonType;
+            var request = _requestBuilder.Create().SetSegment("route", "shows")
+                .Resource($"{language.ThreeLetterCode}/{identity.TvdbId}/{seasonType}").Build();
+            request.SuppressHttpError = true;
+            request.RequestTimeout = TimeSpan.FromSeconds(5);
+            request.LogHttpError = false;
+            request.LogResponseContent = false;
+            var response = _httpClient.Get<ShowResource>(request);
+            if (response.HasHttpError)
+            {
+                throw new HttpException(request, response);
+            }
+
+            var show = response.Resource;
+            return show?.TvdbId == identity.TvdbId
+                ? new SeriesPresentation { Overview = show.Overview, Images = show.Images?.Where(image => image != null).Select(MapImage).ToList() }
+                : null;
         }
 
         public Tuple<Series, List<Episode>> GetSeriesInfo(int tvdbSeriesId, Language language, string seasonType)

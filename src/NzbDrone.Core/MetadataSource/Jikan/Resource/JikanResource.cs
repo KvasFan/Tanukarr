@@ -74,6 +74,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
     public class JikanImagesResource
     {
         public JikanImageSetResource Jpg { get; set; }
+        public JikanImageSetResource Webp { get; set; }
     }
 
     public class JikanImageSetResource

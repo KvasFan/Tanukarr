@@ -13,6 +13,7 @@ using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 
 namespace NzbDrone.Core.DecisionEngine
 {
@@ -30,12 +31,14 @@ namespace NzbDrone.Core.DecisionEngine
         private readonly IRemoteEpisodeAggregationService _aggregationService;
         private readonly ISceneMappingService _sceneMappingService;
         private readonly Logger _logger;
+        private readonly IProfileQualityMatcher _qualityMatcher;
 
         public DownloadDecisionMaker(IEnumerable<IDownloadDecisionEngineSpecification> specifications,
                                      IParsingService parsingService,
                                      ICustomFormatCalculationService formatService,
                                      IRemoteEpisodeAggregationService aggregationService,
                                      ISceneMappingService sceneMappingService,
+                                     IProfileQualityMatcher qualityMatcher,
                                      Logger logger)
         {
             _specifications = specifications;
@@ -44,6 +47,7 @@ namespace NzbDrone.Core.DecisionEngine
             _aggregationService = aggregationService;
             _sceneMappingService = sceneMappingService;
             _logger = logger;
+            _qualityMatcher = qualityMatcher;
         }
 
         public List<DownloadDecision> GetRssDecision(List<ReleaseInfo> reports, bool pushedRelease = false)
@@ -145,6 +149,7 @@ namespace NzbDrone.Core.DecisionEngine
                         else
                         {
                             _aggregationService.Augment(remoteEpisode);
+                            _qualityMatcher.Apply(remoteEpisode);
 
                             remoteEpisode.CustomFormats = _formatCalculator.ParseCustomFormat(remoteEpisode, remoteEpisode.Release.Size);
                             remoteEpisode.CustomFormatScore = remoteEpisode?.Series?.QualityProfile?.Value.CalculateCustomFormatScore(remoteEpisode.CustomFormats) ?? 0;

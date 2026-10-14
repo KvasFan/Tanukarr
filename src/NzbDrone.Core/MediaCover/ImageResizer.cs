@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
 using SixLabors.ImageSharp;
@@ -17,6 +19,9 @@ namespace NzbDrone.Core.MediaCover
 
     public class ImageResizer : IImageResizer
     {
+        private const long MaxEncodedBytes = 20 * 1024 * 1024;
+        private const long MaxPixels = 16 * 1024 * 1024;
+        private const int MaxDimension = 16384;
         private readonly IDiskProvider _diskProvider;
         private readonly DecoderOptions _decoderOptions;
         private readonly bool _enabled;
@@ -42,7 +47,8 @@ namespace NzbDrone.Core.MediaCover
             _decoderOptions = new DecoderOptions
             {
                 Configuration = configuration,
-                SkipMetadata = true
+                SkipMetadata = true,
+                MaxFrames = 1
             };
         }
 
@@ -55,6 +61,24 @@ namespace NzbDrone.Core.MediaCover
 
             try
             {
+                if (height <= 0 || height > MaxDimension || new FileInfo(source).Length > MaxEncodedBytes)
+                {
+                    throw new InvalidDataException("Media cover exceeds the thumbnail size limit");
+                }
+
+                var info = Image.Identify(_decoderOptions, source);
+                if (info.Width <= 0 || info.Height <= 0 || info.Width > MaxDimension || info.Height > MaxDimension ||
+                    (long)info.Width * info.Height > MaxPixels)
+                {
+                    throw new InvalidDataException("Media cover exceeds the thumbnail pixel limit");
+                }
+
+                var outputWidth = (long)Math.Ceiling((double)info.Width * height / info.Height);
+                if (outputWidth > MaxDimension || outputWidth * height > MaxPixels)
+                {
+                    throw new InvalidDataException("Media cover exceeds the thumbnail pixel limit");
+                }
+
                 using var image = Image.Load(_decoderOptions, source);
                 image.Mutate(x => x.Resize(0, height));
                 image.Save(destination);

@@ -9,6 +9,7 @@ import SeriesTagList from 'Components/SeriesTagList';
 import { icons } from 'Helpers/Props';
 import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
 import EditSeriesModal from 'Series/Edit/EditSeriesModal';
+import { getSeriesLibraryLink } from 'Series/Grouping/collectionPresentation';
 import SeriesIndexProgressBar from 'Series/Index/ProgressBar/SeriesIndexProgressBar';
 import SeriesIndexPosterSelect from 'Series/Index/Select/SeriesIndexPosterSelect';
 import { SeriesStatus, Statistics } from 'Series/Series';
@@ -121,7 +122,7 @@ function SeriesIndexPoster(props: SeriesIndexPosterProps) {
   }
 
   const {
-    title,
+    title: nativeTitle,
     monitored,
     status,
     path,
@@ -137,6 +138,7 @@ function SeriesIndexPoster(props: SeriesIndexPosterProps) {
     ratings,
     tags,
   } = series;
+  const title = series.collectionTitle?.trim() || nativeTitle;
 
   const {
     seasonCount = 0,
@@ -146,7 +148,7 @@ function SeriesIndexPoster(props: SeriesIndexPosterProps) {
     sizeOnDisk = 0,
   } = statistics;
 
-  const link = `/series/${titleSlug}`;
+  const link = getSeriesLibraryLink(series);
 
   const elementStyle = {
     width: `${posterWidth}px`,

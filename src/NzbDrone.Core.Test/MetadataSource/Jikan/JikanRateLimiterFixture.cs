@@ -12,6 +12,26 @@ namespace NzbDrone.Core.Test.MetadataSource.Jikan
     public class JikanRateLimiterFixture : CoreTest
     {
         [Test]
+        public void should_skip_optional_artwork_when_the_shared_cooldown_exceeds_its_wait_budget()
+        {
+            var limiter = new JikanRateLimiter();
+            limiter.BackOff(TimeSpan.FromSeconds(10));
+            var stopwatch = Stopwatch.StartNew();
+            limiter.TryWaitForSlot(TimeSpan.FromSeconds(1)).Should().BeFalse();
+            stopwatch.ElapsedMilliseconds.Should().BeLessThan(200);
+        }
+
+        [Test]
+        public void should_count_optional_requests_against_the_same_three_per_second_budget()
+        {
+            var limiter = new JikanRateLimiter();
+            limiter.TryWaitForSlot(TimeSpan.Zero).Should().BeTrue();
+            limiter.WaitForSlot();
+            limiter.WaitForSlot();
+            limiter.TryWaitForSlot(TimeSpan.Zero).Should().BeFalse();
+        }
+
+        [Test]
         public void should_not_delay_the_first_burst()
         {
             var limiter = new JikanRateLimiter();

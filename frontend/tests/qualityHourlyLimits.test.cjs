@@ -290,7 +290,7 @@ test('focusing and blurring a mixed limit leaves all profile values unchanged', 
 
 test('the explicit Unlimited action clears an already empty mixed limit intentionally', () => {
   const item = fixture({ mixed: true });
-  TestRenderer.act(() => item.renderer.root.findByType('button').props.onClick());
+  TestRenderer.act(() => item.renderer.root.findAllByType('button').find((button) => button.props.children === 'Unlimited').props.onClick());
   item.save();
   assert.ok(Object.hasOwn(item.requests[0].body[0], 'preferredSize'));
   assert.equal(item.requests[0].body[0].preferredSize, null);

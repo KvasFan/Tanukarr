@@ -7,6 +7,7 @@ using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.Profiles.Qualities;
+using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Core.Tv;
 
@@ -18,6 +19,7 @@ namespace NzbDrone.Core.Test.Profiles
         [SetUp]
         public void Setup()
         {
+            Mocker.GetMock<IQualityDefinitionService>().Setup(service => service.All()).Returns(Quality.DefaultQualityDefinitions.ToList());
             Mocker.GetMock<IImportListFactory>()
                   .Setup(s => s.All())
                   .Returns(new List<ImportListDefinition>());

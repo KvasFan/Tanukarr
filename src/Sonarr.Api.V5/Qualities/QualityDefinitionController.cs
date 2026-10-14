@@ -76,6 +76,34 @@ public class QualityDefinitionController :
         return new JsonResult(CodecSizeNormalizer.MultiplierCatalog, new JsonSerializerOptions { DictionaryKeyPolicy = null });
     }
 
+    [HttpGet("codecdefaults")]
+    public JsonResult GetCodecDefaults()
+    {
+        return new JsonResult(CodecSizeNormalizer.DefaultMultipliers, new JsonSerializerOptions { DictionaryKeyPolicy = null });
+    }
+
+    [RestPostById]
+    [Consumes("application/json")]
+    public Results<Created<QualityDefinitionResource>, NotFound> Create([FromBody] QualityDefinitionResource resource)
+    {
+        var model = _qualityDefinitionService.Add(resource.ToModel(), resource.CopyFromId);
+        return TypedCreated(model.Id);
+    }
+
+    [RestDeleteById]
+    public NoContent DeleteDefinition(int id)
+    {
+        _qualityDefinitionService.Retire(id);
+        return TypedResults.NoContent();
+    }
+
+    [HttpPost("{id:int}/restore")]
+    public QualityDefinitionResource Restore(int id)
+    {
+        _qualityDefinitionService.Restore(id);
+        return GetResourceById(id);
+    }
+
     private List<QualityDefinitionResource> GetResources()
     {
         var limits = QualityProfileSizeLimit.Summarize(_qualityProfileService.All());

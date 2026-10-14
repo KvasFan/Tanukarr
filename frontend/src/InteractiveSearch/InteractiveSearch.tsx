@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { ListChildComponentProps, VariableSizeList } from 'react-window';
 import Alert from 'Components/Alert';
+import { SelectedFilterKey } from 'Components/Filter/Filter';
 import SelectInput from 'Components/Form/SelectInput';
 import TextInput from 'Components/Form/TextInput';
 import Icon from 'Components/Icon';
@@ -83,16 +84,21 @@ interface InteractiveSearchProps {
   type: InteractiveSearchType;
   searchPayload: InteractiveSearchPayload;
   scrollerRef: RefObject<HTMLDivElement>;
+  initialSelectedFilterKey?: SelectedFilterKey;
 }
 
 function InteractiveSearch({
   type,
   searchPayload,
   scrollerRef,
+  initialSelectedFilterKey,
 }: InteractiveSearchProps) {
   const customFilters = useCustomFiltersList('releases');
 
   const [filter, setFilter] = useState('');
+  const [localFilterKey, setLocalFilterKey] = useState(
+    initialSelectedFilterKey
+  );
 
   const {
     isFetching,
@@ -103,7 +109,7 @@ function InteractiveSearch({
     selectedFilterKey,
     sortKey,
     sortDirection,
-  } = useReleases(searchPayload, filter);
+  } = useReleases(searchPayload, filter, localFilterKey);
 
   const listRef = useRef<VariableSizeList<RowItemData>>(null);
   const listOuterRef = useRef<HTMLDivElement>(null);
@@ -193,13 +199,15 @@ function InteractiveSearch({
 
   const handleFilterSelect = useCallback(
     (selectedFilterKey: string | number) => {
-      if (type === 'episode') {
+      if (initialSelectedFilterKey !== undefined) {
+        setLocalFilterKey(selectedFilterKey);
+      } else if (type === 'episode') {
         setReleaseOption('episodeSelectedFilterKey', selectedFilterKey);
       } else {
         setReleaseOption('seasonSelectedFilterKey', selectedFilterKey);
       }
     },
-    [type]
+    [initialSelectedFilterKey, type]
   );
 
   const handleSortChange = useCallback(({ value }: InputChanged<string>) => {
@@ -243,7 +251,15 @@ function InteractiveSearch({
             customFilters={customFilters}
             buttonComponent={PageMenuButton}
             filterModalConnectorComponent={InteractiveSearchFilterModal}
-            filterModalConnectorComponentProps={{ type, searchPayload }}
+            filterModalConnectorComponentProps={{
+              type,
+              searchPayload,
+              localFilterKey,
+              onLocalFilterSelect:
+                initialSelectedFilterKey === undefined
+                  ? undefined
+                  : handleFilterSelect,
+            }}
             onFilterSelect={handleFilterSelect}
           />
         </div>

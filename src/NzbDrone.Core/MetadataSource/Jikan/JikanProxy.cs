@@ -25,7 +25,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
     /// rate limited accordingly.
     /// </para>
     /// </summary>
-    public class JikanProxy : IMetadataProvider, IAnimeRelationProvider
+    public class JikanProxy : IMetadataProvider, IAnimeRelationProvider, ISeriesPresentationProvider
     {
         private const string BaseUrl = "https://api.jikan.moe/v4";
         private const int MaxEpisodePages = 30;
@@ -45,6 +45,56 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         }
 
         public MetadataSourceType Source => MetadataSourceType.MyAnimeList;
+
+        public SeriesPresentation GetPresentation(Series identity)
+        {
+            var id = SeriesPresentationService.SinglePositiveId(identity.MalIds);
+            if (id <= 0)
+            {
+                return null;
+            }
+
+            if (!_rateLimiter.TryWaitForSlot(TimeSpan.FromSeconds(5)))
+            {
+                throw new RequestLimitReachedException("Optional Jikan presentation lookup skipped during cooldown.");
+            }
+
+            var request = new HttpRequestBuilder($"{BaseUrl}/anime/{id}/full").Build();
+            request.SuppressHttpError = true;
+            request.RequestTimeout = TimeSpan.FromSeconds(5);
+            request.LogHttpError = false;
+            request.LogResponseContent = false;
+            var response = _httpClient.Get<JikanAnimeResponse>(request);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                var limited = new TooManyRequestsException(request, response);
+                _rateLimiter.BackOff(limited.RetryAfter > TimeSpan.Zero ? limited.RetryAfter : TimeSpan.FromSeconds(5));
+            }
+
+            if (response.HasHttpError)
+            {
+                throw new HttpException(request, response);
+            }
+
+            var anime = response.Resource?.Data;
+            if (anime == null || anime.MalId != id)
+            {
+                return null;
+            }
+
+            var presentation = new SeriesPresentation { Overview = anime.Synopsis };
+            var poster = new[]
+            {
+                anime.Images?.Jpg?.LargeImageUrl, anime.Images?.Jpg?.ImageUrl,
+                anime.Images?.Webp?.LargeImageUrl, anime.Images?.Webp?.ImageUrl
+            }.FirstOrDefault(value => value.IsNotNullOrWhiteSpace());
+            if (poster.IsNotNullOrWhiteSpace())
+            {
+                presentation.Images.Add(new MediaCover.MediaCover(MediaCoverTypes.Poster, poster));
+            }
+
+            return presentation;
+        }
 
         public AnimeRelationNode GetAnimeRelations(string foreignId)
         {
@@ -297,7 +347,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 series.Certification = anime.Rating.ToUpperInvariant();
             }
 
-            var poster = anime.Images?.Jpg?.LargeImageUrl ?? anime.Images?.Jpg?.ImageUrl;
+            var poster = new[]
+            {
+                anime.Images?.Jpg?.LargeImageUrl, anime.Images?.Jpg?.ImageUrl,
+                anime.Images?.Webp?.LargeImageUrl, anime.Images?.Webp?.ImageUrl
+            }.FirstOrDefault(value => value.IsNotNullOrWhiteSpace());
 
             if (poster.IsNotNullOrWhiteSpace())
             {

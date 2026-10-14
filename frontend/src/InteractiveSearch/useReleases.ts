@@ -384,7 +384,11 @@ const releaseStore = create<ReleaseStore>(() => ({
 const DEFAULT_RELEASES: Release[] = [];
 const THIRTY_MINUTES = 30 * 60 * 1000;
 
-const useReleases = (payload: InteractiveSearchPayload, filter = '') => {
+const useReleases = (
+  payload: InteractiveSearchPayload,
+  filter = '',
+  selectedFilterOverride?: string | number
+) => {
   const customFilters = useCustomFiltersList('releases');
   const { episodeSelectedFilterKey, seasonSelectedFilterKey } =
     useReleaseOptions();
@@ -392,7 +396,10 @@ const useReleases = (payload: InteractiveSearchPayload, filter = '') => {
   const { sortKey, sortDirection } = releaseStore();
 
   const selectedFilterKey =
-    'seriesId' in payload ? seasonSelectedFilterKey : episodeSelectedFilterKey;
+    selectedFilterOverride ??
+    ('seriesId' in payload
+      ? seasonSelectedFilterKey
+      : episodeSelectedFilterKey);
 
   const { data, queryKey, ...result } = useApiQuery<Release[]>({
     path: '/release',

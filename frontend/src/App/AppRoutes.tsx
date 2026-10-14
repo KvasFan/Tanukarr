@@ -10,6 +10,7 @@ import CalendarPage from 'Calendar/CalendarPage';
 import NotFound from 'Components/NotFound';
 import LibraryTools from 'LibraryTools/LibraryTools';
 import SeriesDetailsPage from 'Series/Details/SeriesDetailsPage';
+import CollectionPage from 'Series/Grouping/CollectionPage';
 import SeriesIndex from 'Series/Index/SeriesIndex';
 import CustomFormatSettingsPage from 'Settings/CustomFormats/CustomFormatSettingsPage';
 import DownloadClientSettings from 'Settings/DownloadClients/DownloadClientSettings';
@@ -69,6 +70,8 @@ export function appRouteElements() {
       />
 
       <Route path="/series/:titleSlug" element={<SeriesDetailsPage />} />
+
+      <Route path="/collections/:collectionId" element={<CollectionPage />} />
 
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/system/library" element={<LibraryTools />} />

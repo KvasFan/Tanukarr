@@ -34,7 +34,9 @@
 
 .posterButton {
   flex-shrink: 0;
+  overflow: hidden;
   padding: 0;
+  border-radius: 12px;
 }
 
 .details {
@@ -43,6 +45,7 @@
 }
 
 .title {
+  display: block;
   overflow: hidden;
   padding: 0;
   max-width: 100%;
@@ -60,27 +63,6 @@
 }
 
 .singletonSeason {
-  margin-left: 8px;
+  display: block;
   font-size: 12px;
-}
-
-.seasons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-
-  max-height: 36px;
-  font-size: 12px;
-}
-
-.seasonEntry {
-  margin-bottom: 15px;
-}
-
-.searches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  margin-top: 8px;
 }

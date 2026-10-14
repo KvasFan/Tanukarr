@@ -408,6 +408,26 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
             mutate.Should().Throw<NotSupportedException>();
         }
 
+        [TestCase(1.00, DownloadRejectionReason.BelowMinimumSize)]
+        [TestCase(2.20, DownloadRejectionReason.AboveMaximumSize)]
+        public void should_apply_the_series_profile_codec_factor_in_actual_size_decisions(double factor, DownloadRejectionReason reason)
+        {
+            _remote.Series.QualityProfile.Value.CodecMultipliers = new CodecMultiplierOverrides { { "HEVC", (decimal)factor } };
+            Subject.IsSatisfiedBy(_remote, new()).Reason.Should().Be(reason);
+            CodecSizeNormalizer.Normalize(_remote).Size.Should().Be(150.Megabytes() * (decimal)factor);
+            _remote.Release.Size.Should().Be(150.Megabytes());
+        }
+
+        [Test]
+        public void should_use_a_configured_unknown_factor_for_mixed_codecs_and_preserve_other_profile_defaults()
+        {
+            _remote.Release.Codec = "Mixed";
+            _remote.Series.QualityProfile.Value.CodecMultipliers = new CodecMultiplierOverrides { { "Unknown", 0.75m } };
+            CodecSizeNormalizer.Normalize(_remote).Multiplier.Should().Be(0.75m);
+            _remote.Series.QualityProfile.Value.CodecMultipliers = new CodecMultiplierOverrides();
+            CodecSizeNormalizer.Normalize(_remote).Multiplier.Should().Be(1m);
+        }
+
         private RemoteEpisode OtherRelease(long size, string codec)
         {
             return new RemoteEpisode

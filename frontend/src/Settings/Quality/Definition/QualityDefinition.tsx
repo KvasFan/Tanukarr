@@ -1,7 +1,10 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import TextInput from 'Components/Form/TextInput';
 import QualityDefinitionModel from 'Quality/QualityDefinitionModel';
+import translate from 'Utilities/String/translate';
 import QualityDefinitionSizeInput from './QualityDefinitionSizeInput';
+import QualityPresetActions from './QualityPresetActions';
+import QualityPresetCriteria from './QualityPresetCriteria';
 import { useManageQualityDefinitions } from './useQualityDefinitions';
 import styles from './QualityDefinition.module.css';
 
@@ -9,6 +12,8 @@ interface QualityDefinitionProps extends QualityDefinitionModel {
   updateDefinition: ReturnType<
     typeof useManageQualityDefinitions
   >['updateDefinition'];
+  onCopy?: (id: number) => void;
+  actionsDisabled?: boolean;
 }
 
 function QualityDefinition({
@@ -21,8 +26,28 @@ function QualityDefinition({
   minSizeIsMixed,
   preferredSizeIsMixed,
   maxSizeIsMixed,
+  source,
+  resolution,
+  codec,
+  titlePattern,
+  isRetired,
+  onCopy,
+  actionsDisabled,
   updateDefinition,
 }: QualityDefinitionProps) {
+  const [editingCriteria, setEditingCriteria] = useState(false);
+  const handleEdit = useCallback(
+    () => setEditingCriteria((current) => !current),
+    []
+  );
+  const handleCopy = useCallback(() => onCopy?.(id), [id, onCopy]);
+  const handleCriteria = useCallback(
+    (
+      key: 'source' | 'resolution' | 'codec' | 'titlePattern',
+      value: string | number
+    ) => updateDefinition(id, key, value),
+    [id, updateDefinition]
+  );
   const handleTitleChange = useCallback(
     ({ value }: { value: string }) => {
       updateDefinition(id, 'title', value);
@@ -82,6 +107,30 @@ function QualityDefinition({
           onChange={handleSizeChange}
         />
       ))}
+      <div className={styles.details}>
+        {isRetired ? <span>{translate('QualityPresetDeleted')}</span> : null}
+        {onCopy ? (
+          <QualityPresetActions
+            id={id}
+            qualityId={quality.id}
+            retired={isRetired}
+            disabled={actionsDisabled}
+            onCopy={handleCopy}
+            onEdit={handleEdit}
+          />
+        ) : null}
+        {editingCriteria && !isRetired ? (
+          <QualityPresetCriteria
+            definition={{
+              source: source ?? quality.source,
+              resolution: resolution ?? quality.resolution,
+              codec,
+              titlePattern,
+            }}
+            onChange={handleCriteria}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -16,6 +16,12 @@ Preserve native provider identities, explicit manual import choices, existing
 library data and configured download clients. Use disposable fixtures for tests;
 real-library downloads, moves or deletion require authorization.
 
+Keep visible application copy useful for the action being performed: labels,
+field instructions, progress and validation errors. Do not add developer
+commentary, implementation explanations or redundant feature summaries inside
+library pages or provider forms. Put implementation details and policy rationale
+in repository documentation.
+
 ## Tools and build
 
 Use .NET SDK **10.0.401** from [global.json](global.json), Node.js **24**, Yarn
@@ -64,6 +70,15 @@ catalogue fixture, separately from frontend component tests.
 The main frontend command also includes naming-token/search payload and AniList
 custom-list autocomplete cases. Those mocked component checks remain separate
 from the real Docker API import/list action checks.
+
+For 1.1.0, verify collection presentation and native navigation, all-member
+interactive searches, whole-group validation, unchanged provider IDs/paths,
+cover density/original recovery, quality preset identity/retirement, matching on
+release and import paths, profile factor omission/reset, archived file ordering
+and concurrent enable/delete attempts. Mounted frontend tests are included in
+the main command. The new Docker artwork/custom-quality/client/refresh/browser
+gates exercise packaged behavior independently. Use generated media and owned
+accounts; report completed-download automation separately from manual imports.
 
 For 1.0.2 list changes, verify the actual provider capability rather than assuming
 every service supports AniList custom lists. Included names form a union; matching

@@ -10,6 +10,7 @@ using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles.EpisodeImport.Aggregation;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.MediaFiles.EpisodeImport
@@ -35,6 +36,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
         private readonly Logger _logger;
         private readonly IManualEpisodeMappingService _manualMapping;
         private readonly IEpisodeNumberingResolver _numberingResolver;
+        private readonly IProfileQualityMatcher _qualityMatcher;
 
         public ImportDecisionMaker(IEnumerable<IImportDecisionEngineSpecification> specifications,
                                    IMediaFileService mediaFileService,
@@ -45,6 +47,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                    ILocalEpisodeCustomFormatCalculationService formatCalculator,
                                    IManualEpisodeMappingService manualMapping,
                                    IEpisodeNumberingResolver numberingResolver,
+                                   IProfileQualityMatcher qualityMatcher,
                                    Logger logger)
         {
             _specifications = specifications;
@@ -57,6 +60,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
             _logger = logger;
             _manualMapping = manualMapping;
             _numberingResolver = numberingResolver;
+            _qualityMatcher = qualityMatcher;
         }
 
         public List<ImportDecision> GetImportDecisions(List<string> videoFiles, Series series)
@@ -143,6 +147,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                 }
 
                 _aggregationService.Augment(localEpisode, downloadClientItem);
+                _qualityMatcher.Apply(localEpisode);
                 if (manual != null)
                 {
                     localEpisode.Episodes = manual.Episodes;

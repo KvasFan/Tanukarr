@@ -20,6 +20,7 @@ interface Quality {
   name: string;
   resolution: number;
   source: QualitySource;
+  isRetired?: boolean;
   minSize: number | null;
   maxSize: number | null;
   preferredSize: number | null;

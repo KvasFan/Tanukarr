@@ -20,6 +20,7 @@ interface QualityProfileItemProps {
   qualityId: number;
   name: string;
   allowed: boolean;
+  isRetired?: boolean;
   minSize: number | null;
   maxSize: number | null;
   preferredSize: number | null;
@@ -37,6 +38,7 @@ function QualityProfileItem({
   groupId,
   name,
   allowed,
+  isRetired,
   minSize,
   maxSize,
   preferredSize,
@@ -56,9 +58,9 @@ function QualityProfileItem({
 
   const handleAllowedChange = useCallback(
     ({ value }: InputChanged<boolean>) => {
-      onItemAllowedChange?.(qualityId, value);
+      if (!isRetired) onItemAllowedChange?.(qualityId, value);
     },
-    [qualityId, onItemAllowedChange]
+    [qualityId, onItemAllowedChange, isRetired]
   );
 
   const handleCreateGroupPress = useCallback(() => {
@@ -97,7 +99,7 @@ function QualityProfileItem({
             containerClassName={styles.checkInputContainer}
             name={name}
             value={allowed}
-            isDisabled={!!groupId}
+            isDisabled={!!groupId || isRetired}
             onChange={handleAllowedChange}
           />
         ) : null}
@@ -110,6 +112,7 @@ function QualityProfileItem({
           )}
         >
           {name}
+          {isRetired ? ` (${translate('QualityPresetDeleted')})` : null}
         </div>
       </label>
 

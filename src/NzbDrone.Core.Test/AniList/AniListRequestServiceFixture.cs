@@ -87,6 +87,26 @@ namespace NzbDrone.Core.Test.AniList
         }
 
         [Test]
+        public void should_skip_optional_metadata_without_waiting_through_a_shared_long_cooldown()
+        {
+            GivenResponses(false, Response(HttpStatusCode.TooManyRequests, "Retry-After", "600"));
+            Assert.Throws<TooManyRequestsException>(() => Subject.ExecuteOptional(_request));
+            Assert.Throws<TooManyRequestsException>(() => AnotherInstance().ExecuteOptional(_request));
+            _waits.Should().BeEmpty();
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(_request), Times.Once());
+        }
+
+        [Test]
+        public void should_share_an_optional_request_quota_with_the_following_normal_list_request()
+        {
+            GivenResponses(false, Response(HttpStatusCode.OK, "X-RateLimit-Remaining", "0", "Retry-After", "10"), Response(HttpStatusCode.OK));
+            Subject.ExecuteOptional(_request);
+            AnotherInstance().Execute(_request);
+            _waits.Should().Equal(TimeSpan.FromSeconds(10));
+            Mocker.GetMock<IHttpClient>().Verify(client => client.Execute(_request), Times.Exactly(2));
+        }
+
+        [Test]
         public void should_share_one_conservative_domain_budget_across_calls()
         {
             GivenResponses(false, Response(HttpStatusCode.OK), Response(HttpStatusCode.OK));

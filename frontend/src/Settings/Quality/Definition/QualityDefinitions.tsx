@@ -1,11 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Alert from 'Components/Alert';
 import FieldSet from 'Components/FieldSet';
 import FormInputHelpText from 'Components/Form/FormInputHelpText';
+import Button from 'Components/Link/Button';
 import PageSectionContent from 'Components/Page/PageSectionContent';
 import usePrevious from 'Helpers/Hooks/usePrevious';
 import { kinds } from 'Helpers/Props';
+import QualityDefinitionModel from 'Quality/QualityDefinitionModel';
 import {
   OnChildStateChange,
   SetChildSave,
@@ -13,6 +15,7 @@ import {
 import translate from 'Utilities/String/translate';
 import QualityCodecSizeFactors from './QualityCodecSizeFactors';
 import QualityDefinition from './QualityDefinition';
+import QualityPresetEditor from './QualityPresetEditor';
 import { useManageQualityDefinitions } from './useQualityDefinitions';
 import styles from './QualityDefinitions.module.css';
 
@@ -27,6 +30,10 @@ function QualityDefinitions({
   setChildSave,
   onChildStateChange,
 }: QualityDefinitionsProps) {
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [editor, setEditor] = useState<{
+    copy?: QualityDefinitionModel;
+  } | null>(null);
   const queryClient = useQueryClient();
   const {
     items,
@@ -39,6 +46,16 @@ function QualityDefinitions({
     updateDefinition,
     saveQualityDefinitions,
   } = useManageQualityDefinitions();
+  const handleCopy = useCallback(
+    (id: number) => setEditor({ copy: items.find((item) => item.id === id) }),
+    [items]
+  );
+  const handleAdd = useCallback(() => setEditor({}), []);
+  const handleClose = useCallback(() => setEditor(null), []);
+  const handleShowDeleted = useCallback(
+    () => setShowDeleted((current) => !current),
+    []
+  );
 
   const wasResettingQualityDefinitions = usePrevious(
     isResettingQualityDefinitions
@@ -93,16 +110,45 @@ function QualityDefinitions({
         </div>
 
         <div className={styles.definitions}>
-          {items.map((item) => {
-            return (
-              <QualityDefinition
-                key={item.id}
-                {...item}
-                updateDefinition={updateDefinition}
-              />
-            );
-          })}
+          {items
+            .filter((item) => showDeleted || !item.isRetired)
+            .map((item) => {
+              return (
+                <QualityDefinition
+                  key={item.id}
+                  {...item}
+                  updateDefinition={updateDefinition}
+                  actionsDisabled={hasPendingChanges}
+                  onCopy={handleCopy}
+                />
+              );
+            })}
         </div>
+        <div className={styles.catalogueActions}>
+          <Button
+            kind="primary"
+            isDisabled={hasPendingChanges || editor != null}
+            onPress={handleAdd}
+          >
+            {translate('QualityPresetAdd')}
+          </Button>
+          {items.some((item) => item.isRetired) ? (
+            <Button onPress={handleShowDeleted}>
+              {translate(
+                showDeleted
+                  ? 'QualityPresetHideDeleted'
+                  : 'QualityPresetShowDeleted'
+              )}
+            </Button>
+          ) : null}
+        </div>
+        {editor ? (
+          <QualityPresetEditor
+            key={editor.copy?.id ?? 'new'}
+            copy={editor.copy}
+            onClose={handleClose}
+          />
+        ) : null}
         <QualityCodecSizeFactors />
       </PageSectionContent>
     </FieldSet>

@@ -47,11 +47,18 @@ namespace NzbDrone.Core.Qualities
             }
         }
 
+        private static QualityDefinition FallbackDefinition(Quality quality)
+        {
+            return Quality.DefaultQualityDefinitions.FirstOrDefault(definition => definition.Quality == quality) ??
+                Quality.DefaultQualityDefinitions.FirstOrDefault(definition => definition.Quality.Source == quality.Source && definition.Quality.Resolution == quality.Resolution) ??
+                Quality.DefaultQualityDefinitions.First(definition => definition.Quality.Id == 0);
+        }
+
         public int CompareTo(object obj)
         {
             var other = (QualityModel)obj;
-            var definition = Quality.DefaultQualityDefinitions.First(q => q.Quality == Quality);
-            var otherDefinition = Quality.DefaultQualityDefinitions.First(q => q.Quality == other.Quality);
+            var definition = FallbackDefinition(Quality);
+            var otherDefinition = FallbackDefinition(other.Quality);
 
             if (definition.Weight > otherDefinition.Weight)
             {

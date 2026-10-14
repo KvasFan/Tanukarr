@@ -4,66 +4,26 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.0.5 is published and deployed.** It supports **TV series and anime**
-in one Sonarr-derived application, with complete import-scoped list snapshots
-and an optional metadata-provider preference for future list additions. All
-three hosted workflows passed: 7,928 backend tests, 115 frontend tests, 29 worker
-tests and fourteen runtime reports totaling 251 checks. The nine release assets,
-public image and protected local upgrade were verified. See the
-[publication and deployment report](docs/releases/1.0.5-publication.md) for exact
-source/image identities, test scope and remaining dependency findings. The
-[preparation ledger](docs/releases/1.0.5-verification.md) preserves separate local
-candidate results, including 7,998 native tests and earlier failures.
+**Tanukarr 1.1.0 is being verified for release.** It manages TV series, anime
+and movie collections in one Sonarr-derived application. This version adds
+full collection pages, reliable artwork fallback, custom quality presets and
+editable codec factors in each quality profile. Existing list filtering,
+download-client, import, backup and Jellyfin refresh/watched features are retained.
 
-The [1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
-retains its own historical publication and deployment evidence. Its exact source,
-assets and all thirteen hosted runtime gates (231 checks), including real
-disposable Jellyfin, were verified. See the
-[publication and deployment report](docs/releases/1.0.4-publication.md) for
-image identities, browser scope, data preservation and remaining security findings.
-It continues the earlier releases and includes
-selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
-shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
-search encoding for titles containing reserved characters. It retains Sonarr
-`develop` through `57816c149` (earlier integration checkpoints used `698bb1dbb`
-and `59c22e859`), Kakarotto features, compatible
-gaboy and ikatun features, AniList identity/list fixes and security hardening.
-These are pinned Git snapshots, not a promise to track the latest upstream head.
-Get the source from [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr)
-and read the [release notes for 1.0.5](docs/releases/1.0.5.md). Published versions
-and assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
-The historical [1.0.3 verification report](docs/releases/1.0.3-verification.md)
-and [publication follow-up](docs/releases/1.0.3-publication.md) preserve that
-release's preparation, public image, hosted checks and deployment evidence.
-The historical
-[1.0.2 publication follow-up](docs/releases/1.0.2-publication.md) records that
-release's hosted workflows, verified assets/image and preserved deployment.
-The historical
-[1.0.1 report](docs/releases/1.0.1-verification.md) retains its original evidence.
-The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
-complete Compose YAML, configuration, permissions, authentication and updates.
-The current source retains [series, anime and movie groups](docs/anime-season-groups.md)
-introduced in 1.0.1:
-official prequel/sequel discovery, manual overrides and one anime presentation
-with configurable season, story-arc and movie folders for newly generated paths.
-It also includes native season-pack search, clearer AniList list settings and
-the covered-library React correction. The immutable 1.0.0 release images retain
-their original scope.
-The [quality and codec guide](docs/quality-and-codec-size.md) explains the new
-MiB/hour editors, mixed profile limits, global-save scope and fixed codec-aware
-size comparisons. Actual download bytes and physical indexer limits are
-preserved; the factors are a sizing heuristic. The
-[fresh upstream audit](docs/upstream-audit-2026-10-13.md) records unchanged
-accepted branch heads and the adapted inherited save-error feedback.
-See the [documentation index](docs/README.md),
-[integration report](docs/integration-2026-10-12.md)
-and the [ikatun feature and validation report](docs/ikatun-integration-2026-10-12.md).
-The [security and functional report](docs/security-functional-validation-2026-10-12.md)
-records the earlier verified Linux amd64 image, test results, remaining findings
-and local Windows/WSL deployment. Dated reports retain their tested source and
-image identities; they do not claim that later release packaging reran every
-suite. The [initial Docker report](docs/docker-validation-2026-10-12.md) preserves
-the first packaging checkpoint.
+See the [1.1.0 release notes](docs/releases/1.1.0.md) and
+[verification ledger](docs/releases/1.1.0-verification.md) for executed checks,
+publication status and remaining findings. The [upstream review](docs/upstream-audit-2026-10-14.md)
+records the latest fetched Sonarr, Kakarotto, gaboy and ikatun heads and the
+compatibility decisions. Source attribution remains in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+Use the [Docker installation guide](docs/docker-installation.md),
+[collection guide](docs/anime-season-groups.md), [quality guide](docs/quality-and-codec-size.md)
+and [metadata guide](docs/metadata-providers.md) to configure the application.
+The [documentation index](docs/README.md) links all maintained guides and dated
+reports. Published assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
+The [1.0.5 publication report](docs/releases/1.0.5-publication.md) preserves the
+previous release's exact source, image, hosted tests and protected deployment
+evidence. Historical reports retain their original tested scope.
 
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series and anime,
 with a metadata provider selected per title, flexible episode orderings and
@@ -293,12 +253,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexpert/tanukarr:1.0.5
+docker pull ghcr.io/kvasexpert/tanukarr:1.1.0
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.0.5
+  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.1.0
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -358,6 +318,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `1.1.0` | In verification: full collection pages, alternate artwork, custom qualities and editable profile codec factors; see the current release ledger. |
 | `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |
 | `1.0.4` | Published and deployed: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. All thirteen hosted gates passed; source/assets, immutable image and protected-data preservation verified. |
 | `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |

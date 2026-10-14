@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import Alert from 'Components/Alert';
+import { SelectedFilterKey } from 'Components/Filter/Filter';
 import Button from 'Components/Link/Button';
 import ModalBody from 'Components/Modal/ModalBody';
 import ModalContent from 'Components/Modal/ModalContent';
@@ -18,6 +19,7 @@ export interface SeasonInteractiveSearchModalContentProps {
   seasonNumber: number;
   displaySeasonNumber?: number;
   seasonPacksOnly?: true;
+  initialSelectedFilterKey?: SelectedFilterKey;
   onModalClose(): void;
 }
 
@@ -27,6 +29,7 @@ function SeasonInteractiveSearchModalContent({
   seasonNumber,
   displaySeasonNumber = seasonNumber,
   seasonPacksOnly,
+  initialSelectedFilterKey,
   onModalClose,
 }: SeasonInteractiveSearchModalContentProps) {
   const searchPayload: InteractiveSearchPayload = {
@@ -55,6 +58,7 @@ function SeasonInteractiveSearchModalContent({
           type="season"
           searchPayload={searchPayload}
           scrollerRef={modalBodyRef}
+          initialSelectedFilterKey={initialSelectedFilterKey}
         />
       </ModalBody>
 

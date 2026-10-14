@@ -21,6 +21,7 @@ namespace NzbDrone.Core.Tv
     public class RefreshSeriesService : IExecute<RefreshSeriesCommand>
     {
         private readonly IMetadataProviderFactory _metadataProviderFactory;
+        private readonly ISeriesPresentationService _seriesPresentationService;
         private readonly IAnimeGroupingService _animeGroupingService;
         private readonly ISeriesService _seriesService;
         private readonly ISeriesTranslationService _seriesTranslationService;
@@ -33,6 +34,7 @@ namespace NzbDrone.Core.Tv
         private readonly Logger _logger;
 
         public RefreshSeriesService(IMetadataProviderFactory metadataProviderFactory,
+                                    ISeriesPresentationService seriesPresentationService,
                                     IAnimeGroupingService animeGroupingService,
                                     ISeriesService seriesService,
                                     ISeriesTranslationService seriesTranslationService,
@@ -45,6 +47,7 @@ namespace NzbDrone.Core.Tv
                                     Logger logger)
         {
             _metadataProviderFactory = metadataProviderFactory;
+            _seriesPresentationService = seriesPresentationService;
             _animeGroupingService = animeGroupingService;
             _seriesService = seriesService;
             _seriesTranslationService = seriesTranslationService;
@@ -93,6 +96,8 @@ namespace NzbDrone.Core.Tv
             // Only when the provider actually resolved an id. Providers that do not map to
             // TheTVDB report zero, which would otherwise wipe the placeholder id allocated
             // when the series was added and break its unique-index invariant on the next save.
+            _seriesPresentationService.Enrich(seriesInfo, series);
+
             if (seriesInfo.TvdbId > 0 && series.TvdbId != seriesInfo.TvdbId)
             {
                 _logger.Warn("Series '{0}' (tvdbid {1}) was replaced with '{2}' (tvdbid {3}), because the original was a duplicate.", series.Title, series.TvdbId, seriesInfo.Title, seriesInfo.TvdbId);

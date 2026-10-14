@@ -163,6 +163,7 @@ function QualityProfileItems({
               containerId={ROOT_CONTAINER}
               qualityId={quality.id}
               name={quality.name}
+              isRetired={quality.isRetired}
               allowed={allowed}
               minSize={minSize}
               maxSize={maxSize}

@@ -5,6 +5,49 @@ is recorded in [CONTRIBUTORS.md](../../CONTRIBUTORS.md); the
 [documentation index](../../docs/README.md) links the build, integration and
 security reports.
 
+The current **1.1.0 preparation** adds five publishing gates to the fourteen
+required reports from 1.0.5: alternate artwork, custom qualities, genuine
+qBittorrent/folder imports, selected-library Jellyfin refresh, and actual packaged
+collection browser checks. The [1.1.0 ledger](../../docs/releases/1.1.0-verification.md)
+records their executions; the historical counts below keep their original scope.
+
+## New 1.1.0 gates
+
+Use an already built image and fresh report names. The artwork and quality
+fixtures use the digest-pinned Python TLS/catalogue double already required by
+the other provider gates. The client fixture additionally uses genuine
+qBittorrent pinned to `97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed`.
+Refresh uses the existing pinned Jellyfin server. All generated media and
+accounts are disposable; client connectivity and manual import are separate
+from completed-download automation or public acquisition.
+
+```sh
+python3 docker/tests/artwork-reliability.py --image tanukarr:verified --timeout 300 --report artwork.json
+python3 docker/tests/custom-qualities.py --image tanukarr:verified --timeout 300 --report custom-qualities.json
+python3 docker/tests/download-client-folders.py --image tanukarr:verified --timeout 300 --report client-folders.json
+python3 docker/tests/jellyfin-refresh.py --image tanukarr:verified \
+  --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
+  --timeout 300 --report jellyfin-refresh.json
+```
+
+For the packaged browser gate, install the exact external Playwright 1.64.0
+package and its Chromium browser outside the application source. Pass the Node
+executable and module directory explicitly:
+
+```sh
+python3 docker/tests/collections-browser.py --image tanukarr:verified \
+  --browser-node /path/to/node --playwright-module /path/to/node_modules/playwright \
+  --playwright-version 1.64.0 --timeout 300 --report collections-browser.json
+```
+
+The gate checks generated Forms authentication, real decoded covers at several
+display densities, collection/member navigation, monitoring/settings persistence
+and read-only searches. It rejects requests leaving its loopback application
+origin. Reports record image/runtime/source identities, browser versions and
+owned-resource cleanup; screenshots use generated catalogue content.
+
+## Preserved 1.0.5 checkpoint
+
 **Tanukarr 1.0.5 is published and deployed.** Its
 [snapshot and identity guide](../../docs/import-list-snapshots.md) describes
 complete private account/list snapshots, local filters, safe per-operation

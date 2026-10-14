@@ -1,5 +1,5 @@
 import ModelBase from 'App/ModelBase';
-import Quality from './Quality';
+import Quality, { QualitySource } from './Quality';
 
 export default interface QualityDefinitionModel extends ModelBase {
   quality: Quality;
@@ -11,4 +11,10 @@ export default interface QualityDefinitionModel extends ModelBase {
   minSizeIsMixed?: boolean;
   maxSizeIsMixed?: boolean;
   preferredSizeIsMixed?: boolean;
+  source?: QualitySource;
+  resolution?: number;
+  codec?: string;
+  titlePattern?: string;
+  isCustom?: boolean;
+  isRetired?: boolean;
 }

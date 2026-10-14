@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Net;
+using System.Threading;
 using NLog;
 using NzbDrone.Common.Cache;
 using NzbDrone.Common.Http;
@@ -11,6 +12,7 @@ namespace NzbDrone.Core.AniList
     public interface IAniListRequestService
     {
         HttpResponse Execute(HttpRequest request);
+        HttpResponse ExecuteOptional(HttpRequest request);
     }
 
     public class AniListRequestService : IAniListRequestService
@@ -43,11 +45,34 @@ namespace NzbDrone.Core.AniList
 
         public HttpResponse Execute(HttpRequest request)
         {
+            return Execute(request, optional: false);
+        }
+
+        public HttpResponse ExecuteOptional(HttpRequest request)
+        {
+            if (!Monitor.TryEnter(_state.SyncRoot, TimeSpan.FromSeconds(2)))
+            {
+                throw RateLimitException(request);
+            }
+
+            try
+            {
+                return Execute(request, optional: true);
+            }
+            finally
+            {
+                Monitor.Exit(_state.SyncRoot);
+            }
+        }
+
+        private HttpResponse Execute(HttpRequest request, bool optional)
+        {
             // List tests, list pagination, metadata and search all consume the same
             // server budget. Share both the lock and cooldown across service instances.
             lock (_state.SyncRoot)
             {
-                var deadline = _delay.UtcNow.Add(MaxRequestWait);
+                var deadline = _delay.UtcNow.Add(optional ? TimeSpan.FromSeconds(5) : MaxRequestWait);
+                var attempts = optional ? 1 : MaxAttempts;
 
                 // HTTP logging must not include private GraphQL response bodies.
                 request.LogHttpError = false;
@@ -55,7 +80,7 @@ namespace NzbDrone.Core.AniList
                 request.ContentSummary = null;
                 request.RateLimit = TimeSpan.Zero;
 
-                for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+                for (var attempt = 1; attempt <= attempts; attempt++)
                 {
                     WaitForCooldown(request, deadline);
                     _rateLimitService.WaitAndPulse(RateLimitKey, RequestInterval);
@@ -113,13 +138,17 @@ namespace NzbDrone.Core.AniList
 
                     ExtendCooldown(response);
 
-                    if (attempt == MaxAttempts || _state.NotBefore > deadline)
+                    if (attempt == attempts || _state.NotBefore > deadline)
                     {
-                        _logger.Warn("AniList request limit reached; retry after {0:0} seconds", RemainingCooldown().TotalSeconds);
+                        if (!optional)
+                        {
+                            _logger.Warn("AniList request limit reached; retry after {0:0} seconds", RemainingCooldown().TotalSeconds);
+                        }
+
                         throw RateLimitException(request);
                     }
 
-                    _logger.Debug("AniList request limit reached; waiting {0:0} seconds before retry {1}/{2}", RemainingCooldown().TotalSeconds, attempt + 1, MaxAttempts);
+                    _logger.Debug("AniList request limit reached; waiting {0:0} seconds before retry {1}/{2}", RemainingCooldown().TotalSeconds, attempt + 1, attempts);
                 }
 
                 throw RateLimitException(request);

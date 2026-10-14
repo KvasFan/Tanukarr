@@ -21,6 +21,7 @@ import { icons, inputTypes, kinds } from 'Helpers/Props';
 import useQualityProfileInUse from 'Settings/Profiles/Quality/useQualityProfileInUse';
 import { InputChanged } from 'typings/inputs';
 import translate from 'Utilities/String/translate';
+import QualityProfileCodecFactors from './QualityProfileCodecFactors';
 import QualityProfileFormatItems from './QualityProfileFormatItems';
 import {
   mapFailuresByQualityId,
@@ -131,6 +132,10 @@ function EditQualityProfileModalContent({
   const handleSavePress = useCallback(() => {
     saveProvider();
   }, [saveProvider]);
+  const handleCodecFactorsChange = useCallback(
+    (value: Record<string, number>) => updateValue('codecMultipliers', value),
+    [updateValue]
+  );
 
   const handleCutoffChange = useCallback(
     ({ name, value }: InputChanged<number>) => {
@@ -155,7 +160,7 @@ function EditQualityProfileModalContent({
         if ('quality' in item && item.quality.id === qualityId) {
           return {
             ...item,
-            allowed,
+            allowed: item.quality.isRetired ? false : allowed,
           };
         }
 
@@ -517,6 +522,11 @@ function EditQualityProfileModalContent({
                 />
               </div>
             </div>
+            <QualityProfileCodecFactors
+              value={item.codecMultipliers?.value}
+              errors={item.codecMultipliers?.errors}
+              onChange={handleCodecFactorsChange}
+            />
           </Form>
         ) : null}
       </ModalBody>

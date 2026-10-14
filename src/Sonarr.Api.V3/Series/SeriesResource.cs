@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
@@ -17,6 +18,9 @@ namespace Sonarr.Api.V3.Series
 
         // View Only
         public string Title { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+        [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Include)]
+        public string CollectionTitle { get; set; }
         public List<AlternateTitleResource> AlternateTitles { get; set; }
         public string SortTitle { get; set; }
 
@@ -107,6 +111,7 @@ namespace Sonarr.Api.V3.Series
                        Id = model.Id,
 
                        Title = model.Title,
+                       CollectionTitle = model.CollectionTitle,
 
                        // AlternateTitles
                        SortTitle = model.SortTitle,

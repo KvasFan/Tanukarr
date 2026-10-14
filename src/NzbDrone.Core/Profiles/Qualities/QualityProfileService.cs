@@ -38,6 +38,7 @@ namespace NzbDrone.Core.Profiles.Qualities
         private readonly IQualityProfileRankService _rankService;
         private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
+        private readonly IQualityDefinitionService _definitions;
 
         public QualityProfileService(IQualityProfileRepository qualityProfileRepository,
                                      IImportListFactory importListFactory,
@@ -45,6 +46,7 @@ namespace NzbDrone.Core.Profiles.Qualities
                                      ISeriesService seriesService,
                                      IQualityProfileRankService rankService,
                                      IEventAggregator eventAggregator,
+                                     IQualityDefinitionService definitions,
                                      Logger logger)
         {
             _qualityProfileRepository = qualityProfileRepository;
@@ -54,10 +56,21 @@ namespace NzbDrone.Core.Profiles.Qualities
             _rankService = rankService;
             _eventAggregator = eventAggregator;
             _logger = logger;
+            _definitions = definitions;
         }
 
         public QualityProfile Add(QualityProfile profile)
         {
+            lock (QualityDefinitionService.CatalogueLock)
+            {
+                return AddProfile(profile);
+            }
+        }
+
+        private QualityProfile AddProfile(QualityProfile profile)
+        {
+            profile.CodecMultipliers ??= new CodecMultiplierOverrides();
+            ValidateProfile(profile);
             var saved = _qualityProfileRepository.Insert(profile);
             _rankService.UpdateRanksForProfile(saved);
             return saved;
@@ -65,6 +78,26 @@ namespace NzbDrone.Core.Profiles.Qualities
 
         public void Update(QualityProfile profile)
         {
+            lock (QualityDefinitionService.CatalogueLock)
+            {
+                UpdateProfile(profile);
+            }
+        }
+
+        private void UpdateProfile(QualityProfile profile)
+        {
+            var existing = _qualityProfileRepository.Get(profile.Id);
+            profile.CodecMultipliers ??= existing?.CodecMultipliers ?? new CodecMultiplierOverrides();
+            if (existing?.Items != null && profile.Items != null)
+            {
+                var requestedIds = QualityProfileSizeLimit.Leaves(profile.Items).Select(item => item.Quality.Id).ToHashSet();
+                foreach (var item in QualityProfileSizeLimit.Leaves(existing.Items).Where(item => item.Quality.Id >= Quality.CustomIdStart && !requestedIds.Contains(item.Quality.Id)))
+                {
+                    profile.Items.Add(item);
+                }
+            }
+
+            ValidateProfile(profile);
             _qualityProfileRepository.Update(profile);
             _rankService.UpdateRanksForProfile(profile);
             _eventAggregator.PublishEvent(new QualityProfileUpdatedEvent(profile.Id));
@@ -84,12 +117,12 @@ namespace NzbDrone.Core.Profiles.Qualities
 
         public List<QualityProfile> All()
         {
-            return _qualityProfileRepository.All().ToList();
+            return _qualityProfileRepository.All().Select(Hydrate).ToList();
         }
 
         public QualityProfile Get(int id)
         {
-            return _qualityProfileRepository.Get(id);
+            return Hydrate(_qualityProfileRepository.Get(id));
         }
 
         public bool Exists(int id)
@@ -252,6 +285,21 @@ namespace NzbDrone.Core.Profiles.Qualities
                 groupId++;
             }
 
+            var definitions = _definitions.All();
+            foreach (var definition in definitions.Where(definition => definition.Quality.Id >= Quality.CustomIdStart))
+            {
+                items.Add(new QualityProfileQualityItem { Quality = definition.Quality, Allowed = false });
+            }
+
+            foreach (var item in QualityProfileSizeLimit.Leaves(items))
+            {
+                item.Quality = Quality.FindById(item.Quality.Id);
+                if (definitions.Any(definition => definition.Quality.Id == item.Quality.Id && definition.IsRetired))
+                {
+                    item.Allowed = false;
+                }
+            }
+
             var formatItems = _formatService.All().Select(format => new ProfileFormatItem
             {
                 Score = 0,
@@ -273,6 +321,14 @@ namespace NzbDrone.Core.Profiles.Qualities
         }
 
         public void UpdateAllSizeLimits(params QualityProfileSizeLimit[] sizeLimits)
+        {
+            lock (QualityDefinitionService.CatalogueLock)
+            {
+                ApplySizeLimits(sizeLimits);
+            }
+        }
+
+        private void ApplySizeLimits(QualityProfileSizeLimit[] sizeLimits)
         {
             if (sizeLimits.Length == 0)
             {
@@ -353,6 +409,49 @@ namespace NzbDrone.Core.Profiles.Qualities
             var profile = GetDefaultProfile(name, cutoff, allowed);
 
             return Add(profile);
+        }
+
+        private void ValidateProfile(QualityProfile profile)
+        {
+            if (!CodecSizeNormalizer.ValidOverrides(profile.CodecMultipliers))
+            {
+                throw new ValidationException(new[] { new ValidationFailure("codecMultipliers", "Codec factors must use supported family names and values from 0.01 to 10.") });
+            }
+
+            var definitions = _definitions.All();
+            var known = definitions.Select(definition => definition.Quality.Id).ToHashSet();
+            if (known.Count > 0 && QualityProfileSizeLimit.Leaves(profile.Items ?? new List<QualityProfileQualityItem>()).Any(item => !known.Contains(item.Quality.Id)))
+            {
+                throw new ValidationException(new[] { new ValidationFailure("items", "This profile contains an unknown quality. Refresh the quality catalogue.") });
+            }
+
+            if (profile.Items?.Any(item => item.Allowed) == true && known.Count > 0 &&
+                !profile.Items.Where(item => item.Allowed).SelectMany(item => item.GetQualities())
+                    .Any(quality => definitions.Any(definition => definition.Quality.Id == quality.Id && !definition.IsRetired)))
+            {
+                throw new ValidationException(new[] { new ValidationFailure("items", "Select at least one active quality. Deleted qualities are retained only for existing library records.") });
+            }
+
+            foreach (var item in QualityProfileSizeLimit.Leaves(profile.Items ?? new List<QualityProfileQualityItem>()).Where(item => item.Allowed))
+            {
+                if (definitions.Any(definition => definition.Quality.Id == item.Quality.Id && definition.IsRetired))
+                {
+                    throw new ValidationException(new[] { new ValidationFailure("items", "A deleted quality cannot be enabled. Restore it in Quality settings first.") });
+                }
+            }
+        }
+
+        private static QualityProfile Hydrate(QualityProfile profile)
+        {
+            if (profile?.Items != null)
+            {
+                foreach (var item in QualityProfileSizeLimit.Leaves(profile.Items))
+                {
+                    item.Quality = Quality.FindById(item.Quality.Id);
+                }
+            }
+
+            return profile;
         }
     }
 }

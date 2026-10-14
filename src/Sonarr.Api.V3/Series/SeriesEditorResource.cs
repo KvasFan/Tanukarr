@@ -13,6 +13,10 @@ namespace Sonarr.Api.V3.Series
         public Language Language { get; set; }
         public SeriesTypes? SeriesType { get; set; }
         public bool? SeasonFolder { get; set; }
+        public string CollectionTitle { get; set; }
+        public string AnimeGroupTitle { get; set; }
+        public AnimeGroupKind? AnimeGroupKind { get; set; }
+        public AnimeGroupMovieFolderStyle? AnimeGroupMovieFolderStyle { get; set; }
         public string RootFolderPath { get; set; }
         public List<int> Tags { get; set; }
         public ApplyTags ApplyTags { get; set; }

@@ -71,6 +71,7 @@ namespace NzbDrone.Core.Tv
         public HashSet<int> MalIds { get; set; }
         public HashSet<int> AniListIds { get; set; }
         public string Title { get; set; }
+        public string CollectionTitle { get; set; }
         public string CleanTitle { get; set; }
         public string SortTitle { get; set; }
         public SeriesStatusType Status { get; set; }

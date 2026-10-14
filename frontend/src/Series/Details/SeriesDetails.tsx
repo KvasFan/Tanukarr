@@ -41,6 +41,7 @@ import useCountryName from 'Internationalization/useCountryName';
 import OrganizePreviewModal from 'Organize/OrganizePreviewModal';
 import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
 import EditSeriesModal from 'Series/Edit/EditSeriesModal';
+import { getSeriesLibraryLink } from 'Series/Grouping/collectionPresentation';
 import SeriesHistoryModal from 'Series/History/SeriesHistoryModal';
 import MonitoringOptionsModal from 'Series/MonitoringOptions/MonitoringOptionsModal';
 import CompleteSeriesSearchModal from 'Series/Search/CompleteSeriesSearchModal';
@@ -105,10 +106,12 @@ interface ExpandedState {
 
 interface SeriesDetailsProps {
   seriesId: number;
+  requestedSeason?: number;
 }
 
-function SeriesDetails({ seriesId }: SeriesDetailsProps) {
+function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
   const executeCommand = useExecuteCommand();
+  const pageBodyRef = useRef<HTMLDivElement>(null);
 
   const series = useSingleSeries(seriesId);
   const { toggleSeriesMonitored, isTogglingSeriesMonitored } =
@@ -139,6 +142,24 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
     hasEpisodeFiles,
     refetch: refetchEpisodeFiles,
   } = useEpisodeFiles({ seriesId });
+
+  useEffect(() => {
+    if (
+      requestedSeason === undefined ||
+      !isEpisodesFetched ||
+      !isEpisodeFilesFetched
+    ) {
+      return;
+    }
+
+    setExpandedState((state) => ({
+      ...state,
+      seasons: { ...state.seasons, [requestedSeason]: true },
+    }));
+    pageBodyRef.current
+      ?.querySelector(`#season-${requestedSeason}`)
+      ?.scrollIntoView({ block: 'start' });
+  }, [requestedSeason, isEpisodesFetched, isEpisodeFilesFetched, seriesId]);
 
   const { data: commands } = useCommands();
 
@@ -489,11 +510,22 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
   const fanartUrl = getFanartUrl(images);
   const isFetching = isEpisodesFetching || isEpisodeFilesFetching;
   const isPopulated = isEpisodesFetched && isEpisodeFilesFetched;
+  const collectionLink = getSeriesLibraryLink(series!);
 
   return (
     <SeriesDetailsProvider seriesId={seriesId}>
       <PageContent title={title}>
         <PageToolbar>
+          {collectionLink.startsWith('/collections/') ? (
+            <ToolbarItem
+              id="collection"
+              priority={1}
+              groupId="collection"
+              label={translate('Collection')}
+              iconName={icons.ORGANIZE}
+              to={collectionLink}
+            />
+          ) : null}
           <ToolbarItem
             id="refresh"
             priority={1}
@@ -613,7 +645,10 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
           />
         </PageToolbar>
 
-        <PageContentBody innerClassName={styles.innerContentBody}>
+        <PageContentBody
+          ref={pageBodyRef}
+          innerClassName={styles.innerContentBody}
+        >
           <div className={styles.header}>
             <div
               className={styles.backdrop}
@@ -963,13 +998,23 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
                   .reverse()
                   .map((season) => {
                     return (
-                      <SeriesDetailsSeason
+                      <div
                         key={season.seasonNumber}
-                        seriesId={seriesId}
-                        {...season}
-                        isExpanded={expandedState.seasons[season.seasonNumber]}
-                        onExpandPress={handleExpandPress}
-                      />
+                        id={`season-${season.seasonNumber}`}
+                      >
+                        <SeriesDetailsSeason
+                          key={season.seasonNumber}
+                          seriesId={seriesId}
+                          {...season}
+                          isExpanded={
+                            expandedState.seasons[season.seasonNumber]
+                          }
+                          isAnchorTarget={
+                            requestedSeason === season.seasonNumber
+                          }
+                          onExpandPress={handleExpandPress}
+                        />
+                      </div>
                     );
                   })}
               </div>

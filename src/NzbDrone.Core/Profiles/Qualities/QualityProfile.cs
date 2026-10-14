@@ -21,6 +21,7 @@ namespace NzbDrone.Core.Profiles.Qualities
         public int MinUpgradeFormatScore { get; set; }
         public List<ProfileFormatItem> FormatItems { get; set; }
         public List<QualityProfileQualityItem> Items { get; set; }
+        public CodecMultiplierOverrides CodecMultipliers { get; set; } = new CodecMultiplierOverrides();
 
         public Quality FirststAllowedQuality()
         {

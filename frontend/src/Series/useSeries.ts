@@ -18,7 +18,13 @@ import sortByProp from 'Utilities/Array/sortByProp';
 import dateFilterPredicate from 'Utilities/Date/dateFilterPredicate';
 import clientSideFilterAndSort from 'Utilities/Filter/clientSideFilterAndSort';
 import translate from 'Utilities/String/translate';
-import Series, { Season, Statistics } from './Series';
+import mergeSeriesUpdate from './mergeSeriesUpdate';
+import Series, {
+  AnimeGroupKind,
+  AnimeGroupMovieFolderStyle,
+  Season,
+  Statistics,
+} from './Series';
 import { useSeriesOptions } from './seriesOptionsStore';
 
 export const FILTERS: Filter[] = [
@@ -791,6 +797,10 @@ interface SaveSeriesEditorPayload {
   seasonFolder?: boolean;
   rootFolderPath?: string;
   tags?: number[];
+  animeGroupTitle?: string;
+  animeGroupKind?: AnimeGroupKind;
+  animeGroupMovieFolderStyle?: AnimeGroupMovieFolderStyle;
+  collectionTitle?: string;
 }
 
 export const useSaveSeries = (moveFiles?: boolean) => {
@@ -814,10 +824,7 @@ export const useSaveSeries = (moveFiles?: boolean) => {
 
           return oldSeries.map((series) => {
             if (series.id === updatedSeries.id) {
-              return {
-                ...series,
-                ...updatedSeries,
-              };
+              return mergeSeriesUpdate(series, updatedSeries);
             }
 
             return series;
@@ -902,7 +909,9 @@ export const useToggleSeriesMonitored = (seriesId: number) => {
           }
 
           return oldSeries.map((series) =>
-            series.id === updatedSeries.id ? updatedSeries : series
+            series.id === updatedSeries.id
+              ? mergeSeriesUpdate(series, updatedSeries)
+              : series
           );
         });
       },
@@ -926,37 +935,27 @@ export const useToggleSeasonMonitored = (seriesId: number) => {
   const queryClient = useQueryClient();
 
   const { mutate, isPending, error } = useApiMutation<
-    Series,
+    Season,
     ToggleSeasonMonitoredPayload
   >({
     path: `/series/${seriesId}/season`,
     method: 'PUT',
     mutationOptions: {
-      onSuccess: (updatedSeries) => {
+      onSuccess: (updatedSeason) => {
         queryClient.setQueryData<Series[]>(['/series'], (oldSeries) => {
           if (!oldSeries) {
             return oldSeries;
           }
 
           return oldSeries.map((series) => {
-            if (series.id === updatedSeries.id) {
-              return {
-                ...series,
-                seasons: series.seasons.map((season) => {
-                  const updatedSeason = updatedSeries.seasons.find(
-                    (s) => s.seasonNumber === season.seasonNumber
-                  );
-
-                  if (updatedSeason) {
-                    return {
-                      ...season,
-                      ...updatedSeason,
-                    };
-                  }
-
-                  return season;
-                }),
-              };
+            if (series.id === seriesId) {
+              return mergeSeriesUpdate(series, {
+                seasons: series.seasons.map((season) =>
+                  season.seasonNumber === updatedSeason.seasonNumber
+                    ? updatedSeason
+                    : season
+                ),
+              });
             }
 
             return series;
@@ -1065,11 +1064,10 @@ export const useSaveSeriesEditor = () => {
                 alternateTitles,
                 images,
                 rootFolderPath,
-                statistics,
                 ...propsToUpdate
               } = updatedSeriesData;
 
-              return { ...series, ...propsToUpdate };
+              return mergeSeriesUpdate(series, propsToUpdate);
             }
 
             return series;

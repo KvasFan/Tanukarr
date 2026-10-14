@@ -100,6 +100,7 @@ jobs:
           fi
           docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
           docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
+          docker pull lscr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
 
       - name: Isolated group, naming and AniList checks
         run: |
@@ -162,12 +163,51 @@ jobs:
           python3 docker/tests/backup-tasks.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-backup-tasks.json"
 
+      - name: Isolated custom qualities, profile codec factors and generated imports
+        run: |
+          python3 docker/tests/custom-qualities.py --image tanukarr:verified \
+            --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-custom-qualities.json"
+
+      - name: Isolated alternate artwork, canonical collection metadata and cover recovery
+        run: |
+          python3 docker/tests/artwork-reliability.py --image tanukarr:verified \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-artwork-reliability.json"
+
+      - name: Real disposable qBittorrent configuration and collection folder imports
+        run: |
+          python3 docker/tests/download-client-folders.py --image tanukarr:verified \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-download-client-folders.json"
+
       - name: Real disposable Jellyfin watched state and monitoring synchronization
         run: |
           python3 docker/tests/jellyfin-watched.py --image tanukarr:verified \
             --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-jellyfin-watched.json"
+
+      - name: Real disposable Jellyfin selected-library import and interval refresh
+        run: |
+          python3 docker/tests/jellyfin-refresh.py --image tanukarr:verified \
+            --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-jellyfin-refresh.json"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Prepare isolated packaged browser tooling
+        run: |
+          npm install --prefix "${RUNNER_TEMP}/tanukarr-browser" --no-audit --no-fund --ignore-scripts playwright@1.64.0
+          "${RUNNER_TEMP}/tanukarr-browser/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Packaged collection navigation, settings, searches and artwork
+        run: |
+          python3 docker/tests/collections-browser.py --image tanukarr:verified \
+            --browser-node "$(command -v node)" \
+            --playwright-module "${RUNNER_TEMP}/tanukarr-browser/node_modules/playwright" \
+            --playwright-version 1.64.0 --timeout 300 \
+            --report "${RUNNER_TEMP}/tanukarr-collections-browser.json"
 
       - name: Upload verification reports
         if: always()
@@ -189,6 +229,12 @@ jobs:
             ${{ runner.temp }}/tanukarr-quality-codecs.json
             ${{ runner.temp }}/tanukarr-backup-tasks.json
             ${{ runner.temp }}/tanukarr-jellyfin-watched.json
+            ${{ runner.temp }}/tanukarr-custom-qualities.json
+            ${{ runner.temp }}/tanukarr-artwork-reliability.json
+            ${{ runner.temp }}/tanukarr-download-client-folders.json
+            ${{ runner.temp }}/tanukarr-jellyfin-refresh.json
+            ${{ runner.temp }}/tanukarr-collections-browser.json
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry
@@ -246,6 +292,11 @@ jobs:
             --verification-report "${RUNNER_TEMP}/tanukarr-quality-codecs.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-backup-tasks.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-jellyfin-watched.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-custom-qualities.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-artwork-reliability.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-download-client-folders.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-jellyfin-refresh.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-collections-browser.json" \
             --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets

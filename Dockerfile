@@ -95,7 +95,7 @@ RUN set -eux; \
 # ---------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS runtime
 
-ARG SONARRWEEB_VERSION=1.0.5
+ARG SONARRWEEB_VERSION=1.1.0
 ARG SONARRWEEB_SOURCE=https://github.com/KvasExpert/Tanukarr
 ARG SONARRWEEB_REVISION
 ARG SONARRWEEB_CREATED

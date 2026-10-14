@@ -97,8 +97,8 @@ test('AniList grouped settings retain all eleven import choices, custom-list tag
   assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListReleaseStatuses' }).length, 1);
   assert.equal(renderer.root.findAllByProps({ 'data-section-title': 'AniListCustomLists' }).length, 1);
   assert.equal(renderer.root.findAll((item) => item.props['data-tag-field']).length, 2);
-  assert.match(JSON.stringify(renderer.toJSON()), /AniListExclusionPrecedenceHelp/);
-  assert.match(JSON.stringify(renderer.toJSON()), /AniListTestRetentionHelp/);
+  assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /AniListExclusionPrecedenceHelp/);
+  assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /AniListTestRetentionHelp/);
   TestRenderer.act(() => renderer.unmount());
 });
 

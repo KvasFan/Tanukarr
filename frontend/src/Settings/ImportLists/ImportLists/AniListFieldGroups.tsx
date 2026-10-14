@@ -195,9 +195,6 @@ function AniListFieldGroups({
             />
           ))}
       </ModalSection>
-      <Alert kind={kinds.INFO}>
-        {translate('AniListExclusionPrecedenceHelp')}
-      </Alert>
       {FIELD_GROUPS.map((group) => (
         <ModalSection key={group.title} title={translate(group.title)}>
           {group.title === 'AniListCustomLists' ? (
@@ -235,7 +232,6 @@ function AniListFieldGroups({
           })}
         </ModalSection>
       ))}
-      <FormInputHelpText text={translate('AniListTestRetentionHelp')} />
     </>
   );
 }

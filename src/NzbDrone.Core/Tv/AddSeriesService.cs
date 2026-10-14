@@ -27,6 +27,7 @@ namespace NzbDrone.Core.Tv
     {
         private readonly ISeriesService _seriesService;
         private readonly IMetadataProviderFactory _metadataProviderFactory;
+        private readonly ISeriesPresentationService _seriesPresentationService;
         private readonly IAllocateSyntheticSeriesIds _syntheticSeriesIds;
         private readonly IAnimeGroupingService _animeGroupingService;
         private readonly IAnimeGroupPathBuilder _animeGroupPathBuilder;
@@ -36,6 +37,7 @@ namespace NzbDrone.Core.Tv
 
         public AddSeriesService(ISeriesService seriesService,
                                 IMetadataProviderFactory metadataProviderFactory,
+                                ISeriesPresentationService seriesPresentationService,
                                 IAllocateSyntheticSeriesIds syntheticSeriesIds,
                                 IAnimeGroupingService animeGroupingService,
                                 IAnimeGroupPathBuilder animeGroupPathBuilder,
@@ -45,6 +47,7 @@ namespace NzbDrone.Core.Tv
         {
             _seriesService = seriesService;
             _metadataProviderFactory = metadataProviderFactory;
+            _seriesPresentationService = seriesPresentationService;
             _syntheticSeriesIds = syntheticSeriesIds;
             _animeGroupingService = animeGroupingService;
             _animeGroupPathBuilder = animeGroupPathBuilder;
@@ -168,6 +171,7 @@ namespace NzbDrone.Core.Tv
             }
 
             var series = tuple.Item1;
+            _seriesPresentationService.Enrich(series);
 
             if (newSeries.AnimeGroupingMode == AnimeGroupingMode.Automatic)
             {

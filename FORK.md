@@ -46,7 +46,7 @@ Version 1.0.2 adds the simplified list controls, final exclusion-veto selection
 rule and complete AniList membership recovery. Earlier tags and dated reports
 retain their original source and behavior.
 Version 1.0.3 adds hourly quality-size editors, summaries of actual profile limits
-and fixed codec-normalized size decisions. The fresh
+and default codec-normalized size decisions. The fresh
 [upstream audit](docs/upstream-audit-2026-10-13.md) found no newer accepted
 default heads; an inherited save-error feedback gap is adapted to the modern UI.
 Version 1.0.4 adds opt-in Jellyfin watched state and guarded originating-account
@@ -63,6 +63,17 @@ remaining security findings. Its
 [publication follow-up](docs/releases/1.0.5-publication.md) records successful
 hosted workflows, verified assets/image and the protected owner upgrade,
 separately from earlier release evidence.
+
+Version 1.1.0 adds full collection pages for linked catalogue entries and native
+multi-season TV, keeping acquisition and episode numbering with each native
+member. Collection names are separate from provider titles and saved paths.
+Optional presentation enrichment uses verified IDs, a bounded public-only cache
+and existing rate coordinators. Custom quality presets keep persistent IDs;
+retirement preserves historical comparisons and prevents new selections. Codec
+factors belong to each profile and are applied once to normalized size policy.
+The [current release notes](docs/releases/1.1.0.md) and
+[verification ledger](docs/releases/1.1.0-verification.md) describe the actual
+implementation and executed checks.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the

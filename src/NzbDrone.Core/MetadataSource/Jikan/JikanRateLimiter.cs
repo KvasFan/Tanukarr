@@ -8,6 +8,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
     public interface IJikanRateLimiter
     {
         void WaitForSlot();
+        bool TryWaitForSlot(TimeSpan maxWait);
         void BackOff(TimeSpan duration);
     }
 
@@ -42,6 +43,21 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
         public void WaitForSlot()
         {
+            WaitForSlot(null);
+        }
+
+        public bool TryWaitForSlot(TimeSpan maxWait)
+        {
+            if (maxWait < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxWait));
+            }
+
+            return WaitForSlot(DateTime.UtcNow.Add(maxWait));
+        }
+
+        private bool WaitForSlot(DateTime? deadline)
+        {
             while (true)
             {
                 TimeSpan wait;
@@ -52,6 +68,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
                     if (_notBefore - now > TimeSpan.FromSeconds(30))
                     {
+                        if (deadline.HasValue)
+                        {
+                            return false;
+                        }
+
                         throw new RequestLimitReachedException("Jikan is cooling down after an HTTP 429 response.", _notBefore - now);
                     }
 
@@ -74,7 +95,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                     {
                         _requests.Enqueue(now);
 
-                        return;
+                        return true;
                     }
 
                     // Wait only until the oldest relevant request ages out, so the caller
@@ -82,6 +103,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                     wait = _notBefore > now ? _notBefore - now : inLastSecond >= PerSecond
                         ? TimeSpan.FromSeconds(1) - (now - PeekOldestWithin(now, TimeSpan.FromSeconds(1)))
                         : TimeSpan.FromMinutes(1) - (now - _requests.Peek());
+
+                    if (deadline.HasValue && (deadline.Value <= now || now.Add(wait) > deadline.Value))
+                    {
+                        return false;
+                    }
                 }
 
                 if (wait > TimeSpan.Zero)

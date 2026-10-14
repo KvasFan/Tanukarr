@@ -135,6 +135,7 @@ interface Series extends ModelBase, AnimeGroupingFields {
   tags: number[];
   title: string;
   originalTitle?: string;
+  collectionTitle?: string | null;
   titleSlug: string;
   tvdbId: number;
   tvMazeId: number;

@@ -32,6 +32,14 @@ public class QualityDefinitionUpdateService : IQualityDefinitionUpdateService
 
     public void UpdateMany(List<QualityDefinitionSizeUpdate> updates)
     {
+        lock (QualityDefinitionService.CatalogueLock)
+        {
+            ApplyUpdates(updates);
+        }
+    }
+
+    private void ApplyUpdates(List<QualityDefinitionSizeUpdate> updates)
+    {
         if (updates == null)
         {
             throw new ValidationException(new[] { new ValidationFailure("", "A quality definition update array is required.") });
@@ -69,12 +77,19 @@ public class QualityDefinitionUpdateService : IQualityDefinitionUpdateService
                 errors.Add(new ValidationFailure("title", "Quality titles must not be blank."));
             }
 
-            models.Add(new QualityDefinition(current.Quality)
+            var merged = new QualityDefinition(current.Quality)
             {
                 Id = current.Id,
                 Title = requested.Title ?? current.Title,
-                Weight = current.Weight
-            });
+                Weight = current.Weight,
+                Source = requested.Source ?? current.Source,
+                Resolution = requested.Resolution ?? current.Resolution,
+                Codec = requested.Codec ?? current.Codec,
+                TitlePattern = requested.TitlePattern ?? current.TitlePattern,
+                IsRetired = current.IsRetired
+            };
+            QualityDefinitionService.ValidateCriteria(merged);
+            models.Add(merged);
 
             if (update.UpdateMinSize || update.UpdateMaxSize || update.UpdatePreferredSize)
             {
@@ -91,6 +106,18 @@ public class QualityDefinitionUpdateService : IQualityDefinitionUpdateService
         if (errors.Count > 0)
         {
             throw new ValidationException(errors);
+        }
+
+        var titles = existing.Values.ToDictionary(definition => definition.Id, definition => definition.Title);
+        models.ForEach(model => titles[model.Id] = model.Title);
+        if (titles.Values.GroupBy(title => title, System.StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
+        {
+            throw new ValidationException(new[] { new ValidationFailure("title", "Quality names must be unique, including deleted qualities.") });
+        }
+
+        if (models.Any(model => existing.Values.Any(other => other.Id != model.Id && string.Equals(other.Title, model.Title, System.StringComparison.OrdinalIgnoreCase))))
+        {
+            throw new ValidationException(new[] { new ValidationFailure("title", "A quality name is still assigned to another definition. Rename it separately first.") });
         }
 
         // The profile service validates the complete batch before any profile write.

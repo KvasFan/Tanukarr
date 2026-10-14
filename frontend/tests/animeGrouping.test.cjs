@@ -37,6 +37,7 @@ function loadSource(relative, mocks = {}) {
 }
 
 const grouping = loadSource('Series/Grouping/animeGrouping.ts');
+const presentation = loadSource('Series/Grouping/collectionPresentation.ts', { './animeGrouping': grouping });
 const { groupAnimeSeries, hasAnimeGroup } = grouping;
 
 function makeSeries(id, season, groupId = 'anilist:10', overrides = {}) {
@@ -119,14 +120,13 @@ function createIndexFixture(view, initialItems = [makeSeries(1, 1), makeSeries(2
   }).default;
   const context = loadSource('App/Select/SelectContext.tsx', { 'App/Select/useSelectStore': store });
   const translate = (key, args) => `${key}${args ? JSON.stringify(args) : ''}`;
-  const button = (props) => React.createElement('button', { onClick: props.onPress }, props.children);
   const nativeEntry = (props) => React.createElement('article', { 'data-native-series': props.seriesId },
     React.createElement('a', { href: `/series/generated-${props.seriesId}` }, `Native entry ${props.seriesId}`));
   const seasonSearch = loadSource('Series/Search/SeasonReleaseSearchButton.tsx', {
     'Components/Link/Button': (props) => React.createElement('button', { disabled: props.isDisabled, onClick: props.onPress }, props.children),
     'Helpers/Props': { sizes: { SMALL: 'small' } },
     'Utilities/String/translate': translate,
-    './SeasonInteractiveSearchModal': (props) => props.isOpen ? React.createElement('output', { 'data-season-search-series': props.seriesId, 'data-season-search-native-number': props.seasonNumber }) : null
+    './SeasonInteractiveSearchModal': (props) => (props.isOpen ? React.createElement('output', { 'data-season-search-series': props.seriesId, 'data-season-search-native-number': props.seasonNumber }) : null)
   }).default;
   const summary = loadSource('Series/Grouping/AnimeGroupSummary.tsx', {
     'App/Select/SelectContext': context,
@@ -134,7 +134,9 @@ function createIndexFixture(view, initialItems = [makeSeries(1, 1), makeSeries(2
       'data-group-selection': props.name, type: 'checkbox', checked: props.value === true,
       onChange: (event) => props.onChange({ name: props.name, value: event.target.checked, shiftKey: false })
     }),
-    'Components/Link/Button': button,
+    'Components/Link/Link': (props) => React.createElement('a', { href: props.to }, props.children),
+    './CollectionPoster': (props) => React.createElement('img', { alt: props.title }),
+    './collectionPresentation': presentation,
     'Components/Modal/Modal': (props) => (props.isOpen ? React.createElement('aside', {}, props.children) : null),
     'Components/Modal/ModalContent': wrapper('modal'),
     'Components/Modal/ModalHeader': wrapper('header'),
@@ -261,8 +263,8 @@ function createIndexFixture(view, initialItems = [makeSeries(1, 1), makeSeries(2
         notify();
       });
     },
-    openGroup() {
-      TestRenderer.act(() => renderer.root.findAllByType('button').find((item) => item.children.includes('Generated chain')).props.onClick());
+    groupLink() {
+      return renderer.root.findAllByType('a').find((item) => item.children.includes('Generated chain')).props.href;
     },
     cleanup() {
       TestRenderer.act(() => renderer.unmount());
@@ -282,39 +284,28 @@ test('movie ordinals are independent of seasons and mixed groups order seasons b
 });
 
 for (const view of ['posters', 'overview', 'table']) {
-  test(`mounted ${view} group panel shows an arc title beside its logical season and retains native entry links`, (context) => {
+  test(`mounted ${view} group opens the dedicated collection route for arc entries`, (context) => {
     const fixture = createIndexFixture(view, [makeSeries(1, 1), makeSeries(2, 2, 'anilist:10', { title: 'Tokyo Revengers: War Of Three Titans Arc' })]);
     context.after(() => fixture.cleanup());
-    fixture.openGroup();
-    const entry = fixture.renderer.root.findAllByType('section').find((item) => item.props['data-anime-group-series-id'] === 2);
-    assert.match(entry.findByType('h3').children.join(''), /AnimeGroupSeasonLabel.*2.*Tokyo Revengers: War Of Three Titans Arc/);
-    assert.equal(entry.findByType('a').props.href, '/series/generated-2');
+    assert.equal(fixture.groupLink(), '/collections/group%3Aanilist%3A10');
+    assert.equal(fixture.renderer.root.findAllByType('aside').length, 0, 'collection navigation does not open a modal');
   });
-  test(`mounted ${view} mixed group separates movie headings and retains native season search identity`, (context) => {
+  test(`mounted ${view} mixed group includes movie and season counts`, (context) => {
     const fixture = createIndexFixture(view, [makeSeries(2, 2), makeSeries(8, null, 'anilist:10', { animeGroupMemberKind: 'movie', animeGroupMovieNumber: 1, title: 'Generated movie' })]);
     context.after(() => fixture.cleanup());
-    fixture.openGroup();
-    assert.equal(fixture.renderer.root.findAllByProps({ 'data-anime-group-section': 'seasons' }).length, 1);
-    assert.equal(fixture.renderer.root.findAllByProps({ 'data-anime-group-section': 'movies' }).length, 1);
-    const movie = fixture.renderer.root.findByProps({ 'data-anime-group-series-id': 8 });
-    assert.match(movie.findByType('h3').children.join(''), /AnimeGroupMovieLabel.*Generated movie/);
-    assert.doesNotMatch(movie.findByType('h3').children.join(''), /Season/);
-    const button = fixture.renderer.root.findAllByType('button').find((item) => item.children.some((child) => typeof child === 'string' && child.startsWith('SearchSeasonPacksWithNumber')));
-    assert.match(button.children.join(''), /2/);
-    TestRenderer.act(() => button.props.onClick());
-    assert.equal(fixture.renderer.root.findByProps({ 'data-season-search-series': 2 }).props['data-season-search-native-number'], 1);
+    assert.match(JSON.stringify(fixture.renderer.toJSON()), /AnimeGroupMemberCounts.*seasons.*1.*movies.*1/);
+    assert.equal(fixture.groupLink(), '/collections/group%3Aanilist%3A10');
   });
 }
 
 for (const view of ['posters', 'overview', 'table']) {
-  test(`mounted ${view} index shows one group plus standalone and opens native Season1/2/3 entries`, (context) => {
+  test(`mounted ${view} index shows one collection link plus a standalone native entry`, (context) => {
     const fixture = createIndexFixture(view);
     context.after(() => fixture.cleanup());
     assert.equal(fixture.renderer.root.findAllByProps({ 'data-anime-group': 'anilist:10' }).length, 1);
     assert.equal(fixture.renderer.root.findAllByProps({ 'data-native-series': 4 }).length, 1);
-    fixture.openGroup();
-    assert.deepEqual(fixture.renderer.root.findAllByType('section').filter((item) => item.props['data-anime-group-series-id']).map((item) => item.props['data-anime-group-series-id']), [1, 2, 3]);
-    assert.deepEqual(fixture.renderer.root.findAllByType('a').map((item) => item.props.href), ['/series/generated-1', '/series/generated-2', '/series/generated-3', '/series/generated-4'].sort());
+    assert.equal(fixture.groupLink(), '/collections/group%3Aanilist%3A10');
+    assert.ok(fixture.renderer.root.findAllByType('a').some((item) => item.props.href === '/series/generated-4'));
   });
 
   test(`mounted ${view} group selection refreshes all visible native IDs and preserves filtering`, (context) => {

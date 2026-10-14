@@ -27,6 +27,11 @@ public class SeriesEditorController : Controller
     {
         var seriesToUpdate = _seriesService.GetSeries(resource.SeriesIds);
 
+        var collectionMembers = resource.AnimeGroupTitle != null || resource.AnimeGroupKind.HasValue || resource.AnimeGroupMovieFolderStyle.HasValue
+            ? _seriesService.GetAllSeries()
+            : seriesToUpdate;
+        SeriesCollectionEditor.Apply(seriesToUpdate, collectionMembers, resource.AnimeGroupTitle, resource.AnimeGroupKind, resource.AnimeGroupMovieFolderStyle, resource.CollectionTitle);
+
         foreach (var series in seriesToUpdate)
         {
             if (resource.Monitored.HasValue)

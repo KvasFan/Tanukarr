@@ -16,10 +16,12 @@ namespace Sonarr.Api.V3.ManualImport
     public class ManualImportController : Controller
     {
         private readonly IManualImportService _manualImportService;
+        private readonly IQualityDefinitionService _qualityDefinitionService;
 
-        public ManualImportController(IManualImportService manualImportService)
+        public ManualImportController(IManualImportService manualImportService, IQualityDefinitionService qualityDefinitionService)
         {
             _manualImportService = manualImportService;
+            _qualityDefinitionService = qualityDefinitionService;
         }
 
         [HttpGet]
@@ -83,7 +85,7 @@ namespace Sonarr.Api.V3.ManualImport
         {
             if (item.Quality != null)
             {
-                item.QualityWeight = Quality.DefaultQualityDefinitions.Single(q => q.Quality == item.Quality.Quality).Weight;
+                item.QualityWeight = _qualityDefinitionService.Get(item.Quality.Quality).Weight;
                 item.QualityWeight += item.Quality.Revision.Real * 10;
                 item.QualityWeight += item.Quality.Revision.Version;
             }

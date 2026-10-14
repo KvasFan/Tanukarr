@@ -20,6 +20,7 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
         {
             _series = Builder<Series>
                     .CreateNew()
+                    .With(s => s.CollectionTitle = null)
                     .Build();
 
             _namingConfig = NamingConfig.Default;

@@ -1,6 +1,7 @@
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.Profiles;
 using NzbDrone.Core.Profiles.Qualities;
+using NzbDrone.Core.Qualities;
 using Sonarr.Http.REST;
 
 namespace Sonarr.Api.V5.Profiles.Quality;
@@ -15,6 +16,7 @@ public class QualityProfileResource : RestResource
     public int CutoffFormatScore { get; set; }
     public int MinUpgradeFormatScore { get; set; }
     public List<ProfileFormatItemResource> FormatItems { get; set; } = [];
+    public CodecMultiplierOverrides? CodecMultipliers { get; set; }
 }
 
 public class QualityProfileQualityItemResource : RestResource
@@ -49,7 +51,9 @@ public static class ProfileResourceMapper
             MinFormatScore = model.MinFormatScore,
             CutoffFormatScore = model.CutoffFormatScore,
             MinUpgradeFormatScore = model.MinUpgradeFormatScore,
-            FormatItems = model.FormatItems.ConvertAll(ToResource)
+            FormatItems = model.FormatItems.ConvertAll(ToResource),
+            CodecMultipliers = new CodecMultiplierOverrides(CodecSizeNormalizer.DefaultMultipliers.ToDictionary(pair => pair.Key,
+                pair => model.CodecMultipliers?.GetValueOrDefault(pair.Key, pair.Value) ?? pair.Value))
         };
     }
 
@@ -90,7 +94,8 @@ public static class ProfileResourceMapper
             MinFormatScore = resource.MinFormatScore,
             CutoffFormatScore = resource.CutoffFormatScore,
             MinUpgradeFormatScore = resource.MinUpgradeFormatScore,
-            FormatItems = resource.FormatItems.ConvertAll(ToModel)
+            FormatItems = resource.FormatItems.ConvertAll(ToModel),
+            CodecMultipliers = resource.CodecMultipliers
         };
     }
 

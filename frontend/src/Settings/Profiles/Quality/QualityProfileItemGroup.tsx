@@ -114,6 +114,7 @@ function QualityProfileItemGroup({
               containerClassName={styles.checkInputContainer}
               name="allowed"
               value={allowed}
+              isDisabled={items.every((item) => item.quality.isRetired)}
               onChange={handleAllowedChange}
             />
 
@@ -132,6 +133,9 @@ function QualityProfileItemGroup({
                   return (
                     <Label key={quality.id} outline={true}>
                       {quality.name}
+                      {quality.isRetired
+                        ? ` (${translate('QualityPresetDeleted')})`
+                        : null}
                     </Label>
                   );
                 })}
@@ -185,6 +189,7 @@ function QualityProfileItemGroup({
                 groupId={groupId}
                 qualityId={quality.id}
                 name={quality.name}
+                isRetired={quality.isRetired}
                 allowed={allowed}
                 minSize={minSize}
                 maxSize={maxSize}

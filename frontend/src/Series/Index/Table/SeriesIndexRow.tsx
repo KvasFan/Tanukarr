@@ -18,6 +18,7 @@ import { icons } from 'Helpers/Props';
 import useCountryName from 'Internationalization/useCountryName';
 import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
 import EditSeriesModal from 'Series/Edit/EditSeriesModal';
+import { getSeriesLibraryLink } from 'Series/Grouping/collectionPresentation';
 import { Statistics } from 'Series/Series';
 import SeriesBanner from 'Series/SeriesBanner';
 import SeriesMovePending from 'Series/SeriesMovePending';
@@ -122,7 +123,7 @@ function SeriesIndexRow(props: SeriesIndexRowProps) {
   }
 
   const {
-    title,
+    title: nativeTitle,
     monitored,
     monitorNewItems,
     status,
@@ -148,6 +149,7 @@ function SeriesIndexRow(props: SeriesIndexRowProps) {
     seasons = [],
     tags = [],
   } = series;
+  const title = series.collectionTitle?.trim() || nativeTitle;
 
   const {
     seasonCount = 0,
@@ -203,7 +205,7 @@ function SeriesIndexRow(props: SeriesIndexRowProps) {
               )}
             >
               {showBanners ? (
-                <Link className={styles.link} to={`/series/${titleSlug}`}>
+                <Link className={styles.link} to={getSeriesLibraryLink(series)}>
                   <SeriesBanner
                     className={styles.bannerImage}
                     images={images}
@@ -219,7 +221,11 @@ function SeriesIndexRow(props: SeriesIndexRowProps) {
                   ) : null}
                 </Link>
               ) : (
-                <SeriesTitleLink titleSlug={titleSlug} title={title} />
+                <SeriesTitleLink
+                  titleSlug={titleSlug}
+                  title={title}
+                  to={getSeriesLibraryLink(series)}
+                />
               )}
             </VirtualTableRowCell>
           );

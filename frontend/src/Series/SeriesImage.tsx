@@ -36,9 +36,31 @@ function findImage(images: Image[], coverType: CoverType) {
 function getUrl(image: Image, coverType: CoverType, size: number) {
   const imageUrl = image?.url;
 
-  return imageUrl
-    ? imageUrl.replace(`${coverType}.jpg`, `${coverType}-${size}.jpg`)
-    : null;
+  if (!imageUrl) {
+    return null;
+  }
+
+  if (!imageUrl.startsWith(`${window.Sonarr?.urlBase ?? ''}/MediaCover/`)) {
+    return imageUrl;
+  }
+
+  const heights: Partial<Record<CoverType, number[]>> = {
+    poster: [250, 500],
+    banner: [35, 70],
+    fanart: [180, 360],
+  };
+  const available = heights[coverType];
+
+  if (!available) {
+    return imageUrl;
+  }
+
+  const height =
+    available.find((value) => value >= size) ?? available[available.length - 1];
+  return imageUrl.replace(
+    new RegExp(`${coverType}\\.jpg(?=$|[?#])`),
+    `${coverType}-${height}.jpg`
+  );
 }
 
 export interface SeriesImageProps {
@@ -102,10 +124,19 @@ function SeriesImage({
   }, [setHasError, setIsLoaded, onLoad]);
 
   const handleError = useCallback(() => {
+    const originalUrl = image.current?.url;
+
+    if (originalUrl && url !== originalUrl) {
+      setUrl(originalUrl);
+      setHasError(false);
+      setIsLoaded(true);
+      return;
+    }
+
     setHasError(true);
     setIsLoaded(false);
     onError?.();
-  }, [setHasError, setIsLoaded, onError]);
+  }, [url, onError]);
 
   useEffect(() => {
     const nextImage = findImage(images, coverType);

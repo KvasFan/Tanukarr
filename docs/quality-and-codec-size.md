@@ -1,6 +1,6 @@
 # Quality sizes and video codecs
 
-Tanukarr 1.0.4 retains the size editors introduced in 1.0.3, showing limits in **MiB per hour** in both
+Tanukarr 1.1.0 retains the size editors introduced in 1.0.3, showing limits in **MiB per hour** in both
 **Settings > Quality** and each quality profile. A **GiB per hour** preview makes
 the same value easier to read. Minimum rejects undersized releases, maximum
 rejects oversized releases, and preferred size contributes to release ranking.
@@ -29,6 +29,29 @@ For the same limit, `6,000 MiB/hour` is approximately `5.86 GiB/hour`. A
 30-minute episode has half that hourly allowance, before codec normalization.
 Actual acceptance also depends on the application's native runtime, episode
 count and existing special-episode rules.
+
+## Create and manage quality presets
+
+In **Settings > Quality**, add a preset or duplicate an existing one. Set its
+name, source, resolution, optional codec family and optional release-title
+regular expression. For example, a **BdRip4k** preset can require Blu-ray,
+2160p and HEVC. Enable the preset in the appropriate quality profiles and set
+its order and hourly size limits there. A new preset is disabled until selected
+in a profile; copying one preserves the corresponding profile settings.
+
+Standard presets can also be renamed, edited and duplicated. Their original
+numeric identities are retained. Custom presets receive persistent identities
+starting at 10000, including after restarting the application. Matching is
+applied to release decisions and imported-file evaluation; a manual quality
+selection remains explicit. Title expressions have bounded length and execution
+time and fail closed on invalid stored expressions or timeouts.
+
+Before deleting a preset, disable it and change any upgrade cutoff that refers
+to it in the profiles named by the validation message. Deletion retires its
+identity so existing files and history remain readable. Retired presets are
+excluded from new matching and new manual selections; a file's existing retired
+quality remains available when editing that file. Restore a retired preset to
+use it again. The Unknown fallback cannot be deleted.
 
 ## Codec-aware size comparisons
 
@@ -74,8 +97,11 @@ The four MPEG-2/AVC/HEVC/AV1 factors are the project owner's requested baseline.
 The other values are conservative project policy estimates. The live
 read-only catalog is available at `/api/v3/qualitydefinition/codecs` and
 `/api/v5/qualitydefinition/codecs`; the table displayed in Settings uses that
-catalog. These factors are fixed in this release, rather than editable profile
-fields.
+catalog. In 1.1.0 these are the defaults: each standard or custom **quality
+profile** has editable codec factors, independent of its quality presets. The
+profile editor accepts factors from 0.01 through 10.00 for all supported codec
+families, including Unknown. Resetting the profile factors restores the defaults;
+changing one profile leaves the others unchanged.
 
 For example, a 30-minute, 1,000 MiB HEVC release compares as 1,670 MiB for these
 decisions, or 3,340 normalized MiB/hour. Its actual download remains 1,000 MiB.
@@ -85,7 +111,8 @@ accepted solely because its codec has a larger multiplier.
 The application first uses recognized structured codec metadata. If that is
 unavailable or unrecognized, it considers bounded codec tokens in the release
 title. Unknown codecs, multiple recognized codecs and lossless/mezzanine
-formats use the neutral factor rather than assuming an efficiency benefit.
+formats use the Unknown family: its default is the neutral 1.00 factor, and
+an explicit profile override changes that policy.
 This is release-metadata classification; it does not inspect the encoded
 picture to measure perceptual quality. The optional
 [compression worker](../docker/compression/README.md) remains a separate feature.
@@ -117,6 +144,13 @@ explicit JSON null. Omitted size properties preserve stored profile values;
 explicit null clears the selected limit. The merged batch is validated before
 writing. Client integrations should send only the fields they intend to change
 and should keep their existing MiB/minute conversion.
+
+Both APIs support creating and retiring quality definitions. Quality definitions
+expose `source`, `resolution`, `codec`, `titlePattern` and `isRetired`; `quality.id`
+remains a durable identity. Quality profiles expose `codecMultipliers` as an
+object keyed by canonical codec family, such as `HEVC` or `AV1`. Omitting that
+object in an update preserves saved overrides; sending an empty object resets
+the overrides to the default policy. Do not lowercase its keys.
 
 The inherited API serializer can omit null size properties in a GET response.
 Treat a missing read value as null and use the mixed flag to distinguish different

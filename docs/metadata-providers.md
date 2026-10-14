@@ -31,6 +31,28 @@ catalogue entry and use the appropriate existing root/folder. Review the
 generated path and episode matches before importing files. This is a per-series
 workflow, not a claim of bulk import through all four providers.
 
+## Missing artwork and descriptions
+
+In 1.1.0, adding or refreshing a title can fill a missing cover, backdrop or
+description from another supported catalogue through a verified provider ID.
+AniList/MyAnimeList cross-references use the confirmed MAL ID. TheTVDB/TMDB
+alternatives require an already known positive native ID; negative compatibility
+placeholders are never sent as TheTVDB IDs. No title-similarity guess changes
+the metadata owner, episode list, numbering or saved path.
+
+Existing valid presentation from the same provider identity survives a
+temporarily empty refresh response. Optional alternate lookups share the
+AniList/Jikan rate coordinators, make at most two provider attempts, and use
+short timeouts and cooldowns. Public presentation cache entries are bounded
+and expire; they contain no list membership, OAuth tokens or account settings.
+Unavailable alternatives leave the original import/refresh available.
+
+Canonical linked-collection presentation is queried separately through the
+verified AniList/MyAnimeList root ID, including when the root itself is not in
+the library. Artwork URLs pass through the authenticated local cover proxy.
+The frontend selects an existing thumbnail size for the display density and
+tries the original image before showing a placeholder when a thumbnail fails.
+
 Different catalogues can group seasons, recuts, specials or editions differently.
 Check the selected entry's episode list and numbering against your releases.
 A title missing from one catalogue may be available in another configured
