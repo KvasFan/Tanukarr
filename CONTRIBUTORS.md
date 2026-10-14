@@ -98,14 +98,15 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The **Tanukarr 1.0.5** candidate is prepared and locally tested under
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), targeting `v1.0.5`
-and `ghcr.io/kvasexpert/tanukarr:1.0.5`. Its
-[release notes](docs/releases/1.0.5.md) and
-[verification ledger](docs/releases/1.0.5-verification.md) distinguish pending
-publication and owner deployment from newly executed tests. The final release
-commit is recorded only after it exists; preparation images are explicitly
-labeled `worktree-1.0.5`. The preceding published release is
+The **Tanukarr 1.0.5** release is published and deployed under
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), with tag `v1.0.5`
+and image `ghcr.io/kvasexpert/tanukarr:1.0.5`. Its
+[publication follow-up](docs/releases/1.0.5-publication.md) identifies source
+`13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6`, all three successful hosted workflows,
+fourteen runtime gates and the protected upgrade. The
+[preparation ledger](docs/releases/1.0.5-verification.md) retains earlier local
+results; candidate images labeled `worktree-1.0.5` are separate from the
+published final-source image. The preceding published release is
 **Tanukarr 1.0.4**, with Git tag
 `v1.0.4`, under the GitHub profile
 [KvasExpert](https://github.com/KvasExpert/Tanukarr). The publishing account
@@ -342,7 +343,7 @@ Local adaptation: `390437b59`, `c4bd6a625`.
 
 ### AniList multiple-list inclusion and exclusion precedence
 
-For the prepared 1.0.5 source, **OpenAI Codex, based on GPT-6**, replaces the
+For the 1.0.5 source, **OpenAI Codex, based on GPT-6**, replaces the
 active paged-list/membership-recovery path with complete account-collection
 snapshots and local filtering, including custom-only groups. Temporary private
 reuse is scoped to provider, account, grant and request projection; the public
@@ -351,8 +352,9 @@ metadata preference, positive supplied-ID fallback, preserved native exclusions
 and clear native-provider/internal-placeholder logs. It does not add guessed
 cross-catalogue mappings or move existing library paths. See the
 [snapshot guide](docs/import-list-snapshots.md) and
-[new verification ledger](docs/releases/1.0.5-verification.md) for the prepared
-contract and actual execution status.
+[preparation ledger](docs/releases/1.0.5-verification.md) and
+[publication follow-up](docs/releases/1.0.5-publication.md) for the contract and
+actual execution status.
 
 The original provider and custom-list source authors below remain credited.
 The following dated paragraphs describe earlier adaptation checkpoints and

@@ -4,17 +4,19 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.0.5 is prepared and locally tested; publication is pending.** It
-supports **TV series and anime** in one Sonarr-derived application. This source
-adds complete import-scoped list snapshots and an optional metadata-provider
-preference for future list additions. The solution build, 7,998 executed native
-tests, 115 frontend tests and fourteen runtime reports totaling 251 checks are recorded in the
-[1.0.5 verification ledger](docs/releases/1.0.5-verification.md), including their
-scope and remaining dependency findings. Hosted CI, public assets/image and the
-owner upgrade remain pending; the published 1.0.4 evidence below is separate.
+**Tanukarr 1.0.5 is published and deployed.** It supports **TV series and anime**
+in one Sonarr-derived application, with complete import-scoped list snapshots
+and an optional metadata-provider preference for future list additions. All
+three hosted workflows passed: 7,928 backend tests, 115 frontend tests, 29 worker
+tests and fourteen runtime reports totaling 251 checks. The nine release assets,
+public image and protected local upgrade were verified. See the
+[publication and deployment report](docs/releases/1.0.5-publication.md) for exact
+source/image identities, test scope and remaining dependency findings. The
+[preparation ledger](docs/releases/1.0.5-verification.md) preserves separate local
+candidate results, including 7,998 native tests and earlier failures.
 
 The [1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
-is published and the preserved local deployment is running. Its exact source,
+retains its own historical publication and deployment evidence. Its exact source,
 assets and all thirteen hosted runtime gates (231 checks), including real
 disposable Jellyfin, were verified. See the
 [publication and deployment report](docs/releases/1.0.4-publication.md) for
@@ -28,7 +30,7 @@ and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr)
-and read the [prepared release notes for 1.0.5](docs/releases/1.0.5.md). Published versions
+and read the [release notes for 1.0.5](docs/releases/1.0.5.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
 The historical [1.0.3 verification report](docs/releases/1.0.3-verification.md)
 and [publication follow-up](docs/releases/1.0.3-publication.md) preserve that
@@ -168,7 +170,7 @@ and Jaro-Winkler scoring. Release matching can use alternative titles supplied
 by the owning provider, including English and romaji names for anime; matching
 still follows the configured series and episode numbering.
 
-**Complete list snapshots and provider choice** — the prepared 1.0.5 source
+**Complete list snapshots and provider choice** — version 1.0.5
 reads complete eligible account/list data before applying each import
 definition's filters locally. Reuse is limited to matching provider, account,
 grant and request scope during one operation; temporary private snapshots are
@@ -291,12 +293,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexpert/tanukarr:1.0.4
+docker pull ghcr.io/kvasexpert/tanukarr:1.0.5
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.0.4
+  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.0.5
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -356,6 +358,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |
 | `1.0.4` | Published and deployed: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. All thirteen hosted gates passed; source/assets, immutable image and protected-data preservation verified. |
 | `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |
 | `1.0.2` | Published list-control/provider checkpoint: exclusion vetoes, complete AniList membership recovery, combined TMDB/Trakt/MDBList sources and direct MAL account status/tag filters. |

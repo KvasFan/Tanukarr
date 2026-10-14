@@ -39,7 +39,7 @@ routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [prepared 1.0.5 release notes](docs/releases/1.0.5.md) for packaging
+configuration and [1.0.5 release notes](docs/releases/1.0.5.md) for packaging
 scope. Version 1.0.1 also includes the later grouping and AniList/browser
 reliability work; the immutable 1.0.0 source and assets remain unchanged.
 Version 1.0.2 adds the simplified list controls, final exclusion-veto selection
@@ -55,12 +55,14 @@ published image, hosted checks and preserved local deployment are recorded in
 the [1.0.4 publication follow-up](docs/releases/1.0.4-publication.md), separately
 from the preceding release and cancelled original candidate.
 
-Version 1.0.5 is prepared and locally tested with complete import-scoped list
+Version 1.0.5 is published and deployed with complete import-scoped list
 snapshots and an optional provider preference for future additions. Its
 [verification ledger](docs/releases/1.0.5-verification.md) records the executed
 native/frontend suites, source-qualified candidate runtime/browser checks and
-remaining security findings. Hosted publication and owner deployment remain
-pending and separate from earlier published evidence.
+remaining security findings. Its
+[publication follow-up](docs/releases/1.0.5-publication.md) records successful
+hosted workflows, verified assets/image and the protected owner upgrade,
+separately from earlier release evidence.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -336,7 +338,7 @@ is genuinely numbered that way, as One Piece is.
 
 ## Import lists
 
-The prepared 1.0.5 implementation validates complete eligible account or selected
+The 1.0.5 implementation validates complete eligible account or selected
 list data before applying each definition's filters locally. Private reuse is
 limited to matching provider, authenticated identity, grant and projection
 during one operation. Temporary snapshot references are released at completion;

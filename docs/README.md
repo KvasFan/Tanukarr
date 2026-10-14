@@ -19,8 +19,9 @@ repeat past verification or rename existing releases, volumes or tools.
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
 | [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
 | [Complete list snapshots and provider identity](import-list-snapshots.md) | 1.0.5 private snapshot boundaries, local filtering, remaining public metadata requests and optional provider preference |
-| [Tanukarr 1.0.5](releases/1.0.5.md) | Prepared, locally tested snapshot/identity changes; publication remains pending |
-| [1.0.5 release verification](releases/1.0.5-verification.md) | Executed native/frontend, candidate runtime/browser and security checks; hosted/publication/owner deployment remain pending |
+| [Tanukarr 1.0.5](releases/1.0.5.md) | Published complete list snapshots, local filtering and future-addition provider preference |
+| [1.0.5 publication and deployment](releases/1.0.5-publication.md) | Exact source/image/assets, fourteen hosted gates, protected upgrade and remaining findings |
+| [1.0.5 release verification](releases/1.0.5-verification.md) | Preserved preparation ledger: native/frontend tests, candidate runtime/browser scope and retained failures |
 | [Quality sizes and video codecs](quality-and-codec-size.md) | Hourly size editors, mixed profile summaries, global-save scope, heuristic codec factors and unchanged API units |
 | [Tanukarr 1.0.4](releases/1.0.4.md) | Published Jellyfin watched state, originating-account progress and backup timing |
 | [1.0.4 publication and deployment](releases/1.0.4-publication.md) | Exact release source/image/assets, all thirteen hosted gates, protected upgrade and remaining findings |
@@ -109,16 +110,18 @@ fresh published-image browser scope and remaining findings. Original cancelled
 candidate receipts and preparation states remain separate. The preceding 1.0.3 reports retain
 their immutable source, numeric evidence and deployment limits.
 
-Tanukarr 1.0.5 is prepared and locally tested, with publication pending. Its
+Tanukarr 1.0.5 is published and deployed. Its
 complete import-scoped snapshots and optional provider preference are described
 in the new guide and release notes. The new ledger records 7,998 passing native
 tests and 115 frontend tests, candidate-image/browser scope and remaining security
-findings. Hosted CI, public assets/image and owner deployment need separate proof.
+findings. The [publication follow-up](releases/1.0.5-publication.md) records
+successful exact-source hosted CI, all fourteen runtime reports (251 checks),
+verified public assets/image and the protected 37-table owner upgrade.
 The [provider matrix](library-tools.md#provider-capabilities) distinguishes
 supported account/list selectors from public metadata. A snapshot covers one
 authorized account or selected list, not an entire catalogue; public metadata
-requests and quotas remain. Its results are qualified to this source and
-candidate rather than borrowed from the published 1.0.4 release.
+requests and quotas remain. Its results identify this release's source and
+images separately from the published 1.0.4 evidence.
 
 The October 12 security-validation checkpoint records its Linux amd64
 `<recorded-local-image-reference>` image, digest, export checksum and runtime version in the

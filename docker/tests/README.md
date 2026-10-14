@@ -5,7 +5,7 @@ is recorded in [CONTRIBUTORS.md](../../CONTRIBUTORS.md); the
 [documentation index](../../docs/README.md) links the build, integration and
 security reports.
 
-**Tanukarr 1.0.5 is prepared and locally tested; publication is pending.** Its
+**Tanukarr 1.0.5 is published and deployed.** Its
 [snapshot and identity guide](../../docs/import-list-snapshots.md) describes
 complete private account/list snapshots, local filters, safe per-operation
 reuse and the optional new-series metadata preference. Public metadata and
@@ -14,10 +14,13 @@ relations outside the snapshot can still need requests. The
 which selectors and snapshot boundaries each service supports. Earlier 1.0.4
 runtime results remain in their [published checkpoint](../../docs/releases/1.0.4-publication.md);
 they do not verify the new source. New execution and publication results belong
-in the [1.0.5 ledger](../../docs/releases/1.0.5-verification.md).
+in the [preparation ledger](../../docs/releases/1.0.5-verification.md) and
+[publication follow-up](../../docs/releases/1.0.5-publication.md). The final tag
+passed all fourteen required gates, totaling 251 checks.
 
-For 1.0.5, use a built candidate explicitly supplied through `--image`; these
-development commands do not establish that a `1.0.5` registry tag is published.
+Supply the exact image being verified through `--image`. The published 1.0.5
+result is recorded separately; development commands alone do not establish
+publication or results for a different build.
 Snapshot fixtures must verify complete collection/list reads before filtering,
 custom-only membership, failures retaining saved data, isolation between
 accounts/grants and release of temporary references. Preference checks must
@@ -43,7 +46,8 @@ completion safeguards still apply. It tests actual importer/API/database behavio
 with generated responses on trusted local TLS and an internal Docker network.
 No owner's configuration or private provider account is used. JSON records the
 actual image identity, executed checks and cleanup result. The final local
-1.0.5 candidate passed 20 checks; this is not a hosted or published-image result.
+1.0.5 candidate passed 20 checks. A separate exact-source hosted run also passed
+20 checks and its report is verified in the published release assets.
 
 ## Anime season grouping
 
@@ -84,7 +88,7 @@ Grouping edits and restart preserve the imported bytes. This
 does not establish media-server season remapping or a real-library migration.
 
 The unsaved AniList Test and name action must leave saved import-list settings
-unchanged. The prepared 1.0.5 path starts with a complete selected-user anime
+unchanged. The 1.0.5 path starts with a complete selected-user anime
 collection and evaluates custom-group membership locally, including entries
 hidden from ordinary status groups. Incomplete or conflicting collections must
 retain previous membership. Generated test credentials do not authenticate a
@@ -142,7 +146,7 @@ runtime cases.
 
 The historical 1.0.2 scenario checks the final exclusion-veto selection rule,
 overlapping custom names across duplicate pages and complete-collection recovery
-after missing membership fields. The prepared 1.0.5 importer uses complete
+after missing membership fields. The 1.0.5 importer uses complete
 collections as its primary input instead. Partial/wrong-owner/missing-ID
 collections must still retain the previous list. The earlier counts belong to the
 [1.0.2 verification report](../../docs/releases/1.0.2-verification.md), rather

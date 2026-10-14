@@ -100,7 +100,7 @@ dotnet test src/NzbDrone.Api.Test/Sonarr.Api.Test.csproj -c Debug --no-build --f
 ```
 
 These commands describe reproducible checks; running them is required before
-claiming results for another change. The prepared 1.0.5 source has its own
+claiming results for another change. The 1.0.5 preparation has its own
 executed build, native/frontend, candidate runtime/browser and security evidence
 in the [new ledger](docs/releases/1.0.5-verification.md). The 833 focused tests
 overlap the 7,998 passing native cases; do not add those counts together.
@@ -233,16 +233,18 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The **1.0.5** target
-uses Git tag `v1.0.5` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.5` once
-verified publication completes. Its [verification ledger](docs/releases/1.0.5-verification.md)
-records pending and executed checks separately. The preceding
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The verified **1.0.5** release
+uses Git tag `v1.0.5` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.5`.
+Its [publication follow-up](docs/releases/1.0.5-publication.md) records exact-source
+hosted checks, verified distribution and the protected owner upgrade. Its
+[preparation ledger](docs/releases/1.0.5-verification.md) preserves earlier
+candidate states and executed checks separately. The preceding
 [1.0.4 publication follow-up](docs/releases/1.0.4-publication.md) retains that
 release's actual hosted checks, artifact identities and remaining findings.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[prepared release notes](docs/releases/1.0.5.md) when changing the published deployment.
+[release notes](docs/releases/1.0.5.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 

@@ -1,9 +1,10 @@
 # Complete import-list snapshots and provider identity
 
-Tanukarr 1.0.5 is being prepared to reduce duplicate list requests and evaluate
+Tanukarr 1.0.5 reduces duplicate list requests and evaluates
 supported filters against complete import-scoped snapshots. This guide describes
-the intended contract; executed results belong in the release verification
-report. The published 1.0.4 results do not verify this new implementation.
+the implemented contract; executed results belong in the release verification
+report. The [1.0.5 publication follow-up](releases/1.0.5-publication.md) records
+the successful hosted checks, public assets/image and protected deployment.
 
 ## Read complete eligible data before filtering
 
@@ -79,9 +80,10 @@ and a separate burst limiter in its
 
 ## Choose an import metadata source
 
-The planned common **Preferred metadata source** field applies to future
+The common **Metadata provider for new series** field applies to future
 additions from that import list. **Automatic** keeps the existing selection
-order. An explicit catalogue can be used only when the item supplies a verified
+order: TheTVDB, AniList, TMDB, then MyAnimeList. An explicit catalogue can be used
+only when the item supplies a verified
 positive ID for it; otherwise automatic selection remains the fallback.
 Existing series keep their current metadata owner, numbering and paths.
 

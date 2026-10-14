@@ -1,9 +1,11 @@
-# Install Tanukarr 1.0.4 with Docker
+# Install Tanukarr 1.0.5 with Docker
 
 Tanukarr is an independent Sonarr fork. Its source and release notes are on
-[GitHub](https://github.com/KvasExpert/Tanukarr). The **1.0.4**
-[release notes](releases/1.0.4.md) describe optional Jellyfin watched state,
-guarded originating-account progress and successful manual backup timing. The
+[GitHub](https://github.com/KvasExpert/Tanukarr). The **1.0.5**
+[release notes](releases/1.0.5.md) describe complete import-scoped list snapshots,
+local filtering, duplicate-read reuse and a metadata provider preference for new
+series. The optional Jellyfin watched state, guarded originating-account
+progress and successful manual backup timing introduced in 1.0.4 remain included. The
 hourly quality-size controls, mixed profile summaries, guarded global edits and
 codec-aware size decisions introduced in 1.0.3 remain included. The
 exclusion-veto list controls and complete AniList membership recovery introduced
@@ -14,20 +16,22 @@ query encoding introduced in earlier versions remain included. Original
 Sonarr and fork contributors, including recorded AI tool/model attribution, are
 listed in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
-**Published release:** 1.0.4 was published on 2026-10-14 with verified source,
-nine downloadable assets and thirteen passing runtime reports. The
-[publication and deployment follow-up](releases/1.0.4-publication.md) records its
-exact Linux amd64 manifest, remaining findings and preserved local upgrade.
-The preceding 1.0.3 remains available under its own tag and recorded digest.
+**Published release:** 1.0.5 was published on 2026-10-14 with verified source,
+nine downloadable assets and fourteen passing runtime reports totaling **251
+checks**. The [publication and deployment follow-up](releases/1.0.5-publication.md)
+records its exact Linux amd64 manifest, remaining dependency findings and
+preserved local upgrade. The preceding
+[1.0.4](releases/1.0.4-publication.md) and
+[1.0.3](releases/1.0.3-publication.md) retain their own tags and dated evidence.
 
 GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
-below uses `ghcr.io/kvasexpert/tanukarr:1.0.4`; the GitHub repository itself is source
+below uses `ghcr.io/kvasexpert/tanukarr:1.0.5`; the GitHub repository itself is source
 code, not a Docker image. Check the release notes and
 [package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr) for
 the published architectures and image digest. The
-[1.0.4 publication follow-up](releases/1.0.4-publication.md) verifies anonymous
+[1.0.5 publication follow-up](releases/1.0.5-publication.md) verifies anonymous
 pulls, exact source/image identities and nine downloadable assets. Use its own
-recorded digest when pinning a 1.0.4 deployment; earlier release identities remain
+recorded digest when pinning a 1.0.5 deployment; earlier release identities remain
 in their historical reports.
 
 ## Prerequisites
@@ -52,7 +56,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasexpert/tanukarr:1.0.4
+    image: ghcr.io/kvasexpert/tanukarr:1.0.5
     container_name: tanukarr
     restart: unless-stopped
     ports:
@@ -100,9 +104,9 @@ Open **http://localhost:6970**. The named volume holds the database, `config.xml
 settings and logs. Recreating the container retains this volume. Avoid
 `docker compose down -v`, which deletes it.
 
-The [verified 1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
+The [verified 1.0.5 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.5)
 provides ready-to-use
-[`compose.yaml`](https://github.com/KvasExpert/Tanukarr/releases/download/v1.0.4/compose.yaml)
+[`compose.yaml`](https://github.com/KvasExpert/Tanukarr/releases/download/v1.0.5/compose.yaml)
 with bind-mounted `./config` and `./media` defaults. It is an alternative to the
 named-volume example. Download that file into a new
 installation directory, create those two directories with the correct permissions,
@@ -144,6 +148,14 @@ runs in another container, mount that same host parent at `/media` there too.
 If its reported path differs, configure a Remote Path Mapping in Tanukarr.
 Remote Path Mapping translates paths; it does not mount storage or fix ownership.
 
+An import-list root must also be under persistent storage. The preserved local
+1.0.5 deployment's read-only check found an accessible import root in the
+container's writable layer and **zero registered media files**. Its settings and
+existing paths were retained; no files were imported or moved. That observation
+does not verify a real media import. Choose a root under the mounted media parent
+before using the instance for downloads, and review existing series paths before
+changing them.
+
 Hardlinks require downloads and the library to be on the **same underlying
 filesystem**, with permissions that allow the import. One parent mount helps
 preserve that relationship; it does not make separate disks or network shares
@@ -183,13 +195,32 @@ AniList account-list status, anime release status and custom-list
 membership are separate filters; see [Library tools](library-tools.md).
 AniList lets you include several custom lists and veto entries by excluded
 custom-list membership, within the enabled Import membership/release statuses.
-Version 1.0.4 retains the 1.0.2 rule: excluded custom-list members are removed, including overlap with
+Version 1.0.5 retains the 1.0.2 rule: excluded custom-list members are removed, including overlap with
 an included list. It removes the six separate account-status exclusion controls
 and their behavior; the immutable 1.0.1 image retains its original settings.
-Use the verified 1.0.4 image and check its source revision.
+Use the verified 1.0.5 image and check its source revision.
 The list-control changes introduced in 1.0.2 also remove the
 duplicate legacy custom-list textbox, moving its saved name into Included
 Custom Lists tags without discarding the filter.
+
+In 1.0.5, supported providers first validate a complete selected-account or
+selected-list snapshot, then apply each import definition's filters. Definitions
+with the same account, grant and request projection can share that read during
+one synchronization; a new synchronization or unsaved **Test** gets a fresh
+scope. Private temporary responses are released after the operation. Saved list
+membership and SIMKL's required incremental baseline remain. A failed or
+incomplete response retains the previous successful membership.
+
+Each import list also offers **Metadata provider for new series**. **Automatic**
+keeps the existing selection order; an explicit catalogue is used only when the
+item supplies its verified positive ID. If that ID is unavailable, Automatic
+remains the fallback. Native AniList, MAL, TMDB and TheTVDB IDs stay in separate
+namespaces; a negative internal TVDB placeholder is not a real TheTVDB identity.
+Changing the preference does not move or renumber existing series. See
+[complete list snapshots and provider identity](import-list-snapshots.md) for
+provider boundaries, native-ID safeguards, container/log clocks, local API
+requests and the distinction between software licensing and remote-service
+access.
 
 For Jellyfin, configure the dedicated
 connection under **Settings -> Connect** and select one initialized library;
@@ -210,7 +241,7 @@ setting for the new instance.
 A **public** GHCR package supports anonymous pulls:
 
 ```sh
-docker pull ghcr.io/kvasexpert/tanukarr:1.0.4
+docker pull ghcr.io/kvasexpert/tanukarr:1.0.5
 ```
 
 If GitHub reports `denied` or `unauthorized`, confirm that the tag exists and that
@@ -228,14 +259,21 @@ shell command that saves them in command history.
 
 ## Version pins and updates
 
-`1.0.4` is the Tanukarr release version; the application's inherited internal
+`1.0.5` is the Tanukarr release version; the application's inherited internal
 Sonarr version may use a different numbering scheme. Prefer the exact release
 tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
 
 ```yaml
-    image: ghcr.io/kvasexpert/tanukarr@sha256:6b57ad2f00409f641bac5622437f46cd8b22e050d2e74b58dcf905c280301494
+    image: ghcr.io/kvasexpert/tanukarr@sha256:3684368104605ca02345e6a002293a99b85334fba8fab4d1734b097caaf730a4
 ```
+
+This is the verified Linux amd64 **platform manifest**. Its configuration digest
+is `sha256:9db5b44847a99f15a0ac30847a7f7807da2a10bda10d0e815730e847dac8c269`;
+the hosted verification reports identify that configuration, while the anonymous
+pull and deployed image use the manifest identity above. The publication proof
+ties both identities to source
+`13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6`. Use the manifest digest in Compose.
 
 Release workflows also produce `latest` for release builds, `edge` for untagged
 `main` development builds and `sha-<full-commit>` for a particular build. Tags can
@@ -258,16 +296,27 @@ Recreating the container uses the new image with the existing configuration.
 may prevent downgrading; restore the pre-update backup into a separate configuration
 location when a rollback requires it. Never overwrite your only backup.
 
+The verified local 1.0.4-to-1.0.5 upgrade preserved all old protected columns and
+rows across **37 protected tables**. Migration **250** adds only
+`ImportLists.PreferredMetadataSource`, defaulting existing lists to Automatic.
+Raw before/after hashes were retained; this is not a claim of identical database
+bytes or unchanged volatile task data. The post-upgrade V3/V5 status endpoints
+reported Tanukarr 1.0.5, internal Core 10.0.0.10489, .NET 10.0.12 and schema 250.
+Read-only local GETs returned a healthy `/ping`; `/` and `/series` redirected to
+the local login page. No private provider account, download or media import was
+triggered by that owner check. See the
+[publication follow-up](releases/1.0.5-publication.md) for the evidence and limits.
+
 ## Release archive fallback
 
 If a release includes a Docker image archive, download that archive and its
-checksum from the verified [GitHub release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4).
+checksum from the verified [GitHub release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.5).
 Choose an architecture compatible with your Docker host. Verify the filename
 listed in the release's checksum file before loading it:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-1.0.4-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-1.0.5-linux-amd64-docker.tar.gz
 ```
 
 On Windows, use `Get-FileHash -Algorithm SHA256` and compare its output with
@@ -281,16 +330,19 @@ docker compose up -d --pull never
 ```
 
 Use the actual asset name shown for the release; the command above illustrates
-the 1.0.4 Linux amd64 archive naming convention. This is an offline image import,
+the 1.0.5 Linux amd64 archive naming convention. This is an offline image import,
 not a source build. Asset availability, architectures, SBOMs, manifests and test
 receipts must be checked on the corresponding release. GitHub source archives
 are source code and cannot be loaded with `docker load`. Source and image assets
 must preserve the project's GPL license and contributor notices.
 
-The 1.0.4 packaging workflow also prepares `provider-verification.json`, alongside
+The verified 1.0.5 release provides `provider-verification.json`, alongside
 the primary verification/manifest assets, to identify required provider/runtime
-checks for the same tested image. It aggregates eleven additional reports beyond
-smoke and functional/security, for thirteen required publishing gates. The
+checks for the same tested image. It aggregates twelve additional reports beyond
+smoke and functional/security, for fourteen required publishing gates totaling
+251 checks. The new import-snapshot fixture verifies two definitions sharing one
+complete read, independent local filters, a fresh subsequent sync and account/grant
+isolation through controlled provider endpoints. The
 backup fixture checks actual archive integrity and success/failure task timing;
 the watched fixture changes Played state on a disposable real local Jellyfin.
 Quality/codec checks retain local RSS coverage. The configured
@@ -303,27 +355,30 @@ or successful execution.
 The initial 0.0.1 release provides an image archive for **Linux amd64** and
 its matching source archive, SBOM, manifest and verification receipts. Its
 immutable assets and dated reports remain historical checkpoints; they do not
-establish that an equivalent 1.0.4 asset has been published or tested.
+establish that an equivalent later asset has been published or tested. The
+1.0.5 publication has its own proof rather than inheriting those early results.
 
 ## Building from the GitHub source
 
 To build the tagged source instead of pulling the published image:
 
 ```sh
-git clone --branch v1.0.4 --depth 1 https://github.com/KvasExpert/Tanukarr.git
+git clone --branch v1.0.5 --depth 1 https://github.com/KvasExpert/Tanukarr.git
 cd Tanukarr
 docker build --progress=plain \
   --build-arg TANUKARR_SOURCE=https://github.com/KvasExpert/Tanukarr \
-  -t tanukarr:1.0.4 .
+  --build-arg TANUKARR_VERSION=1.0.5 \
+  --build-arg TANUKARR_REVISION=13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6 \
+  -t tanukarr:1.0.5 .
 ```
 
-Use `image: tanukarr:1.0.4` in the standalone Compose example above and run
+Use `image: tanukarr:1.0.5` in the standalone Compose example above and run
 `docker compose up -d --pull never`. The build downloads dependencies and runs
 the checks encoded in the Dockerfile. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 The explicit source argument uses the current canonical repository URL. The
-verified `v1.0.4` tag resolves to `fee14c10a50c2ca92eb633a2ee821a1095531997`.
+verified `v1.0.5` tag resolves to `13a33f7ac310cd3a7cb583cb9f38dfb26ebb72a6`.
 To build development code instead, clone `main`
 and check the repository's `VERSION` file.
 An untagged main checkout can include changes added after a release, so record
@@ -338,7 +393,7 @@ their configuration mount and Compose project identity when changing images.
 ## Upgrading an existing installation
 
 The repository and product are now named **Tanukarr**. New installations use
-`ghcr.io/kvasexpert/tanukarr:1.0.4`. Historical
+`ghcr.io/kvasexpert/tanukarr:1.0.5`. Historical
 [0.0.1](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.0.1) and
 [0.1.0](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.1.0) releases retain
 the image paths and filenames recorded in their manifests. A GitHub repository
