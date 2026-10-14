@@ -335,6 +335,14 @@ namespace NzbDrone.Core.Test.AniList
                       return new HttpResponse(request, new HttpHeader(), "{}", HttpStatusCode.OK);
                   });
 
+            // Warm only the mock dispatch; leave the real limiter and service state untouched.
+            Mocker.GetMock<IHttpClient>().Object.Execute(_request);
+            Mocker.GetMock<IHttpClient>().Invocations.Clear();
+            starts.Clear();
+            active = 0;
+            overlap = false;
+            stopwatch.Restart();
+
             Task.WaitAll(Task.Run(() => first.Execute(_request)), Task.Run(() => second.Execute(new HttpRequest("https://graphql.anilist.co"))));
 
             overlap.Should().BeFalse();
