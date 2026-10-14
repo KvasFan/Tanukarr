@@ -5,9 +5,11 @@
 </p>
 
 **Tanukarr 1.0.4** manages **TV series and anime** in one Sonarr-derived application.
-The local candidate passed 231 checks across thirteen container reports, plus
-separate Backup, watched-counter and quality browser checks. Hosted publication
-and deployment are pending in the [1.0.4 verification ledger](docs/releases/1.0.4-verification.md).
+The original candidate passed 231 container checks, but late review found
+dispatch opt-out and queue-source isolation gaps. Publication was cancelled.
+The amended source passed native/Linux builds and all thirteen container gates
+(231 checks), including real disposable Jellyfin; release publication is tracked in the
+[1.0.4 verification ledger](docs/releases/1.0.4-verification.md).
 It continues the earlier releases and includes
 selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
 shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
@@ -326,7 +328,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `1.0.4` | Locally verified candidate: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing; final tagged image, hosted publication and deployment remain pending in the 1.0.4 ledger. |
+| `1.0.4` | Locally verified amended candidate: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. Fresh native/Linux builds and all thirteen runtime gates passed; hosted publication and owner deployment remain pending. |
 | `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |
 | `1.0.2` | Published list-control/provider checkpoint: exclusion vetoes, complete AniList membership recovery, combined TMDB/Trakt/MDBList sources and direct MAL account status/tag filters. |
 | `1.0.1` | Historical grouping, season-pack searches, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; retains its original list controls. |

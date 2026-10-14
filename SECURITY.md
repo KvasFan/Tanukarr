@@ -24,6 +24,14 @@ Its [fresh verification ledger](docs/releases/1.0.4-verification.md) distinguish
 pending source/image checks from executed evidence. Neither a configured gate nor
 the preceding release's scan establishes the candidate's security result.
 
+The freshly amended local image `cd27c2fc…` was scanned at its exact immutable
+identity: 49 vulnerability occurrences across 15 distinct CVEs, including
+21 High occurrences and zero Critical findings; no image secret matches were
+detected. The amended-source scan covered 46 production C# files with 27 rules,
+zero parse errors and two retained inherited calendar INFO findings. ImageSharp
+3.1.12 and the documented upgrade license constraint remain. These are scoped
+executed scans, not a clean-security claim or verification of a published image.
+
 For a defect confirmed to affect upstream Sonarr, follow the
 [upstream security policy](https://github.com/Sonarr/Sonarr/blob/develop/SECURITY.md).
 Upstream maintainers do not support fork-only behavior. This fork does not promise

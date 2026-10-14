@@ -14,7 +14,7 @@ namespace NzbDrone.Core.ImportLists.Progress
 {
     public interface IImportListProgressService
     {
-        void SyncProgress(int seriesId, IReadOnlyCollection<int> watchedEpisodeIds);
+        void SyncProgress(int seriesId, IReadOnlyCollection<int> watchedEpisodeIds, Func<bool> canDispatch);
     }
 
     public interface IImportListProgressClock
@@ -61,7 +61,7 @@ namespace NzbDrone.Core.ImportLists.Progress
             _logger = logger;
         }
 
-        public void SyncProgress(int seriesId, IReadOnlyCollection<int> watchedEpisodeIds)
+        public void SyncProgress(int seriesId, IReadOnlyCollection<int> watchedEpisodeIds, Func<bool> canDispatch)
         {
             lock (QueueLock)
             {
@@ -69,6 +69,14 @@ namespace NzbDrone.Core.ImportLists.Progress
                 var episodes = _episodes.GetEpisodeBySeries(seriesId);
                 var progress = ImportListProgressGuard.ContiguousProgress(episodes, watchedEpisodeIds, series.MetadataSource == MetadataSourceType.Tvdb);
                 if (progress == 0)
+                {
+                    return;
+                }
+
+                var watchedIds = watchedEpisodeIds.ToHashSet();
+                var sources = episodes.Where(episode => watchedIds.Contains(episode.Id))
+                    .Select(episode => episode.WatchedSource).Distinct(StringComparer.Ordinal).ToList();
+                if (sources.Count != 1 || string.IsNullOrWhiteSpace(sources[0]))
                 {
                     return;
                 }
@@ -90,26 +98,27 @@ namespace NzbDrone.Core.ImportLists.Progress
                         target.NativeEpisodes = episodes.Where(episode => episode.SeasonNumber > 0)
                             .OrderBy(episode => episode.SeasonNumber).ThenBy(episode => episode.EpisodeNumber).ToList();
 
-                        Dispatch(definition, seriesId, writer, target, progress);
+                        Dispatch(definition, seriesId, writer, target, progress, sources[0], canDispatch);
                     }
                 }
             }
         }
 
-        private void Dispatch(ImportListDefinition definition, int seriesId, IImportListProgressWriter writer, ImportListProgressTarget target, int progress)
+        private void Dispatch(ImportListDefinition definition, int seriesId, IImportListProgressWriter writer, ImportListProgressTarget target, int progress, string watchedSource, Func<bool> canDispatch)
         {
             var now = _clock.UtcNow;
+            var stateFingerprint = ImportListProgressGuard.Fingerprint(target.Fingerprint, watchedSource);
             var state = _states.ForListSeries(definition.Id, seriesId) ?? new ImportListProgressState
             {
                 ImportListId = definition.Id,
                 SeriesId = seriesId,
-                TargetFingerprint = target.Fingerprint,
+                TargetFingerprint = stateFingerprint,
                 NextAttemptUtc = now
             };
-            if (state.TargetFingerprint != target.Fingerprint || (state.AcknowledgedProgress > 0 &&
+            if (state.TargetFingerprint != stateFingerprint || (state.AcknowledgedProgress > 0 &&
                 state.AcknowledgedIdentityFingerprint != IdentityFingerprint(target, state.AcknowledgedProgress)))
             {
-                state.TargetFingerprint = target.Fingerprint;
+                state.TargetFingerprint = stateFingerprint;
                 state.PendingProgress = 0;
                 state.AcknowledgedProgress = 0;
                 state.AcknowledgedIdentityFingerprint = string.Empty;
@@ -137,6 +146,31 @@ namespace NzbDrone.Core.ImportLists.Progress
                 return;
             }
 
+            // A settings save can complete while an earlier title/list operation
+            // is doing HTTP I/O. Recheck both authorities at every new target;
+            // retained pending work cannot authorize itself after an opt-out.
+            if (canDispatch == null || !canDispatch())
+            {
+                return;
+            }
+
+            var currentDefinition = _lists.Find(definition.Id);
+            if (currentDefinition == null || !currentDefinition.EnableAutomaticAdd ||
+                currentDefinition.Implementation != definition.Implementation)
+            {
+                return;
+            }
+
+            var currentSeries = _series.GetSeries(seriesId);
+            var currentMemberships = _items.GetAllForLists(new List<int> { definition.Id });
+            var currentTarget = currentMemberships.Where(item => item.ImportListId == definition.Id)
+                .Select(item => writer.TryGetTarget(currentDefinition, currentSeries, item, out var result) ? result : null)
+                .FirstOrDefault(result => result != null && result.Fingerprint == target.Fingerprint);
+            if (currentTarget == null || !canDispatch())
+            {
+                return;
+            }
+
             _dispatches++;
             target.AcknowledgedProgress = state.AcknowledgedProgress;
             state.LastAttemptUtc = now;
@@ -144,7 +178,7 @@ namespace NzbDrone.Core.ImportLists.Progress
             Save(state);
             try
             {
-                var confirmed = writer.Advance(definition, target, state.PendingProgress);
+                var confirmed = writer.Advance(currentDefinition, target, state.PendingProgress);
                 if (confirmed <= 0)
                 {
                     throw new ImportListProgressUnavailableException();

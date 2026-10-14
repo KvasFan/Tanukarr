@@ -55,7 +55,7 @@ namespace NzbDrone.Core.ImportLists.Progress
                 },
                 IsMovie = series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie,
                 IsTvdb = series.MetadataSource == MetadataSourceType.Tvdb,
-                Fingerprint = ImportListProgressGuard.Fingerprint("Simkl", settings.BaseUrl, settings.AuthUser, settings.ClientIdV2, settings.AccessToken, series.MetadataSource.ToString(), id.ToString(CultureInfo.InvariantCulture))
+                Fingerprint = ImportListProgressGuard.Fingerprint("Simkl", settings.BaseUrl, settings.AuthUser, settings.ClientIdV2, settings.AccessToken, settings.ScopeV2, series.MetadataSource.ToString(), id.ToString(CultureInfo.InvariantCulture))
             };
             return true;
         }

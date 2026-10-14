@@ -100,7 +100,7 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
             actual.SeasonNumber.Should().Be(1);
             _series.Get(_show.Id).AnimeGroupSeasonNumber.Should().Be(3);
             _definition.Enable.Should().BeTrue("watched-only Jellyfin connections are active without import notifications");
-            Mocker.GetMock<IImportListProgressService>().Verify(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>()), Times.Never());
+            Mocker.GetMock<IImportListProgressService>().Verify(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<Func<bool>>()), Times.Never());
         }
 
         [Test]
@@ -306,18 +306,152 @@ namespace NzbDrone.Core.Test.NotificationTests.Jellyfin
             _settings.SyncListProgress = true;
             _subject.Sync(true);
             _subject.Sync(true);
-            Mocker.GetMock<IImportListProgressService>().Verify(service => service.SyncProgress(_show.Id, It.Is<IReadOnlyCollection<int>>(ids => ids.Count == 1 && ids.Contains(_episode.Id))), Times.Exactly(2));
+            Mocker.GetMock<IImportListProgressService>().Verify(service => service.SyncProgress(_show.Id, It.Is<IReadOnlyCollection<int>>(ids => ids.Count == 1 && ids.Contains(_episode.Id)), It.IsAny<Func<bool>>()), Times.Exactly(2));
         }
 
         [Test]
         public void should_save_watched_state_before_origin_write_failure()
         {
             _settings.SyncListProgress = true;
-            Mocker.GetMock<IImportListProgressService>().Setup(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>())).Throws(new InvalidOperationException("private origin response"));
+            Mocker.GetMock<IImportListProgressService>().Setup(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<Func<bool>>())).Throws(new InvalidOperationException("private origin response"));
             _subject.Sync(true);
             Stored.Watched.Should().BeTrue();
             _states.ForNotification(10).LastSyncUtc.Should().Be(_now);
             ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
+        public void should_revoke_later_origin_target_authorization_when_global_progress_is_disabled_during_the_first_advance()
+        {
+            _settings.SyncListProgress = true;
+            var permissions = new List<bool>();
+            Mocker.GetMock<IImportListProgressService>()
+                .Setup(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<Func<bool>>()))
+                .Callback<int, IReadOnlyCollection<int>, Func<bool>>((seriesId, watched, canDispatch) =>
+                {
+                    permissions.Add(canDispatch());
+                    _settings.SyncListProgress = false;
+                    permissions.Add(canDispatch());
+                });
+
+            _subject.Sync(true);
+
+            permissions.Should().Equal(true, false);
+            Stored.Watched.Should().BeTrue("a later origin opt-out does not erase successfully read local watch history");
+            _states.ForNotification(10).LastSyncUtc.Should().Be(_now);
+        }
+
+        [TestCase("disabled")]
+        [TestCase("user")]
+        [TestCase("library")]
+        [TestCase("paths")]
+        [TestCase("policy")]
+        [TestCase("notification-tags")]
+        [TestCase("series-tags")]
+        [TestCase("second-connection")]
+        [TestCase("deleted")]
+        [TestCase("read-failure")]
+        public void should_recheck_immutable_notification_scope_before_each_later_origin_target(string change)
+        {
+            _settings.SyncListProgress = true;
+            if (change == "series-tags")
+            {
+                _definition.Tags.Add(9);
+                _show.Tags.Add(9);
+                _series.Update(_show);
+            }
+
+            var permissions = new List<bool>();
+            Mocker.GetMock<IImportListProgressService>()
+                .Setup(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<Func<bool>>()))
+                .Callback<int, IReadOnlyCollection<int>, Func<bool>>((seriesId, watched, canDispatch) =>
+                {
+                    permissions.Add(canDispatch());
+                    switch (change)
+                    {
+                        case "disabled":
+                            _settings.EnableWatchedSync = false;
+                            break;
+                        case "user":
+                            _settings.WatchedUserId = "af7440e699464d958939fd71fe016d91";
+                            break;
+                        case "library":
+                            _settings.LibraryId = "af7440e699464d958939fd71fe016d91";
+                            break;
+                        case "paths":
+                            _settings.JellyfinPathPrefix = "/media";
+                            _settings.TanukarrPathPrefix = "/media";
+                            break;
+                        case "policy":
+                            _settings.UnmonitorWatchedEpisodes = true;
+                            break;
+                        case "notification-tags":
+                            _definition.Tags.Add(9);
+                            break;
+                        case "series-tags":
+                            _show.Tags.Clear();
+                            _series.Update(_show);
+                            break;
+                        case "second-connection":
+                            _definitions.Add(new NotificationDefinition { Id = 11, Implementation = "Jellyfin", Settings = _settings });
+                            break;
+                        case "deleted":
+                            _definitions.Clear();
+                            break;
+                        case "read-failure":
+                            Mocker.GetMock<INotificationRepository>().Setup(repository => repository.Find(10)).Throws(new InvalidOperationException("private failed permission read"));
+                            break;
+                    }
+
+                    permissions.Add(canDispatch());
+                });
+
+            _subject.Sync(true);
+
+            permissions.Should().Equal(true, false);
+            Stored.Watched.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_not_call_progress_for_a_later_series_after_global_writeback_is_disabled()
+        {
+            _settings.SyncListProgress = true;
+            var otherShow = _series.Insert(new Series
+            {
+                Title = "Other generated series", TvdbId = -90002, Path = "/media/Other",
+                CleanTitle = "othergeneratedseries", SortTitle = "other generated series", TitleSlug = "other-generated-series",
+                Monitored = true, Seasons = new List<Season> { new Season { SeasonNumber = 1, Monitored = true } }
+            });
+            var files = Mocker.Resolve<MediaFileRepository>();
+            var otherFile = files.Insert(new EpisodeFile
+            {
+                SeriesId = otherShow.Id, SeasonNumber = 1, RelativePath = "Episode.mkv",
+                DateAdded = _now, Quality = new QualityModel(), Languages = new List<Language> { Language.English }
+            });
+            _episodes.Insert(new Episode
+            {
+                SeriesId = otherShow.Id, SeasonNumber = 1, EpisodeNumber = 1, EpisodeFileId = otherFile.Id,
+                Monitored = true, Title = "Other generated episode"
+            });
+            _snapshot.Add(new JellyfinWatchedItem
+            {
+                Id = "3d88a080dc9b4983b10b18d21fa69e6b", Type = "Episode", Path = "/media/Other/Episode.mkv",
+                UserData = new JellyfinWatchedUserData { Played = true }
+            });
+            var calls = 0;
+            Mocker.GetMock<IImportListProgressService>()
+                .Setup(service => service.SyncProgress(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<Func<bool>>()))
+                .Callback<int, IReadOnlyCollection<int>, Func<bool>>((seriesId, watched, canDispatch) =>
+                {
+                    canDispatch().Should().BeTrue();
+                    calls++;
+                    _settings.SyncListProgress = false;
+                });
+
+            _subject.Sync(true);
+
+            calls.Should().Be(1);
+            _episodes.GetEpisodes(otherShow.Id).Single().Watched.Should().BeTrue();
         }
 
         [Test]

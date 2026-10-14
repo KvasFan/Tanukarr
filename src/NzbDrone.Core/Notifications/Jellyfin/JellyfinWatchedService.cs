@@ -70,9 +70,14 @@ namespace NzbDrone.Core.Notifications.Jellyfin
                 }
 
                 var definition = definitions[0];
+                var notificationId = definition.Id;
                 var settings = (JellyfinSettings)definition.Settings;
-                var fingerprint = Fingerprint(definition.Id, settings);
-                var state = _stateRepository.ForNotification(definition.Id);
+                var fingerprint = Fingerprint(notificationId, settings);
+                var expectedUnmonitor = settings.UnmonitorWatchedEpisodes;
+                var expectedRemonitor = settings.RemonitorUnwatchedEpisodes;
+                var expectedSyncProgress = settings.SyncListProgress;
+                var expectedTags = new HashSet<int>(definition.Tags ?? new HashSet<int>());
+                var state = _stateRepository.ForNotification(notificationId);
                 if (!force && state?.TargetFingerprint == fingerprint &&
                     (_clock.UtcNow - state.LastSyncUtc).TotalMinutes < settings.WatchedSyncIntervalMinutes)
                 {
@@ -85,9 +90,10 @@ namespace NzbDrone.Core.Notifications.Jellyfin
 
                     // A settings save/deletion during the HTTP request cannot apply an
                     // old user's data or authorize a stale monitoring/list-write policy.
-                    var current = _notificationRepository.Find(definition.Id);
+                    var current = _notificationRepository.Find(notificationId);
                     if (!IsActive(current) || Fingerprint(current.Id, (JellyfinSettings)current.Settings) != fingerprint ||
-                        !SamePolicy(settings, (JellyfinSettings)current.Settings) ||
+                        !SamePolicy((JellyfinSettings)current.Settings, expectedUnmonitor, expectedRemonitor, expectedSyncProgress) ||
+                        !SameTags(current.Tags, expectedTags) ||
                         _notificationRepository.All().Count(IsActive) != 1)
                     {
                         return;
@@ -96,24 +102,33 @@ namespace NzbDrone.Core.Notifications.Jellyfin
                     var applyInitialUnmonitor = settings.UnmonitorWatchedEpisodes &&
                         (state?.TargetFingerprint != fingerprint || !state.UnmonitorWatchedEpisodes);
                     var matchedSeries = ApplySnapshot(items, settings, fingerprint, current.Tags, applyInitialUnmonitor);
-                    state ??= new JellyfinWatchState { NotificationId = definition.Id };
+                    state ??= new JellyfinWatchState { NotificationId = notificationId };
                     state.TargetFingerprint = fingerprint;
                     state.LastSyncUtc = _clock.UtcNow;
                     state.UnmonitorWatchedEpisodes = settings.UnmonitorWatchedEpisodes;
                     _stateRepository.Upsert(state);
 
-                    if (settings.SyncListProgress)
+                    if (expectedSyncProgress)
                     {
                         // Retry even unchanged snapshots; origin writes have their own
                         // durable idempotency/watermarks and never roll back local state.
                         foreach (var seriesId in matchedSeries)
                         {
+                            // Capture the original notification scope, not a mutable settings
+                            // reference. The progress service invokes this again immediately
+                            // before every list/title target, including multiple origin lists.
+                            Func<bool> canDispatch = () => IsProgressAuthorized(notificationId, seriesId, fingerprint, expectedUnmonitor, expectedRemonitor, expectedTags);
+                            if (!canDispatch())
+                            {
+                                break;
+                            }
+
                             var watched = _episodeRepository.GetEpisodes(seriesId)
                                 .Where(episode => episode.Watched && episode.WatchedSource == fingerprint)
                                 .Select(episode => episode.Id).ToList();
                             try
                             {
-                                _progressService.SyncProgress(seriesId, watched);
+                                _progressService.SyncProgress(seriesId, watched, canDispatch);
                             }
                             catch (Exception)
                             {
@@ -126,7 +141,7 @@ namespace NzbDrone.Core.Notifications.Jellyfin
                 {
                     // Never include HTTP exception text, user names, keys or item paths.
                     // The last successful watermark is unchanged and the next tick retries.
-                    _logger.Warn("Jellyfin watched sync did not complete for connection {0}; the last successful poll remains retryable", definition.Id);
+                    _logger.Warn("Jellyfin watched sync did not complete for connection {0}; the last successful poll remains retryable", notificationId);
                 }
             }
         }
@@ -239,11 +254,42 @@ namespace NzbDrone.Core.Notifications.Jellyfin
                 definition.Settings is JellyfinSettings settings && settings.EnableWatchedSync;
         }
 
-        private static bool SamePolicy(JellyfinSettings left, JellyfinSettings right)
+        private bool IsProgressAuthorized(int notificationId, int seriesId, string fingerprint, bool unmonitor, bool remonitor, HashSet<int> tags)
         {
-            return left.UnmonitorWatchedEpisodes == right.UnmonitorWatchedEpisodes &&
-                left.RemonitorUnwatchedEpisodes == right.RemonitorUnwatchedEpisodes &&
-                left.SyncListProgress == right.SyncListProgress;
+            try
+            {
+                var current = _notificationRepository.Find(notificationId);
+                if (!IsActive(current) || _notificationRepository.All().Count(IsActive) != 1)
+                {
+                    return false;
+                }
+
+                var settings = (JellyfinSettings)current.Settings;
+                if (Fingerprint(notificationId, settings) != fingerprint ||
+                    !SamePolicy(settings, unmonitor, remonitor, true) || !SameTags(current.Tags, tags))
+                {
+                    return false;
+                }
+
+                var series = _seriesRepository.Find(seriesId);
+                return series != null && (tags.Count == 0 || (series.Tags?.Overlaps(tags) ?? false));
+            }
+            catch (Exception)
+            {
+                // Failure to re-read permission never authorizes an external mutation.
+                return false;
+            }
+        }
+
+        private static bool SamePolicy(JellyfinSettings current, bool unmonitor, bool remonitor, bool syncProgress)
+        {
+            return current.UnmonitorWatchedEpisodes == unmonitor &&
+                current.RemonitorUnwatchedEpisodes == remonitor && current.SyncListProgress == syncProgress;
+        }
+
+        private static bool SameTags(HashSet<int> current, HashSet<int> expected)
+        {
+            return current == null ? expected.Count == 0 : current.SetEquals(expected);
         }
 
         private static string Fingerprint(int notificationId, JellyfinSettings settings)

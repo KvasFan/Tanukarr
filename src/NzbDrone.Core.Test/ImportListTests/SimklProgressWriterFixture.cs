@@ -89,6 +89,15 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
+        public void should_change_target_fingerprint_when_saved_oauth_write_scope_is_revoked()
+        {
+            _settings.ScopeV2 = "media:read";
+            Subject.TryGetTarget(_definition, _series, _item, out var current).Should().BeTrue();
+            current.Fingerprint.Should().NotBe(_target.Fingerprint);
+            _requests.Should().BeEmpty();
+        }
+
+        [Test]
         public void should_not_create_membership_when_existing_list_entry_is_missing()
         {
             Respond("{\"account\":{\"id\":7}}", "[{\"simkl\":44,\"list\":null,\"result\":false}]");

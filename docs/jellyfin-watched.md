@@ -109,14 +109,29 @@ implementation avoids lowering the remote progress it observed and avoids blind
 history retries, while retaining these cross-service concurrency limitations.
 
 The persistent queue stores pending and acknowledged progress, hashed target
-identity and retry timing. It limits dispatch to **10 list/title targets per
+identity and retry timing. Queue authority includes exactly one nonempty
+Jellyfin watched-source fingerprint from the matched watched episodes, together
+with the provider target identity. Missing or mixed episode sources cannot
+authorize a write. Changing the selected Jellyfin source must reset its prior
+pending/acknowledged context before considering that source's current prefix;
+old queued progress cannot be replayed for a different user/source. Existing
+remote progress is still read and is not requested to decrease.
+It limits dispatch to **10 list/title targets per
 minute**, uses bounded provider batches, and backs off on network errors or rate
 limits. Local watched state remains saved when a provider write fails. Expired
 tokens, foreign accounts or unavailable entries require corrected authorization;
 they are not treated as successful remote updates. Polling an unchanged Jellyfin
 snapshot still retries eligible queued writes. Disabling either write opt-in
-prevents subsequent dispatches; it cannot cancel an already in-flight request
-or undo previously confirmed remote state.
+prevents subsequent dispatches; it cannot cancel an already in-flight writer
+advance, which may contain several HTTP requests, or undo previously confirmed
+remote state.
+
+The amended implementation rechecks current connection/list authorization and
+native target identity immediately before each writer advance. A late review
+found that the original candidate reused captured settings across targets and
+that provider-only queue identity could carry pending progress into a different
+Jellyfin source. That candidate's publication was cancelled. Fresh amended-source verification
+is tracked separately in the [1.0.4 ledger](releases/1.0.4-verification.md).
 
 ## API, persistence and privacy
 

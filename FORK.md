@@ -475,6 +475,12 @@ explicit episode identities/history. Unsupported mappings and public/foreign
 accounts remain read-only. Local progress is retained independently of remote
 acknowledgement. Tanukarr does not send list-status, rating or custom-membership
 changes; a provider can apply its own account rules when progress/history changes.
+Queued pending/acknowledged progress must belong to one exact nonempty Jellyfin
+episode-source fingerprint as well as the provider identity. Missing or mixed
+sources are refused; changing that source cannot replay another user's pending
+prefix. The fresh remote preflight still avoids requesting a decrease to observed
+remote progress. The original provider-only queue identity was a late-review
+defect; amended-source verification remains separate from original candidate checks.
 See [Jellyfin watched status](docs/jellyfin-watched.md) for the capability table,
 retry limits and the reviewed Unmonitarr concept/source credit.
 
