@@ -134,29 +134,34 @@ def serve_fixture(root):
                     record.update(kind="search", mediaId=matches[0]["id"])
                     response = {"data": {"Page": {"media": matches}}}
                 elif "MediaListCollection(" in query:
-                    require(variables.get("id") == "fixture-unknown" and variables.get("chunk") == 1,
-                            "Unexpected synthetic collection fallback")
-                    record.update(kind="unconfirmed-custom-list-collection")
-                    response = {"data": {"User": {"id": 900001, "name": "fixture-unknown", "mediaListOptions": {
-                        "animeList": {"customLists": ["DaiBaNanaTop", "Fixture optional"]}}}, "MediaListCollection": None},
-                        "errors": [{"message": "Synthetic collection membership unavailable"}]}
+                    username = variables.get("id")
+                    require(username in ("fixture-array", "fixture-unknown") and variables.get("chunk") == 1,
+                            "Unexpected synthetic complete account query")
+                    require(all(field in query for field in ("userId", "updatedAt", "isCustomList", "relationType(version: 2)"))
+                            and "status_in" not in query, "Complete account projection was not requested")
+                    owner = {"id": 900001, "name": username}
+                    user = dict(owner, mediaListOptions={"animeList": {"customLists": ["DaiBaNanaTop", "Fixture optional"]}})
+                    record.update(kind="complete-account-collection", unknownMembership=username == "fixture-unknown")
+                    if username == "fixture-unknown":
+                        response = {"data": {"User": user, "MediaListCollection": None},
+                                    "errors": [{"message": "Synthetic collection membership unavailable"}]}
+                    else:
+                        def entry(media_id):
+                            source = media_resource(media_id)
+                            media = {key: source[key] for key in ("id", "idMal", "type", "format", "status", "episodes", "title", "startDate", "endDate", "relations")
+                                     if key in source}
+                            return {"id": media_id + 1000000, "userId": owner["id"], "status": "CURRENT", "progress": 0,
+                                    "updatedAt": 1000, "media": media}
+                        response = {"data": {"User": user, "MediaListCollection": {
+                            "user": owner, "hasNextChunk": False, "lists": [
+                                {"name": "Watching", "isCustomList": False, "entries": [entry(media_id) for media_id in (900101, 900102, 900502)]},
+                                {"name": "DaiBaNanaTop", "isCustomList": True, "entries": [entry(900101)]},
+                                {"name": "Fixture optional", "isCustomList": True, "entries": []}]}}}
                 elif "User(name:" in query and "mediaListOptions" in query:
                     require(variables.get("username") == "fixture-array", "Unknown synthetic fixture username")
                     record.update(kind="custom-list-names")
                     response = {"data": {"User": {"mediaListOptions": {"animeList": {
                         "customLists": ["DaiBaNanaTop", "Fixture optional"]}}}}}
-                elif "mediaList(userName:" in query:
-                    username = variables.get("id")
-                    require(username in ("fixture-array", "fixture-unknown") and variables.get("page") == 1,
-                            "Unknown synthetic list fixture")
-                    require("customListEntries:" in query, "Typed custom-list membership alias was not requested")
-                    rows = []
-                    for media_id, membership in ((900101, True), (900102, False), (900502, None)):
-                        rows.append({"status": "CURRENT", "progress": 0, "media": media_resource(media_id),
-                                     "customLists": None, "customListEntries": None if username == "fixture-unknown"
-                                     else [] if membership is None else [{"name": "DaiBaNanaTop", "enabled": membership}]})
-                    record.update(kind="custom-list-entries", entryCount=len(rows), unknownMembership=username == "fixture-unknown")
-                    response = {"data": {"Page": {"pageInfo": {"currentPage": 1, "hasNextPage": False}, "mediaList": rows}}}
                 else:
                     raise SmokeFailure("Only catalogue and synthetic list fixtures are supported")
                 record["status"] = 200
@@ -636,7 +641,7 @@ class AnimeGroups(ContainerSmoke):
         status, body = self.raw("/api/v5/importlist/test", "POST", resource)
         # Only the generated fixture account is used here; no private response
         # bodies may be included by a runner using a real account.
-        require(status == 204, "Valid typed-array fallback did not pass the real unsaved provider Test: "
+        require(status == 204, "Valid complete-account custom groups did not pass the real unsaved provider Test: "
                 + body.decode("utf-8", errors="replace"))
         time.sleep(2)
         options = self.api_json("/api/v5/importlist/action/getCustomLists", "POST", resource)["options"]
@@ -645,16 +650,16 @@ class AnimeGroups(ContainerSmoke):
         fields["username"]["value"] = "fixture-unknown"
         time.sleep(2)
         status, body = self.raw("/api/v5/importlist/test", "POST", resource)
-        require(status == 400 and "custom list membership" in body.decode("utf-8", errors="replace").lower(),
-                "Unknown map and array membership failed to trigger conservative retention protection")
+        require(status == 400 and "complete account list" in body.decode("utf-8", errors="replace").lower(),
+                "Unconfirmed complete collection failed to trigger conservative retention protection")
         require(self.api_json("/api/v5/importlist") == before, "Unsaved Test or custom-list name action saved provider settings")
-        self.list_test_observations = {"knownArrayTestStatus": 204, "unknownMembershipTestStatus": 400,
+        self.list_test_observations = {"completeAccountTestStatus": 204, "unknownMembershipTestStatus": 400,
                                        "customListNames": [item["value"] for item in options],
                                        "savedImportListsBefore": len(before), "savedImportListsAfter": len(before),
                                        "excludedFixtureMediaId": 900101, "knownFalseFixtureMediaId": 900102,
                                        "knownEmptyMovieFixtureMediaId": 900502}
-        self.check("real unsaved AniList provider Test accepts explicit typed-array membership and read-only names without saving")
-        self.check("unknown map plus unknown array returns HTTP 400 retention guard with saved import lists unchanged")
+        self.check("real unsaved AniList provider Test accepts complete custom groups and read-only names without saving")
+        self.check("unconfirmed complete account returns HTTP 400 retention guard with saved import lists unchanged")
 
     def edits_and_restart(self):
         original = self.get(self.series[900402])

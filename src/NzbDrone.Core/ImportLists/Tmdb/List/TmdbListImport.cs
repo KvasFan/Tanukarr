@@ -61,6 +61,7 @@ public class TmdbListImport : TmdbImportBase<TmdbListSettings>
 
     private ImportListFetchResult FetchComposed(bool recordStatus)
     {
+        using var snapshots = recordStatus ? ImportListSnapshotScope.BeginIfNeeded() : ImportListSnapshotScope.Begin();
         return ImportListSetOperations.Fetch(
             (ImportListDefinition)Definition,
             _importListStatusService,
@@ -74,6 +75,13 @@ public class TmdbListImport : TmdbImportBase<TmdbListSettings>
 
     private List<ImportListItemInfo> ReadCompleteList(string listId, bool applyFilters)
     {
+        var key = ImportListSnapshotScope.Fingerprint("TmdbSelectedList-v1", Settings.BaseUrl, Settings.AuthToken, Settings.AccountId, listId);
+        var items = ImportListSnapshotScope.Current?.GetOrLoad(key, () => ReadListSnapshot(listId)) ?? ReadListSnapshot(listId);
+        return ImportListSnapshotScope.CopyItems(items);
+    }
+
+    private List<ImportListItemInfo> ReadListSnapshot(string listId)
+    {
         if (!TmdbListSettings.IsValidListId(listId))
         {
             throw new ImportListException(null, "Enter a positive numeric TMDB list ID.");
@@ -83,12 +91,14 @@ public class TmdbListImport : TmdbImportBase<TmdbListSettings>
         int? totalPages = null;
         int? expectedItems = null;
         var rawItems = 0;
+        long payloadBytes = 0;
         for (var page = 1; page <= ImportListSetOperations.MaxPages; page++)
         {
             var request = new HttpRequestBuilder(Settings.BaseUrl).Accept(HttpAccept.Json)
                 .SetHeader("Authorization", $"Bearer {Settings.AuthToken}")
                 .Resource($"4/list/{listId}").AddQueryParam("page", page).Build();
             var response = FetchImportListResponse(new ImportListRequest(request));
+            ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
             var body = JObject.Parse(response.Content);
             if (body["results"] is not JArray items || body["page"]?.Type != JTokenType.Integer || (int)body["page"] != page ||
                 body["total_pages"]?.Type != JTokenType.Integer || (int)body["total_pages"] < 0 ||

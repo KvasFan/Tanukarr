@@ -20,6 +20,7 @@ public class ImportListResource : ProviderResource<ImportListResource>
     public int ListOrder { get; set; }
     public TimeSpan MinRefreshInterval { get; set; }
     public TagExistingType TagExisting { get; set; }
+    public ImportListMetadataSource? PreferredMetadataSource { get; set; }
 }
 
 public class ImportListResourceMapper : ProviderResourceMapper<ImportListResource, ImportListDefinition>
@@ -41,6 +42,7 @@ public class ImportListResourceMapper : ProviderResourceMapper<ImportListResourc
         resource.ListOrder = (int)definition.ListType;
         resource.MinRefreshInterval = definition.MinRefreshInterval;
         resource.TagExisting = definition.TagExisting;
+        resource.PreferredMetadataSource = definition.PreferredMetadataSource;
 
         return resource;
     }
@@ -61,6 +63,7 @@ public class ImportListResourceMapper : ProviderResourceMapper<ImportListResourc
         definition.ListType = resource.ListType;
         definition.MinRefreshInterval = resource.MinRefreshInterval;
         definition.TagExisting = resource.TagExisting;
+        definition.PreferredMetadataSource = resource.PreferredMetadataSource ?? existingDefinition?.PreferredMetadataSource ?? ImportListMetadataSource.Automatic;
 
         return definition;
     }

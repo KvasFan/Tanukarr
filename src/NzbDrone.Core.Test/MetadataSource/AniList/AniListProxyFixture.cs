@@ -13,8 +13,11 @@ using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
 using NzbDrone.Core.AniList;
 using NzbDrone.Core.Exceptions;
+using NzbDrone.Core.ImportLists;
+using NzbDrone.Core.ImportLists.AniList;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.MetadataSource.AniList;
+using NzbDrone.Core.MetadataSource.AniList.Resource;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Core.Tv;
 using NzbDrone.Test.Common;
@@ -372,6 +375,73 @@ namespace NzbDrone.Core.Test.MetadataSource.AniList
             fetch.Should().Throw<SeriesNotFoundException>();
             Subject.SearchForNewSeriesByAniListId(id).Should().BeEmpty();
             Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.IsAny<HttpRequest>()), Times.Never());
+        }
+
+        private static MediaInfo PublicMedia(int id, bool complete = true)
+        {
+            return new MediaInfo
+            {
+                Id = id,
+                Type = "ANIME",
+                Format = "TV",
+                Title = new MediaTitles { UserPreferred = "Public root " + id },
+                Relations = complete ? new AniListRelationConnection { Edges = new List<AniListRelationEdge>() } : null
+            };
+        }
+
+        [Test]
+        public void should_reuse_complete_scoped_relations_beyond_the_public_ttl_cache_capacity_without_extra_http()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            var snapshot = AniListPublicRelationSnapshot.From(Enumerable.Range(1, 600).Select(id => PublicMedia(id)));
+            scope.GetOrLoad(ImportListSnapshotScope.Fingerprint("public-relation-fixture"), () => snapshot, value => value.PayloadBytes);
+            for (var id = 1; id <= 600; id++)
+            {
+                Subject.GetAnimeRelations(id.ToString()).ForeignId.Should().Be(id.ToString());
+            }
+
+            var changed = Subject.GetAnimeRelations("1");
+            changed.Title = "Changed by caller";
+            Subject.GetAnimeRelations("1").Title.Should().Be("Public root 1");
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.IsAny<HttpRequest>()), Times.Never());
+        }
+
+        [Test]
+        public void should_keep_consumed_public_relations_in_the_normal_cache_after_private_scope_disposal()
+        {
+            using (var scope = ImportListSnapshotScope.Begin())
+            {
+                var snapshot = AniListPublicRelationSnapshot.From(new[] { PublicMedia(253) });
+                scope.GetOrLoad(ImportListSnapshotScope.Fingerprint("public-relation-fixture"), () => snapshot, value => value.PayloadBytes);
+                Subject.GetAnimeRelations("253").Title.Should().Be("Public root 253");
+            }
+
+            AnotherInstance().GetAnimeRelations("253").Title.Should().Be("Public root 253");
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.IsAny<HttpRequest>()), Times.Never());
+        }
+
+        [Test]
+        public void should_fetch_relations_outside_the_scoped_account_instead_of_inventing_an_empty_graph()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            var snapshot = AniListPublicRelationSnapshot.From(new[] { PublicMedia(1) });
+            scope.GetOrLoad(ImportListSnapshotScope.Fingerprint("public-relation-fixture"), () => snapshot, value => value.PayloadBytes);
+            GivenResponses(CompleteMedia(253, 1, false, 1));
+            Subject.GetAnimeRelations("253").Title.Should().Be("Test anime");
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.IsAny<HttpRequest>()), Times.Once());
+        }
+
+        [Test]
+        public void should_not_seed_missing_relation_fields_or_incomplete_full_metadata()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            var snapshot = AniListPublicRelationSnapshot.From(new[] { PublicMedia(253, false) });
+            scope.GetOrLoad(ImportListSnapshotScope.Fingerprint("public-relation-fixture"), () => snapshot, value => value.PayloadBytes);
+            GivenResponses(CompleteMedia(253, 1, false, 1));
+            Subject.GetSeriesInfo(253).Item1.Title.Should().Be("Test anime");
+            Mocker.GetMock<IAniListRequestService>().Verify(service => service.Execute(It.Is<HttpRequest>(request =>
+                Encoding.UTF8.GetString(request.ContentData).Contains("airingSchedule"))),
+                Times.Once());
         }
     }
 }

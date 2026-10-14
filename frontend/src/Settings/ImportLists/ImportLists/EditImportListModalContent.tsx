@@ -76,6 +76,7 @@ function EditImportListModalContent({
     qualityProfileId,
     seriesType,
     language,
+    preferredMetadataSource,
     seasonFolder,
     tags,
     tagExisting,
@@ -289,6 +290,29 @@ function EditImportListModalContent({
                 includeAny={false}
                 onChange={handleInputChange}
                 {...language}
+              />
+            </FormRow>
+
+            <FormRow>
+              <FormLabel>
+                {translate('ImportListsPreferredMetadataSource')}
+              </FormLabel>
+              <FormInputHelpText
+                text={translate('ImportListsPreferredMetadataSourceHelpText')}
+              />
+              <FormInput
+                type={inputTypes.SELECT}
+                name="preferredMetadataSource"
+                values={[
+                  { key: 'automatic', value: translate('Automatic') },
+                  { key: 'tvdb', value: 'TheTVDB' },
+                  { key: 'tmdb', value: 'TMDB' },
+                  { key: 'aniList', value: 'AniList' },
+                  { key: 'myAnimeList', value: 'MyAnimeList (Jikan)' },
+                ]}
+                {...preferredMetadataSource}
+                value={preferredMetadataSource?.value ?? 'automatic'}
+                onChange={handleInputChange}
               />
             </FormRow>
 

@@ -75,12 +75,14 @@ namespace NzbDrone.Core.Test.ImportListTests
             Mocker.GetMock<IImportListRepository>().Verify(s => s.UpdateSettings(It.IsAny<ImportListDefinition>()), Times.Never());
         }
 
-        [Test]
-        public void should_accept_an_explicit_empty_custom_list_array()
+        [TestCase("[]")]
+        [TestCase("null")]
+        public void should_accept_explicit_empty_or_nullable_custom_list_names_without_replacing_stored_selections(string names)
         {
-            GivenResponse("{\"data\":{\"User\":{\"mediaListOptions\":{\"animeList\":{\"customLists\":[]}}}}}");
+            GivenResponse("{\"data\":{\"User\":{\"mediaListOptions\":{\"animeList\":{\"customLists\":" + names + "}}}}}");
 
             Load().Should().BeEmpty();
+            _settings.IncludedCustomLists.Should().Equal("Stored unavailable name");
             _settings.ExcludedCustomLists.Should().Equal("Excluded");
         }
 
@@ -88,7 +90,6 @@ namespace NzbDrone.Core.Test.ImportListTests
         [TestCase("{}")]
         [TestCase("{\"data\":{\"User\":null}}")]
         [TestCase("{\"data\":{\"User\":{\"mediaListOptions\":null}}}")]
-        [TestCase("{\"data\":{\"User\":{\"mediaListOptions\":{\"animeList\":{\"customLists\":null}}}}}")]
         [TestCase("{\"data\":{\"User\":{\"mediaListOptions\":{\"animeList\":{\"customLists\":[null]}}}}}")]
         [TestCase("{\"data\":{\"User\":{\"mediaListOptions\":{\"animeList\":{\"customLists\":[true]}}}}}")]
         [TestCase("{\"data\":{\"User\":{\"mediaListOptions\":{\"animeList\":{\"customLists\":[\" \" ]}}}}}")]

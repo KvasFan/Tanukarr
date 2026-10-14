@@ -156,14 +156,29 @@ namespace NzbDrone.Core.ImportLists.Simkl
 
         private HashSet<int> ReadList(SimklUserSettings settings, int id)
         {
+            var key = ImportListSnapshotScope.Fingerprint(
+                "SimklCustomMembership-v1",
+                settings.BaseUrl,
+                settings.ClientIdV2,
+                settings.AuthUser,
+                settings.AccessToken,
+                settings.ScopeV2,
+                settings.ShowType.ToString(CultureInfo.InvariantCulture),
+                id.ToString(CultureInfo.InvariantCulture));
+            return ImportListSnapshotScope.Current?.GetOrLoad(key, () => ReadListSnapshot(settings, id)) ?? ReadListSnapshot(settings, id);
+        }
+
+        private HashSet<int> ReadListSnapshot(SimklUserSettings settings, int id)
+        {
             var result = new HashSet<int>();
             var expectedType = settings.ShowType == (int)SimklUserShowType.Anime ? "anime" : "tv";
             SimklCustomPagination first = null;
             string name = null;
             var ownerId = 0;
+            long payloadBytes = 0;
             for (var page = 1; page <= 20; page++)
             {
-                var resource = ReadResource<SimklCustomListPage>(settings, $"lists/{id}?limit={PageLimit}&page={page}");
+                var resource = ReadResource<SimklCustomListPage>(settings, $"lists/{id}?limit={PageLimit}&page={page}", ref payloadBytes);
                 ValidatePaging(resource.Pagination, page, ref first);
                 if (resource.Id != id || resource.MediaType != expectedType || resource.Name.IsNullOrWhiteSpace() ||
                     resource.User?.Id is not > 0 || resource.Items == null || resource.Items.Count > PageLimit || resource.Counts?.Items != first.TotalItems)
@@ -203,8 +218,16 @@ namespace NzbDrone.Core.ImportLists.Simkl
         private T ReadResource<T>(SimklUserSettings settings, string resource)
             where T : new()
         {
+            long payloadBytes = 0;
+            return ReadResource<T>(settings, resource, ref payloadBytes);
+        }
+
+        private T ReadResource<T>(SimklUserSettings settings, string resource, ref long payloadBytes)
+            where T : new()
+        {
             var request = SimklV2RequestBuilder.Build(resource, settings);
             var response = _requests.Execute(request);
+            ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
             try
             {
                 var json = JObject.Parse(response.Content);

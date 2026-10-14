@@ -33,5 +33,9 @@ public class ImportListController : ProviderControllerBase<ImportListResource, I
             .NotNull()
             .Must(l => IsoLanguages.Get(l!) != null)
             .WithMessage("Invalid Language value");
+
+        SharedValidator.RuleFor(c => c.PreferredMetadataSource)
+            .Must(source => !source.HasValue || Enum.IsDefined(source.Value))
+            .WithMessage("Select a supported metadata source or Automatic.");
     }
 }

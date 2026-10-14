@@ -50,6 +50,7 @@ namespace NzbDrone.Core.ImportLists
 
         public ImportListFetchResult Fetch()
         {
+            using var snapshots = ImportListSnapshotScope.BeginIfNeeded();
             var result = new ImportListFetchResult();
 
             var importLists = _importListFactory.AutomaticAddEnabled();
@@ -133,6 +134,7 @@ namespace NzbDrone.Core.ImportLists
 
         public ImportListFetchResult FetchSingleList(ImportListDefinition definition)
         {
+            using var snapshots = ImportListSnapshotScope.BeginIfNeeded();
             var result = new ImportListFetchResult();
 
             var importList = _importListFactory.GetInstance(definition);

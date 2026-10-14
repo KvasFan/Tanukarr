@@ -20,6 +20,7 @@ namespace NzbDrone.Core.ImportLists
         public bool SeasonFolder { get; set; }
         public string RootFolderPath { get; set; }
         public TagExistingType TagExisting { get; set; }
+        public ImportListMetadataSource PreferredMetadataSource { get; set; }
 
         [MemberwiseEqualityIgnore]
         public override bool Enable => EnableAutomaticAdd;

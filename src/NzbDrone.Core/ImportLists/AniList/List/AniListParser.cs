@@ -56,21 +56,31 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 throw new ImportListException(importListResponse, "AniList returned a list entry without a valid media ID. The previous list will be retained.");
             }
 
-            NormalizeCustomListMembership(page.MediaList, importListResponse);
+            pageInfo = page.PageInfo;
+            return ParseEntries(page.MediaList, importListResponse);
+        }
 
-            if (HasExclusions() && page.MediaList.Any(item => item.CustomLists == null))
+        public IList<ImportListItemInfo> ParseEntries(IEnumerable<MediaList> entries, ImportListResponse importListResponse = null)
+        {
+            var result = new List<ImportListItemInfo>();
+            foreach (var item in entries)
             {
-                throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for exclusions. The previous list will be retained.");
-            }
+                if (item?.Media == null || item.Media.Id <= 0)
+                {
+                    throw new ImportListException(importListResponse, "AniList returned a list entry without a valid media ID. The previous list will be retained.");
+                }
 
-            if ((_settings.IncludedCustomLists?.Any() == true || _settings.CustomList.IsNotNullOrWhiteSpace()) &&
-                page.MediaList.Any(item => item.CustomLists == null))
-            {
-                throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for inclusion filters. The previous list will be retained.");
-            }
+                NormalizeCustomListMembership(new[] { item }, importListResponse);
+                if (HasExclusions() && item.CustomLists == null)
+                {
+                    throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for exclusions. The previous list will be retained.");
+                }
 
-            foreach (var item in page.MediaList)
-            {
+                if (HasInclusions() && item.CustomLists == null)
+                {
+                    throw new ImportListException(importListResponse, "AniList returned an entry without custom list membership needed for inclusion filters. The previous list will be retained.");
+                }
+
                 var media = item.Media;
 
                 // Excluded custom-list membership removes the media from the selected
@@ -98,7 +108,6 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 result.Add(entry);
             }
 
-            pageInfo = page.PageInfo;
             return result.Where(item => !ExcludedMediaIds.Contains(item.AniListId)).ToList();
         }
 

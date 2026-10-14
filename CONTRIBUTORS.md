@@ -65,6 +65,11 @@ local commit makes their original author name unreachable from HEAD.
   regression and browser checks; verification scope is recorded separately.
   Tanukarr 1.0.1 preparation adds group-slot collision recovery, its regression
   coverage, release documentation and GitHub repository artwork integration.
+  Tanukarr 1.0.5 preparation adds complete import-scoped snapshots, private
+  account/grant isolation, public relation-cache prefill, optional per-list
+  metadata preference and accurate native-ID/internal-placeholder logs. This is
+  new local adaptation of the credited provider implementations, not reassigned
+  authorship or a claim of completed release verification.
 - **Translators, reviewers and automation**: retained in the full Git
   register below and in each source commit; issue numbers alone are not
   evidence of implementation authorship.
@@ -81,6 +86,7 @@ local commit makes their original author name unreachable from HEAD.
 | Tanukarr 1.0.2 final exclusion-veto selection, simplified/compatible list controls, complete AniList membership recovery, provider capability audit, direct MyAnimeList account-list adaptation and release documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original providers/authors remain credited and fresh execution/publication evidence belongs to the 1.0.2 verification report |
 | Tanukarr 1.0.3 hourly quality-size editors, mixed-profile summaries, guarded global size updates, heuristic codec-size decisions, inherited save-error adaptation, upstream audit and English documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original Sonarr quality UI/backend and parsing authors remain credited below; new execution/publication evidence belongs to the 1.0.3 report |
 | Tanukarr 1.0.4 inherited manual-backup timing correction, selected-user Jellyfin watched state, monitoring ownership, native-account progress writers, persistent retries, disposable runtime fixtures and English release documentation | OpenAI Codex, based on GPT-6 | Actual local session identity; original Sonarr/provider implementations and Baretsky's Unmonitarr concept remain separately credited; execution/publication evidence belongs to the new 1.0.4 ledger |
+| Tanukarr 1.0.5 complete scoped list snapshots, provider-specific local filtering, private-account/grant isolation, public AniList relation reuse, optional future-addition metadata preference, native-ID log clarity and English guides | OpenAI Codex, based on GPT-6 | Actual local session identity; original Xabis, Private Contributor, KakarottoCake and other provider authors remain credited; new execution and publication evidence belongs only to the 1.0.5 ledger |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -92,22 +98,24 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The **Tanukarr 1.0.4** candidate is being prepared under
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), targeting `v1.0.4`
-and `ghcr.io/kvasexpert/tanukarr:1.0.4`. Its
-[release notes](docs/releases/1.0.4.md) and
-[verification ledger](docs/releases/1.0.4-verification.md) distinguish pending
-publication from newly executed tests. The preceding published release is
-**Tanukarr 1.0.3**, with Git tag
-`v1.0.3`, under the GitHub profile
+The **Tanukarr 1.0.5** candidate is prepared and locally tested under
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), targeting `v1.0.5`
+and `ghcr.io/kvasexpert/tanukarr:1.0.5`. Its
+[release notes](docs/releases/1.0.5.md) and
+[verification ledger](docs/releases/1.0.5-verification.md) distinguish pending
+publication and owner deployment from newly executed tests. The final release
+commit is recorded only after it exists; preparation images are explicitly
+labeled `worktree-1.0.5`. The preceding published release is
+**Tanukarr 1.0.4**, with Git tag
+`v1.0.4`, under the GitHub profile
 [KvasExpert](https://github.com/KvasExpert/Tanukarr). The publishing account
 maintains this release; it is not credited as the original author of inherited
 features. Naming, version metadata, installation YAML, workflow and release
 packaging are local adaptation work; original feature authors and their source
 commits remain credited below. Release publication does not transfer credit
 for inherited features to the publishing account. The
-[release notes](docs/releases/1.0.3.md), [preparation ledger](docs/releases/1.0.3-verification.md),
-[publication follow-up](docs/releases/1.0.3-publication.md) and
+[release notes](docs/releases/1.0.4.md), [preparation ledger](docs/releases/1.0.4-verification.md),
+[publication follow-up](docs/releases/1.0.4-publication.md) and
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
 The historical [0.0.1](docs/releases/0.0.1.md) and
@@ -333,6 +341,22 @@ Private Contributor (source history); KakarottoCake (fork maintainer).
 Local adaptation: `390437b59`, `c4bd6a625`.
 
 ### AniList multiple-list inclusion and exclusion precedence
+
+For the prepared 1.0.5 source, **OpenAI Codex, based on GPT-6**, replaces the
+active paged-list/membership-recovery path with complete account-collection
+snapshots and local filtering, including custom-only groups. Temporary private
+reuse is scoped to provider, account, grant and request projection; the public
+relation cache remains separate. The same local work adds the optional common
+metadata preference, positive supplied-ID fallback, preserved native exclusions
+and clear native-provider/internal-placeholder logs. It does not add guessed
+cross-catalogue mappings or move existing library paths. See the
+[snapshot guide](docs/import-list-snapshots.md) and
+[new verification ledger](docs/releases/1.0.5-verification.md) for the prepared
+contract and actual execution status.
+
+The original provider and custom-list source authors below remain credited.
+The following dated paragraphs describe earlier adaptation checkpoints and
+their original response-recovery behavior, rather than the active 1.0.5 route.
 
 The new controls extend the existing provider and custom-list feature:
 

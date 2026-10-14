@@ -73,19 +73,16 @@ def list_membership(media_id, control, include_override=None):
 
 
 def list_row(media_id, control, include_override=None):
-    membership = list_membership(media_id, control, include_override)
-    if include_override is not None:
-        membership["Never"] = not include_override
     resource = media_resource(media_id)
     if media_id == IDS[3]:
         resource["status"] = control.get("overlapReleaseStatus", "FINISHED")
-    row = {"status": control.get("overlapListStatus", "CURRENT") if media_id == IDS[3] else "CURRENT",
-           "progress": 0, "media": resource}
-    shape = "omitted" if control.get("unknownMembership") else control.get("membershipShape", "map")
-    if shape != "omitted":
-        row["customLists"] = membership if shape == "map" else None
-        row["customListEntries"] = ([{"name": name, "enabled": enabled} for name, enabled in membership.items()]
-                                    if shape in ("map", "array") else None)
+    public = {key: resource[key] for key in ("id", "idMal", "type", "format", "status", "episodes", "title", "startDate", "endDate", "relations")
+              if key in resource}
+    if control.get("collectionFailure") == "missingId" and media_id == IDS[2]:
+        public.pop("id", None)
+    row = {"id": media_id + 1000000, "userId": 940001, "updatedAt": 1000,
+           "status": control.get("overlapListStatus", "CURRENT") if media_id == IDS[3] else "CURRENT",
+           "progress": 0, "media": public}
     return row
 
 
@@ -105,15 +102,15 @@ def membership_collection(control, chunk):
     members = list(IDS[(chunk - 1) * 2:chunk * 2]) if chunks else list(IDS)
     if chunks and chunk == 2:
         members.append(IDS[0])
-    if control.get("collectionFailure") == "missingId":
-        members = [media_id for media_id in members if media_id != IDS[2]]
     def entries(ids):
-        return [{"media": {"id": media_id, "type": "ANIME"}} for media_id in ids]
+        return [list_row(media_id, control) for media_id in ids]
     lists = [{"name": "Watching", "isCustomList": False, "entries": entries(members)}]
     for name in names:
         ids = [] if control.get("collectionEmptyCustomMembership") else [
             media_id for media_id in members if list_membership(media_id, control).get(name)]
         lists.append({"name": name, "isCustomList": True, "entries": entries(ids)})
+    if control.get("overlapDuplicateOrder") == "excludedThenIncluded":
+        lists[1], lists[2] = lists[2], lists[1]
     collection_owner = dict(owner)
     if control.get("collectionFailure") == "wrongOwner":
         collection_owner = {"id": 940002, "name": "generated-other-account"}
@@ -159,25 +156,12 @@ def serve_fixture(root):
                 if "MediaListCollection(" in query:
                     require(variables.get("id") == "generated-reliability-account", "Unexpected collection account")
                     chunk = int(variables["chunk"])
-                    require(chunk in (1, 2) and "isCustomList" in query and "mediaListOptions" in query,
-                            "Unexpected authoritative collection query")
-                    record.update(kind="membership-collection", chunk=chunk, failure=control.get("collectionFailure"),
+                    require(chunk in (1, 2) and all(field in query for field in
+                            ("isCustomList", "mediaListOptions", "userId", "updatedAt", "relationType(version: 2)"))
+                            and "status_in" not in query, "Unexpected complete account collection query")
+                    record.update(kind="account-collection", chunk=chunk, failure=control.get("collectionFailure"),
                                   unavailable=bool(control.get("unknownMembership")))
                     value = membership_collection(control, chunk)
-                elif "mediaList(userName:" in query:
-                    require(variables.get("id") == "generated-reliability-account", "Unexpected fixture account")
-                    page = int(variables["page"])
-                    require(page in (1, 2) and "customListEntries:" in query, "Unexpected fixture list query")
-                    rows = []
-                    for media_id in IDS[(page - 1) * 2:page * 2]:
-                        override = None
-                        if media_id == IDS[3] and control.get("overlapDuplicateOrder"):
-                            override = control["overlapDuplicateOrder"] == "excludedThenIncluded"
-                        rows.append(list_row(media_id, control, override))
-                    if page == 1 and control.get("overlapDuplicateOrder"):
-                        rows.append(list_row(IDS[3], control, control["overlapDuplicateOrder"] == "includedThenExcluded"))
-                    record.update(kind="list", page=page, unknownMembership=bool(control.get("unknownMembership")))
-                    value = {"data": {"Page": {"pageInfo": {"currentPage": page, "hasNextPage": page == 1}, "mediaList": rows}}}
                 elif "Media(" in query:
                     media_id = int(variables["id"])
                     require(media_id in IDS, "Unknown synthetic media ID")
@@ -401,12 +385,12 @@ class AniListReliability(_groups.AnimeGroups):
         self.check("metadata 429 keeps the completed membership snapshot and earlier successful batch insertion")
         self.check("terminal quota retries are bounded and stop remaining AniList batch traffic")
 
-        before = sum(r.get("kind") == "list" for r in self.records())
+        before = sum(r.get("kind") == "account-collection" for r in self.records())
         self.control(blockedMetadataIds=[])
         self.command({"name": "ImportListSync"})
         self.idle()
         require(self.library_ids() == list(IDS[:3]), "Automatic cached membership retry did not add remaining series")
-        after = sum(r.get("kind") == "list" for r in self.records())
+        after = sum(r.get("kind") == "account-collection" for r in self.records())
         require(after == before, "Automatic quota recovery repeated the successful list GraphQL pagination")
         self.observations["cachedRecovery"] = {"listRequestsBefore": before, "listRequestsAfter": after, "libraryIds": self.library_ids()}
         self.check("automatic ImportListSync resumes unchanged successful membership without a fresh list request")
@@ -421,8 +405,15 @@ class AniListReliability(_groups.AnimeGroups):
         for media_id in IDS[:3]:
             require(sum(r.get("kind") == "metadata" and r.get("mediaId") == media_id and r["status"] == 200 for r in records) == 1,
                     "Public metadata cache did not coalesce add and refresh")
-        require(sum(r.get("kind") == "relations" for r in records) == 1, "Shared relation cache did not remove repeated chain lookups")
-        self.check("one successful metadata fetch per series and reused root/neighbor relation data across add and refresh")
+        relation_requests = sum(r.get("kind") == "relations" for r in records)
+        require(relation_requests == 0, "Complete account direct relations did not eliminate standalone chain lookups")
+        self.observations["sameFiniteAccountTransport"] = {
+            "checkpoint1_0_4": {"selectedListPagesPerFetch": 2, "standaloneRelationRequestsAcrossRecovery": 1,
+                                "scope": "Recorded previous fixture protocol/checkpoint, not a second live binary run"},
+            "current": {"accountEntries": len(IDS), "chunksPerUnfilteredCompleteFetch": 1,
+                        "standaloneRelationRequestsAcrossRecovery": relation_requests,
+                        "metadataRefreshStillUsesLiveRequests": True}}
+        self.check("complete account direct relations eliminate standalone grouping requests while full metadata refresh remains live")
         self.until(lambda: all((self.root / "config" / "MediaCover" / str(s["id"]) / "poster.jpg").is_file()
                                for s in self.api_json("/api/v5/series")), "Generated cover images did not initialize")
         for series in self.api_json("/api/v5/series"):
@@ -437,10 +428,10 @@ class AniListReliability(_groups.AnimeGroups):
         resource = self.api_json("/api/v5/importlist/" + str(self.definition["id"]))
         next(field for field in resource["fields"] if field["name"] == "excludedCustomLists")["value"] = ["Never", "After edit"]
         self.control(unknownMembership=True, excludedOnlyIds=[IDS[2], IDS[3]])
-        before = sum(r.get("kind") == "list" for r in self.records())
+        before = sum(r.get("kind") == "account-collection" for r in self.records())
         self.api_json("/api/v5/importlist/" + str(self.definition["id"]) + "?skipTesting=true", "PUT", resource)
         self.idle()
-        require(sum(r.get("kind") == "list" for r in self.records()) > before, "Changed settings did not perform a new full fetch attempt")
+        require(sum(r.get("kind") == "account-collection" for r in self.records()) > before, "Changed settings did not perform a new full fetch attempt")
         require(self.stored_ids() == list(IDS[:3]), "Unknown authoritative membership replaced the previous saved list")
         self.command({"name": "ImportListSync"})
         self.idle()
@@ -451,10 +442,10 @@ class AniListReliability(_groups.AnimeGroups):
         resource = self.api_json("/api/v5/importlist/" + str(self.definition["id"]))
         status, _body = self.raw("/api/v5/importlist/test", "POST", resource)
         require(status == 204, "Synthetic recovered connection test failed")
-        before = sum(r.get("kind") == "list" for r in self.records())
+        before = sum(r.get("kind") == "account-collection" for r in self.records())
         self.command({"name": "ImportListSync"})
         self.idle()
-        require(self.library_ids() == list(IDS[:2]) and sum(r.get("kind") == "list" for r in self.records()) == before,
+        require(self.library_ids() == list(IDS[:2]) and sum(r.get("kind") == "account-collection" for r in self.records()) == before,
                 "Connection Test recreated an invalid successful-fetch witness or resumed stale rows")
         self.check("a later successful Test cannot restore the invalidated cached membership witness")
         self.command({"name": "ImportListSync", "definitionId": self.definition["id"]})
@@ -598,8 +589,8 @@ class AniListReliability(_groups.AnimeGroups):
             require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
                     "An included copy on another page defeated the authoritative exclusion")
             duplicate_orders[order] = self.library_ids()
-        self.observations["crossPageExclusionVeto"] = duplicate_orders
-        self.check("exclusions win over earlier/later included copies across pages using native media identity")
+        self.observations["customGroupOrderExclusionVeto"] = duplicate_orders
+        self.check("exclusions win regardless of custom-group ordering using native media identity")
 
         self.control(overlapDuplicateOrder=None, overlapExcluded=False, overlapListStatus="PLANNING")
         self.fresh_sync()
@@ -635,25 +626,25 @@ class AniListReliability(_groups.AnimeGroups):
         self.idle()
 
     def sparse_membership_recovery(self):
-        before = sum(r.get("kind") == "membership-collection" for r in self.records())
+        before = sum(r.get("kind") == "account-collection" for r in self.records())
         self.control(membershipShape="array")
         self.fresh_sync()
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
                 "Explicit array flags changed known membership")
-        require(sum(r.get("kind") == "membership-collection" for r in self.records()) == before,
-                "Known typed-array membership unnecessarily fetched a collection")
-        self.check("complete typed-array flags retain membership without an extra collection request")
+        require(sum(r.get("kind") == "account-collection" for r in self.records()) - before == 1,
+                "Fresh sync did not fetch the complete account exactly once")
+        self.check("complete account groups establish custom membership without per-entry map or array fallback")
 
         self.control(membershipShape="null", collectionChunks=True)
-        before = sum(r.get("kind") == "membership-collection" for r in self.records())
+        before = sum(r.get("kind") == "account-collection" for r in self.records())
         self.fresh_sync()
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
-                "Sparse null map/array fields did not recover the authoritative custom memberships")
-        after = sum(r.get("kind") == "membership-collection" for r in self.records())
+                "Complete multi-chunk account groups did not recover authoritative custom memberships")
+        after = sum(r.get("kind") == "account-collection" for r in self.records())
         require(after - before == 2, "Sparse membership repeated collection pagination for each list page")
         self.observations["sparseNullRecovery"] = {"collectionRequestsPerSync": after - before,
                                                  "collectionChunks": 2, "storedMembershipIds": self.stored_ids()}
-        self.check("sparse null map/array membership recovers from two complete trusted collection chunks once per sync")
+        self.check("two complete account chunks establish all custom memberships once per sync without a second filtered feed")
 
         resource = self.saved_definition()
         self.field(resource, "includedCustomLists")["value"] = []
@@ -686,11 +677,11 @@ class AniListReliability(_groups.AnimeGroups):
         self.check("partial, missing-ID, wrong-owner and unavailable collections reject unknown membership and retain the complete saved list")
 
         self.control(membershipShape="null", collectionChunks=False, collectionFailure=None)
-        before = sum(r.get("kind") == "membership-collection" for r in self.records())
+        before = sum(r.get("kind") == "account-collection" for r in self.records())
         self.fresh_sync()
         require(self.library_ids() == list(IDS[:3]) and self.stored_ids() == list(IDS[:3]),
                 "Recovered complete collection did not resume a valid fresh sync")
-        require(sum(r.get("kind") == "membership-collection" for r in self.records()) - before == 1,
+        require(sum(r.get("kind") == "account-collection" for r in self.records()) - before == 1,
                 "Recovery did not execute a fresh complete collection request")
         self.check("a later complete collection restores fresh synchronization after conservative membership retention")
 
@@ -757,7 +748,8 @@ def main():
                 "fixtureConfigOwnership": audit.fixture_config_ownership,
                 "scope": {"trustedLocalAniListMock": True, "liveAniListTested": False, "privateAccountUsed": False,
                           "realLibraryTested": False, "downloadsTested": False, "tlsValidationDisabled": False,
-                          "sparseNullMembershipSimulated": True, "liveSparseNullFailureReproduced": False,
+                          "completeAccountCollectionSimulated": True, "perEntryMembershipFieldsNotRequested": True,
+                          "liveSparseNullFailureReproduced": False,
                           "externalProviderRoutingEnabled": False, "mainConfigurationAccessed": False,
                           "databaseInspection": "read-only plus one targeted legacy-settings seed in the owned stopped fixture"},
                 "cleanupComplete": cleanup_complete,

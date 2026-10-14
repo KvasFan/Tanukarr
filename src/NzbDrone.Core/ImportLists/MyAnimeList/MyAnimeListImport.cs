@@ -131,6 +131,7 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
 
         public override ImportListFetchResult Fetch()
         {
+            using var snapshots = ImportListSnapshotScope.BeginIfNeeded();
             try
             {
                 CheckToken();
@@ -154,6 +155,7 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
 
         protected override void Test(List<ValidationFailure> failures)
         {
+            using var snapshots = ImportListSnapshotScope.Begin();
             try
             {
                 CheckToken(false);
@@ -171,17 +173,30 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
             Settings.Validate().ThrowOnError();
             var generator = (MyAnimeListRequestGenerator)GetRequestGenerator();
             var parser = (MyAnimeListParser)GetParser();
-            var items = new List<ImportListItemInfo>();
+            var key = ImportListSnapshotScope.Fingerprint("MyAnimeListAccount-v1", generator.GetRequest(0).Url.FullUri, Settings.ClientId, Settings.AccessToken);
+            var snapshot = ImportListSnapshotScope.Current?.GetOrLoad(key, () => ReadCompleteAccount(generator), value => value.PayloadBytes)
+                ?? ReadCompleteAccount(generator);
+            return parser.ParseValidatedItems(snapshot.Items).ToList();
+        }
+
+        private MyAnimeListAccountSnapshot ReadCompleteAccount(MyAnimeListRequestGenerator generator)
+        {
+            var snapshot = new MyAnimeListAccountSnapshot();
             var offset = 0;
             for (var page = 1; page <= MaxPages; page++)
             {
                 var request = generator.GetRequest(offset);
                 var response = FetchImportListResponse(request);
-                items.AddRange(parser.ParseResponse(response, out var next, out var count));
+                var payloadBytes = snapshot.PayloadBytes;
+                ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
+                snapshot.PayloadBytes = payloadBytes;
+                var resource = MyAnimeListParser.ReadPage(response);
+                snapshot.Items.AddRange(resource.Animes);
+                var next = resource.Paging.Next;
+                var count = resource.Animes.Count;
                 if (next.IsNullOrWhiteSpace())
                 {
-                    items.RemoveAll(item => parser.ExcludedMediaIds.Contains(item.MalId));
-                    return items;
+                    return snapshot;
                 }
 
                 var current = new Uri(request.Url.FullUri);
@@ -202,6 +217,12 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
             }
 
             throw new ImportListException(null, "MyAnimeList exceeded the 100-page safety limit. The previous list will be retained.");
+        }
+
+        private sealed class MyAnimeListAccountSnapshot
+        {
+            public List<MyAnimeListItem> Items { get; } = new();
+            public long PayloadBytes { get; set; }
         }
 
         protected override ImportListResponse FetchImportListResponse(ImportListRequest request)

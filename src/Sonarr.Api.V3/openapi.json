@@ -9900,6 +9900,16 @@
         },
         "additionalProperties": false
       },
+      "ImportListMetadataSource": {
+        "enum": [
+          "automatic",
+          "tvdb",
+          "tmdb",
+          "aniList",
+          "myAnimeList"
+        ],
+        "type": "string"
+      },
       "ImportListResource": {
         "type": "object",
         "properties": {
@@ -9995,6 +10005,9 @@
           },
           "tagExisting": {
             "$ref": "#/components/schemas/TagExistingType"
+          },
+          "preferredMetadataSource": {
+            "$ref": "#/components/schemas/ImportListMetadataSource"
           }
         },
         "additionalProperties": false

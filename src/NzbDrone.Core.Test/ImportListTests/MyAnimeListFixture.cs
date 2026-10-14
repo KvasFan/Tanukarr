@@ -345,5 +345,107 @@ namespace NzbDrone.Core.Test.ImportListTests
             Subject.Test().IsValid.Should().BeTrue();
             Mocker.GetMock<IImportListRepository>().Verify(repository => repository.UpdateSettings(It.IsAny<ImportListDefinition>()), Times.Never());
         }
+
+        [Test]
+        public void should_read_one_complete_account_once_then_apply_different_definition_filters_locally()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            _settings.ListStatuses = new[] { (int)MyAnimeListStatus.Watching };
+            _settings.IncludedTags = new[] { "Pinned" };
+            _settings.ExcludedTags = new[] { "Never" };
+            GivenResponses(Page(
+                null,
+                Row(21, "watching", "finished_airing", "Pinned"),
+                Row(22, "plan_to_watch", "currently_airing", "Seasonal"),
+                Row(23, "watching", "finished_airing", "Pinned", "Never")));
+
+            var first = Subject.Fetch();
+            first.Series.Select(item => item.MalId).Should().Equal(21);
+            Subject.Definition = new ImportListDefinition { Id = 20, Name = "Second definition", Settings = _settings };
+            _settings.ListStatuses = new[] { (int)MyAnimeListStatus.PlanToWatch };
+            _settings.IncludedTags = new[] { "Seasonal" };
+            _settings.ExcludedTags = Array.Empty<string>();
+            var second = Subject.Fetch();
+
+            second.AnyFailure.Should().BeFalse();
+            second.Series.Select(item => item.MalId).Should().Equal(22);
+            first.Series.Should().OnlyContain(item => item.ImportListId == 10);
+            second.Series.Should().OnlyContain(item => item.ImportListId == 20);
+            _requests.Should().ContainSingle();
+            _requests.Single().Url.Query.Should().NotContain("status=");
+        }
+
+        [TestCase("username")]
+        [TestCase("token")]
+        [TestCase("client")]
+        public void should_not_share_an_account_snapshot_after_native_account_or_authority_changes(string changed)
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            GivenResponses(Page(null, Row(21)), Page(null, Row(22)));
+            Subject.Fetch().Series.Single().MalId.Should().Be(21);
+            if (changed == "username")
+            {
+                _settings.Username = "another-public-user";
+            }
+            else if (changed == "token")
+            {
+                _settings.AccessToken = "another-generated-token";
+            }
+            else
+            {
+                _settings.ClientId = "another-generated-client";
+            }
+
+            Subject.Fetch().Series.Single().MalId.Should().Be(22);
+            _requests.Should().HaveCount(2);
+        }
+
+        [Test]
+        public void should_fetch_fresh_data_for_test_even_inside_an_active_import_with_changed_filters()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            GivenResponses(Page(null, Row(21)), Page(null, Row(22, "watching", "finished_airing", "Pinned")));
+            Subject.Fetch().AnyFailure.Should().BeFalse();
+            _settings.IncludedTags = new[] { "Pinned" };
+            Subject.Test().IsValid.Should().BeTrue();
+            _requests.Should().HaveCount(2);
+            ImportListSnapshotScope.Current.Should().BeSameAs(scope);
+            Subject.Fetch().Series.Should().BeEmpty();
+            _requests.Should().HaveCount(2);
+            Mocker.GetMock<IImportListRepository>().Verify(repository => repository.UpdateSettings(It.IsAny<ImportListDefinition>()), Times.Never());
+        }
+
+        [Test]
+        public void should_share_an_incomplete_read_failure_without_publishing_partial_membership_and_retry_next_import()
+        {
+            GivenResponses(Page("https://api.myanimelist.net/v2/users/@me/animelist?offset=1", Row(21)), "{\"error\":\"incomplete\"}");
+            using (ImportListSnapshotScope.Begin())
+            {
+                Subject.Fetch().AnyFailure.Should().BeTrue();
+                Subject.Fetch().Series.Should().BeEmpty();
+                _requests.Should().HaveCount(2);
+                Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(10), Times.Never());
+            }
+
+            ImportListSnapshotScope.Current.Should().BeNull();
+            GivenResponses(Page(null, Row(22)));
+            Subject.Fetch().Series.Single().MalId.Should().Be(22);
+            _requests.Should().HaveCount(3);
+            ExceptionVerification.ExpectedWarns(2);
+        }
+
+        [Test]
+        public void should_refuse_an_oversized_account_response_instead_of_replacing_membership_with_a_prefix()
+        {
+            var row = Row(21);
+            row["node"]["title"] = new string('a', (int)ImportListSnapshotScope.MaxSnapshotBytes);
+            GivenResponses(Page(null, row));
+            var result = Subject.Fetch();
+            result.AnyFailure.Should().BeTrue();
+            result.Series.Should().BeEmpty();
+            Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(10), Times.Never());
+            ImportListSnapshotScope.Current.Should().BeNull();
+            ExceptionVerification.ExpectedWarns(1);
+        }
     }
 }

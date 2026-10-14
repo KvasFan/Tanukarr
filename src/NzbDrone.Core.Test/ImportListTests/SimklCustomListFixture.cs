@@ -7,6 +7,7 @@ using Moq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using NzbDrone.Common.Http;
+using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.Exceptions;
 using NzbDrone.Core.ImportLists.Simkl;
 using NzbDrone.Core.ImportLists.Simkl.User;
@@ -53,6 +54,20 @@ namespace NzbDrone.Core.Test.ImportListTests
                 ["pagination"] = new JObject { ["page"] = page, ["limit"] = 500, ["total_items"] = count, ["total_pages"] = (count + 499) / 500 },
                 ["items"] = new JArray(values.Select(value => new JObject { ["type"] = "anime", ["ids"] = new JObject { ["simkl_id"] = value } }))
             };
+        }
+
+        [Test]
+        public void should_reuse_complete_custom_memberships_across_different_local_filter_sets()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            _settings.IncludedCustomListIds = new[] { "1" };
+            _settings.ExcludedCustomListIds = new[] { "2" };
+            GivenResponses(Page(1, new[] { 1, 2 }), Page(2, new[] { 2 }), Page(3, new[] { 3, 4 }));
+            Subject.Read(_settings).Items.Select(item => item.MalId).Should().Equal(101);
+            _settings.IncludedCustomListIds = new[] { "1", "3" };
+            Subject.Read(_settings).Items.Select(item => item.MalId).Should().Equal(101, 103);
+            _requests.Should().HaveCount(3);
+            _requests.Select(request => request.Url.Path).Should().Equal("/lists/1", "/lists/2", "/lists/3");
         }
 
         private void GivenResponses(params JObject[] bodies)

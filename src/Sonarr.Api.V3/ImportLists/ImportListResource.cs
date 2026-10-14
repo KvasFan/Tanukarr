@@ -20,6 +20,7 @@ namespace Sonarr.Api.V3.ImportLists
         public int ListOrder { get; set; }
         public TimeSpan MinRefreshInterval { get; set; }
         public TagExistingType TagExisting { get; set; }
+        public ImportListMetadataSource? PreferredMetadataSource { get; set; }
     }
 
     public class ImportListResourceMapper : ProviderResourceMapper<ImportListResource, ImportListDefinition>
@@ -46,6 +47,7 @@ namespace Sonarr.Api.V3.ImportLists
             resource.ListOrder = (int)definition.ListType;
             resource.MinRefreshInterval = definition.MinRefreshInterval;
             resource.TagExisting = definition.TagExisting;
+            resource.PreferredMetadataSource = definition.PreferredMetadataSource;
 
             return resource;
         }
@@ -71,6 +73,7 @@ namespace Sonarr.Api.V3.ImportLists
             definition.ListType = resource.ListType;
             definition.MinRefreshInterval = resource.MinRefreshInterval;
             definition.TagExisting = resource.TagExisting;
+            definition.PreferredMetadataSource = resource.PreferredMetadataSource ?? existingDefinition?.PreferredMetadataSource ?? ImportListMetadataSource.Automatic;
 
             return definition;
         }

@@ -5,6 +5,46 @@ is recorded in [CONTRIBUTORS.md](../../CONTRIBUTORS.md); the
 [documentation index](../../docs/README.md) links the build, integration and
 security reports.
 
+**Tanukarr 1.0.5 is prepared and locally tested; publication is pending.** Its
+[snapshot and identity guide](../../docs/import-list-snapshots.md) describes
+complete private account/list snapshots, local filters, safe per-operation
+reuse and the optional new-series metadata preference. Public metadata and
+relations outside the snapshot can still need requests. The
+[provider matrix](../../docs/library-tools.md#provider-capabilities) defines
+which selectors and snapshot boundaries each service supports. Earlier 1.0.4
+runtime results remain in their [published checkpoint](../../docs/releases/1.0.4-publication.md);
+they do not verify the new source. New execution and publication results belong
+in the [1.0.5 ledger](../../docs/releases/1.0.5-verification.md).
+
+For 1.0.5, use a built candidate explicitly supplied through `--image`; these
+development commands do not establish that a `1.0.5` registry tag is published.
+Snapshot fixtures must verify complete collection/list reads before filtering,
+custom-only membership, failures retaining saved data, isolation between
+accounts/grants and release of temporary references. Preference checks must
+exercise v3/v5 persistence and omission compatibility, positive supplied IDs,
+fallback, exclusion retention and unchanged existing-series paths/numbering.
+
+## Complete import-scoped snapshots
+
+Run the new mandatory snapshot gate with an already built image:
+
+```sh
+python3 docker/tests/import-snapshots.py --image tanukarr:verified \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report import-snapshots-report.json
+```
+
+The fixture checks complete AniList chunks and MAL pages, reuse by two saved
+definitions during one operation, a fresh subsequent synchronization, independent
+local filters, grant isolation, partial-read retention and shared public relation
+data during grouping. Nullable AniList progress/update fields, absent custom-name
+options and unnamed standard groups exercise valid API responses; identity and
+completion safeguards still apply. It tests actual importer/API/database behavior
+with generated responses on trusted local TLS and an internal Docker network.
+No owner's configuration or private provider account is used. JSON records the
+actual image identity, executed checks and cleanup result. The final local
+1.0.5 candidate passed 20 checks; this is not a hosted or published-image result.
+
 ## Anime season grouping
 
 For a 1.0.2 or main-source build containing the grouping feature, run from a
@@ -43,13 +83,14 @@ expressions, native group-file token samples and legacy naming PUTs are checked.
 Grouping edits and restart preserve the imported bytes. This
 does not establish media-server season remapping or a real-library migration.
 
-The local mock also supplies synthetic custom-list names, a null membership map
-with valid typed-array flags/known empty membership, and a response with both
-membership shapes unknown. The real unsaved AniList provider Test and name action
-must accept the known response, reject unknown membership conservatively and
-leave saved import-list settings unchanged. Generated test credentials do not
-authenticate a real account. A fresh-schema run does not itself prove an upgrade
-from an older migration; actual migration fixtures provide separate evidence.
+The unsaved AniList Test and name action must leave saved import-list settings
+unchanged. The prepared 1.0.5 path starts with a complete selected-user anime
+collection and evaluates custom-group membership locally, including entries
+hidden from ordinary status groups. Incomplete or conflicting collections must
+retain previous membership. Generated test credentials do not authenticate a
+real account. Earlier typed-array/missing-map recovery scenarios are historical
+checks of the pre-1.0.5 importer. A fresh-schema run does not prove an upgrade
+from an older migration; migration fixtures provide separate evidence.
 
 Only this invocation's three containers, two networks and temporary data are removed in
 cleanup. `--keep` retains them for inspection; disposable API and CA keys remain
@@ -93,15 +134,17 @@ The [reliability checkpoint](../../docs/anilist-react-reliability-2026-10-13.md)
 records that checkpoint's image, 12 passing checks and earlier fixture-helper failures.
 These checks use synthetic data; they are not a live-account or owner-library
 test. A different image or modified script needs its own recorded execution.
-The same final-image fixture also passed its 12 checks with actual host
+At that historical checkpoint, the same image's fixture also passed its 12
+checks with actual host
 UID/GID 1001 and the supplementary Docker socket group, including cleanup.
 That runner-ownership repeat is separate evidence, not 12 additional distinct
 runtime cases.
 
-The 1.0.2 scenario additionally checks the final exclusion-veto selection rule,
-overlapping custom names across duplicate pages, and complete-collection recovery
-when both membership shapes are unavailable. Partial/wrong-owner/missing-ID
-collections must retain the previous list. New execution counts belong to the
+The historical 1.0.2 scenario checks the final exclusion-veto selection rule,
+overlapping custom names across duplicate pages and complete-collection recovery
+after missing membership fields. The prepared 1.0.5 importer uses complete
+collections as its primary input instead. Partial/wrong-owner/missing-ID
+collections must still retain the previous list. The earlier counts belong to the
 [1.0.2 verification report](../../docs/releases/1.0.2-verification.md), rather
 than those earlier twelve checks.
 
@@ -372,8 +415,11 @@ includes TMDB/Trakt/MDBList selections and complete Plex Watchlist pagination;
 SIMKL V2 has its own additional required fixture. Version 1.0.3 adds the
 editable quality/codec fixture. Version 1.0.4 adds actual backup/task timing and
 local Jellyfin watched-state fixtures. Smoke and functional/security plus eleven
-additional reports form thirteen publishing gates. Release packaging
-aggregates the eleven additional reports in `provider-verification.json` and
+additional reports formed thirteen publishing gates for 1.0.4. Version 1.0.5
+adds the complete import-scoped snapshot gate, making fourteen required reports:
+smoke, functional/security and twelve additional provider/feature reports.
+Release packaging aggregates those twelve additional reports in
+`provider-verification.json` and
 records their actual check counts in `release-manifest.json`, using the same
 tested image throughout.
 The additional

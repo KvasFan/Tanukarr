@@ -41,11 +41,18 @@ namespace NzbDrone.Core.ImportLists.Simkl
 
         public SimklV2WatchlistSnapshot Read(SimklUserSettings settings)
         {
+            var key = ImportListSnapshotScope.Fingerprint("SimklInventory-v1", Scope(settings), settings.AccessToken, settings.ScopeV2);
+            return ImportListSnapshotScope.Current?.GetOrLoad(key, () => ReadInventory(settings)) ?? ReadInventory(settings);
+        }
+
+        private SimklV2WatchlistSnapshot ReadInventory(SimklUserSettings settings)
+        {
             var scope = Scope(settings);
             lock (_locks.Get(scope, () => new object()))
             {
                 var previous = Load(scope);
-                var activities = ReadObject(SimklV2RequestBuilder.Build("sync/activities", settings));
+                long payloadBytes = 0;
+                var activities = ReadObject(SimklV2RequestBuilder.Build("sync/activities", settings), ref payloadBytes);
                 var bucket = settings.ShowType == (int)SimklUserShowType.Anime ? "anime" : "tv_shows";
                 ValidateActivities(activities, bucket);
                 if (previous != null)
@@ -72,7 +79,7 @@ namespace NzbDrone.Core.ImportLists.Simkl
                         request.Url = request.Url.AddQueryParam("date_from", since);
                     }
 
-                    foreach (var row in ReadRows(ReadObject(request), type, false))
+                    foreach (var row in ReadRows(ReadObject(request, ref payloadBytes), type, false))
                     {
                         rows[row.Show.Ids.Simkl] = row;
                     }
@@ -82,20 +89,23 @@ namespace NzbDrone.Core.ImportLists.Simkl
                 {
                     var request = SimklV2RequestBuilder.Build("sync/all-items/" + type, settings);
                     request.Url = request.Url.AddQueryParam("extended", "simkl_ids_only");
-                    var current = ReadRows(ReadObject(request), type, true).Select(row => row.Show.Ids.Simkl).ToHashSet();
+                    var current = ReadRows(ReadObject(request, ref payloadBytes), type, true).Select(row => row.Show.Ids.Simkl).ToHashSet();
                     foreach (var id in rows.Keys.Where(id => !current.Contains(id)).ToArray())
                     {
                         rows.Remove(id);
                     }
                 }
 
-                return new SimklV2WatchlistSnapshot
+                var snapshot = new SimklV2WatchlistSnapshot
                 {
                     Scope = scope,
                     BaselineRevision = previous?.Revision,
                     Activities = activities,
                     Rows = rows.Values.OrderBy(row => row.Show.Ids.Simkl).ToList()
                 };
+                long inventoryBytes = 0;
+                ImportListSnapshotScope.AddPayloadBytes(ref inventoryBytes, Json.ToJson(snapshot));
+                return snapshot;
             }
         }
 
@@ -110,6 +120,16 @@ namespace NzbDrone.Core.ImportLists.Simkl
             lock (_locks.Get(scope, () => new object()))
             {
                 var previous = Load(scope);
+                if (snapshot.CommittedRevision != null)
+                {
+                    if (previous?.Revision != snapshot.CommittedRevision)
+                    {
+                        throw Failure("Another sync replaced the staged Simkl inventory after its commit.");
+                    }
+
+                    return;
+                }
+
                 if (previous?.Revision != snapshot.BaselineRevision)
                 {
                     throw Failure("Another sync committed newer Simkl inventory. Retry using its saved cursor.");
@@ -153,6 +173,7 @@ namespace NzbDrone.Core.ImportLists.Simkl
                     }
 
                     File.Move(temporary, path, true);
+                    snapshot.CommittedRevision = stored.Revision;
                 }
                 finally
                 {
@@ -174,6 +195,11 @@ namespace NzbDrone.Core.ImportLists.Simkl
 
             try
             {
+                if (new FileInfo(path).Length > ImportListSnapshotScope.MaxSnapshotBytes)
+                {
+                    throw Failure("The saved Simkl inventory exceeds the response safety limit.");
+                }
+
                 var stored = JsonConvert.DeserializeObject<SimklV2WatchlistSnapshot>(File.ReadAllText(path), new JsonSerializerSettings { DateParseHandling = DateParseHandling.None });
                 if (stored?.Scope != scope || string.IsNullOrEmpty(stored.Revision) || stored.Activities == null || stored.Rows == null ||
                     stored.Rows.Any(row => row?.Show?.Ids?.Simkl is not > 0 || !Statuses.Contains(row.Status, StringComparer.Ordinal)) ||
@@ -190,9 +216,10 @@ namespace NzbDrone.Core.ImportLists.Simkl
             }
         }
 
-        private JObject ReadObject(NzbDrone.Common.Http.HttpRequest request)
+        private JObject ReadObject(NzbDrone.Common.Http.HttpRequest request, ref long payloadBytes)
         {
             var response = _requests.Execute(request);
+            ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
             try
             {
                 using var reader = new JsonTextReader(new StringReader(response.Content)) { DateParseHandling = DateParseHandling.None };
@@ -289,6 +316,8 @@ namespace NzbDrone.Core.ImportLists.Simkl
         public string Revision { get; set; }
         [JsonIgnore]
         public string BaselineRevision { get; set; }
+        [JsonIgnore]
+        internal string CommittedRevision { get; set; }
         public JObject Activities { get; set; }
         public List<SimklSeriesResource> Rows { get; set; }
     }

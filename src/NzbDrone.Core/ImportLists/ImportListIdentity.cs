@@ -38,8 +38,38 @@ namespace NzbDrone.Core.ImportLists
             return exclusion.TvdbId > 0 && series.TvdbId > 0 && exclusion.TvdbId == series.TvdbId;
         }
 
-        public static MetadataSourceType? GetSource(ImportListItemInfo item)
+        public static bool IsExcluded(ImportListExclusion exclusion, ImportListItemInfo item)
         {
+            if (exclusion.MetadataSource != MetadataSourceType.Tvdb && exclusion.ForeignId.IsNotNullOrWhiteSpace())
+            {
+                return int.TryParse(exclusion.ForeignId, NumberStyles.None, CultureInfo.InvariantCulture, out var id) &&
+                    id > 0 && GetId(item, exclusion.MetadataSource) == id;
+            }
+
+            return exclusion.TvdbId > 0 && item.TvdbId > 0 && exclusion.TvdbId == item.TvdbId;
+        }
+
+        public static MetadataSourceType? GetPreferredSource(ImportListMetadataSource preference)
+        {
+            return preference switch
+            {
+                ImportListMetadataSource.Automatic => null,
+                ImportListMetadataSource.Tvdb => MetadataSourceType.Tvdb,
+                ImportListMetadataSource.Tmdb => MetadataSourceType.Tmdb,
+                ImportListMetadataSource.AniList => MetadataSourceType.AniList,
+                ImportListMetadataSource.MyAnimeList => MetadataSourceType.MyAnimeList,
+                _ => throw new InvalidOperationException("Unsupported preferred metadata source.")
+            };
+        }
+
+        public static MetadataSourceType? GetSource(ImportListItemInfo item, ImportListMetadataSource preference = ImportListMetadataSource.Automatic)
+        {
+            var preferred = GetPreferredSource(preference);
+            if (preferred.HasValue && GetId(item, preferred.Value) > 0)
+            {
+                return preferred;
+            }
+
             if (item.TvdbId > 0)
             {
                 return MetadataSourceType.Tvdb;
@@ -63,9 +93,9 @@ namespace NzbDrone.Core.ImportLists
             return null;
         }
 
-        public static Series CreateSeries(ImportListItemInfo item, ISearchForNewSeries lookup, Language language)
+        public static Series CreateSeries(ImportListItemInfo item, ISearchForNewSeries lookup, Language language, ImportListMetadataSource preference = ImportListMetadataSource.Automatic)
         {
-            var source = GetSource(item);
+            var source = GetSource(item, preference);
 
             if (!source.HasValue)
             {
@@ -78,13 +108,7 @@ namespace NzbDrone.Core.ImportLists
                 throw new InvalidOperationException("This list item does not supply a supported show ID.");
             }
 
-            var id = source.Value switch
-            {
-                MetadataSourceType.Tvdb => item.TvdbId,
-                MetadataSourceType.AniList => item.AniListId,
-                MetadataSourceType.Tmdb => item.TmdbId,
-                _ => item.MalId
-            };
+            var id = GetId(item, source.Value);
 
             var series = new Series
             {
@@ -111,6 +135,18 @@ namespace NzbDrone.Core.ImportLists
             }
 
             return series;
+        }
+
+        private static int GetId(ImportListItemInfo item, MetadataSourceType source)
+        {
+            return source switch
+            {
+                MetadataSourceType.Tvdb => item.TvdbId,
+                MetadataSourceType.AniList => item.AniListId,
+                MetadataSourceType.Tmdb => item.TmdbId,
+                MetadataSourceType.MyAnimeList => item.MalId,
+                _ => 0
+            };
         }
     }
 }

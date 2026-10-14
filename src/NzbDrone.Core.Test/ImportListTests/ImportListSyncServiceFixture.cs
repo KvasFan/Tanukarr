@@ -839,6 +839,74 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
+        public void should_apply_a_list_provider_preference_to_new_series_only()
+        {
+            WithList(1, true);
+            ((ImportListDefinition)_importLists[0].Definition).PreferredMetadataSource = ImportListMetadataSource.MyAnimeList;
+            _importListFetch.Series = new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { ImportListId = 1, AniListId = 21, MalId = 42 }
+            };
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(items =>
+                items.Count == 1 && items[0].MetadataSource == MetadataSourceType.MyAnimeList && items[0].ForeignId == "42" && items[0].TvdbId == 0),
+                true),
+                Times.Once());
+        }
+
+        [Test]
+        public void should_keep_an_existing_series_source_numbering_and_path_when_the_list_preference_changes()
+        {
+            WithList(1, true);
+            WithTagExisting(TagExistingType.Add, 10);
+            ((ImportListDefinition)_importLists[0].Definition).PreferredMetadataSource = ImportListMetadataSource.MyAnimeList;
+            var existing = new Series
+            {
+                Id = 5, TvdbId = -7, MetadataSource = MetadataSourceType.AniList, ForeignId = "21",
+                Path = "/generated/library/Existing Anime/Season 03", SeasonFolder = false,
+                Seasons = new List<Season> { new Season { SeasonNumber = 1, Monitored = false } }
+            };
+            _importListFetch.Series = new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { ImportListId = 1, AniListId = 21, MalId = 42 }
+            };
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetAllSeries()).Returns(new List<Series> { existing });
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetSeries(It.IsAny<IEnumerable<int>>())).Returns(new List<Series> { existing });
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(items => items.Count == 0), true), Times.Once());
+            Assert.That(existing.MetadataSource, Is.EqualTo(MetadataSourceType.AniList));
+            Assert.That(existing.ForeignId, Is.EqualTo("21"));
+            Assert.That(existing.TvdbId, Is.EqualTo(-7));
+            Assert.That(existing.Path, Is.EqualTo("/generated/library/Existing Anime/Season 03"));
+            Assert.That(existing.Seasons.Single().SeasonNumber, Is.EqualTo(1));
+            Assert.That(existing.Seasons.Single().Monitored, Is.False);
+            Mocker.GetMock<ISeriesService>().Verify(service => service.UpdateTags(It.Is<List<Series>>(items => items.Count == 1 && items[0].Tags.Contains(10))), Times.Once());
+        }
+
+        [Test]
+        public void should_preserve_native_global_exclusions_when_a_second_catalog_is_selected()
+        {
+            WithList(1, true);
+            ((ImportListDefinition)_importLists[0].Definition).PreferredMetadataSource = ImportListMetadataSource.MyAnimeList;
+            _importListFetch.Series = new List<ImportListItemInfo>
+            {
+                new ImportListItemInfo { ImportListId = 1, AniListId = 21, MalId = 42 }
+            };
+            Mocker.GetMock<IImportListExclusionService>().Setup(service => service.All()).Returns(new List<ImportListExclusion>
+            {
+                new ImportListExclusion { MetadataSource = MetadataSourceType.AniList, ForeignId = "21", TvdbId = -7 }
+            });
+
+            Subject.Execute(_commandAll);
+
+            Mocker.GetMock<IAddSeriesService>().Verify(service => service.AddSeries(It.Is<List<Series>>(items => items.Count == 0), true), Times.Once());
+        }
+
+        [Test]
         public void should_honor_an_exclusion_for_a_deleted_native_anilist_entry()
         {
             WithList(1, true);

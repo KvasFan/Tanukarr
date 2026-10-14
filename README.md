@@ -4,7 +4,15 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.0.4** manages **TV series and anime** in one Sonarr-derived application.
+**Tanukarr 1.0.5 is prepared and locally tested; publication is pending.** It
+supports **TV series and anime** in one Sonarr-derived application. This source
+adds complete import-scoped list snapshots and an optional metadata-provider
+preference for future list additions. The solution build, 7,998 executed native
+tests, 115 frontend tests and fourteen runtime reports totaling 251 checks are recorded in the
+[1.0.5 verification ledger](docs/releases/1.0.5-verification.md), including their
+scope and remaining dependency findings. Hosted CI, public assets/image and the
+owner upgrade remain pending; the published 1.0.4 evidence below is separate.
+
 The [1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
 is published and the preserved local deployment is running. Its exact source,
 assets and all thirteen hosted runtime gates (231 checks), including real
@@ -20,7 +28,7 @@ and `59c22e859`), Kakarotto features, compatible
 gaboy and ikatun features, AniList identity/list fixes and security hardening.
 These are pinned Git snapshots, not a promise to track the latest upstream head.
 Get the source from [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr)
-and read the [release notes for 1.0.4](docs/releases/1.0.4.md). Published versions
+and read the [prepared release notes for 1.0.5](docs/releases/1.0.5.md). Published versions
 and assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
 The historical [1.0.3 verification report](docs/releases/1.0.3-verification.md)
 and [publication follow-up](docs/releases/1.0.3-publication.md) preserve that
@@ -32,7 +40,7 @@ The historical
 [1.0.1 report](docs/releases/1.0.1-verification.md) retains its original evidence.
 The [Docker installation guide](docs/docker-installation.md) explains GHCR pulls,
 complete Compose YAML, configuration, permissions, authentication and updates.
-Version 1.0.4 retains [series, anime and movie groups](docs/anime-season-groups.md)
+The current source retains [series, anime and movie groups](docs/anime-season-groups.md)
 introduced in 1.0.1:
 official prequel/sequel discovery, manual overrides and one anime presentation
 with configurable season, story-arc and movie folders for newly generated paths.
@@ -160,6 +168,23 @@ and Jaro-Winkler scoring. Release matching can use alternative titles supplied
 by the owning provider, including English and romaji names for anime; matching
 still follows the configured series and episode numbering.
 
+**Complete list snapshots and provider choice** — the prepared 1.0.5 source
+reads complete eligible account/list data before applying each import
+definition's filters locally. Reuse is limited to matching provider, account,
+grant and request scope during one operation; temporary private snapshots are
+released afterward. Saved membership and SIMKL's incremental baseline remain
+necessary. Public metadata and relations outside the collection may still need
+requests and remain subject to provider quotas. See the
+[snapshot and identity guide](docs/import-list-snapshots.md) and
+[provider capability matrix](docs/library-tools.md#provider-capabilities).
+
+**Metadata provider for new series** defaults to **Automatic**. An explicit
+catalogue is used only when the list supplies its positive ID; an unavailable
+ID keeps the existing automatic fallback. Existing series retain their source,
+numbering and paths. AniList and MyAnimeList may still need an internal negative
+TVDB slot while retaining their real native IDs. The field does not manufacture
+cross-catalogue mappings or turn an AniList number into a TheTVDB number.
+
 **AniList custom lists** — target your own custom lists alongside Planning and
 Watching. Tanukarr supports multiple included lists, excluded lists and
 the existing Import checkboxes for account-list and media-release states.
@@ -178,15 +203,17 @@ name becomes an **Included Custom Lists** tag, so its filter stays visible and
 can be edited there. The [settings cleanup checkpoint](docs/anilist-settings-cleanup-2026-10-13.md)
 records this later source change and its verification scope.
 The earlier [membership and priority checkpoint](docs/anilist-membership-priority-2026-10-13.md)
-records an intermediate inclusion-first development rule. Version 1.0.2 uses
-the final exclusion-veto rule and retains complete-collection recovery for
-otherwise unknown membership; see the [new release verification](docs/releases/1.0.2-verification.md).
+records an intermediate inclusion-first development rule. The final
+exclusion-veto rule remains. The historical
+[1.0.2 report](docs/releases/1.0.2-verification.md) records the previous paged
+membership-recovery implementation; 1.0.5 instead starts with the complete
+selected user's anime collection, including custom groups. Incomplete or
+ambiguous collection data retains previous membership.
 
-Version 1.0.1 includes grouped AniList settings and **Load custom lists** name
-autocomplete while preserving manual names and OAuth. A typed-array membership
-fallback accepts explicit valid flags when AniList's normal map is unavailable;
-unknown membership retains the previous list. Loading names or testing unsaved
-settings does not save or sync the connection.
+Grouped AniList settings and **Load custom lists** retain name autocomplete,
+literal manual names and OAuth. Loading names or testing unsaved settings does
+not save or sync the connection. Their temporary scope is separate from a
+saved synchronization and its private snapshots.
 
 Version 1.0.1 includes progress-preserving metadata
 imports, eligible saved-list retries on the normal five-minute task and bounded

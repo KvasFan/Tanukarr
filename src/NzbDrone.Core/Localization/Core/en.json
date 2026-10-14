@@ -2736,5 +2736,7 @@
   "NotificationsJellyfinSettingsTanukarrPathPrefixHelpText": "Matching absolute media root as seen by Tanukarr. Episodes are matched by exact imported-file paths rather than titles or grouped folder numbers.",
   "ImportListsSyncWatchedProgress": "Update watched progress",
   "ImportListsSyncWatchedProgressHelpText": "Allow the Jellyfin watched integration to advance this account's existing watched progress. Requires authorized account access and the Jellyfin progress option. Other list fields are preserved.",
-  "ImportListsSimklSyncWatchedProgressHelpText": "Requires your own SIMKL AUTH V2 app, an authorized media:write grant and exact native media identities. Enable this option before authorizing again to grant write access. Existing read-only tokens remain read-only."
+  "ImportListsSimklSyncWatchedProgressHelpText": "Requires your own SIMKL AUTH V2 app, an authorized media:write grant and exact native media identities. Enable this option before authorizing again to grant write access. Existing read-only tokens remain read-only.",
+  "ImportListsPreferredMetadataSource": "Metadata provider for new series",
+  "ImportListsPreferredMetadataSourceHelpText": "Use this catalogue when the list supplies its positive ID; otherwise keep the available provider through Automatic fallback. Existing series keep their source. AniList and MyAnimeList may still require an internal TVDB placeholder. Catalogue episode numbering can differ."
 }

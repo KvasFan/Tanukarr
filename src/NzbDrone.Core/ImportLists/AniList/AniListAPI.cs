@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using NzbDrone.Common.Serializer;
+using NzbDrone.Core.MetadataSource.AniList.Resource;
 
 namespace NzbDrone.Core.ImportLists.AniList
 {
@@ -9,13 +10,47 @@ namespace NzbDrone.Core.ImportLists.AniList
     {
         None,
         QueryList,
-        QueryMembership
+        QueryMembership,
+        QueryCollection
     }
 
     public static class AniListAPI
     {
         public const int PageSize = 50;
         public const int MaxPages = 5000 / PageSize;
+        public const int CollectionChunkSize = 500;
+        public const int MaxCollectionEntries = 11000;
+        public const int MaxCollectionChunks = MaxCollectionEntries / CollectionChunkSize;
+
+        private const string QueryCollection = @"
+            query ($id: String!, $chunk: Int!) {
+                User(name: $id) {
+                    id name
+                    mediaListOptions { animeList { customLists } }
+                }
+                MediaListCollection(userName: $id, type: ANIME, chunk: $chunk, perChunk: 500) {
+                    user { id name }
+                    hasNextChunk
+                    lists {
+                        name isCustomList
+                        entries {
+                            id userId status progress updatedAt
+                            media {
+                                id idMal type format status episodes
+                                title { userPreferred romaji english native }
+                                startDate { year month day }
+                                endDate { year month day }
+                                relations {
+                                    edges {
+                                        relationType(version: 2)
+                                        node { id type format }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }";
 
         public const string CustomListNamesQuery = @"
             query ($username: String!) {
@@ -95,6 +130,10 @@ namespace NzbDrone.Core.ImportLists.AniList
             {
                 querySource = QueryMembership;
             }
+            else if (query == AniListQuery.QueryCollection)
+            {
+                querySource = QueryCollection;
+            }
 
             if (string.IsNullOrEmpty(querySource))
             {
@@ -125,11 +164,19 @@ namespace NzbDrone.Core.ImportLists.AniList
 
         [JsonPropertyName("romaji")]
         public string UserRomaji { get; set; }
+
+        public string English { get; set; }
+
+        public string Native { get; set; }
     }
 
     public class MediaInfo
     {
         public int Id { get; set; }
+
+        public string Type { get; set; }
+
+        public AniListRelationConnection Relations { get; set; }
 
         public int? IdMal { get; set; }
 

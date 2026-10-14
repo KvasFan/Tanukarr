@@ -1,3 +1,4 @@
+using System;
 using FluentValidation;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.Validation;
@@ -26,6 +27,10 @@ namespace Sonarr.Api.V3.ImportLists
             SharedValidator.RuleFor(c => c.QualityProfileId).Cascade(CascadeMode.Stop)
                 .ValidId()
                 .SetValidator(qualityProfileExistsValidator);
+
+            SharedValidator.RuleFor(c => c.PreferredMetadataSource)
+                .Must(source => !source.HasValue || Enum.IsDefined(source.Value))
+                .WithMessage("Select a supported metadata source or Automatic.");
         }
     }
 }

@@ -10,11 +10,11 @@ namespace NzbDrone.Core.Tv
     }
 
     /// <summary>
-    /// Issues placeholder TVDB ids for series that have no entry on TheTVDB.
+    /// Issues internal placeholder TVDB ids when no verified positive TVDB id is supplied.
     /// <para>
-    /// TheTVDB's editors sometimes decline to list content separately, folding a recut or a
-    /// spin-off into its parent series, while TMDB and AniList list it in its own right.
-    /// Such a series has no TVDB id, but one is still needed because the column is uniquely
+    /// A selected metadata provider can identify a series by its own native catalogue id
+    /// without supplying a verified TheTVDB mapping. An internal value is still needed
+    /// because the column is uniquely
     /// indexed and <see cref="ISeriesRepository.FindByTvdbId"/> expects at most one match,
     /// so zero cannot be used more than once.
     /// </para>
@@ -49,7 +49,7 @@ namespace NzbDrone.Core.Tv
                 var allocated = checked(lowest - 1);
                 _lastAllocatedTvdbId = allocated;
 
-                _logger.Debug("Allocated synthetic TVDB id {0} for a series with no TheTVDB entry", allocated);
+                _logger.Debug("Allocated internal TVDB placeholder {0}; the selected metadata provider did not supply a verified positive TheTVDB ID", allocated);
 
                 return allocated;
             }

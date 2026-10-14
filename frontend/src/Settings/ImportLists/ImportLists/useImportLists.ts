@@ -23,6 +23,13 @@ import translate from 'Utilities/String/translate';
 
 export type TagExisting = 'none' | 'add' | 'sync';
 
+export type ImportListMetadataSource =
+  | 'automatic'
+  | 'tvdb'
+  | 'tmdb'
+  | 'aniList'
+  | 'myAnimeList';
+
 export interface ImportListModel extends Provider {
   enableAutomaticAdd: boolean;
   searchForMissingEpisodes: boolean;
@@ -38,6 +45,7 @@ export interface ImportListModel extends Provider {
   minRefreshInterval: string;
   tags: number[];
   tagExisting: TagExisting;
+  preferredMetadataSource: ImportListMetadataSource;
 }
 
 interface BulkEditImportListsPayload {
@@ -172,6 +180,7 @@ export const useManageImportList = (
         enableAutomaticAdd: true,
         shouldMonitor: 'all' as SeriesMonitor,
         seriesType: 'standard' as SeriesType,
+        preferredMetadataSource: schema.preferredMetadataSource ?? 'automatic',
         language: preferredLanguage,
         seasonFolder: true,
         rootFolderPath: '',

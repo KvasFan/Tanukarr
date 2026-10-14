@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using FluentValidation;
@@ -59,7 +60,7 @@ namespace NzbDrone.Core.Tv
             newSeries = AddSkyhookData(newSeries);
             newSeries = SetPropertiesAndValidate(newSeries);
 
-            _logger.Info("Adding Series {0} Path: [{1}]", newSeries, newSeries.Path);
+            LogAddingSeries(newSeries);
             _seriesService.AddSeries(newSeries);
 
             return newSeries;
@@ -77,15 +78,6 @@ namespace NzbDrone.Core.Tv
                 if (ignoreErrors && throttledSources.Contains(s.MetadataSource))
                 {
                     continue;
-                }
-
-                if (s.Path.IsNullOrWhiteSpace())
-                {
-                    _logger.Info("Adding Series {0} Root Folder Path: [{1}]", s, s.RootFolderPath);
-                }
-                else
-                {
-                    _logger.Info("Adding Series {0} Path: [{1}]", s, s.Path);
                 }
 
                 try
@@ -113,6 +105,7 @@ namespace NzbDrone.Core.Tv
                         continue;
                     }
 
+                    LogAddingSeries(series);
                     seriesToAdd.Add(series);
                 }
                 catch (TooManyRequestsException) when (ignoreErrors)
@@ -163,11 +156,14 @@ namespace NzbDrone.Core.Tv
             }
             catch (SeriesNotFoundException)
             {
-                _logger.Error("Series {0} with TVDB ID {1} was not found, it may have been removed from TheTVDB. Path: {2}", newSeries, newSeries.TvdbId, newSeries.Path);
+                _logger.Error("Series [{0}:{1}][{2}] was not found in the selected metadata provider. Path: {3}", newSeries.MetadataSource, NativeIdForLog(newSeries), newSeries.Title, newSeries.Path);
+
+                var field = newSeries.MetadataSource == MetadataSourceType.Tvdb ? "TvdbId" : "ForeignId";
+                var identity = newSeries.MetadataSource == MetadataSourceType.Tvdb ? (object)newSeries.TvdbId : newSeries.ForeignId;
 
                 throw new ValidationException(new List<ValidationFailure>
                                               {
-                                                  new ValidationFailure("TvdbId", $"A series with this ID was not found. Path: {newSeries.Path}", newSeries.TvdbId)
+                                                  new ValidationFailure(field, $"A series with this ID was not found in the selected metadata provider. Path: {newSeries.Path}", identity)
                                               });
             }
 
@@ -235,6 +231,26 @@ namespace NzbDrone.Core.Tv
             }
 
             return newSeries;
+        }
+
+        private void LogAddingSeries(Series series)
+        {
+            var tvdbId = series.TvdbId > 0 ? series.TvdbId.ToString(CultureInfo.InvariantCulture) : "unmapped";
+            var placeholder = series.TvdbId < 0 ? series.TvdbId.ToString(CultureInfo.InvariantCulture) : "none";
+            _logger.Info("Adding Series [{0}:{1}][{2}] TheTVDB ID: {3}; internal placeholder: {4}; Path: [{5}]",
+                series.MetadataSource,
+                NativeIdForLog(series),
+                series.Title,
+                tvdbId,
+                placeholder,
+                series.Path);
+        }
+
+        private static string NativeIdForLog(Series series)
+        {
+            return series.ForeignId.IsNotNullOrWhiteSpace()
+                ? series.ForeignId
+                : series.TvdbId > 0 ? series.TvdbId.ToString(CultureInfo.InvariantCulture) : "unknown";
         }
 
         private static void ClearAutomaticGroup(Series series, bool preserveProviderMemberKind = false)

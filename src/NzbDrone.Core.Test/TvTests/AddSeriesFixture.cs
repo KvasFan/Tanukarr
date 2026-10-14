@@ -182,6 +182,29 @@ namespace NzbDrone.Core.Test.TvTests
                   .Verify(v => v.GetProvider(It.Is<Series>(s => s.MetadataSource == MetadataSourceType.Tmdb)), Times.Once());
         }
 
+        [TestCase(MetadataSourceType.Tvdb, "TvdbId")]
+        [TestCase(MetadataSourceType.Tmdb, "ForeignId")]
+        [TestCase(MetadataSourceType.AniList, "ForeignId")]
+        [TestCase(MetadataSourceType.MyAnimeList, "ForeignId")]
+        public void should_report_the_native_identity_field_when_the_selected_provider_has_no_match(MetadataSourceType source, string expectedField)
+        {
+            var request = new Series
+            {
+                MetadataSource = source,
+                ForeignId = "21",
+                TvdbId = source == MetadataSourceType.Tvdb ? 21 : 0,
+                RootFolderPath = @"C:\Test\TV"
+            };
+            _metadataProvider.Setup(provider => provider.GetSeriesInfo(It.IsAny<Series>()))
+                .Throws(new SeriesNotFoundException(request.TvdbId));
+
+            var exception = Assert.Throws<ValidationException>(() => Subject.AddSeries(request));
+
+            exception.Errors.Should().ContainSingle().Which.PropertyName.Should().Be(expectedField);
+            Mocker.GetMock<IAllocateSyntheticSeriesIds>().Verify(allocator => allocator.AllocateTvdbId(), Times.Never());
+            ExceptionVerification.ExpectedErrors(1);
+        }
+
         [Test]
         public void should_keep_the_chosen_ordering()
         {

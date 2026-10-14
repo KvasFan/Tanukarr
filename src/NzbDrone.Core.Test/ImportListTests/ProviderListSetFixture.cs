@@ -404,5 +404,115 @@ namespace NzbDrone.Core.Test.ImportListTests
             result.Series.Should().BeEmpty();
             ExceptionVerification.ExpectedWarns(1);
         }
+
+        [TestCase("TMDB")]
+        [TestCase("Trakt")]
+        [TestCase("MDBList")]
+        public void should_reuse_complete_selected_lists_without_leaking_definition_membership(string provider)
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            var first = Subject(provider, false);
+            Respond(request => Page(request, provider, new JArray(Item(provider, 101))));
+            var firstResult = first.Fetch();
+            var second = Subject(provider, false);
+            second.Definition.Id = 77;
+            second.Definition.Name = "Second definition";
+            var secondResult = second.Fetch();
+
+            _requests.Should().ContainSingle();
+            firstResult.Series.Should().OnlyContain(item => item.ImportListId == 42 && item.ImportList == "Fixture");
+            secondResult.Series.Should().OnlyContain(item => item.ImportListId == 77 && item.ImportList == "Second definition");
+            secondResult.Series.Single().Should().NotBeSameAs(firstResult.Series.Single());
+        }
+
+        [TestCase("TMDB")]
+        [TestCase("Trakt")]
+        [TestCase("MDBList")]
+        public void should_read_an_identical_inclusion_and_exclusion_source_once_then_subtract_locally(string provider)
+        {
+            var subject = Subject(provider, false);
+            if (subject.Definition.Settings is TmdbListSettings tmdb)
+            {
+                tmdb.ExcludedListIds = new[] { "1" };
+            }
+            else if (subject.Definition.Settings is TraktListSettings trakt)
+            {
+                trakt.Rating = null;
+                trakt.Genres = null;
+                trakt.ExcludedLists = new[] { "1" };
+            }
+            else
+            {
+                ((MDBListSettings)subject.Definition.Settings).ExcludedListUrls = new[] { Url("1") };
+            }
+
+            Respond(request => Page(request, provider, new JArray(Item(provider, 101))));
+            var result = subject.Fetch();
+            result.AnyFailure.Should().BeFalse();
+            result.Series.Should().BeEmpty();
+            _requests.Should().ContainSingle();
+        }
+
+        [TestCase("TMDB")]
+        [TestCase("Trakt")]
+        [TestCase("MDBList")]
+        public void should_not_share_a_selected_list_after_credentials_change(string provider)
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            var subject = Subject(provider, false);
+            Respond(request => Page(request, provider, new JArray(Item(provider, 101))));
+            subject.Fetch().AnyFailure.Should().BeFalse();
+            if (subject.Definition.Settings is TmdbListSettings tmdb)
+            {
+                tmdb.AuthToken = "other-generated-token";
+            }
+            else if (subject.Definition.Settings is TraktListSettings trakt)
+            {
+                trakt.AccessToken = "other-generated-token";
+            }
+            else
+            {
+                ((MDBListSettings)subject.Definition.Settings).ApiKey = "other-generated-key";
+            }
+
+            subject.Fetch().AnyFailure.Should().BeFalse();
+            _requests.Should().HaveCount(2);
+        }
+
+        [Test]
+        public void should_preserve_distinct_arbitrary_trakt_server_filter_projections()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            var subject = Subject("Trakt", false);
+            var settings = (TraktListSettings)subject.Definition.Settings;
+            settings.TraktAdditionalParameters = "languages=en";
+            Respond(request => Page(request, "Trakt", new JArray(Item("Trakt", request.Url.Query.Contains("languages=en") ? 101 : 202))));
+            subject.Fetch().Series.Single().TmdbId.Should().Be(101);
+            settings.TraktAdditionalParameters = "languages=it";
+            subject.Fetch().Series.Single().TmdbId.Should().Be(202);
+            _requests.Should().HaveCount(2);
+        }
+
+        [TestCase("TMDB")]
+        [TestCase("Trakt")]
+        [TestCase("MDBList")]
+        public void should_keep_failed_selected_list_reads_private_to_the_import_and_retry_on_next_import(string provider)
+        {
+            var subject = Subject(provider, false);
+            Respond(request => new HttpResponse(request, new HttpHeader(), "{}", HttpStatusCode.Forbidden));
+            using (ImportListSnapshotScope.Begin())
+            {
+                subject.Fetch().AnyFailure.Should().BeTrue();
+                subject.Fetch().Series.Should().BeEmpty();
+                _requests.Should().ContainSingle();
+                Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordSuccess(42), Times.Never());
+            }
+
+            Respond(request => Page(request, provider, new JArray(Item(provider, 101))));
+            subject.Fetch().AnyFailure.Should().BeFalse();
+            _requests.Should().HaveCount(2);
+            ImportListSnapshotScope.Current.Should().BeNull();
+            ExceptionVerification.ExpectedWarns(2);
+        }
     }
 }

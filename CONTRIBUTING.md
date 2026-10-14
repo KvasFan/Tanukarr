@@ -74,6 +74,49 @@ successful list. See [Library tools](docs/library-tools.md#lists-rules-and-keys)
 and the [1.0.2 verification report](docs/releases/1.0.2-verification.md) for
 provider-specific limits and executed evidence.
 
+For the 1.0.5 snapshot changes, verify complete pagination before
+local filters, custom-only AniList groups, duplicate/conflicting identities,
+failed later pages, account/grant isolation, bounded retention and scope cleanup
+after success and exceptions. Saved membership and SIMKL's incremental baseline
+must survive; temporary private responses must not become diagnostic exports.
+Public metadata or relations outside the collection can still require requests.
+Use the [snapshot guide](docs/import-list-snapshots.md) and the
+[provider matrix](docs/library-tools.md#provider-capabilities) to distinguish
+provider-specific boundaries.
+
+Test the common metadata preference on both v3 and v5: Automatic defaults,
+available positive native IDs, unavailable-preference fallback, unknown enum
+rejection, older clients omitting the field and explicit resets. Changing a
+preference must preserve existing source ownership, native episode numbering,
+paths, tags and exclusions. Migration 250 adds only the default-Automatic
+ImportLists column. Native AniList/MAL numbers must never become TVDB numbers.
+An internal TVDB placeholder and a native provider ID are different values.
+
+Run the solution build before focused tests, for example:
+
+```sh
+dotnet test src/NzbDrone.Core.Test/Sonarr.Core.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~ImportListIdentity|FullyQualifiedName~ImportListMetadataSource|FullyQualifiedName~ImportListSnapshot"
+dotnet test src/NzbDrone.Api.Test/Sonarr.Api.Test.csproj -c Debug --no-build --filter "FullyQualifiedName~ImportListMetadataSourceResourceFixture"
+```
+
+These commands describe reproducible checks; running them is required before
+claiming results for another change. The prepared 1.0.5 source has its own
+executed build, native/frontend, candidate runtime/browser and security evidence
+in the [new ledger](docs/releases/1.0.5-verification.md). The 833 focused tests
+overlap the 7,998 passing native cases; do not add those counts together.
+
+Run the new complete-snapshot fixture against an explicitly selected built image:
+
+```sh
+python3 docker/tests/import-snapshots.py --image tanukarr:verified \
+  --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
+  --timeout 300 --report import-snapshots-report.json
+```
+
+It uses owned generated AniList/MAL responses, not private accounts. Verify the
+JSON's image ID, actual checks, failure and cleanup fields. Local candidates
+do not establish hosted CI, public release assets or an owner deployment.
+
 To reproduce the Docker workflow's new deterministic provider/search checks,
 use an already built image and the pinned Python fixture image. On Debian/Ubuntu:
 
@@ -190,16 +233,16 @@ A CI pass does not imply that every online or platform suite ran.
 ## Release and installation documentation
 
 The public project is
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The **1.0.4** target
-uses Git tag `v1.0.4` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.4` once
-verified publication completes. Its [verification ledger](docs/releases/1.0.4-verification.md)
+[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The **1.0.5** target
+uses Git tag `v1.0.5` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.5` once
+verified publication completes. Its [verification ledger](docs/releases/1.0.5-verification.md)
 records pending and executed checks separately. The preceding
-[1.0.3 publication follow-up](docs/releases/1.0.3-publication.md) retains that
+[1.0.4 publication follow-up](docs/releases/1.0.4-publication.md) retains that
 release's actual hosted checks, artifact identities and remaining findings.
 The [Docker installation guide](docs/docker-installation.md) contains complete
 Compose YAML, GHCR pulls, storage, permissions, authentication, updates and the
 release-image archive fallback. Maintain that guide and
-[release notes](docs/releases/1.0.4.md) when changing the published deployment.
+[prepared release notes](docs/releases/1.0.5.md) when changing the published deployment.
 Preserve earlier release notes and dated verification reports as historical
 checkpoints; do not apply their results to a new image without running checks.
 

@@ -44,6 +44,7 @@ namespace NzbDrone.Core.ImportLists.Simkl.User
 
         public override ImportListFetchResult Fetch()
         {
+            using var snapshots = ImportListSnapshotScope.BeginIfNeeded();
             if (!UsesV2 && !HasCustomFilters)
             {
                 return base.Fetch();
@@ -78,6 +79,7 @@ namespace NzbDrone.Core.ImportLists.Simkl.User
 
         protected override void Test(List<ValidationFailure> failures)
         {
+            using var snapshots = ImportListSnapshotScope.Begin();
             if (!UsesV2 && !HasCustomFilters)
             {
                 base.Test(failures);

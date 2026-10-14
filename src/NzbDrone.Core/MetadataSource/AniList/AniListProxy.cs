@@ -10,6 +10,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
 using NzbDrone.Core.AniList;
 using NzbDrone.Core.Exceptions;
+using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MetadataSource.AniList.Resource;
@@ -58,6 +59,19 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 return null;
             }
 
+            var snapshots = ImportListSnapshotScope.Current?.GetCompletedValues<AniListPublicRelationSnapshot>();
+            if (snapshots != null)
+            {
+                foreach (var snapshot in snapshots)
+                {
+                    if (snapshot.TryGet(id, out var node))
+                    {
+                        _metadataCache.Set("relations:" + id, node, RelationCacheLifetime);
+                        return node;
+                    }
+                }
+            }
+
             return _metadataCache.Get("relations:" + id, () => FetchAnimeRelations(id), RelationCacheLifetime);
         }
 
@@ -71,7 +85,7 @@ namespace NzbDrone.Core.MetadataSource.AniList
             return response?.Errors?.Count > 0 ? null : MapRelations(media, id);
         }
 
-        private static AnimeRelationNode MapRelations(AniListMediaResource media, int id)
+        internal static AnimeRelationNode MapRelations(AniListMediaResource media, int id)
         {
             if (media == null || media.Id != id || media.Type != "ANIME" ||
                 media.Format.IsNullOrWhiteSpace() || media.Relations?.Edges == null)

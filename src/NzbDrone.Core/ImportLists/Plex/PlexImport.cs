@@ -77,6 +77,7 @@ namespace NzbDrone.Core.ImportLists.Plex
 
         private ImportListFetchResult ReadWatchlist(bool recordStatus)
         {
+            using var snapshots = recordStatus ? ImportListSnapshotScope.BeginIfNeeded() : ImportListSnapshotScope.Begin();
             return ImportListSetOperations.Fetch(
                 (ImportListDefinition)Definition,
                 _importListStatusService,
@@ -87,14 +88,23 @@ namespace NzbDrone.Core.ImportLists.Plex
 
         private List<ImportListItemInfo> ReadCompleteWatchlist()
         {
+            var key = ImportListSnapshotScope.Fingerprint("PlexWatchlist-v1", "https://discover.provider.plex.tv/library/sections/watchlist/all", _configService.PlexClientIdentifier, Settings.AccessToken);
+            var items = ImportListSnapshotScope.Current?.GetOrLoad(key, ReadWatchlistSnapshot) ?? ReadWatchlistSnapshot();
+            return ImportListSnapshotScope.CopyItems(items);
+        }
+
+        private List<ImportListItemInfo> ReadWatchlistSnapshot()
+        {
             var generator = new PlexListRequestGenerator(_plexTvService, Settings, PageSize);
             var parser = new PlexParser();
             var result = new List<ImportListItemInfo>();
             var offset = 0;
             int? total = null;
+            long payloadBytes = 0;
             for (var index = 0; index < PlexListRequestGenerator.MaxPages; index++)
             {
                 var response = FetchImportListResponse(generator.GetRequest(offset));
+                ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
                 var page = parser.ParsePage(response, offset);
                 if (total.HasValue && page.Total != total)
                 {

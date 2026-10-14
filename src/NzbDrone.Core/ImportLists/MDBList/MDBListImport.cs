@@ -42,6 +42,7 @@ namespace NzbDrone.Core.ImportLists.MDBList
 
         private ImportListFetchResult FetchComposed(bool recordStatus)
         {
+            using var snapshots = recordStatus ? ImportListSnapshotScope.BeginIfNeeded() : ImportListSnapshotScope.Begin();
             return ImportListSetOperations.Fetch(
                 (ImportListDefinition)Definition,
                 _importListStatusService,
@@ -55,6 +56,13 @@ namespace NzbDrone.Core.ImportLists.MDBList
 
         private List<ImportListItemInfo> ReadCompleteList(string listUrl, bool applyFilters)
         {
+            var key = ImportListSnapshotScope.Fingerprint("MdbSelectedList-v1", MDBListSettings.GetListPath(listUrl), Settings.ApiKey);
+            var items = ImportListSnapshotScope.Current?.GetOrLoad(key, () => ReadListSnapshot(listUrl)) ?? ReadListSnapshot(listUrl);
+            return ImportListSnapshotScope.CopyItems(items);
+        }
+
+        private List<ImportListItemInfo> ReadListSnapshot(string listUrl)
+        {
             if (MDBListSettings.GetListPath(listUrl) == null)
             {
                 throw new ImportListException(null, "Enter an HTTPS list URL on mdblist.com.");
@@ -67,9 +75,11 @@ namespace NzbDrone.Core.ImportLists.MDBList
             int? offset = null;
             var rawCount = 0;
             int? expectedCount = null;
+            long payloadBytes = 0;
             for (var page = 1; page <= ImportListSetOperations.MaxPages; page++)
             {
                 var response = FetchImportListResponse(generator.GetRequest(listUrl, cursor, offset));
+                ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
                 var document = JToken.Parse(response.Content);
                 var rows = document as JArray ?? document["shows"] as JArray ?? document["items"] as JArray;
                 if (rows == null)

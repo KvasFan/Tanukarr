@@ -27,6 +27,14 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
 
         public IList<ImportListItemInfo> ParseResponse(ImportListResponse response, out string next, out int count)
         {
+            var resource = ReadPage(response);
+            next = resource.Paging.Next;
+            count = resource.Animes.Count;
+            return ParseValidatedItems(resource.Animes, response);
+        }
+
+        internal static MyAnimeListResponse ReadPage(ImportListResponse response)
+        {
             MyAnimeListResponse resource;
             try
             {
@@ -42,21 +50,31 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
                 throw Failure(response);
             }
 
+            foreach (var item in resource.Animes)
+            {
+                if (item?.AnimeListInfo?.Id is not > 0 || item.AnimeListInfo.Title.IsNullOrWhiteSpace() ||
+                    item.ListStatus?.Score is not >= 0 or > 10 ||
+                    !MyAnimeListRequestGenerator.StatusMapping.Values.Contains(item.ListStatus.Status))
+                {
+                    throw Failure(response);
+                }
+            }
+
+            return resource;
+        }
+
+        internal IList<ImportListItemInfo> ParseValidatedItems(IEnumerable<MyAnimeListItem> items, ImportListResponse response = null)
+        {
             _settings.NormalizeLegacyStatus();
             var selectedStatuses = _settings.ListStatuses.ToHashSet();
             var included = (_settings.IncludedTags ?? Array.Empty<string>()).ToHashSet(StringComparer.Ordinal);
             var excluded = (_settings.ExcludedTags ?? Array.Empty<string>()).ToHashSet(StringComparer.Ordinal);
             var result = new List<ImportListItemInfo>();
 
-            foreach (var item in resource.Animes)
+            foreach (var item in items)
             {
                 var node = item?.AnimeListInfo;
                 var status = item?.ListStatus;
-                if (node?.Id is not > 0 || node.Title.IsNullOrWhiteSpace() || status?.Score is not >= 0 or > 10 ||
-                    !MyAnimeListRequestGenerator.StatusMapping.Values.Contains(status.Status))
-                {
-                    throw Failure(response);
-                }
 
                 if ((included.Count > 0 || excluded.Count > 0) &&
                     (status.Tags == null || status.Tags.Any(tag => tag.IsNullOrWhiteSpace())))
@@ -83,8 +101,6 @@ namespace NzbDrone.Core.ImportLists.MyAnimeList
                 result.Add(new ImportListItemInfo { Title = node.Title, MalId = node.Id });
             }
 
-            next = resource.Paging.Next;
-            count = resource.Animes.Count;
             return result.Where(item => !ExcludedMediaIds.Contains(item.MalId)).ToList();
         }
 

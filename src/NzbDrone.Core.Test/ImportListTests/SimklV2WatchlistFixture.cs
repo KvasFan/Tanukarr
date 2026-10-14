@@ -9,6 +9,7 @@ using NUnit.Framework;
 using NzbDrone.Common.Cache;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Http;
+using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.ImportLists.Exceptions;
 using NzbDrone.Core.ImportLists.Simkl;
 using NzbDrone.Core.ImportLists.Simkl.User;
@@ -81,6 +82,63 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         private string SavedPath() => Directory.GetFiles(Path.Combine(TempFolder, "cache", "simkl-v2"), "*.json").Single();
+
+        [Test]
+        public void should_share_one_staged_inventory_and_commit_it_once_while_preserving_the_incremental_baseline()
+        {
+            Respond(Activities(), Rows(Row(1)));
+            using (ImportListSnapshotScope.Begin())
+            {
+                var first = Subject.Read(_settings);
+                var second = Subject.Read(_settings);
+                second.Should().BeSameAs(first);
+                _requests.Should().HaveCount(2);
+                Subject.Commit(_settings, first);
+                var saved = File.ReadAllText(SavedPath());
+                Subject.Commit(_settings, second);
+                File.ReadAllText(SavedPath()).Should().Be(saved);
+                saved.Should().NotContain("CommittedRevision").And.NotContain("PRIVATE-ACCESS");
+            }
+
+            ImportListSnapshotScope.Current.Should().BeNull();
+            File.Exists(SavedPath()).Should().BeTrue();
+            Respond(Activities());
+            Subject.Read(_settings).Rows.Select(row => row.Show.Ids.Simkl).Should().Equal(1);
+            _requests.Should().HaveCount(3);
+            _requests.Last().Url.Path.Should().Be("/sync/activities");
+        }
+
+        [Test]
+        public void should_still_reject_a_shared_stage_after_an_independent_sync_commits_a_newer_revision()
+        {
+            using var import = ImportListSnapshotScope.Begin();
+            Respond(Activities(), Rows(Row(1)));
+            var staged = Subject.Read(_settings);
+            Subject.Commit(_settings, staged);
+            Respond(Activities(Second, Second), Rows(Row(2)));
+            using (ImportListSnapshotScope.Begin())
+            {
+                Subject.Commit(_settings, Subject.Read(_settings));
+            }
+
+            var newer = File.ReadAllText(SavedPath());
+            Action commit = () => Subject.Commit(_settings, staged);
+            commit.Should().Throw<ImportListException>();
+            File.ReadAllText(SavedPath()).Should().Be(newer);
+        }
+
+        [Test]
+        public void should_revalidate_a_changed_token_instead_of_reusing_the_account_activity_response()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            Respond(Activities(), Rows(Row(1)), Activities());
+            var original = Subject.Read(_settings);
+            Subject.Commit(_settings, original);
+            _settings.AccessToken = "OTHER-GENERATED-TOKEN";
+            Subject.Read(_settings).Should().NotBeSameAs(original);
+            _requests.Should().HaveCount(3);
+            _requests.Last().Headers["Authorization"].Should().Be("Bearer OTHER-GENERATED-TOKEN");
+        }
 
         [Test]
         public void should_stage_all_statuses_after_activities_and_persist_only_on_commit_without_credentials()

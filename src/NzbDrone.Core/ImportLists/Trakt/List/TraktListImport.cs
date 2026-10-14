@@ -104,6 +104,7 @@ namespace NzbDrone.Core.ImportLists.Trakt.List
 
         private ImportListFetchResult FetchComposed(bool recordStatus)
         {
+            using var snapshots = recordStatus ? ImportListSnapshotScope.BeginIfNeeded() : ImportListSnapshotScope.Begin();
             return ImportListSetOperations.Fetch(
                 (ImportListDefinition)Definition,
                 _importListStatusService,
@@ -118,6 +119,14 @@ namespace NzbDrone.Core.ImportLists.Trakt.List
 
         private List<ImportListItemInfo> ReadCompleteList(string slug, bool applyFilters)
         {
+            var request = ((TraktListRequestGenerator)GetRequestGenerator()).GetRequest(slug, 1, applyFilters);
+            var key = ImportListSnapshotScope.Fingerprint("TraktSelectedList-v1", request.Url.FullUri, Settings.AccessToken, ClientId);
+            var items = ImportListSnapshotScope.Current?.GetOrLoad(key, () => ReadListSnapshot(slug, applyFilters)) ?? ReadListSnapshot(slug, applyFilters);
+            return ImportListSnapshotScope.CopyItems(items);
+        }
+
+        private List<ImportListItemInfo> ReadListSnapshot(string slug, bool applyFilters)
+        {
             if (!TraktListSettings.IsValidList(slug))
             {
                 throw new ImportListException(null, "Enter a Trakt list slug or numeric ID.");
@@ -128,9 +137,11 @@ namespace NzbDrone.Core.ImportLists.Trakt.List
             int? expectedPages = null;
             int? expectedItems = null;
             var rawItems = 0;
+            long payloadBytes = 0;
             for (var page = 1; page <= ImportListSetOperations.MaxPages; page++)
             {
                 var response = FetchImportListResponse(generator.GetRequest(slug, page, applyFilters));
+                ImportListSnapshotScope.AddPayloadBytes(ref payloadBytes, response.Content);
                 if (response.HttpResponse.StatusCode != HttpStatusCode.OK)
                 {
                     throw new ImportListException(response, "Trakt did not return a successful list response.");

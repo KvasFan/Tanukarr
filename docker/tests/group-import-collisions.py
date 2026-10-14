@@ -50,6 +50,24 @@ def media_resource(media_id):
     return resource
 
 
+def account_collection():
+    owner = {"id": 940001, "name": "generated-reliability-account"}
+    # Entries recur in status and custom groups with the same stable identity
+    # and public metadata, matching AniList's complete collection projection.
+    def entry(media_id):
+        public = media_resource(media_id)
+        return {"id": media_id + 1000000, "userId": owner["id"], "updatedAt": 1704067200,
+                "status": "CURRENT", "progress": 0,
+                "media": {key: public[key] for key in
+                          ("id", "idMal", "type", "format", "status", "episodes", "title",
+                           "startDate", "endDate", "relations")}}
+    rows = [entry(media_id) for media_id in LIST_IDS]
+    return {"data": {"User": dict(owner, mediaListOptions={"animeList": {"customLists": ["Include"]}}),
+                     "MediaListCollection": {"user": owner, "hasNextChunk": False, "lists": [
+                         {"name": "Watching", "isCustomList": False, "entries": rows},
+                         {"name": "Include", "isCustomList": True, "entries": rows}]}}}
+
+
 def serve_fixture(root):
     lock = threading.Lock()
 
@@ -80,13 +98,23 @@ def serve_fixture(root):
                 require(self.path == "/" and 0 < length < 65536, "Unexpected fixture request")
                 request = json.loads(self.rfile.read(length))
                 query, variables = request["query"], request["variables"]
-                if "mediaList(userName:" in query:
+                if "MediaListCollection(" in query:
+                    require(variables.get("id") == "generated-reliability-account" and variables.get("chunk") == 1,
+                            "Unexpected fixture collection account or chunk")
+                    require(all(field in query for field in
+                                ("isCustomList", "mediaListOptions", "userId", "updatedAt", "relationType(version: 2)", "perChunk: 500"))
+                            and "status_in" not in query, "Unexpected complete account collection query")
+                    record.update(kind="list", protocol="complete-account-collection", chunk=1)
+                    value = account_collection()
+                elif "mediaList(userName:" in query:
+                    # Retain the old projection solely for --expect-old-failure
+                    # checkpoints that demonstrate the historical SQLite failure.
                     require(variables.get("id") == "generated-reliability-account" and variables.get("page") == 1,
                             "Unexpected fixture list query")
                     rows = [{"status": "CURRENT", "progress": 0, "media": media_resource(media_id),
                              "customLists": {"Include": True}, "customListEntries": [{"name": "Include", "enabled": True}]}
                             for media_id in LIST_IDS]
-                    record.update(kind="list", page=1)
+                    record.update(kind="list", protocol="legacy-page", page=1)
                     value = {"data": {"Page": {"pageInfo": {"currentPage": 1, "hasNextPage": False}, "mediaList": rows}}}
                 elif "Media(" in query:
                     media_id = int(variables["id"])
@@ -180,6 +208,9 @@ class GroupImportCollisions(_reliability.AniListReliability):
             fields[key]["value"] = value
         self.definition = self.api_json("/api/v5/importlist", "POST", resource)
         self.idle()
+        if not self.args.expect_old_failure:
+            require(any(row.get("protocol") == "complete-account-collection" and row["status"] == 200
+                        for row in self.records()), "List validation did not consume a complete account collection")
         self.check("synthetic import list saved with automatic adds and acquisition disabled")
 
     def group_snapshot(self, series):

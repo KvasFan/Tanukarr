@@ -85,6 +85,7 @@ namespace NzbDrone.Core.ImportLists
 
         private void SyncAll()
         {
+            using var snapshots = ImportListSnapshotScope.BeginIfNeeded();
             if (_importListFactory.AutomaticAddEnabled().Empty())
             {
                 _logger.Debug("No import lists with automatic add enabled");
@@ -107,6 +108,7 @@ namespace NzbDrone.Core.ImportLists
 
         private void SyncList(ImportListDefinition definition)
         {
+            using var snapshots = ImportListSnapshotScope.BeginIfNeeded();
             _logger.ProgressInfo("Starting Import List Refresh for List {0}", definition.Name);
 
             var result = _listFetcherAndParser.FetchSingleList(definition);
@@ -160,7 +162,7 @@ namespace NzbDrone.Core.ImportLists
 
                 try
                 {
-                    candidate = existing ?? ImportListIdentity.CreateSeries(item, _seriesSearchService, importList.Language);
+                    candidate = existing ?? ImportListIdentity.CreateSeries(item, _seriesSearchService, importList.Language, importList.PreferredMetadataSource);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -170,7 +172,7 @@ namespace NzbDrone.Core.ImportLists
 
                 existing ??= existingSeries.FirstOrDefault(s => SameSeries(s, candidate));
 
-                if (listExclusions.Any(exclusion => ImportListIdentity.IsExcluded(exclusion, candidate)))
+                if (listExclusions.Any(exclusion => ImportListIdentity.IsExcluded(exclusion, item) || ImportListIdentity.IsExcluded(exclusion, candidate)))
                 {
                     _logger.Debug("{0} [{1}] Rejected due to list exclusion", candidate.ForeignId, item.Title);
                     continue;
@@ -187,6 +189,12 @@ namespace NzbDrone.Core.ImportLists
 
                 if (pendingSeries == null)
                 {
+                    if (importList.PreferredMetadataSource != ImportListMetadataSource.Automatic &&
+                        candidate.MetadataSource != ImportListIdentity.GetPreferredSource(importList.PreferredMetadataSource))
+                    {
+                        _logger.Debug("Preferred metadata source {0} has no positive ID for this item; using the supplied {1} identity {2} instead", importList.PreferredMetadataSource, candidate.MetadataSource, candidate.ForeignId);
+                    }
+
                     candidate.Monitored = importList.ShouldMonitor != MonitorTypes.None;
                     candidate.MonitorNewItems = importList.MonitorNewItems;
                     candidate.RootFolderPath = importList.RootFolderPath;

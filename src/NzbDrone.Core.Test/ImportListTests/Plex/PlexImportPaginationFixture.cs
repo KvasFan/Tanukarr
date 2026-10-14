@@ -312,5 +312,50 @@ namespace NzbDrone.Core.Test.ImportListTests.Plex
             AssertFailure();
             Mocker.GetMock<IImportListStatusService>().Verify(service => service.RecordFailure(12, TimeSpan.FromSeconds(60)), Times.Once());
         }
+
+        [Test]
+        public void should_reuse_one_complete_watchlist_then_release_it_for_the_next_import()
+        {
+            GivenPages(Page(0, 1, 1), Page(0, 2, 2));
+            using (ImportListSnapshotScope.Begin())
+            {
+                var first = Subject.Fetch();
+                Subject.Definition.Id = 13;
+                var second = Subject.Fetch();
+                _requests.Should().ContainSingle();
+                _offsets.Should().Equal(0);
+                first.Series.Single().ImportListId.Should().Be(12);
+                second.Series.Single().ImportListId.Should().Be(13);
+                second.Series.Single().Should().NotBeSameAs(first.Series.Single());
+            }
+
+            Subject.Fetch().Series.Should().HaveCount(2);
+            _requests.Should().HaveCount(2);
+            ImportListSnapshotScope.Current.Should().BeNull();
+        }
+
+        [Test]
+        public void should_not_reuse_a_watchlist_after_its_authenticated_account_changes()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            GivenPages(Page(0, 1, 1), Page(0, 2, 2));
+            Subject.Fetch().Series.Should().ContainSingle();
+            ((PlexListSettings)Subject.Definition.Settings).AccessToken = "another-generated-token";
+            Subject.Fetch().Series.Should().HaveCount(2);
+            _requests.Should().HaveCount(2);
+        }
+
+        [Test]
+        public void should_load_test_data_in_a_fresh_scope_without_replacing_the_import_snapshot()
+        {
+            using var scope = ImportListSnapshotScope.Begin();
+            GivenPages(Page(0, 1, 1), Page(0, 2, 2));
+            Subject.Fetch().Series.Should().ContainSingle();
+            Subject.Test().IsValid.Should().BeTrue();
+            _requests.Should().HaveCount(2);
+            Subject.Fetch().Series.Should().ContainSingle();
+            _requests.Should().HaveCount(2);
+            ImportListSnapshotScope.Current.Should().BeSameAs(scope);
+        }
     }
 }

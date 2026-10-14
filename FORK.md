@@ -39,7 +39,7 @@ routes. API v3 and v5 remain supported; v4 is not implemented.
 Its product version is separate from
 Sonarr's inherited internal core/API version. See the
 [Docker installation guide](docs/docker-installation.md) for the published-image
-configuration and [current release notes](docs/releases/1.0.4.md) for packaging
+configuration and [prepared 1.0.5 release notes](docs/releases/1.0.5.md) for packaging
 scope. Version 1.0.1 also includes the later grouping and AniList/browser
 reliability work; the immutable 1.0.0 source and assets remain unchanged.
 Version 1.0.2 adds the simplified list controls, final exclusion-veto selection
@@ -54,6 +54,13 @@ progress, plus successful manual-backup task timing. Its exact amended source,
 published image, hosted checks and preserved local deployment are recorded in
 the [1.0.4 publication follow-up](docs/releases/1.0.4-publication.md), separately
 from the preceding release and cancelled original candidate.
+
+Version 1.0.5 is prepared and locally tested with complete import-scoped list
+snapshots and an optional provider preference for future additions. Its
+[verification ledger](docs/releases/1.0.5-verification.md) records the executed
+native/frontend suites, source-qualified candidate runtime/browser checks and
+remaining security findings. Hosted publication and owner deployment remain
+pending and separate from earlier published evidence.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the
@@ -329,6 +336,36 @@ is genuinely numbered that way, as One Piece is.
 
 ## Import lists
 
+The prepared 1.0.5 implementation validates complete eligible account or selected
+list data before applying each definition's filters locally. Private reuse is
+limited to matching provider, authenticated identity, grant and projection
+during one operation. Temporary snapshot references are released at completion;
+saved membership and SIMKL's incremental baseline remain. Public catalogue
+metadata, airing details and relations outside the account collection can still
+require requests. Snapshot reuse reduces duplicate work while retaining rate
+limits and failure safeguards. See the
+[snapshot guide](docs/import-list-snapshots.md) and
+[provider capability matrix](docs/library-tools.md#provider-capabilities).
+
+**Metadata provider for new series** is an optional per-list preference with
+**Automatic** as the compatibility default. A requested catalogue must have a
+positive ID supplied by the item; otherwise the existing automatic order
+(TheTVDB, AniList, TMDB, MyAnimeList) applies. A provider request failure remains
+retryable instead of silently switching episode structures. Existing matched
+series keep their source, native numbering and paths; native global exclusions
+are checked against the original item as well as the chosen candidate.
+Originating-account watched progress still requires the native catalogue and
+episode identity supported by its writer. A different metadata preference can
+change which progress mappings are available for a newly added series; see the
+[watched integration contract](docs/jellyfin-watched.md#advance-the-originating-list-account).
+
+No ID is guessed from a title or reused across catalogue namespaces. The
+negative inherited TVDB slot is an internal compatibility placeholder when
+there is no verified positive mapping. The native provider/foreign ID remains
+the series identity. Add-series logs now distinguish it from that placeholder
+after metadata preparation; a placeholder does not establish that the title
+is absent from TheTVDB.
+
 AniList imports target a user's account list through the configured authenticated
 import-list connection. Public catalogue lookup needs no account; saving an
 AniList import list requires the OAuth fields validated by the importer.
@@ -366,12 +403,12 @@ Custom names retain spaces and punctuation, including commas.
 
 Exact name matches distinguish lists that differ only in case. A unique
 case-insensitive fallback remains convenient for manual entry; an ambiguous
-excluded name fails the sync rather than guessing. Excluded membership is tracked
-by native AniList media ID across pagination, so an excluded copy on an earlier
-or later page removes an otherwise selected duplicate. Unknown required
-membership still fails the fetch unless the new
-complete-collection fallback can validate it authoritatively.
-The previous cached list is retained when the fetch fails.
+excluded name fails the sync rather than guessing. Version 1.0.5 evaluates
+membership by native AniList media ID across the complete selected user's anime
+collection, including custom-only groups. Excluded membership removes an
+otherwise eligible duplicate. Incomplete, conflicting or ambiguous collection
+data retains the previous saved list. The older paged-list plus membership
+recovery route belongs to the historical release reports.
 
 Filters belong to one saved AniList connection. They do not write global
 exclusion records or directly delete shows or files; existing list-cleanup

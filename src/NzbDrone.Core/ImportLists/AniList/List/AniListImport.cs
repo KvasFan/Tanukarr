@@ -16,6 +16,7 @@ using NzbDrone.Core.Http.CloudFlare;
 using NzbDrone.Core.ImportLists.Exceptions;
 using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.Localization;
+using NzbDrone.Core.MetadataSource.AniList;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Validation;
@@ -86,12 +87,18 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 !data.TryGetProperty("User", out var user) || user.ValueKind != JsonValueKind.Object ||
                 !user.TryGetProperty("mediaListOptions", out var options) || options.ValueKind != JsonValueKind.Object ||
                 !options.TryGetProperty("animeList", out var animeList) || animeList.ValueKind != JsonValueKind.Object ||
-                !animeList.TryGetProperty("customLists", out var names) || names.ValueKind != JsonValueKind.Array)
+                !animeList.TryGetProperty("customLists", out var names) ||
+                (names.ValueKind != JsonValueKind.Array && names.ValueKind != JsonValueKind.Null))
             {
                 throw new ImportListException(null, "AniList did not return custom list names. Check the username and authentication, or enter the names manually.");
             }
 
             var result = new List<FieldSelectStringOption>();
+            if (names.ValueKind == JsonValueKind.Null)
+            {
+                return result;
+            }
+
             foreach (var item in names.EnumerateArray())
             {
                 if (item.ValueKind != JsonValueKind.String || item.GetString().IsNullOrWhiteSpace())
@@ -132,14 +139,28 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
         public override AniListParser GetParser()
         {
-            // Resolve sparse membership at most once per fetch/test operation. Ordinary
-            // maps and explicit array flags require no collection request.
+            return new AniListParser(Settings);
+        }
+
+        private AniListAccountSnapshot GetAccountSnapshot()
+        {
+            var scope = ImportListSnapshotScope.Current;
             var generator = GetRequestGenerator();
-            var username = Settings.Username;
-            var membership = new Lazy<AniListCustomListMembershipSnapshot>(() =>
-                AniListCustomListMembershipSnapshot.Load(username,
-                    chunk => FetchImportListResponse(generator.GetMembershipRequest(chunk))));
-            return new AniListParser(Settings, id => membership.Value.GetMembership(id));
+            var key = ImportListSnapshotScope.Fingerprint("AniList",
+                "complete-anime-collection-v1",
+                Settings.BaseUrl.Trim(),
+                Settings.Username.Trim().ToUpperInvariant(),
+                Settings.AccessToken);
+            var snapshot = scope.GetOrLoad(key,
+                () => AniListAccountSnapshot.Load(Settings.Username, chunk => FetchImportListResponse(generator.GetCollectionRequest(chunk))),
+                value => value.PayloadBytes);
+
+            // Keep only complete direct public relationship nodes available through
+            // the import scope. These do not contain any account or list attributes.
+            scope.GetOrLoad(ImportListSnapshotScope.Fingerprint("AniListPublicRelations", key),
+                () => AniListPublicRelationSnapshot.From(snapshot.PublicMedia),
+                value => value.PayloadBytes);
+            return snapshot;
         }
 
         protected override ImportListResponse FetchImportListResponse(ImportListRequest request)
@@ -172,19 +193,6 @@ namespace NzbDrone.Core.ImportLists.AniList.List
             return result;
         }
 
-        private static void ValidatePagination(ImportListResponse response, PageInfo pageInfo, int requestedPage)
-        {
-            if (pageInfo.CurrentPage != requestedPage)
-            {
-                throw new ImportListException(response, "AniList returned page {0} when page {1} was requested.", pageInfo.CurrentPage, requestedPage);
-            }
-
-            if (pageInfo.HasNextPage == true && requestedPage >= AniListAPI.MaxPages)
-            {
-                throw new ImportListException(response, "AniList's 5000-entry pagination limit was reached. Narrow the selected list statuses before syncing.");
-            }
-        }
-
         protected override ImportListFetchResult FetchItems(Func<IImportListRequestGenerator, ImportListPageableRequestChain> pageableRequestChainSelector, bool isRecent = false)
         {
             var releases = new List<ImportListItemInfo>();
@@ -193,30 +201,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
             try
             {
-                var generator = GetRequestGenerator();
+                using var snapshotScope = ImportListSnapshotScope.BeginIfNeeded();
                 var parser = GetParser();
-                var pageIndex = 1;
-                var hasNextPage = false;
-                ImportListRequest currentRequest = null;
-
-                // Anilist caps the result list to 50 items at maximum per query, so the data must be pulled in batches.
-                // The number of pages are not known upfront, so the fetch logic must be changed to look at the returned page data.
-                do
-                {
-                    // Build the query for the current page
-                    currentRequest = generator.GetRequest(pageIndex);
-                    url = currentRequest.Url.FullUri;
-
-                    // Fetch and parse the response
-                    var response = FetchImportListResponse(currentRequest);
-                    var page = parser.ParseResponse(response, out var pageInfo).ToList();
-                    ValidatePagination(response, pageInfo, pageIndex);
-                    releases.AddRange(page.Where(IsValidItem));
-
-                    hasNextPage = pageInfo.HasNextPage == true;
-                    pageIndex++;
-                }
-                while (hasNextPage);
+                url = Settings.BaseUrl.Trim();
+                var snapshot = GetAccountSnapshot();
+                releases.AddRange(parser.ParseEntries(snapshot.GetEntries()).Where(IsValidItem));
 
                 // A later custom-list exclusion removes an earlier occurrence,
                 // including media that matched an explicitly included custom list.
@@ -296,6 +285,11 @@ namespace NzbDrone.Core.ImportLists.AniList.List
                 _logger.Error(ex, "An error occurred while processing feed. {0}", url);
             }
 
+            if (anyFailure)
+            {
+                releases.Clear();
+            }
+
             return new ImportListFetchResult(CleanupListItems(releases), anyFailure);
         }
 
@@ -303,33 +297,13 @@ namespace NzbDrone.Core.ImportLists.AniList.List
         {
             try
             {
+                // An unsaved Test always gets a new snapshot, independently of an
+                // import in the caller's execution context or an earlier Test.
+                using var snapshotScope = ImportListSnapshotScope.Begin();
                 var parser = GetParser();
-                var generator = GetRequestGenerator();
-                var pageIndex = 1;
-                var continueTesting = true;
-                var matchingIds = new HashSet<int>();
-                var checkAllPages = Settings.ExcludedCustomLists?.Any() == true;
-
-                // Anilist caps the result list to 50 items at maximum per query, so the data must be pulled in batches.
-                // The number of pages are not known upfront, so the fetch logic must be changed to look at the returned page data.
-                do
-                {
-                    var currentRequest = generator.GetRequest(pageIndex);
-                    var response = FetchImportListResponse(currentRequest);
-                    var page = parser.ParseResponse(response, out var pageInfo).ToList();
-                    ValidatePagination(response, pageInfo, pageIndex);
-
-                    matchingIds.UnionWith(page.Where(IsValidItem).Select(item => item.AniListId));
-
-                    // Exclusions may veto an earlier result, so test every page when enabled.
-                    continueTesting = pageInfo.HasNextPage == true && (checkAllPages || page.Count == 0);
-                    pageIndex++;
-                }
-                while (continueTesting);
-
-                matchingIds.ExceptWith(parser.ExcludedMediaIds);
-
-                if (matchingIds.Count == 0)
+                var snapshot = GetAccountSnapshot();
+                var matches = parser.ParseEntries(snapshot.GetEntries()).Where(IsValidItem).ToList();
+                if (matches.Count == 0)
                 {
                     return new NzbDroneValidationFailure(string.Empty,
                             "Connected to AniList, but no entries match the selected list statuses, release statuses and custom-list filters. Adjust these filters if you expected entries.")
