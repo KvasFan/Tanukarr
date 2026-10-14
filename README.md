@@ -5,11 +5,12 @@
 </p>
 
 **Tanukarr 1.0.4** manages **TV series and anime** in one Sonarr-derived application.
-The original candidate passed 231 container checks, but late review found
-dispatch opt-out and queue-source isolation gaps. Publication was cancelled.
-The amended source passed native/Linux builds and all thirteen container gates
-(231 checks), including real disposable Jellyfin; release publication is tracked in the
-[1.0.4 verification ledger](docs/releases/1.0.4-verification.md).
+The [1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
+is published and the preserved local deployment is running. Its exact source,
+assets and all thirteen hosted runtime gates (231 checks), including real
+disposable Jellyfin, were verified. See the
+[publication and deployment report](docs/releases/1.0.4-publication.md) for
+image identities, browser scope, data preservation and remaining security findings.
 It continues the earlier releases and includes
 selected-library Jellyfin refresh, AniList custom-list inclusion/exclusion,
 shared AniList request pacing and bounded HTTP 429 recovery, and correct Nyaa
@@ -328,7 +329,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `1.0.4` | Locally verified amended candidate: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. Fresh native/Linux builds and all thirteen runtime gates passed; hosted publication and owner deployment remain pending. |
+| `1.0.4` | Published and deployed: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. All thirteen hosted gates passed; source/assets, immutable image and protected-data preservation verified. |
 | `1.0.3` | Published hourly quality-size editors, mixed profile summaries, validated partial global updates and heuristic codec-normalized size decisions; exact checks/digest are in the publication follow-up. |
 | `1.0.2` | Published list-control/provider checkpoint: exclusion vetoes, complete AniList membership recovery, combined TMDB/Trakt/MDBList sources and direct MAL account status/tag filters. |
 | `1.0.1` | Historical grouping, season-pack searches, metadata retry/cache improvements, covered-library React correction and safe group-slot allocation; retains its original list controls. |

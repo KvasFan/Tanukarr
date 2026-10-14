@@ -162,7 +162,8 @@ configuration. It is separate from an owner's library and private provider
 accounts. Provider response fixtures and a passing local played-state check do
 not establish that an external account accepted a write. Current execution,
 publication and security state belong to the
-[release verification](releases/1.0.4-verification.md).
+[publication follow-up](releases/1.0.4-publication.md); earlier candidate states
+remain in the [preparation ledger](releases/1.0.4-verification.md).
 
 [Unmonitarr](https://github.com/baretsky/Unmonitarr) provided the requested
 watched-to-monitoring concept. The reviewed source is Baretsky's

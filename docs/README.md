@@ -19,8 +19,9 @@ repeat past verification or rename existing releases, volumes or tools.
 | [Docker installation](docker-installation.md) | GHCR/GitHub release installation, complete Compose YAML, volumes, authentication and updates |
 | [Metadata providers](metadata-providers.md) | Per-title TV/anime catalogue selection, credentials, persistent provider ownership and separate episode ordering |
 | [Quality sizes and video codecs](quality-and-codec-size.md) | Hourly size editors, mixed profile summaries, global-save scope, heuristic codec factors and unchanged API units |
-| [Tanukarr 1.0.4](releases/1.0.4.md) | Locally verified amended candidate for Jellyfin watched state, originating-account progress and backup timing; publication pending |
-| [1.0.4 release verification](releases/1.0.4-verification.md) | Fresh amended native/Linux builds, scans and all thirteen runtime gates (231 checks); hosted publication/deployment pending |
+| [Tanukarr 1.0.4](releases/1.0.4.md) | Published Jellyfin watched state, originating-account progress and backup timing |
+| [1.0.4 publication and deployment](releases/1.0.4-publication.md) | Exact release source/image/assets, all thirteen hosted gates, protected upgrade and remaining findings |
+| [1.0.4 release verification](releases/1.0.4-verification.md) | Preserved preparation ledger: original cancellation, fresh amended native/Linux tests and local image gates |
 | [Series, anime and movie groups](anime-season-groups.md) | 1.0.1 official relationships, manual overrides, story-arc/movie folder expressions, grouped library views and native-numbering limits |
 | [Tanukarr 1.0.3](releases/1.0.3.md) | Published quality/codec changes, upstream review and upgrade guidance |
 | [1.0.3 release verification](releases/1.0.3-verification.md) | Preserved preparation ledger, original candidate checks and limits |
@@ -98,12 +99,11 @@ upstream checkpoints, including `59c22e859`, already present in Git are identifi
 in the contributor register. A recorded snapshot is not a continuously updated
 upstream-version promise.
 
-Tanukarr 1.0.4's original candidate passed 231 checks and separate browsers, but
-late review found dispatch opt-out and queue-source isolation gaps. Its Docker
-publication runs were cancelled. Those receipts are preserved separately from
-the fresh amended native/Linux builds, tests, scans and all thirteen runtime
-reports (231 checks), plus separate watched/Backup browser checks. Publication and owner deployment
-remain pending. The preceding 1.0.3 reports retain
+Tanukarr 1.0.4 is published and deployed from amended source `fee14c10…`.
+Its own hosted workflows, thirteen runtime reports (231 checks), source/image
+assets and protected upgrade were verified. The publication follow-up records
+fresh published-image browser scope and remaining findings. Original cancelled
+candidate receipts and preparation states remain separate. The preceding 1.0.3 reports retain
 their immutable source, numeric evidence and deployment limits.
 
 The October 12 security-validation checkpoint records its Linux amd64

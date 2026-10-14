@@ -50,8 +50,10 @@ and fixed codec-normalized size decisions. The fresh
 [upstream audit](docs/upstream-audit-2026-10-13.md) found no newer accepted
 default heads; an inherited save-error feedback gap is adapted to the modern UI.
 Version 1.0.4 adds opt-in Jellyfin watched state and guarded originating-account
-progress, plus successful manual-backup task timing. Its verification and
-publication status remain separate from the preceding release.
+progress, plus successful manual-backup task timing. Its exact amended source,
+published image, hosted checks and preserved local deployment are recorded in
+the [1.0.4 publication follow-up](docs/releases/1.0.4-publication.md), separately
+from the preceding release and cancelled original candidate.
 
 Use the [documentation index](docs/README.md) for current guides and dated
 validation checkpoints. This file describes design; it does not replace the

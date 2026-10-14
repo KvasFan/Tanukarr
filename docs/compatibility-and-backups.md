@@ -49,8 +49,9 @@ external services if moving an installation directory.
 
 For an existing Tanukarr Docker deployment, stop the container, save a
 consistent configuration backup and change the image to the newly verified
-`ghcr.io/kvasexpert/tanukarr:1.0.4` after publication. Its
-[verification ledger](releases/1.0.4-verification.md) tracks the current state;
+`ghcr.io/kvasexpert/tanukarr:1.0.4`. Its
+[publication follow-up](releases/1.0.4-publication.md) records the verified
+manifest and protected 35-to-37-table upgrade;
 the [1.0.3 publication follow-up](releases/1.0.3-publication.md) retains the
 preceding release's verified digest and deployment evidence. Preserve the
 original `/config` volume or bind mount, media mounts, Compose project/volume
@@ -103,7 +104,8 @@ a real valid ZIP was created while task timing stayed unchanged. The new
 integrity, V3/V5 timing, deliberate unwritable-folder failure, recovery and
 scheduled/manual category separation. Its optional Chromium helper presses the
 actual Tasks button and checks the refreshed cell without page reload. Newly
-executed results belong to [1.0.4 verification](releases/1.0.4-verification.md).
+executed results belong to the [preparation ledger](releases/1.0.4-verification.md)
+and [published-image follow-up](releases/1.0.4-publication.md).
 
 Migrations 248/249 add Jellyfin watched state and the persistent originating-list
 progress queue to the same SQLite database. A standard ZIP includes them with

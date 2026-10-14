@@ -10,27 +10,30 @@ Private vulnerability reporting is enabled for this repository. Use
 [private reporting form](https://github.com/KvasExpert/Tanukarr/security/advisories/new),
 before publishing exploit details or credentials.
 
-The published 1.0.3 release uses Git tag `v1.0.3` and GHCR image
-`ghcr.io/kvasexpert/tanukarr:1.0.3`. The
-[publication follow-up](docs/releases/1.0.3-publication.md) records the verified
+The published 1.0.4 release uses Git tag `v1.0.4` and GHCR image
+`ghcr.io/kvasexpert/tanukarr:1.0.4`. The
+[publication follow-up](docs/releases/1.0.4-publication.md) records the verified
 image, executed scans and remaining findings. Identify the exact Git commit and image digest
-in reports. The [release notes](docs/releases/1.0.3.md)
+in reports. The [release notes](docs/releases/1.0.4.md)
 and release manifest record
 the artifact being distributed. Source Kakarotto, gaboy or ikatun images can
 contain different code and require reports to their own maintainers.
 
-The 1.0.4 candidate adds selected-user Jellyfin state and opt-in account writes.
-Its [fresh verification ledger](docs/releases/1.0.4-verification.md) distinguishes
-pending source/image checks from executed evidence. Neither a configured gate nor
-the preceding release's scan establishes the candidate's security result.
+Release 1.0.4 adds selected-user Jellyfin state and opt-in account writes.
+Its [preparation ledger](docs/releases/1.0.4-verification.md) preserves earlier
+candidate checkpoints; the publication follow-up records fresh hosted evidence.
+Neither a configured gate nor an earlier release's scan establishes a new
+image's security result.
 
-The freshly amended local image `cd27c2fc…` was scanned at its exact immutable
+The published image `6b57ad2f…` was scanned at its exact immutable
 identity: 49 vulnerability occurrences across 15 distinct CVEs, including
 21 High occurrences and zero Critical findings; no image secret matches were
 detected. The amended-source scan covered 46 production C# files with 27 rules,
-zero parse errors and two retained inherited calendar INFO findings. ImageSharp
+zero parse errors and two retained inherited calendar INFO findings; an explicit
+46-file Git witness matches release source `fee14c10…`. ImageSharp
 3.1.12 and the documented upgrade license constraint remain. These are scoped
-executed scans, not a clean-security claim or verification of a published image.
+executed scans, not a clean-security claim. The local amended image's separate
+scan remains retained at its original checkpoint.
 
 For a defect confirmed to affect upstream Sonarr, follow the
 [upstream security policy](https://github.com/Sonarr/Sonarr/blob/develop/SECURITY.md).

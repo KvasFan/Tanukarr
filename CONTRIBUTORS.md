@@ -180,13 +180,17 @@ supplied artwork. Actual macOS Finder/AppKit rendering was not executed here.
   exact imported-file matching and optional boundary-checked path translation,
   public watched flag/date with private source authority, reversible owned
   monitoring changes, migrations 248/249 and guarded AniList/MAL/Trakt/SIMKL
-  account progress. It also implements retry/idempotency guards, successful
+  account progress. It also implements current authority checks before each
+  target dispatch, one-source queue isolation, retry/idempotency guards, successful
   manual-backup task updates ordered before SignalR broadcasts, regression/runtime
   fixtures and English documentation. These attribution statements do not imply
   that all candidate checks or live private-account writes passed.
 
-See [Jellyfin watched status](docs/jellyfin-watched.md) and
-[1.0.4 verification](docs/releases/1.0.4-verification.md) for behavior and
+The final amended release source is
+[`fee14c10a50c2ca92eb633a2ee821a1095531997`](https://github.com/KvasExpert/Tanukarr/commit/fee14c10a50c2ca92eb633a2ee821a1095531997).
+See [Jellyfin watched status](docs/jellyfin-watched.md),
+[1.0.4 publication](docs/releases/1.0.4-publication.md) and the preserved
+[preparation ledger](docs/releases/1.0.4-verification.md) for behavior and
 actually executed evidence. All earlier source authors, Git identity counts,
 release hashes and historical AI declarations below remain unchanged.
 

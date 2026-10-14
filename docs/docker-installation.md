@@ -14,21 +14,21 @@ query encoding introduced in earlier versions remain included. Original
 Sonarr and fork contributors, including recorded AI tool/model attribution, are
 listed in [CONTRIBUTORS.md](../CONTRIBUTORS.md).
 
-**Publication checkpoint:** 1.0.4 is being prepared. Confirm the
-[new verification ledger](releases/1.0.4-verification.md) and completed release
-before using the versioned image/tag examples below. A documentation/version
-change does not publish an image. The preceding verified 1.0.3 remains available
-under its own tag and recorded digest.
+**Published release:** 1.0.4 was published on 2026-10-14 with verified source,
+nine downloadable assets and thirteen passing runtime reports. The
+[publication and deployment follow-up](releases/1.0.4-publication.md) records its
+exact Linux amd64 manifest, remaining findings and preserved local upgrade.
+The preceding 1.0.3 remains available under its own tag and recorded digest.
 
 GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
 below uses `ghcr.io/kvasexpert/tanukarr:1.0.4`; the GitHub repository itself is source
 code, not a Docker image. Check the release notes and
 [package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr) for
 the published architectures and image digest. The
-[historical 1.0.3 publication follow-up](releases/1.0.3-publication.md) verifies anonymous
-pulls, exact source/image identities and the nine downloadable release assets.
-Those identifiers belong to 1.0.3. Use the newly verified release's own digest
-when pinning a 1.0.4 deployment.
+[1.0.4 publication follow-up](releases/1.0.4-publication.md) verifies anonymous
+pulls, exact source/image identities and nine downloadable assets. Use its own
+recorded digest when pinning a 1.0.4 deployment; earlier release identities remain
+in their historical reports.
 
 ## Prerequisites
 
@@ -100,7 +100,7 @@ Open **http://localhost:6970**. The named volume holds the database, `config.xml
 settings and logs. Recreating the container retains this volume. Avoid
 `docker compose down -v`, which deletes it.
 
-After verified publication, the [1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
+The [verified 1.0.4 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.0.4)
 provides ready-to-use
 [`compose.yaml`](https://github.com/KvasExpert/Tanukarr/releases/download/v1.0.4/compose.yaml)
 with bind-mounted `./config` and `./media` defaults. It is an alternative to the
@@ -186,7 +186,7 @@ custom-list membership, within the enabled Import membership/release statuses.
 Version 1.0.4 retains the 1.0.2 rule: excluded custom-list members are removed, including overlap with
 an included list. It removes the six separate account-status exclusion controls
 and their behavior; the immutable 1.0.1 image retains its original settings.
-Use 1.0.4 after verified publication and check its source revision.
+Use the verified 1.0.4 image and check its source revision.
 The list-control changes introduced in 1.0.2 also remove the
 duplicate legacy custom-list textbox, moving its saved name into Included
 Custom Lists tags without discarding the filter.
@@ -234,7 +234,7 @@ tag above. For a reproducible deployment, replace the image line with the digest
 recorded for that release:
 
 ```yaml
-    image: ghcr.io/kvasexpert/tanukarr@sha256:REPLACE_WITH_RELEASE_DIGEST
+    image: ghcr.io/kvasexpert/tanukarr@sha256:6b57ad2f00409f641bac5622437f46cd8b22e050d2e74b58dcf905c280301494
 ```
 
 Release workflows also produce `latest` for release builds, `edge` for untagged
@@ -323,7 +323,7 @@ the checks encoded in the Dockerfile. Further test commands are in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 The explicit source argument uses the current canonical repository URL. The
-`v1.0.4` tag is a preparation target until verified publication completes.
+verified `v1.0.4` tag resolves to `fee14c10a50c2ca92eb633a2ee821a1095531997`.
 To build development code instead, clone `main`
 and check the repository's `VERSION` file.
 An untagged main checkout can include changes added after a release, so record
