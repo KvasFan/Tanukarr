@@ -9,6 +9,20 @@ follow the MIT-licensed
 [wshobson/agents definitions at `044b4b21`](https://github.com/wshobson/agents/tree/044b4b21f083948e69ec878a7b07c8d0951a6ffa).
 Those role definitions do not identify a different model.
 
+The implementation is recorded in
+[`052c5546`](https://github.com/KvasExpert/Tanukarr/commit/052c5546f4bcb527679109256809719e3bf6e63e).
+The same OpenAI Codex based on GPT-6 session supplied the supported CI formatter
+in [`d027563b`](https://github.com/KvasExpert/Tanukarr/commit/d027563b4dfb504f4aa0801ac29568f5615a1b78),
+the isolated read-only health probe in
+[`ce780e33`](https://github.com/KvasExpert/Tanukarr/commit/ce780e3348e133c3e5b8722270b87beaa9103416),
+host-runner media-fixture permissions in
+[`2d75d212`](https://github.com/KvasExpert/Tanukarr/commit/2d75d212a216619397e1ae377f10a48ca783cc36),
+and serial CI output copies in
+[`6d947e60`](https://github.com/KvasExpert/Tanukarr/commit/6d947e60ea6f6a24dc06d695dacf6f51a48f27e5).
+Executed results and public distribution identities belong to the
+[publication report](docs/releases/0.1.0-publication.md), separately from
+implementation credit.
+
 The movie providers are original implementations of the official TMDB and OMDb
 API contracts. Radarr's GPL-3.0
 [`df2faa64` architecture](https://github.com/Radarr/Radarr/tree/df2faa64c75e6081556d11232dc46523e7264ea1)
