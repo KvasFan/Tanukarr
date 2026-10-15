@@ -59,7 +59,7 @@ async function main(input) {
     return context;
   };
   const context = await createContext();
-  const page = await context.newPage();
+  let page = await context.newPage();
   let diagnosticPage = page;
   let failure = null;
   const api = async (resource) => {
@@ -508,7 +508,12 @@ async function main(input) {
     diagnosticPage = page;
     checks.push('a controlled missing thumbnail recovers through the existing original cached image before showing a placeholder');
 
-    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileContext = await createContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await context.storageState() });
+    page = await mobileContext.newPage();
+    diagnosticPage = page;
+    observations.mobileInput = await page.evaluate(() => ({ coarsePointer: matchMedia('(pointer: coarse)').matches, touchPoints: navigator.maxTouchPoints }));
+    assert.equal(observations.mobileInput.coarsePointer, true);
+    assert.ok(observations.mobileInput.touchPoints > 0);
     await page.goto(input.baseUrl + groupRoute('anilist:900501'));
     await visibleCovers(page);
     assert.equal(await page.locator('main').evaluate((main) => main.scrollWidth <= main.clientWidth + 1), true);
@@ -530,6 +535,21 @@ async function main(input) {
     await page.goto(input.baseUrl + '/settings/quality');
     await page.locator('[data-quality-definition-id]').first().waitFor({ state: 'visible' });
     assert.equal(await page.locator('main').evaluate((main) => main.scrollWidth <= main.clientWidth + 1), true);
+    await page.evaluate(async () => { await document.fonts.ready; });
+    observations.mobileQualityFields = await page.locator('[data-quality-definition-id] input[type="number"]').evaluateAll((inputs) => {
+      const context = document.createElement('canvas').getContext('2d');
+      return inputs.map((input) => {
+        const style = getComputedStyle(input);
+        context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        const text = input.value || input.placeholder;
+        const textWidth = context.measureText(text).width;
+        const contentWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 16;
+        return { name: input.name, text, textWidth, contentWidth, fontSize: parseFloat(style.fontSize) };
+      });
+    });
+    assert.ok(observations.mobileQualityFields.length >= 66);
+    assert.ok(observations.mobileQualityFields.every((field) => field.fontSize >= 16), 'touch quality inputs retain readable text');
+    assert.ok(observations.mobileQualityFields.every((field) => field.contentWidth >= field.textWidth + 1), 'mobile quality inputs display complete numeric values and unlimited placeholders with space for number controls');
     await screenshot('quality-settings-mobile.png');
     await page.getByRole('button', { name: profile.name, exact: true }).click();
     await page.getByRole('dialog').locator('input[name="codecMultipliers.HEVC"]').waitFor({ state: 'visible' });
@@ -550,6 +570,15 @@ async function main(input) {
     await page.goto(input.baseUrl + `/series/${secondMember.titleSlug}?season=1#season-1`);
     await page.locator('#season-1 table tbody tr').first().waitFor({ state: 'visible' });
     assert.equal(await page.getByRole('button', { name: /^(Show Episodes|Hide Episodes|Expand All|Collapse All)$/ }).count(), 0);
+    observations.mobileSeasonHeader = await page.locator('#season-1').getByText('Season 1', { exact: true }).first().evaluate((label) => {
+      const name = label.getBoundingClientRect();
+      const statistics = label.parentElement.nextElementSibling.getBoundingClientRect();
+      return { label: name.toJSON(), statistics: statistics.toJSON(), scrollWidth: label.scrollWidth, clientWidth: label.clientWidth };
+    });
+    const seasonPackBounds = await page.locator('#season-1').getByRole('button', { name: 'Search Season 1 Packs', exact: true }).boundingBox();
+    assert.ok(observations.mobileSeasonHeader.clientWidth >= observations.mobileSeasonHeader.scrollWidth);
+    assert.ok(observations.mobileSeasonHeader.label.right <= observations.mobileSeasonHeader.statistics.left + 1, 'the complete mobile season label stays clear of its statistics');
+    assert.ok(seasonPackBounds.y >= observations.mobileSeasonHeader.label.bottom, 'mobile search actions wrap below the season label');
     await screenshot('season-episodes-expanded-mobile.png', page, false);
     await page.locator('#season-1 button[aria-haspopup="dialog"]').click();
     await page.getByRole('button', { name: 'Manage Episodes', exact: true }).click();

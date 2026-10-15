@@ -44,8 +44,8 @@ jobs:
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" "$ASSET_PATH"/* --clobber
             gh release edit "$tag" --title "Tanukarr $RELEASE_VERSION" \
-              --notes-file "$notes" --draft=false
+              --notes-file "$notes" --draft=false --latest
           else
             gh release create "$tag" "$ASSET_PATH"/* --verify-tag \
-              --title "Tanukarr $RELEASE_VERSION" --notes-file "$notes"
+              --title "Tanukarr $RELEASE_VERSION" --notes-file "$notes" --latest
           fi

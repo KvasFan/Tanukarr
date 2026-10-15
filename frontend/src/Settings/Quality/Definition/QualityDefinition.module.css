@@ -59,7 +59,7 @@
 
 @media (--breakpointSmall) {
   .qualityDefinition {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
   }
 
@@ -79,7 +79,4 @@
     font-size: 12px;
   }
 
-  .limitField {
-    flex-wrap: wrap;
-  }
 }

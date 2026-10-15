@@ -201,7 +201,10 @@ def package(args):
             "smokeChecks": len(smoke["checks"]), "functionalChecks": len(functional["checks"]),
             "additionalVerificationChecks": {name: len(report["checks"]) for name, report in additional.items()},
             "liveAniListRequested": bool(functional.get("liveAniListRequested")),
-            "browserUITested": bool(functional.get("browserUITested")),
+            "browserUITested": bool(functional.get("browserUITested") or any(
+                report.get("browserUITested") or report.get("browser", {}).get("passed")
+                for report in additional.values()
+            )),
             "realLibraryTested": bool(smoke.get("realLibraryTested") or functional.get("realLibraryTested")),
             "downloadsTested": bool(smoke.get("downloadsTested") or functional.get("downloadsTested")),
             "notes": "Verification scope is recorded in the included reports; the SBOM is an inventory, not a clean security scan.",

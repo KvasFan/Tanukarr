@@ -224,7 +224,8 @@
 }
 
 .cardOverview {
-  display: box;
+  /* stylelint-disable-next-line value-no-vendor-prefix -- required for -webkit-line-clamp */
+  display: -webkit-box;
   overflow: hidden;
   margin: 14px 0;
   color: var(--inkSoft);

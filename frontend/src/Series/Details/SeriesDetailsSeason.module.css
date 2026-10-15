@@ -177,6 +177,14 @@
 }
 
 @media (--breakpointSmall) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .header > button {
+    margin: 0 0 12px 16px;
+  }
+
   .season {
     border-right: 0;
     border-left: 0;
@@ -184,7 +192,7 @@
   }
 
   .left {
-    flex: 1;
+    flex: 1 1 100%;
     min-width: 0;
     max-width: none;
   }
@@ -202,6 +210,10 @@
 
   .actionsMenuButton {
     padding: 6px 8px;
+  }
+
+  .actionsMenu {
+    margin: 0 8px 12px auto;
   }
 
   .sizeOnDisk {
