@@ -7,6 +7,7 @@ import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
+import os
 from pathlib import Path
 import secrets
 import sqlite3
@@ -215,6 +216,19 @@ def serve_fixture(root):
 
 
 class CollectionsBrowser(groups.AnimeGroups):
+    def media_generation_receipt(self, kind, result):
+        """Keep bounded diagnostics for owned FFmpeg inputs, without fixture secrets."""
+        detail = result.stderr or ""
+        if self.root:
+            detail = detail.replace(str(self.root), "[owned-fixture]")
+        for secret in (self.api_key, self.metadata_key, self.username, self.password,
+                       "generated-gui-tmdb", "generated-gui-omdb"):
+            if secret:
+                detail = detail.replace(secret, "[REDACTED]")
+        receipt = {"kind": kind, "returnCode": result.returncode, "stderr": detail[-2000:]}
+        self.media_generation_diagnostics = getattr(self, "media_generation_diagnostics", []) + [receipt]
+        return receipt
+
     fixture_hosts = ("graphql.anilist.co", "s4.anilist.co", "api.themoviedb.org", "image.tmdb.org", "www.omdbapi.com", "m.media-amazon.com")
 
     def __init__(self, args):
@@ -299,7 +313,9 @@ class CollectionsBrowser(groups.AnimeGroups):
             [self.args.ffmpeg, "-nostdin", "-v", "error", "-f", "lavfi", "-i", "color=c=blue:s=1280x720:r=1",
              "-t", "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-y", str(source)],
             capture_output=True, text=True, timeout=60)
-        require(generated.returncode == 0 and source.is_file(), "Could not generate the owned browser video")
+        video_receipt = self.media_generation_receipt("browser-video", generated)
+        require(generated.returncode == 0 and source.is_file(),
+                "Could not generate the owned browser video: " + json.dumps(video_receipt))
         source.chmod(0o644)
         episode = next(item for item in self.episodes(member) if item["seasonNumber"] == 1 and item["episodeNumber"] == 1)
         self.command({"name": "ManualImport", "importMode": "copy", "files": [{
@@ -313,13 +329,28 @@ class CollectionsBrowser(groups.AnimeGroups):
         self.imported_hash = hashlib.sha256(source.read_bytes()).hexdigest()
         if self.args.gui_audit:
             self.gui_import_directory = "/media/explicit/" + GUI_IMPORT_MOVIE[1]
-            self.docker("exec", "--user", f"1000:{self.fixture_gid}", self.container, "mkdir", self.gui_import_directory)
+            # docker exec does not inherit the entrypoint's umask. Share only
+            # this generated directory with the host runner through fixture_gid.
+            self.docker("exec", "--user", f"1000:{self.fixture_gid}", self.container,
+                        "mkdir", "-m", "0775", self.gui_import_directory)
             target = self.root / "media" / "explicit" / GUI_IMPORT_MOVIE[1] / f"{GUI_IMPORT_MOVIE[1]} ({GUI_IMPORT_MOVIE[2]}) 720p WEB-DL.mkv"
+            require(target.parent.is_dir() and not target.parent.is_symlink() and
+                    target.parent.resolve().is_relative_to((self.root / "media" / "explicit").resolve()),
+                    "Generated movie directory is outside the owned fixture")
+            ownership = self.docker("exec", "--user", f"1000:{self.fixture_gid}", self.container,
+                                    "stat", "-c", "%u:%g:%a", self.gui_import_directory)
+            require(ownership == f"1000:{self.fixture_gid}:775" and os.access(target.parent, os.W_OK),
+                    "Generated movie directory must retain app ownership and host fixture-group write access")
+            self.gui_import_directory_ownership = {"appUid": 1000, "sharedGid": self.fixture_gid,
+                                                   "mode": "0775", "hostWriteAccess": True,
+                                                   "ownedDirectoryVerified": True}
             movie_video = subprocess.run(
                 [self.args.ffmpeg, "-nostdin", "-v", "error", "-i", str(source), "-f", "lavfi", "-i",
                  "sine=frequency=1000:sample_rate=48000", "-t", "2", "-c:v", "copy", "-c:a", "aac", "-y", str(target)],
                 capture_output=True, text=True, timeout=60)
-            require(movie_video.returncode == 0 and target.is_file(), "Could not generate the owned audio/video movie for Library Import")
+            movie_receipt = self.media_generation_receipt("library-import-movie", movie_video)
+            require(movie_video.returncode == 0 and target.is_file(),
+                    "Could not generate the owned audio/video movie for Library Import: " + json.dumps(movie_receipt))
             target.chmod(0o644)
             self.gui_import_hash = hashlib.sha256(target.read_bytes()).hexdigest()
         self.command({"name": "RescanSeries", "seriesId": member["id"]})
@@ -458,6 +489,8 @@ def main():
                   "mockImage": args.mock_image, "mockImageId": audit.mock_id, "passed": error is None,
                   "error": error, "checks": audit.results + ((browser or {}).get("checks", [])), "browser": browser,
                   "fixtureRequests": requests, "cleanupConfirmed": cleanup, "fixtureConfigOwnership": audit.fixture_config_ownership,
+                  "mediaGenerationDiagnostics": getattr(audit, "media_generation_diagnostics", []),
+                  "guiImportDirectoryOwnership": getattr(audit, "gui_import_directory_ownership", None),
                   "scope": {"ownedFixture": True, "ownerConfigurationAccessed": False, "privateAccountUsed": False,
                             "publicMetadataRequests": False, "acquisitionTested": False, "internalNetwork": True,
                             "externalRoutingAllowed": False, "trustedCatalogueTls": True, "realLibraryTested": False,
