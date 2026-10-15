@@ -797,6 +797,7 @@ interface SaveSeriesEditorPayload {
   seasonFolder?: boolean;
   rootFolderPath?: string;
   tags?: number[];
+  applyTags?: string;
   animeGroupTitle?: string;
   animeGroupKind?: AnimeGroupKind;
   animeGroupMovieFolderStyle?: AnimeGroupMovieFolderStyle;
