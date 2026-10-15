@@ -10,9 +10,11 @@ the product version and adds graphical account creation, collection and quality
 fixes, configurable metadata sources and TVmaze. Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
 
-See the [0.1.0 release notes](docs/releases/0.1.0.md) and
-[verification ledger](docs/releases/0.1.0-verification.md) for executed checks,
-exact source/image identities and remaining findings. The [1.1.0 publication](docs/releases/1.1.0-publication.md)
+See the [0.1.0 release notes](docs/releases/0.1.0.md),
+[publication report](docs/releases/0.1.0-publication.md) and
+[preparation ledger](docs/releases/0.1.0-verification.md) for executed checks,
+exact source/image identities, completed release replacement and remaining
+findings. The [1.1.0 publication](docs/releases/1.1.0-publication.md)
 retains the base release's original evidence. The [upstream review](docs/upstream-audit-2026-10-14.md)
 records the latest fetched Sonarr, Kakarotto, gaboy and ikatun heads and the
 compatibility decisions. Source attribution remains in [CONTRIBUTORS.md](CONTRIBUTORS.md).
@@ -23,7 +25,7 @@ and [metadata guide](docs/metadata-providers.md) to configure the application.
 The [documentation index](docs/README.md) links all maintained guides and dated
 reports. Published assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
 The [1.0.5 publication report](docs/releases/1.0.5-publication.md) preserves the
-previous release's exact source, image, hosted tests and protected deployment
+earlier release's exact source, image, hosted tests and protected deployment
 evidence. Historical reports retain their original tested scope.
 
 A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series and anime,

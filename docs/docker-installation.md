@@ -3,11 +3,12 @@
 Tanukarr manages TV series, anime and movie collections. The 0.1.0 reset derives
 from 1.1.0 and keeps its database schema and APIs. It adds graphical account
 creation, collection/quality fixes and configurable metadata catalogues including
-TVmaze. Read the [release notes](releases/0.1.0.md) and
-[verification ledger](releases/0.1.0-verification.md) for actual publication
+TVmaze. Read the [release notes](releases/0.1.0.md),
+[publication report](releases/0.1.0-publication.md) and
+[preparation ledger](releases/0.1.0-verification.md) for actual publication
 status, exact source/image identities and remaining security findings.
 
-The intended release image is `ghcr.io/kvasexpert/tanukarr:0.1.0`. The GitHub
+The published release image is `ghcr.io/kvasexpert/tanukarr:0.1.0`. The GitHub
 repository contains source, while GHCR stores Docker images. Published support
 is Linux amd64; a configured build target is not a tested or published platform.
 Previous [1.1.0 publication evidence](releases/1.1.0-publication.md) describes
@@ -150,11 +151,16 @@ The reset keeps migrations 251/252 from 1.1.0 and v3/v5 APIs. The inherited
 internal Core version differs from Tanukarr's product version.
 
 The release workflow assigns `latest` to the tested release, `edge` to main,
-and `sha-<full-commit>` to a build. A digest pins exact image bytes; use the
-published platform manifest from the new verification ledger in the form
-`ghcr.io/kvasexpert/tanukarr@sha256:<published-manifest>`. Do not reuse the
-historical 1.1.0 digest for the new release. Only use assets whose publication
-and checks are actually recorded in the ledger.
+and `sha-<full-commit>` to a build. A digest pins exact image bytes. The verified
+0.1.0 Linux amd64 reference is:
+
+```text
+ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd
+```
+
+The publication report binds this manifest to the tested source and assets.
+Anonymous pulls of this reference were verified. The historical 1.1.0 digest
+continues to identify the historical image.
 
 Anonymous pulls should work for public packages. If registry policy requires
 authentication, use `docker login ghcr.io -u <github-user>` and enter an

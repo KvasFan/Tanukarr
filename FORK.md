@@ -4,7 +4,8 @@ The October 15 product version reset derives **0.1.0** from the exact 1.1.0
 source and retains its migrations and APIs. It adds graphical first-run account
 creation, collection/quality fixes, enabled and ordered metadata catalogues,
 TVmaze and container hardening. This is not a database downgrade. See the
-[reset notes](docs/releases/0.1.0.md) and [new verification ledger](docs/releases/0.1.0-verification.md).
+[reset notes](docs/releases/0.1.0.md), [publication report](docs/releases/0.1.0-publication.md)
+and [preparation ledger](docs/releases/0.1.0-verification.md).
 
 The reasoning behind Tanukarr's integrated changes, and the trade-offs they carry.
 [README.md](README.md) covers what the features are and how to install; this file
@@ -77,7 +78,7 @@ Optional presentation enrichment uses verified IDs, a bounded public-only cache
 and existing rate coordinators. Custom quality presets keep persistent IDs;
 retirement preserves historical comparisons and prevents new selections. Codec
 factors belong to each profile and are applied once to normalized size policy.
-The [current release notes](docs/releases/1.1.0.md) and
+The [1.1.0 release notes](docs/releases/1.1.0.md) and
 [verification ledger](docs/releases/1.1.0-verification.md) describe the actual
 implementation and executed checks.
 

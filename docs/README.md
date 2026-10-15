@@ -8,14 +8,17 @@ Archive wording uses the current Tanukarr product terminology. Numeric test
 results, source/image hashes, tags and published assets keep their recorded
 identities. Historical release pages and manifests identify original asset
 names; angle-bracket paths in historical commands are placeholders for the
-actual existing local directories and files. This wording update does not
-repeat past verification or rename existing releases, volumes or tools.
+actual existing local directories and files. Historical wording edits do not
+repeat past verification. The separate October 15 version reset replaced the
+old public release objects; its publication report records that operation.
 
 ## Using and contributing to this integration
 
 | Document | Purpose |
 | --- | --- |
 | [Tanukarr 0.1.0 reset](releases/0.1.0.md) | 1.1.0-derived account setup, collection/UI fixes, metadata source controls and container hardening |
+| [0.1.0 publication and release replacement](releases/0.1.0-publication.md) | Exact source/public digest, 21 hosted gates, verified assets, interface evidence and replacement of all nine former GitHub releases |
+| [0.1.0 public-image security](releases/0.1.0-image-security.json) | Actual public-image CVEs, scanner/registry identities and vendor remedies, including the licensed v3 backport |
 | [0.1.0 reset verification](releases/0.1.0-verification.md) | New executed evidence and publication state, separate from the former version |
 | [Tanukarr 1.1.0](releases/1.1.0.md) | Full collection pages, alternate artwork, custom qualities and editable profile codec factors |
 | [1.1.0 publication and deployment](releases/1.1.0-publication.md) | Exact source/image/assets, nineteen hosted gates, public security findings and protected upgrade evidence |
