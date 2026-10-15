@@ -52,7 +52,9 @@ function CollectionSearchContent({
   const [statuses, setStatuses] = useState<SearchStatus[]>(() =>
     jobs.map((job) => ({ ...job, state: 'pending', count: 0 }))
   );
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(
+    jobs[0]?.seriesId ?? null
+  );
   const bodyRef = useRef<HTMLDivElement>(null);
   const changeSelection = useCallback(
     ({ value }: InputChanged<string>) => setSelectedId(Number(value)),
@@ -100,7 +102,6 @@ function CollectionSearchContent({
 
           queryClient.setQueryData(['/release', payload], releases);
           update(job.seriesId, 'complete', releases.length);
-          setSelectedId((current) => current ?? job.seriesId);
         } catch {
           if (!controller.signal.aborted) {
             update(job.seriesId, 'failed');
@@ -130,6 +131,19 @@ function CollectionSearchContent({
   ).length;
   const isSearching = completed < jobs.length;
   const failed = statuses.filter((status) => status.state === 'failed');
+  const selectedStatus = statuses.find(
+    (status) => status.seriesId === selectedId
+  );
+
+  useEffect(() => {
+    if (selectedStatus?.state === 'failed') {
+      const successful = statuses.find((status) => status.state === 'complete');
+
+      if (successful) {
+        setSelectedId(successful.seriesId);
+      }
+    }
+  }, [selectedStatus, statuses]);
 
   return (
     <ModalContent onModalClose={onModalClose}>
@@ -165,12 +179,13 @@ function CollectionSearchContent({
             {translate('CollectionSearchEntryError', { title: status.title })}
           </Alert>
         ))}
-        {selectedId === null ? null : (
+        {selectedId === null || selectedStatus?.state !== 'complete' ? null : (
           <InteractiveSearch
             key={selectedId}
             type="series"
             searchPayload={{ seriesId: selectedId, completeSeries: true }}
             scrollerRef={bodyRef}
+            initialSelectedFilterKey="all"
           />
         )}
       </ModalBody>

@@ -1,5 +1,11 @@
 # What this fork changes
 
+The October 15 product version reset derives **0.1.0** from the exact 1.1.0
+source and retains its migrations and APIs. It adds graphical first-run account
+creation, collection/quality fixes, enabled and ordered metadata catalogues,
+TVmaze and container hardening. This is not a database downgrade. See the
+[reset notes](docs/releases/0.1.0.md) and [new verification ledger](docs/releases/0.1.0-verification.md).
+
 The reasoning behind Tanukarr's integrated changes, and the trade-offs they carry.
 [README.md](README.md) covers what the features are and how to install; this file
 covers why they work the way they do.

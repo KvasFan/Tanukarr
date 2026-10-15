@@ -1,10 +1,17 @@
+using System.Collections.Generic;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.MetadataSource;
 using Sonarr.Http.REST;
 
 namespace Sonarr.Api.V3.Config
 {
     public class MetadataSourceConfigResource : RestResource
     {
+        public List<MetadataSourceType> MetadataSourceOrder { get; set; }
+        public List<MetadataSourceType> DisabledMetadataSources { get; set; }
+        public bool TmdbApiKeyConfigured { get; set; }
+
         /// <summary>
         /// User-supplied TMDB API key. TMDB requires one per user and does not permit a
         /// shared key to be redistributed, so there is no default.
@@ -18,7 +25,10 @@ namespace Sonarr.Api.V3.Config
         {
             return new MetadataSourceConfigResource
             {
-                TmdbApiKey = model.TmdbApiKey
+                MetadataSourceOrder = MetadataSourcePolicy.Order(model),
+                DisabledMetadataSources = MetadataSourcePolicy.Disabled(model),
+                TmdbApiKeyConfigured = model.TmdbApiKey.IsNotNullOrWhiteSpace(),
+                TmdbApiKey = model.TmdbApiKey.IsNotNullOrWhiteSpace() ? "********" : string.Empty
             };
         }
     }

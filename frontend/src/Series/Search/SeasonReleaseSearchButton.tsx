@@ -5,6 +5,7 @@ import translate from 'Utilities/String/translate';
 import SeasonInteractiveSearchModal from './SeasonInteractiveSearchModal';
 
 interface SeasonReleaseSearchButtonProps {
+  size?: React.ComponentProps<typeof Button>['size'];
   seriesId: number;
   seasonNumber: number;
   displaySeasonNumber?: number;
@@ -12,6 +13,7 @@ interface SeasonReleaseSearchButtonProps {
 }
 
 function SeasonReleaseSearchButton({
+  size = sizes.SMALL,
   seriesId,
   seasonNumber,
   displaySeasonNumber = seasonNumber,
@@ -28,7 +30,7 @@ function SeasonReleaseSearchButton({
   return (
     <>
       <Button
-        size={sizes.SMALL}
+        size={size}
         isDisabled={isOpen || episodeCount === 0}
         onPress={onOpen}
       >

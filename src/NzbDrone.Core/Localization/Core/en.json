@@ -1,4 +1,10 @@
 {
+  "MetadataSourcesManageHelp": "Enable the catalogues you want to search and arrange their search order. Existing series keep their selected catalogue.",
+  "MetadataSourcesAll": "All enabled sources",
+  "MetadataSourcesAllHelp": "Search enabled catalogues in your preferred order, then choose a result and its catalogue.",
+  "MetadataSourceMoveUp": "Move up",
+  "MetadataSourceMoveDown": "Move down",
+  "MetadataSourceTvMazeDescription": "TV catalogue with episode titles, air dates and artwork. No API key required. Data from TVmaze, CC BY-SA.",
   "About": "About",
   "Absolute": "Absolute",
   "AbsoluteEpisodeNumber": "Absolute Episode Number",

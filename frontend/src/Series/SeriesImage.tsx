@@ -30,11 +30,13 @@ function getLazyLoadComponent(value: unknown): typeof LazyLoadExport {
 const LazyLoad = getLazyLoadComponent(LazyLoadExport);
 
 function findImage(images: Image[], coverType: CoverType) {
-  return images.find((image) => image.coverType === coverType);
+  return images.find(
+    (image) => image.coverType === coverType && (image.url || image.remoteUrl)
+  );
 }
 
 function getUrl(image: Image, coverType: CoverType, size: number) {
-  const imageUrl = image?.url;
+  const imageUrl = image?.url || image?.remoteUrl;
 
   if (!imageUrl) {
     return null;
@@ -96,6 +98,7 @@ function SeriesImage({
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(true);
   const image = useRef<Image | null>(null);
+  const attemptedUrls = useRef(new Set<string>());
 
   const alt = useMemo(() => {
     let type = translate('ImagePoster');
@@ -124,10 +127,19 @@ function SeriesImage({
   }, [setHasError, setIsLoaded, onLoad]);
 
   const handleError = useCallback(() => {
-    const originalUrl = image.current?.url;
+    if (url) {
+      attemptedUrls.current.add(url);
+    }
 
-    if (originalUrl && url !== originalUrl) {
-      setUrl(originalUrl);
+    const nextUrl = [image.current?.url, image.current?.remoteUrl].find(
+      (candidate) =>
+        candidate &&
+        !attemptedUrls.current.has(candidate) &&
+        (candidate === image.current?.url || /^https:\/\//i.test(candidate))
+    );
+
+    if (nextUrl) {
+      setUrl(nextUrl);
       setHasError(false);
       setIsLoaded(true);
       return;
@@ -141,11 +153,17 @@ function SeriesImage({
   useEffect(() => {
     const nextImage = findImage(images, coverType);
 
-    if (nextImage && (!image.current || nextImage.url !== image.current.url)) {
+    if (
+      nextImage &&
+      (!image.current ||
+        nextImage.url !== image.current.url ||
+        nextImage.remoteUrl !== image.current.remoteUrl)
+    ) {
       // Don't reset isLoaded, as we want to immediately try to
       // show the new image, whether an image was shown previously
       // or the placeholder was shown.
       image.current = nextImage;
+      attemptedUrls.current.clear();
 
       setUrl(getUrl(nextImage, coverType, pixelRatio * size));
       setHasError(false);
@@ -170,7 +188,9 @@ function SeriesImage({
   }, []);
 
   if (hasError || !url) {
-    return <img className={className} style={style} src={placeholder} />;
+    return (
+      <img alt={alt} className={className} style={style} src={placeholder} />
+    );
   }
 
   if (lazy) {
@@ -180,7 +200,12 @@ function SeriesImage({
         offset={100}
         overflow={overflow}
         placeholder={
-          <img className={className} style={style} src={placeholder} />
+          <img
+            alt={alt}
+            className={className}
+            style={style}
+            src={placeholder}
+          />
         }
       >
         <img
@@ -189,6 +214,7 @@ function SeriesImage({
           style={style}
           src={url}
           rel="noreferrer"
+          referrerPolicy="no-referrer"
           onError={handleError}
           onLoad={handleLoad}
         />
@@ -202,6 +228,7 @@ function SeriesImage({
       className={className}
       style={style}
       src={isLoaded ? url : placeholder}
+      referrerPolicy="no-referrer"
       onError={handleError}
       onLoad={handleLoad}
     />

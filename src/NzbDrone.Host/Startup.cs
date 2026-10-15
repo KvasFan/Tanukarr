@@ -68,6 +68,7 @@ namespace NzbDrone.Host
             services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddResponseCompression();
+            services.AddAntiforgery();
 
             services.AddCors(options =>
             {

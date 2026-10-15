@@ -53,6 +53,12 @@ test('TVDB defaults keep positive links and never send negative placeholders to 
   assert.equal(provider({ metadataSource: 'aniList', foreignId: undefined, tvdbId: 123 }).url, undefined);
 });
 
+test('TVmaze links preserve the native ID without treating it as TVDB', () => {
+  assert.deepEqual(provider({ metadataSource: 'tvMaze', foreignId: '123', tvdbId: -1 }),
+    { name: 'TVmaze', externalId: '123', url: 'https://www.tvmaze.com/shows/123' });
+  assert.equal(provider({ metadataSource: 'tvMaze', foreignId: '../123' }).url, undefined);
+});
+
 test('provider links reject injected/invalid foreign IDs and preserve IMDb title IDs', () => {
   // eslint-disable-next-line no-script-url
   const invalidIds = ['-1', '0', 'javascript:alert(1)', '../settings/general', '1?apikey=secret'];

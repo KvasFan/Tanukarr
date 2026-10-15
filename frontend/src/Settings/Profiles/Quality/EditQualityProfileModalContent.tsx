@@ -33,7 +33,6 @@ import QualityProfileItems, {
 import { SizeChanged } from './QualityProfileItemSize';
 import useQualityProfileDnd from './useQualityProfileDnd';
 import {
-  QualityProfileGroup,
   QualityProfileItems as QualityProfileItemsType,
   QualityProfileQualityItem,
   useManageQualityProfile,
@@ -43,6 +42,7 @@ import styles from './EditQualityProfileModalContent.module.css';
 interface EditQualityProfileModalContentProps {
   id?: number;
   cloneId?: number;
+  qualitySettings?: boolean;
   onDeleteQualityProfilePress?: () => void;
   onModalClose: () => void;
 }
@@ -50,6 +50,7 @@ interface EditQualityProfileModalContentProps {
 function EditQualityProfileModalContent({
   id,
   cloneId,
+  qualitySettings = false,
   onDeleteQualityProfilePress,
   onModalClose,
 }: EditQualityProfileModalContentProps) {
@@ -213,16 +214,13 @@ function EditQualityProfileModalContent({
       const { qualityId, ...sizes } = sizeChange;
 
       const newItems = items.value.map((item) => {
-        if ('quality' in item && item.quality.id === qualityId) {
-          return {
-            ...item,
-            ...sizes,
-          };
+        if ('quality' in item) {
+          return item.quality.id === qualityId ? { ...item, ...sizes } : item;
         }
 
         return {
           ...item,
-          items: (item as QualityProfileGroup).items.map((subItem) => {
+          items: item.items.map((subItem) => {
             if (subItem.quality.id === qualityId) {
               return {
                 ...subItem,
@@ -351,11 +349,17 @@ function EditQualityProfileModalContent({
     }
   }, [cutoff, items, updateValue]);
 
+  let modalTitle = id
+    ? translate('EditQualityProfile')
+    : translate('AddQualityProfile');
+
+  if (qualitySettings && id) {
+    modalTitle = `${translate('Quality')} · ${name?.value ?? ''}`;
+  }
+
   return (
     <ModalContent onModalClose={onModalClose}>
-      <ModalHeader>
-        {id ? translate('EditQualityProfile') : translate('AddQualityProfile')}
-      </ModalHeader>
+      <ModalHeader>{modalTitle}</ModalHeader>
 
       <ModalBody>
         {isSchemaFetched ? null : <LoadingIndicator />}
@@ -368,115 +372,166 @@ function EditQualityProfileModalContent({
 
         {isSchemaFetched && !schemaError ? (
           <Form>
+            {qualitySettings && !id ? (
+              <FormRow>
+                <FormLabel>{translate('Name')}</FormLabel>
+                <FormInput
+                  type={inputTypes.TEXT}
+                  name="name"
+                  {...name}
+                  onChange={handleInputChange}
+                />
+              </FormRow>
+            ) : null}
             <div className={styles.formGroupsContainer}>
-              <div className={styles.formGroupWrapper}>
-                <FormRow>
-                  <FormLabel>{translate('Name')}</FormLabel>
-
-                  <FormInput
-                    type={inputTypes.TEXT}
-                    name="name"
-                    {...name}
-                    onChange={handleInputChange}
-                  />
-                </FormRow>
-
-                <FormRow>
-                  <FormLabel>{translate('UpgradesAllowed')}</FormLabel>
-
-                  <FormInputHelpText
-                    text={translate('UpgradesAllowedHelpText')}
-                  />
-
-                  <FormInput
-                    type={inputTypes.CHECK}
-                    name="upgradeAllowed"
-                    {...upgradeAllowed}
-                    onChange={handleInputChange}
-                  />
-                </FormRow>
-
-                {upgradeAllowed.value ? (
+              {qualitySettings ? null : (
+                <div className={styles.formGroupWrapper}>
                   <FormRow>
-                    <FormLabel>{translate('UpgradeUntil')}</FormLabel>
-
-                    <FormInputHelpText
-                      text={translate('UpgradeUntilEpisodeHelpText')}
-                    />
+                    <FormLabel>{translate('Name')}</FormLabel>
 
                     <FormInput
-                      type={inputTypes.SELECT}
-                      name="cutoff"
-                      {...cutoff}
-                      values={qualities}
-                      onChange={handleCutoffChange}
-                    />
-                  </FormRow>
-                ) : null}
-
-                {formatItems.value.length > 0 ? (
-                  <FormRow>
-                    <FormLabel>
-                      {translate('MinimumCustomFormatScore')}
-                    </FormLabel>
-
-                    <FormInputHelpText
-                      text={translate('MinimumCustomFormatScoreHelpText')}
-                    />
-
-                    <FormInput
-                      type={inputTypes.NUMBER}
-                      name="minFormatScore"
-                      {...minFormatScore}
+                      type={inputTypes.TEXT}
+                      name="name"
+                      {...name}
                       onChange={handleInputChange}
                     />
                   </FormRow>
-                ) : null}
 
-                {upgradeAllowed.value && formatItems.value.length > 0 ? (
                   <FormRow>
-                    <FormLabel>
-                      {translate('UpgradeUntilCustomFormatScore')}
-                    </FormLabel>
+                    <FormLabel>{translate('UpgradesAllowed')}</FormLabel>
 
                     <FormInputHelpText
-                      text={translate(
-                        'UpgradeUntilCustomFormatScoreEpisodeHelpText'
-                      )}
+                      text={translate('UpgradesAllowedHelpText')}
                     />
 
                     <FormInput
-                      type={inputTypes.NUMBER}
-                      name="cutoffFormatScore"
-                      {...cutoffFormatScore}
+                      type={inputTypes.CHECK}
+                      name="upgradeAllowed"
+                      {...upgradeAllowed}
                       onChange={handleInputChange}
                     />
                   </FormRow>
-                ) : null}
 
-                {upgradeAllowed.value && formatItems.value.length > 0 ? (
-                  <FormRow>
-                    <FormLabel>
-                      {translate('MinimumCustomFormatScoreIncrement')}
-                    </FormLabel>
+                  {upgradeAllowed.value ? (
+                    <FormRow>
+                      <FormLabel>{translate('UpgradeUntil')}</FormLabel>
 
-                    <FormInputHelpText
-                      text={translate(
-                        'MinimumCustomFormatScoreIncrementHelpText'
-                      )}
+                      <FormInputHelpText
+                        text={translate('UpgradeUntilEpisodeHelpText')}
+                      />
+
+                      <FormInput
+                        type={inputTypes.SELECT}
+                        name="cutoff"
+                        {...cutoff}
+                        values={qualities}
+                        onChange={handleCutoffChange}
+                      />
+                    </FormRow>
+                  ) : null}
+
+                  {formatItems.value.length > 0 ? (
+                    <FormRow>
+                      <FormLabel>
+                        {translate('MinimumCustomFormatScore')}
+                      </FormLabel>
+
+                      <FormInputHelpText
+                        text={translate('MinimumCustomFormatScoreHelpText')}
+                      />
+
+                      <FormInput
+                        type={inputTypes.NUMBER}
+                        name="minFormatScore"
+                        {...minFormatScore}
+                        onChange={handleInputChange}
+                      />
+                    </FormRow>
+                  ) : null}
+
+                  {upgradeAllowed.value && formatItems.value.length > 0 ? (
+                    <FormRow>
+                      <FormLabel>
+                        {translate('UpgradeUntilCustomFormatScore')}
+                      </FormLabel>
+
+                      <FormInputHelpText
+                        text={translate(
+                          'UpgradeUntilCustomFormatScoreEpisodeHelpText'
+                        )}
+                      />
+
+                      <FormInput
+                        type={inputTypes.NUMBER}
+                        name="cutoffFormatScore"
+                        {...cutoffFormatScore}
+                        onChange={handleInputChange}
+                      />
+                    </FormRow>
+                  ) : null}
+
+                  {upgradeAllowed.value && formatItems.value.length > 0 ? (
+                    <FormRow>
+                      <FormLabel>
+                        {translate('MinimumCustomFormatScoreIncrement')}
+                      </FormLabel>
+
+                      <FormInputHelpText
+                        text={translate(
+                          'MinimumCustomFormatScoreIncrementHelpText'
+                        )}
+                      />
+
+                      <FormInput
+                        type={inputTypes.NUMBER}
+                        name="minUpgradeFormatScore"
+                        min={1}
+                        {...minUpgradeFormatScore}
+                        onChange={handleInputChange}
+                      />
+                    </FormRow>
+                  ) : null}
+
+                  <div className={styles.formatItemLarge}>
+                    <QualityProfileFormatItems
+                      profileFormatItems={formatItems.value}
+                      errors={formatItems.errors}
+                      warnings={formatItems.warnings}
+                      onQualityProfileFormatItemScoreChange={
+                        handleFormatItemScoreChange
+                      }
                     />
+                  </div>
+                </div>
+              )}
 
-                    <FormInput
-                      type={inputTypes.NUMBER}
-                      name="minUpgradeFormatScore"
-                      min={1}
-                      {...minUpgradeFormatScore}
-                      onChange={handleInputChange}
+              {qualitySettings ? (
+                <div className={styles.qualitiesColumn}>
+                  <DragDropProvider
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <QualityProfileItems
+                      mode={mode}
+                      displayItems={displayItems}
+                      errors={items.errors}
+                      warnings={items.warnings}
+                      failuresByQualityId={failuresByQualityId}
+                      onChangeMode={handleChangeMode}
+                      onCreateGroupPress={handleCreateGroupPress}
+                      onDeleteGroupPress={handleDeleteGroupPress}
+                      onItemAllowedChange={handleItemAllowedChange}
+                      onGroupAllowedChange={handleGroupAllowedChange}
+                      onItemGroupNameChange={handleGroupNameChange}
+                      onSizeChange={handleSizeChange}
                     />
-                  </FormRow>
-                ) : null}
+                  </DragDropProvider>
+                </div>
+              ) : null}
 
-                <div className={styles.formatItemLarge}>
+              {qualitySettings ? null : (
+                <div className={styles.formatItemSmall}>
                   <QualityProfileFormatItems
                     profileFormatItems={formatItems.value}
                     errors={formatItems.errors}
@@ -486,53 +541,21 @@ function EditQualityProfileModalContent({
                     }
                   />
                 </div>
-              </div>
-
-              <div className={styles.qualitiesColumn}>
-                <DragDropProvider
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDragEnd={handleDragEnd}
-                >
-                  <QualityProfileItems
-                    mode={mode}
-                    displayItems={displayItems}
-                    errors={items.errors}
-                    warnings={items.warnings}
-                    failuresByQualityId={failuresByQualityId}
-                    onChangeMode={handleChangeMode}
-                    onCreateGroupPress={handleCreateGroupPress}
-                    onDeleteGroupPress={handleDeleteGroupPress}
-                    onItemAllowedChange={handleItemAllowedChange}
-                    onGroupAllowedChange={handleGroupAllowedChange}
-                    onItemGroupNameChange={handleGroupNameChange}
-                    onSizeChange={handleSizeChange}
-                  />
-                </DragDropProvider>
-              </div>
-
-              <div className={styles.formatItemSmall}>
-                <QualityProfileFormatItems
-                  profileFormatItems={formatItems.value}
-                  errors={formatItems.errors}
-                  warnings={formatItems.warnings}
-                  onQualityProfileFormatItemScoreChange={
-                    handleFormatItemScoreChange
-                  }
-                />
-              </div>
+              )}
             </div>
-            <QualityProfileCodecFactors
-              value={item.codecMultipliers?.value}
-              errors={item.codecMultipliers?.errors}
-              onChange={handleCodecFactorsChange}
-            />
+            {qualitySettings ? (
+              <QualityProfileCodecFactors
+                value={item.codecMultipliers?.value}
+                errors={item.codecMultipliers?.errors}
+                onChange={handleCodecFactorsChange}
+              />
+            ) : null}
           </Form>
         ) : null}
       </ModalBody>
 
       <ModalFooter>
-        {id ? (
+        {id && !qualitySettings ? (
           <div
             className={styles.deleteButtonContainer}
             title={

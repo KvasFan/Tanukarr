@@ -31,7 +31,7 @@ import MoveSeriesModal from 'Series/MoveSeries/MoveSeriesModal';
 import Series, { AnimeGroupingFields, Statistics } from 'Series/Series';
 import SeriesMovePending from 'Series/SeriesMovePending';
 import { useSaveSeries, useSingleSeries } from 'Series/useSeries';
-import { InputChanged } from 'typings/inputs';
+import { CheckInputChanged, InputChanged } from 'typings/inputs';
 import selectSettings from 'Utilities/selectSettings';
 import translate from 'Utilities/String/translate';
 import RootFolderModal from './RootFolder/RootFolderModal';
@@ -40,12 +40,16 @@ import styles from './EditSeriesModalContent.module.css';
 
 export interface EditSeriesModalContentProps {
   seriesId: number;
+  seasonNumber?: number;
+  seasonTitle?: string;
   onModalClose: () => void;
   onDeleteSeriesPress: () => void;
 }
 
 function EditSeriesModalContent({
   seriesId,
+  seasonNumber,
+  seasonTitle,
   onModalClose,
   onDeleteSeriesPress,
 }: EditSeriesModalContentProps) {
@@ -167,6 +171,22 @@ function EditSeriesModalContent({
     [setPendingChange]
   );
   const groupingSeries = { ...series, ...pendingChanges };
+  const selectedSeason = (pendingChanges.seasons ?? series.seasons ?? []).find(
+    (season) => season.seasonNumber === seasonNumber
+  );
+  const handleSeasonMonitoredChange = useCallback(
+    ({ value }: CheckInputChanged) => {
+      setPendingChange(
+        'seasons',
+        series.seasons.map((season) =>
+          season.seasonNumber === seasonNumber
+            ? { ...season, monitored: value }
+            : season
+        )
+      );
+    },
+    [series.seasons, seasonNumber, setPendingChange]
+  );
   const canGroup = canConfigureAnimeGrouping(groupingSeries);
   const { data: groupingPreview, isFetching: isGroupingFetching } =
     useAnimeGroupingPreview(
@@ -256,10 +276,27 @@ function EditSeriesModalContent({
 
   return (
     <ModalContent onModalClose={onModalClose}>
-      <ModalHeader>{translate('EditSeriesModalHeader', { title })}</ModalHeader>
+      <ModalHeader>
+        {seasonTitle ? `${seasonTitle} · ` : null}
+        {translate('EditSeriesModalHeader', { title })}
+      </ModalHeader>
 
       <ModalBody>
         <Form {...otherSettings}>
+          {selectedSeason ? (
+            <FormRow size={sizes.MEDIUM}>
+              <FormLabel>
+                {seasonTitle} · {translate('Monitored')}
+              </FormLabel>
+              <FormInput
+                type={inputTypes.CHECK}
+                name="seasonMonitored"
+                value={selectedSeason.monitored}
+                isDisabled={isSaving}
+                onChange={handleSeasonMonitoredChange}
+              />
+            </FormRow>
+          ) : null}
           <FormRow size={sizes.MEDIUM}>
             <FormLabel>{translate('Monitored')}</FormLabel>
 

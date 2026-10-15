@@ -536,7 +536,7 @@ test('every season card links to its native season and opens real pack, episode 
     './CollectionPoster': () => null,
     'Series/Search/SeasonReleaseSearchButton': pack,
     'Series/Search/SeasonInteractiveSearchModal': (props) => (props.isOpen ? React.createElement('output', { 'data-episodes': `${props.seriesId}:${props.seasonNumber}`, 'data-initial-filter': props.initialSelectedFilterKey }) : null),
-    './CollectionSeasonSettingsModal': (props) => (props.isOpen ? React.createElement('button', { onClick: props.onEditEntry }, 'EditEntry') : null),
+    './CollectionSeasonSettingsModal': (props) => (props.isOpen ? React.createElement('output', { 'data-settings': props.member.id, 'data-season': props.season.seasonNumber }) : null),
     'Series/Edit/EditSeriesModal': (props) => (props.isOpen ? React.createElement('output', { 'data-edit': props.seriesId }) : null),
     'Series/Delete/DeleteSeriesModal': () => null
   }).default;
@@ -548,26 +548,20 @@ test('every season card links to its native season and opens real pack, episode 
   assert.equal(renderer.root.findByType('output').props['data-pack'], '42:1:3');
   press(renderer, 'SearchEpisodes');
   assert.ok(renderer.root.findAllByType('output').some((item) => item.props['data-episodes'] === '42:1'));
-  assert.equal(renderer.root.findByProps({ 'data-episodes': '42:1' }).props['data-initial-filter'], 'not-season-pack');
+  assert.equal(renderer.root.findByProps({ 'data-episodes': '42:1' }).props['data-initial-filter'], 'all');
   press(renderer, 'SeasonSettings');
-  press(renderer, 'EditEntry');
-  assert.ok(renderer.root.findAllByType('output').some((item) => item.props['data-edit'] === 42));
+  assert.equal(renderer.root.findByProps({ 'data-settings': 42 }).props['data-season'], 1);
+  assert.equal(renderer.root.findAllByType('a').length, 2, 'poster and title provide navigation without a redundant Open Season action');
   TestRenderer.act(() => renderer.unmount());
 });
 
-test('season monitoring saves the native series and season independently of logical collection season', () => {
-  const calls = [];
-  const Component = load('Series/Grouping/CollectionSeasonSettingsModal.tsx', { ...common, 'Series/useSeries': { useToggleSeasonMonitored: (id) => ({ toggleSeasonMonitored: (payload, options) => {
-    calls.push({ id, payload });
-    options.onSuccess();
-  } }) } }).default;
-  let closed = 0;
+test('season settings reuse the complete editor with native season scope', () => {
+  const Component = load('Series/Grouping/CollectionSeasonSettingsModal.tsx', { ...common, 'Series/Edit/EditSeriesModalContent': (props) => React.createElement('output', { 'data-settings-series': props.seriesId, 'data-native-season': props.seasonNumber, 'data-title': props.seasonTitle }) }).default;
   const native = member(42, 3);
-  const renderer = mount(Component, { isOpen: true, member: native, season: native.seasons[0], title: 'Season 3', onModalClose: () => closed++, onEditEntry: () => undefined });
-  TestRenderer.act(() => renderer.root.findByType('input').props.onChange({ target: { checked: false } }));
-  press(renderer, 'Save');
-  assert.deepEqual(calls, [{ id: 42, payload: { seasonNumber: 1, monitored: false } }]);
-  assert.equal(closed, 1);
+  const renderer = mount(Component, { isOpen: true, member: native, season: native.seasons[0], title: 'Season 3', onModalClose: () => undefined, onDeleteSeriesPress: () => undefined });
+  assert.equal(renderer.root.findByType('output').props['data-settings-series'], 42);
+  assert.equal(renderer.root.findByType('output').props['data-native-season'], 1);
+  assert.equal(renderer.root.findByType('output').props['data-title'], 'Season 3');
   TestRenderer.act(() => renderer.unmount());
 });
 
@@ -602,7 +596,7 @@ function searchFixture(fetcher, members = [member(1, 1), member(2, 2)]) {
     'Utilities/Fetch/fetchJson': fetcher,
     'Utilities/Fetch/getQueryPath': (value) => `/api/v5${value}`,
     'Utilities/Fetch/getQueryString': (params) => `?${new URLSearchParams(params)}`,
-    'InteractiveSearch/InteractiveSearch': (props) => React.createElement('output', { 'data-results-native-id': props.searchPayload.seriesId, 'data-cached': cache.has(JSON.stringify(['/release', props.searchPayload])) })
+    'InteractiveSearch/InteractiveSearch': (props) => React.createElement('output', { 'data-results-native-id': props.searchPayload.seriesId, 'data-cached': cache.has(JSON.stringify(['/release', props.searchPayload])), 'data-initial-filter': props.initialSelectedFilterKey })
   }).default;
   const renderer = mount(Component, { isOpen: true, collection: { id: 'anilist:900', title: 'Generated Collection', members }, onModalClose: () => undefined });
   return { renderer, cache, cleared };
@@ -617,12 +611,15 @@ test('Search Collection fetches every member sequentially, shares actual interac
   }, [member(1, 1), member(2, 2), member(3, 3, { seasons: [{ seasonNumber: 1, statistics: { totalEpisodeCount: 0 } }] })]);
   assert.equal(requests.length, 1);
   assert.equal(requests[0].path, '/api/v5/release?seriesId=1&completeSeries=true');
+  assert.equal(renderer.root.findByType('select').props.value, 1, 'the selected title is visible while the automatic search is pending');
+  assert.equal(renderer.root.findAllByType('output').length, 0, 'interactive search waits for the owned request instead of issuing a duplicate');
   await TestRenderer.act(async() => {
     pending[0]([{ id: 123 }]);
   });
   assert.equal(requests.length, 2);
   assert.equal(requests[1].path, '/api/v5/release?seriesId=2&completeSeries=true');
   assert.equal(renderer.root.findByType('output').props['data-cached'], true, 'interactive results reuse the collection fetch instead of issuing another query');
+  assert.equal(renderer.root.findByType('output').props['data-initial-filter'], 'all', 'a saved native search filter cannot hide collection results');
   await TestRenderer.act(async() => {
     pending[1]([]);
   });
@@ -799,4 +796,184 @@ test('series updates honor explicit zero statistics and authoritative new/remove
   assert.equal(result.seasons[1].statistics, undefined, 'new seasons do not borrow another season count');
   assert.deepEqual(mergeSeriesUpdate(original, { seasons: [] }).seasons, [], 'an explicit empty season list is authoritative');
   assert.equal(mergeSeriesUpdate(original, { monitored: false }).seasons, original.seasons, 'an omitted season list keeps the existing membership');
+});
+
+test('complete season editor saves monitoring and shared settings together while preserving native IDs and other seasons', () => {
+  const native = member(42, 3, {
+    metadataSource: 'aniList', foreignId: '4242', tvdbId: -42,
+    path: '/generated-media/Native entry 42', language: { id: 1, name: 'English' },
+    monitored: true, monitorNewItems: 'all', seasonFolder: true,
+    qualityProfileId: 1, seriesType: 'anime', seasonType: 'default', seasonTypes: [], tags: [],
+    seasons: [{ seasonNumber: 1, monitored: true }, { seasonNumber: 0, monitored: false }]
+  });
+  const submitted = [];
+  const previous = load('Helpers/Hooks/usePrevious.tsx').default;
+  const pendingChanges = load('Helpers/Hooks/usePendingChangesStore.ts');
+  const settings = load('Utilities/selectSettings.ts', {
+    'Helpers/Hooks/useApiMutation': { getValidationFailures: () => ({ errors: [], warnings: [] }) },
+    'Utilities/Fetch/fetchJson': { ApiError: class ApiError extends Error {} },
+    'Utilities/Object/isEmpty': load('Utilities/Object/isEmpty.ts')
+  }).default;
+  const constants = new Proxy({}, { get: (_target, key) => key });
+  const input = (props) => React.createElement('input', { name: props.name, value: props.value, onChange: (event) => props.onChange({ name: props.name, value: event.target.value }) });
+  const Component = load('Series/Edit/EditSeriesModalContent.tsx', {
+    ...common,
+    'AddSeries/SeriesMonitorNewItemsOptionsPopoverContent': () => null,
+    'Components/Form/FormInput': input,
+    'Components/Form/FormInputButton': button,
+    'Components/Form/FormInputHelpText': () => null,
+    'Components/Tooltip/Popover': () => null,
+    'Helpers/Hooks/usePendingChangesStore': pendingChanges,
+    'Helpers/Hooks/usePrevious': previous,
+    'Helpers/Props': { icons: constants, inputTypes: constants, kinds: constants, sizes: constants, tooltipPositions: constants },
+    'Series/Grouping/animeGrouping': { canConfigureAnimeGrouping: () => false },
+    'Series/Grouping/AnimeGroupingOptions': () => null,
+    'Series/Grouping/useAnimeGroupingPreview': () => ({}),
+    'Series/MoveSeries/MoveSeriesModal': () => null,
+    'Series/SeriesMovePending': () => null,
+    'Series/useSeries': { useSingleSeries: () => native, useSaveSeries: () => ({ saveSeries: (payload) => submitted.push(payload), isSaving: false }) },
+    'Utilities/selectSettings': settings,
+    './RootFolder/RootFolderModal': () => null,
+    './EditSeriesModalContent.module.css': {}
+  }).default;
+  const renderer = mount(Component, { seriesId: 42, seasonNumber: 1, seasonTitle: 'Season 3', onModalClose: () => undefined, onDeleteSeriesPress: () => undefined });
+  const names = renderer.root.findAllByType('input').map((item) => item.props.name);
+
+  for (const name of ['seasonMonitored', 'monitored', 'monitorNewItems', 'seasonFolder', 'qualityProfileId', 'seriesType', 'language', 'seasonType', 'path', 'tags']) {
+    assert.ok(names.includes(name), `full settings include ${name}`);
+  }
+
+  TestRenderer.act(() => renderer.root.findAllByType('input').find((item) => item.props.name === 'seasonMonitored').props.onChange({ target: { value: false } }));
+  TestRenderer.act(() => renderer.root.findAllByType('input').find((item) => item.props.name === 'qualityProfileId').props.onChange({ target: { value: 5 } }));
+  press(renderer, 'Save');
+  assert.equal(submitted.length, 1);
+  assert.equal(submitted[0].seasons[0].monitored, false);
+  assert.deepEqual(submitted[0].seasons[1], native.seasons[1]);
+  assert.equal(submitted[0].monitored, true);
+  assert.equal(submitted[0].qualityProfileId, 5);
+
+  for (const key of ['id', 'foreignId', 'tvdbId', 'path', 'animeGroupId', 'animeGroupSeasonNumber']) {
+    assert.equal(submitted[0][key], native[key], `${key} remains native`);
+  }
+
+  TestRenderer.act(() => renderer.unmount());
+});
+
+function nativeSeasonFixture(hasFiles = false, small = false) {
+  const commands = [];
+  const episodes = [{ id: 601, seriesId: 42, seasonNumber: 1, episodeNumber: 1, title: 'Generated episode', monitored: true, airDateUtc: '2000-01-01T00:00:00Z', episodeFileId: hasFiles ? 900 : 0 }];
+  const action = (props) => React.createElement('button', { disabled: props.isDisabled, onClick: props.onPress, 'aria-label': props['aria-label'] ?? props.title }, props.children);
+
+  const workflow = (kind) => {
+    const Workflow = (props) => (props.isOpen ? React.createElement('output', { 'data-workflow': kind, 'data-series': props.seriesId, 'data-season': props.seasonNumber, 'data-folder': props.folder }) : null);
+    Workflow.propTypes = { isOpen: PropTypes.bool, seriesId: PropTypes.number, seasonNumber: PropTypes.number, folder: PropTypes.string };
+    return Workflow;
+  };
+
+  const constants = new Proxy({}, { get: (_target, key) => key });
+  const Component = load('Series/Details/SeriesDetailsSeason.tsx', {
+    ...common,
+    'App/appStore': { useAppDimension: () => small },
+    'Commands/CommandNames': { SeasonSearch: 'SeasonSearch' },
+    'Commands/useCommands': { useCommands: () => ({ data: [] }), useExecuteCommand: () => (command) => commands.push(command) },
+    'Components/Label': wrap,
+    'Components/Link/IconButton': action,
+    'Components/Link/SpinnerIconButton': action,
+    'Components/Menu/Menu': wrap,
+    'Components/Menu/MenuButton': wrap,
+    'Components/Menu/MenuContent': wrap,
+    'Components/Menu/MenuItem': action,
+    'Components/MonitorToggleButton': () => null,
+    'Components/SpinnerIcon': () => null,
+    'Components/Table/Table': wrap,
+    'Components/Table/TableBody': wrap,
+    'Components/Tooltip/Popover': () => null,
+    'Episode/episodeOptionsStore': { useEpisodeOptions: () => ({ columns: [], sortKey: 'episodeNumber', sortDirection: 'ascending' }), setEpisodeOptions: () => undefined, setEpisodeSort: () => undefined },
+    'Episode/useEpisode': { getQueryKey: () => ['/episode', { seriesId: 42 }], useToggleEpisodesMonitored: () => ({ toggleEpisodesMonitored: () => undefined }) },
+    'Episode/useEpisodes': { useSeasonEpisodes: () => ({ data: episodes }) },
+    'Helpers/Hooks/usePrevious': load('Helpers/Hooks/usePrevious.tsx').default,
+    'Helpers/Props': { align: constants, icons: constants, sortDirections: constants, tooltipPositions: constants },
+    'InteractiveImport/InteractiveImportModal': workflow('manage'),
+    'Organize/OrganizePreviewModal': workflow('rename'),
+    'Series/History/SeriesHistoryModal': workflow('history'),
+    'Series/Search/SeasonInteractiveSearchModal': workflow('search'),
+    'Series/Search/SeasonReleaseSearchButton': () => null,
+    'Series/useSeries': { useSingleSeries: () => ({ monitored: true, path: '/generated-media/native' }), useToggleSeasonMonitored: () => ({ toggleSeasonMonitored: () => undefined }) },
+    'Utilities/Command': { findCommand: () => undefined, isCommandExecuting: () => false },
+    'Utilities/Date/isBefore': () => true,
+    'Utilities/Number/formatBytes': String,
+    'Utilities/Table/getToggledRange': () => undefined,
+    './EpisodeRow': (props) => React.createElement('article', { 'data-episode': props.id }),
+    './SeasonInfo': () => null,
+    './SeasonProgressLabel': () => null,
+    './SeriesDetailsSeason.module.css': {}
+  }).default;
+  return { renderer: mount(Component, { seriesId: 42, seasonNumber: 1, monitored: true }), commands };
+}
+
+for (const small of [false, true]) {
+  test(`native season stays expanded and all ${small ? 'mobile' : 'desktop'} actions preserve native scope`, () => {
+    const { renderer, commands } = nativeSeasonFixture(true, small);
+    assert.equal(renderer.root.findByType('article').props['data-episode'], 601, 'old seasons are immediately visible without expansion state');
+    assert.equal(renderer.root.findAllByType('button').some((item) => ['HideEpisodes', 'ShowEpisodes'].includes(item.props['aria-label'])), false);
+    const labels = small ? ['Search', 'InteractiveSearch', 'PreviewRename', 'ManageEpisodes', 'History'] : ['SearchForMonitoredEpisodesSeason', 'InteractiveSearchSeason', 'PreviewRenameSeason', 'ManageEpisodesSeason', 'HistorySeason'];
+
+    for (const label of labels) {
+      const target = renderer.root.findAllByType('button').find((item) => item.props['aria-label'] === label || item.children.includes(label));
+      assert.ok(target, `${label} is present`);
+      assert.notEqual(target.props.disabled, true, `${label} is enabled for owned episode files`);
+      TestRenderer.act(() => target.props.onClick());
+    }
+
+    assert.deepEqual(commands, [{ name: 'SeasonSearch', seriesId: 42, seasonNumber: 1 }]);
+
+    for (const kind of ['search', 'rename', 'manage', 'history']) {
+      const output = renderer.root.findByProps({ 'data-workflow': kind });
+      assert.equal(output.props['data-series'], 42);
+      assert.equal(output.props['data-season'], 1);
+    }
+
+    assert.equal(renderer.root.findByProps({ 'data-workflow': 'manage' }).props['data-folder'], '/generated-media/native');
+    TestRenderer.act(() => renderer.unmount());
+  });
+}
+
+test('Manage Episodes is available before import while Preview Rename is disabled when a season has no files', () => {
+  const { renderer } = nativeSeasonFixture();
+  const manage = renderer.root.findAllByType('button').find((item) => item.props['aria-label'] === 'ManageEpisodesSeason');
+  assert.notEqual(manage.props.disabled, true);
+  TestRenderer.act(() => manage.props.onClick());
+  assert.equal(renderer.root.findByProps({ 'data-workflow': 'manage' }).props['data-season'], 1);
+  assert.equal(renderer.root.findAllByType('button').find((item) => item.props['aria-label'] === 'PreviewRenameSeason').props.disabled, true);
+  TestRenderer.act(() => renderer.unmount());
+});
+
+test('Manage Episodes retains its fetched episode mapping while edits and reprocess responses update the active rows', () => {
+  let active = [{ id: 11, path: '/generated/episode.mkv', episodeFileId: 99, series: { id: 42 }, seasonNumber: 1, episodes: [{ id: 51 }], releaseGroup: 'Original' }];
+  const hooks = load('InteractiveImport/useInteractiveImport.ts', {
+    'Helpers/Hooks/useApiMutation': () => ({}),
+    'Helpers/Hooks/useApiQuery': () => ({ data: active, isFetched: true }),
+    'Utilities/Filter/clientSideFilterAndSort': (items) => ({ data: items }),
+    './interactiveImportOptionsStore': { useInteractiveImportOptions: () => ({}) }
+  });
+  const observations = [];
+
+  function Frame({ season }) {
+    const result = hooks.default({ seriesId: 42, seasonNumber: season });
+    observations.push({ original: result.originalItems, active: result.data });
+    return null;
+  }
+
+  Frame.propTypes = { season: PropTypes.number };
+  const renderer = mount(Frame, { season: 1 });
+  const baseline = observations[0].original;
+  active = [{ ...active[0], episodes: [{ id: 52 }], releaseGroup: 'Selected' }];
+  TestRenderer.act(() => renderer.update(React.createElement(Frame, { season: 1 })));
+  assert.equal(observations.at(-1).original, baseline);
+  assert.deepEqual(observations.at(-1).original[0].episodes, [{ id: 51 }], 'episode reassignment must remain distinguishable from a metadata-only update');
+  assert.deepEqual(observations.at(-1).active[0].episodes, [{ id: 52 }]);
+  active = [{ id: 22, series: { id: 42 }, seasonNumber: 2, episodes: [{ id: 62 }] }];
+  TestRenderer.act(() => renderer.update(React.createElement(Frame, { season: 2 })));
+  assert.deepEqual(observations.at(-1).original[0].episodes, [{ id: 62 }], 'opening a different native season establishes its own baseline');
+  TestRenderer.act(() => renderer.unmount());
 });

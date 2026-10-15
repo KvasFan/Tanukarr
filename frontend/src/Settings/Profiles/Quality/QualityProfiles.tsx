@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageSectionContent from 'Components/Page/PageSectionContent';
 import AddCard from 'Components/SettingsCard/AddCard';
 import settingsCardStyles from 'Components/SettingsCard/SettingsCard.module.css';
@@ -9,6 +10,7 @@ import QualityProfile from './QualityProfile';
 import { useQualityProfiles } from './useQualityProfiles';
 
 function QualityProfiles() {
+  const navigate = useNavigate();
   const { data, error, isFetching, isFetched } = useQualityProfiles();
 
   // Sort the data by name
@@ -19,9 +21,8 @@ function QualityProfiles() {
   const [cloneProfileId, setCloneProfileId] = useState<number | null>(null);
 
   const handleAddQualityProfilePress = useCallback(() => {
-    setCloneProfileId(null);
-    setIsQualityProfileModalOpen(true);
-  }, []);
+    navigate('/settings/quality?addProfile=true');
+  }, [navigate]);
 
   const handleAddQualityProfileClosePress = useCallback(() => {
     setCloneProfileId(null);

@@ -1,82 +1,145 @@
-import React from 'react';
+import React, { useCallback } from 'react';
+import { MetadataSource } from 'AddSeries/AddNewSeries/useAddSeries';
 import Alert from 'Components/Alert';
 import FieldSet from 'Components/FieldSet';
+import CheckInput from 'Components/Form/CheckInput';
+import Button from 'Components/Link/Button';
 import InlineMarkdown from 'Components/Markdown/InlineMarkdown';
 import { kinds } from 'Helpers/Props';
+import { CheckInputChanged } from 'typings/inputs';
 import translate from 'Utilities/String/translate';
-import { useMetadataSourceSettings } from './useMetadataSourceSettings';
+import { metadataSources, orderedMetadataSources } from './metadataSources';
 import styles from './Sources.module.css';
 
-interface SourceProps {
-  name: string;
-  url: string;
-  description: string;
-  status?: string;
+interface SourcesProps {
+  order?: MetadataSource[];
+  disabled?: MetadataSource[];
+  hasTmdbKey: boolean;
+  onOrderChange: (order: MetadataSource[]) => void;
+  onDisabledChange: (disabled: MetadataSource[]) => void;
 }
 
-function Source({ name, url, description, status }: SourceProps) {
+interface SourceRowProps {
+  source: (typeof metadataSources)[number];
+  index: number;
+  count: number;
+  enabled: boolean;
+  lastEnabled: boolean;
+  hasTmdbKey: boolean;
+  onToggle: (change: CheckInputChanged) => void;
+  onMove: (index: number, direction: number) => void;
+}
+
+function SourceRow({
+  source,
+  index,
+  count,
+  enabled,
+  lastEnabled,
+  hasTmdbKey,
+  onToggle,
+  onMove,
+}: SourceRowProps) {
+  const handleUp = useCallback(() => onMove(index, -1), [index, onMove]);
+  const handleDown = useCallback(() => onMove(index, 1), [index, onMove]);
+  let status = translate('Disabled');
+
+  if (enabled) {
+    status =
+      source.key === 'tmdb' && !hasTmdbKey
+        ? translate('MetadataSourceNeedsApiKey')
+        : translate('MetadataSourceReady');
+  }
+
   return (
     <div className={styles.source}>
       <div className={styles.header}>
-        <a className={styles.name} href={url} target="_blank" rel="noreferrer">
-          {name}
+        <CheckInput
+          containerClassName={styles.toggle}
+          name={source.key}
+          ariaLabel={`${translate('Enable')} ${source.value}`}
+          value={enabled}
+          isDisabled={enabled && lastEnabled}
+          onChange={onToggle}
+        />
+        <a
+          className={styles.name}
+          href={source.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {source.value}
         </a>
-
-        {status ? <span className={styles.status}>{status}</span> : null}
+        <span className={styles.status}>{status}</span>
+        <div className={styles.actions}>
+          <Button
+            title={`${translate('MetadataSourceMoveUp')} ${source.value}`}
+            isDisabled={index === 0}
+            onPress={handleUp}
+          >
+            ↑
+          </Button>
+          <Button
+            title={`${translate('MetadataSourceMoveDown')} ${source.value}`}
+            isDisabled={index === count - 1}
+            onPress={handleDown}
+          >
+            ↓
+          </Button>
+        </div>
       </div>
-
-      <div className={styles.description}>{description}</div>
+      <div className={styles.description}>{translate(source.description)}</div>
     </div>
   );
 }
 
-/**
- * What each metadata source is good for, and whether it is usable right now.
- * A source is chosen per series when adding it, from the dropdown above the
- * search box, so this page is about what the choices mean rather than a setting.
- */
-function Sources() {
-  const { data } = useMetadataSourceSettings();
-
-  // The key itself comes back masked, so a separate flag says whether one is stored.
-  const hasTmdbKey = !!data?.tmdbApiKeyConfigured;
+function Sources({
+  order,
+  disabled = [],
+  hasTmdbKey,
+  onOrderChange,
+  onDisabledChange,
+}: SourcesProps) {
+  const sources = orderedMetadataSources(order);
+  const handleMove = useCallback(
+    (index: number, direction: number) => {
+      const keys = sources.map(({ key }) => key);
+      [keys[index], keys[index + direction]] = [
+        keys[index + direction],
+        keys[index],
+      ];
+      onOrderChange(keys);
+    },
+    [sources, onOrderChange]
+  );
+  const handleToggle = useCallback(
+    ({ name, value }: CheckInputChanged) => {
+      const key = name as MetadataSource;
+      onDisabledChange(
+        value ? disabled.filter((item) => item !== key) : [...disabled, key]
+      );
+    },
+    [disabled, onDisabledChange]
+  );
+  const lastEnabled =
+    sources.filter(({ key }) => !disabled.includes(key)).length === 1;
 
   return (
     <FieldSet legend={translate('MetadataSources')}>
-      <Alert kind={kinds.INFO}>{translate('MetadataSourcesInfo')}</Alert>
-
-      <Source
-        name="TheTVDB"
-        url="https://www.thetvdb.com"
-        description={translate('MetadataSourceTvdbDescription')}
-        status={translate('MetadataSourceReady')}
-      />
-
-      <Source
-        name="TMDB"
-        url="https://www.themoviedb.org"
-        description={translate('MetadataSourceTmdbDescription')}
-        status={
-          hasTmdbKey
-            ? translate('MetadataSourceReady')
-            : translate('MetadataSourceNeedsApiKey')
-        }
-      />
-
-      <Source
-        name="AniList"
-        url="https://anilist.co"
-        description={translate('MetadataSourceAniListDescription')}
-        status={translate('MetadataSourceReady')}
-      />
-
-      <Source
-        name="MyAnimeList"
-        url="https://myanimelist.net"
-        description={translate('MetadataSourceMyAnimeListDescription')}
-        status={translate('MetadataSourceReady')}
-      />
-
+      <Alert kind={kinds.INFO}>{translate('MetadataSourcesManageHelp')}</Alert>
+      {sources.map((source, index) => (
+        <SourceRow
+          key={source.key}
+          source={source}
+          index={index}
+          count={sources.length}
+          enabled={!disabled.includes(source.key)}
+          lastEnabled={lastEnabled}
+          hasTmdbKey={hasTmdbKey}
+          onToggle={handleToggle}
+          onMove={handleMove}
+        />
+      ))}
       <div className={styles.attribution}>
         <InlineMarkdown
           data={translate('SeriesAndEpisodeInformationIsProvidedByTheTVDB', {

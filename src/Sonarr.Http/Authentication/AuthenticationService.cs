@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using NLog;
@@ -19,6 +21,8 @@ namespace Sonarr.Http.Authentication
     {
         void LogUnauthorized(HttpRequest context);
         User Login(HttpRequest request, string username, string password);
+        bool IsInitialSetupRequired { get; }
+        bool CreateInitialUser(string username, string password, string passwordConfirmation);
         DateTime? GetLockoutEndTime(HttpRequest request);
         void Logout(HttpContext context);
         string RequestPasswordReset(HttpRequest request);
@@ -37,11 +41,13 @@ namespace Sonarr.Http.Authentication
         private static readonly TimeSpan ResetRequestThrottle = TimeSpan.FromMinutes(1);
 
         private static readonly Logger _authLogger = LogManager.GetLogger("Auth");
+        private static readonly Lock InitialSetupLock = new();
         private readonly IConfigFileProvider _configFileProvider;
         private readonly IUserService _userService;
         private readonly ICached<FailedLoginAttempts> _failedAttempts;
         private readonly ICached<string> _resetToken;
         private readonly ICached<string> _resetRequests;
+        private readonly bool _hasConfiguredInitialPassword;
         private string _configuredResetTokenHash;
 
         public AuthenticationService(IConfigFileProvider configFileProvider, IUserService userService, ICacheManager cacheManager, IOptions<AuthOptions> authOptions)
@@ -52,6 +58,7 @@ namespace Sonarr.Http.Authentication
             _resetToken = cacheManager.GetCache<string>(GetType(), "passwordResetToken");
             _resetRequests = cacheManager.GetCache<string>(GetType(), "passwordResetRequests");
             _configuredResetTokenHash = GetConfiguredResetTokenHash(authOptions.Value.ResetToken);
+            _hasConfiguredInitialPassword = authOptions.Value.InitialPassword.IsNotNullOrWhiteSpace();
         }
 
         public User Login(HttpRequest request, string username, string password)
@@ -82,6 +89,33 @@ namespace Sonarr.Http.Authentication
             RecordFailedAttempt(remoteIP, username);
 
             return null;
+        }
+
+        public bool IsInitialSetupRequired => !_hasConfiguredInitialPassword &&
+            _configFileProvider.AuthenticationMethod == AuthenticationType.Forms && _userService.FindUser() == null;
+
+        public bool CreateInitialUser(string username, string password, string passwordConfirmation)
+        {
+            if (username.IsNullOrWhiteSpace() || username.Trim().Length > 64 || username.Any(char.IsControl) ||
+                password.IsNullOrWhiteSpace() || password.Length < 12 || password.Length > 128 || password != passwordConfirmation)
+            {
+                return false;
+            }
+
+            // First-run requests must never replace an existing account, including
+            // another browser completing setup while this request was in flight.
+            lock (InitialSetupLock)
+            {
+                if (!IsInitialSetupRequired)
+                {
+                    return false;
+                }
+
+                _userService.Add(username.Trim(), password);
+                _authLogger.Info("Initial account created in the browser");
+
+                return true;
+            }
         }
 
         public DateTime? GetLockoutEndTime(HttpRequest request)

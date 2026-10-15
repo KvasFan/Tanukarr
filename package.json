@@ -1,6 +1,6 @@
 {
   "name": "tanukarr",
-  "version": "1.1.0",
+  "version": "0.1.0",
   "description": "Tanukarr manages TV series and anime with per-series TheTVDB, TMDB, AniList and MyAnimeList metadata for Usenet and BitTorrent users",
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
     "watch": "vite build --watch",
     "types:css": "tcm frontend/src --camelCase --pattern \"**/*.module.css\"",
     "typecheck": "yarn types:css && tsc --noEmit -p frontend/tsconfig.json",
-    "test:queue-details": "node --test frontend/tests/queueDetails.test.cjs frontend/tests/episodeBatches.test.cjs frontend/tests/metadataIdentity.test.cjs frontend/tests/addSeriesModal.test.cjs frontend/tests/animeGrouping.test.cjs frontend/tests/groupNamingAndSearch.test.cjs frontend/tests/anilistListChoices.test.cjs frontend/tests/seriesImageInterop.test.cjs frontend/tests/oauthCallback.test.cjs frontend/tests/providerListChoices.test.cjs frontend/tests/qualityHourlyLimits.test.cjs frontend/tests/collections.test.cjs frontend/tests/customQualities.test.cjs",
+    "test:queue-details": "node --test frontend/tests/queueDetails.test.cjs frontend/tests/episodeBatches.test.cjs frontend/tests/metadataIdentity.test.cjs frontend/tests/addSeriesModal.test.cjs frontend/tests/animeGrouping.test.cjs frontend/tests/groupNamingAndSearch.test.cjs frontend/tests/anilistListChoices.test.cjs frontend/tests/seriesImageInterop.test.cjs frontend/tests/oauthCallback.test.cjs frontend/tests/providerListChoices.test.cjs frontend/tests/qualityHourlyLimits.test.cjs frontend/tests/collections.test.cjs frontend/tests/customQualities.test.cjs frontend/tests/metadataSources.test.cjs",
+    "test:metadata-sources": "node --test frontend/tests/metadataSources.test.cjs",
     "test:add-series-modal": "node --test frontend/tests/addSeriesModal.test.cjs",
     "test:anime-grouping": "node --test frontend/tests/addSeriesModal.test.cjs frontend/tests/animeGrouping.test.cjs",
     "lint": "eslint --config frontend/.eslintrc.cjs --ignore-path frontend/.eslintignore frontend/",

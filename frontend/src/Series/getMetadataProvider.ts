@@ -27,6 +27,13 @@ export default function getMetadataProvider(series: MetadataIdentity) {
         url: nativeId ? `https://myanimelist.net/anime/${nativeId}` : undefined,
       };
 
+    case 'tvmaze':
+      return {
+        name: 'TVmaze',
+        externalId: nativeId,
+        url: nativeId ? `https://www.tvmaze.com/shows/${nativeId}` : undefined,
+      };
+
     case 'tmdb': {
       const id = nativeId ?? positiveId(series.tmdbId);
       return {

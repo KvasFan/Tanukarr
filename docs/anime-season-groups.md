@@ -20,6 +20,12 @@ separate Seasons, Movies and Specials sections. Each entry links to its native
 details page and expands the selected native season. Season pack search,
 episode search, monitoring and season settings remain available on its card.
 
+The 0.1.0 reset opens the complete series editor from Season Settings, with
+monitoring scoped to the selected native season. The native episode table stays
+expanded. Manage Episodes also opens before files exist; Preview Rename requires
+files to preview. Collection searches immediately select their first entry and
+keep their result filter separate from other search pages.
+
 **Search Collection** queries every saved native member with episodes using its
 existing complete-series search. Results retain their owning entry, native
 numbering, rejection reasons and explicit grab actions. Progress and errors are

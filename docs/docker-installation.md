@@ -1,62 +1,51 @@
-# Install Tanukarr 1.1.0 with Docker
+# Install Tanukarr 0.1.0 with Docker
 
-Tanukarr is an independent Sonarr fork for TV series, anime and movie collections.
-Its source is on [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr).
-The [1.1.0 release notes](releases/1.1.0.md) describe full collection pages,
-alternate artwork, custom quality presets and profile codec factors. Existing
-list, import, client, backup and Jellyfin features remain included.
+Tanukarr manages TV series, anime and movie collections. The 0.1.0 reset derives
+from 1.1.0 and keeps its database schema and APIs. It adds graphical account
+creation, collection/quality fixes and configurable metadata catalogues including
+TVmaze. Read the [release notes](releases/0.1.0.md) and
+[verification ledger](releases/0.1.0-verification.md) for actual publication
+status, exact source/image identities and remaining security findings.
 
-**Publication checkpoint:** 1.1.0 is published and independently verified.
-The [publication follow-up](releases/1.1.0-publication.md) records its exact
-source, assets, public image, runtime checks and remaining security findings.
-The [preparation ledger](releases/1.1.0-verification.md) preserves earlier
-checkpoints. Previous release reports retain their historical upgrade results.
-Original contributors and actual AI identities are recorded in
-[CONTRIBUTORS.md](../CONTRIBUTORS.md).
+The intended release image is `ghcr.io/kvasexpert/tanukarr:0.1.0`. The GitHub
+repository contains source, while GHCR stores Docker images. Published support
+is Linux amd64; a configured build target is not a tested or published platform.
+Previous [1.1.0 publication evidence](releases/1.1.0-publication.md) describes
+that historical image, not this new one.
 
-GitHub Container Registry (GHCR) is GitHub's Docker image registry. The installation
-below uses `ghcr.io/kvasexpert/tanukarr:1.1.0`; the GitHub repository itself is source
-code, not a Docker image. Check the release notes and
-[package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr) for
-the published architectures and image digest. The
-[1.1.0 publication follow-up](releases/1.1.0-publication.md) verifies anonymous
-pulls, exact source/image identities and nine downloadable assets. The verified
-Linux amd64 manifest is
-`sha256:40b0404c862c9df5fb658d9356f3d2d4a92c04a1786fe2e08c58e23db9f750b0`;
-earlier release identities remain in their historical reports.
+## Requirements
 
-## Prerequisites
+Use [Docker Engine](https://docs.docker.com/engine/install/) with the
+[Compose plugin](https://docs.docker.com/compose/install/), or Docker Desktop
+configured for Linux containers. Check `docker version` and `docker compose
+version`. The published image needs no local Node or .NET SDK.
 
-Install [Docker Engine](https://docs.docker.com/engine/install/) and the
-[Docker Compose plugin](https://docs.docker.com/compose/install/), or Docker
-Desktop configured for Linux containers. Check `docker version` and
-`docker compose version`. These examples use Compose v2-style commands and do not
-require Node, .NET or a local source build.
+The default host address is **http://localhost:6970**, forwarding to container
+port **8989**. Keep configuration, ports and download-client categories separate
+from any other Sonarr instance. Use a non-root numeric host UID and GID that own
+the media directories; root or malformed PUID/PGID values are rejected.
 
-The default host port is **6970** and the container port is **8989**. The examples
-publish only to `127.0.0.1`; upstream Sonarr can continue using host port 8989.
-Keep Tanukarr's configuration and download-client category separate from other
-Sonarr instances.
+## Complete Compose configuration
 
-## Docker Compose: named configuration volume
-
-Create an installation directory and save the following as `compose.yaml`:
+Create a separate installation directory and save this as `compose.yaml`:
 
 ```yaml
 name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasexpert/tanukarr:1.1.0
+    image: ghcr.io/kvasexpert/tanukarr:0.1.0
     container_name: tanukarr
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "127.0.0.1:6970:8989"
     environment:
       PUID: "${TANUKARR_PUID:-1000}"
       PGID: "${TANUKARR_PGID:-1000}"
-      TZ: "${TANUKARR_TZ:-Etc/UTC}"
       UMASK: "${TANUKARR_UMASK:-002}"
+      TZ: "${TANUKARR_TZ:-Etc/UTC}"
     volumes:
       - tanukarr-config:/config
       - /srv/tanukarr/media:/media
@@ -66,8 +55,8 @@ volumes:
     name: tanukarr-config
 ```
 
-On Linux, run `id -u` and `id -g` for the host account that manages media. Save
-their numbers in a `.env` file beside `compose.yaml`, for example:
+On Linux, run `id -u` and `id -g` for the account managing your media. Store the
+numbers and preferred timezone in `.env` beside the Compose file:
 
 ```dotenv
 TANUKARR_PUID=1000
@@ -75,11 +64,8 @@ TANUKARR_PGID=1000
 TANUKARR_TZ=Europe/Rome
 ```
 
-Do not commit a production `.env` or configuration directory to Git. Change the
-media path to your actual library/download parent before starting. Create and
-grant access to that directory for the chosen UID/GID; the entrypoint fixes
-`/config` ownership but does not recursively change your media library. For a
-new, empty location with UID/GID 1000:
+Replace the media path with your actual library/download parent. For a new,
+empty directory owned by UID/GID 1000:
 
 ```sh
 sudo install -d -m 2775 -o 1000 -g 1000 /srv/tanukarr/media
@@ -91,193 +77,65 @@ docker compose up -d
 docker compose ps
 ```
 
-Open **http://localhost:6970**. The named volume holds the database, `config.xml`,
-settings and logs. Recreating the container retains this volume. Avoid
-`docker compose down -v`, which deletes it.
+The entrypoint secures `/config` with mode 0750 and the selected owner/group;
+it does not recursively change media ownership. Do not commit `.env`, real
+configuration or credentials. To use bind-mounted configuration, replace
+`tanukarr-config:/config` with `/srv/tanukarr/config:/config` and prepare that
+directory for the selected UID/GID. Keep the existing mount on an upgrade.
+`docker compose down -v` removes named volumes and their data.
 
-The [1.1.0 release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.1.0)
-provides ready-to-use
-[`compose.yaml`](https://github.com/KvasExpert/Tanukarr/releases/download/v1.1.0/compose.yaml)
-with bind-mounted `./config` and `./media` defaults. It is an alternative to the
-named-volume example. Download that file into a new
-installation directory, create those two directories with the correct permissions,
-and run the same Compose commands above. Its `TANUKARR_*` variables also allow
-custom bind address, host port, config path and media path; inspect
-`docker compose config` before starting. That release YAML pulls the published
-image and does not require cloning the source repository.
+The release's `compose.yaml` asset offers `./config` and `./media` bind defaults
+and `TANUKARR_*` overrides for bind address, port and paths. Inspect the rendered
+configuration before starting it. Legacy `SONARRWEEB_*` and `SONARR_PRO_*`
+deployment variable aliases remain accepted.
 
-## Bind-mounted configuration
+## First-run account creation
 
-If you prefer configuration files in the installation directory, replace the
-configuration volume line with a bind mount:
+Open **http://localhost:6970**. Choose a username and a password of 12 to 128
+characters in **Create your account**, confirm it and submit. No default password
+is generated or printed in logs. The form is protected by an antiforgery token;
+after one account exists it cannot replace that account. Subsequent visits show
+the regular login form. Existing users, legacy configuration migration and
+explicit `SONARR__AUTH__INITIALUSERNAME` / `SONARR__AUTH__INITIALPASSWORD`
+provisioning remain supported. Keep provisioned secrets outside version control
+and avoid displaying resolved secret-containing configuration.
 
-```yaml
-    volumes:
-      - ./config:/config
-      - /srv/tanukarr/media:/media
-```
+The packaged default uses Forms authentication. Authentication bypass for local
+addresses applies only if explicitly configured. Keep the default loopback port
+binding, or place remote access behind a correctly configured HTTPS reverse
+proxy. URL Base and proxy paths must agree. Do not expose an unclaimed first-run
+form publicly before creating its account.
 
-Remove the top-level `volumes:` declaration from that example. Create `config`
-before startup and make it writable by the selected PUID/PGID. Back up this
-directory separately from your media. On Docker Desktop, use a host directory
-shared with Docker; on WSL, paths must be visible to the Docker daemon's Linux
-distribution. A Windows path visible to PowerShell is not automatically a Linux
-bind-mount path.
+## Configure the library
 
-## Storage, downloads and hardlinks
+Add `/media/tv` as a root folder and use the same container paths in download
+clients; a common parent allows hardlinks and moves. Configure clients and
+indexers separately from metadata. A search cannot produce indexer releases
+without a reachable, enabled indexer supporting that search type.
 
-Mount downloads and the library through one shared parent such as `/media`, and
-configure root folders and the download client using matching paths:
+Settings → Metadata Source enables and orders TheTVDB, TMDB, AniList,
+MyAnimeList/Jikan and TVmaze. TMDB needs a user-supplied v3 API key; other listed
+public catalogue paths do not need a key here. Add New Series can search all
+enabled catalogues or one selected source. Existing series keep their owning
+catalogue and native episode numbering. Consult the [provider guide](metadata-providers.md)
+for coverage, credentials and ordering limits.
 
-```text
-/media/downloads/tv    completed downloads
-/media/tv              Tanukarr library root
-```
+Quality choices, groups, sizes and codec factors are managed under
+Settings → Quality. Settings → Profiles retains profile policy and custom
+formats. See the [quality guide](quality-and-codec-size.md),
+[collection guide](anime-season-groups.md), [list guide](library-tools.md),
+[Jellyfin refresh](jellyfin.md) and [watched-state guide](jellyfin-watched.md).
+Compression uses the optional separate [host worker](../docker/compression/README.md).
 
-Use a separate download category, for example `tanukarr`. If the download client
-runs in another container, mount that same host parent at `/media` there too.
-If its reported path differs, configure a Remote Path Mapping in Tanukarr.
-Remote Path Mapping translates paths; it does not mount storage or fix ownership.
+## Upgrade and pin an image
 
-An import-list root must also be under persistent storage. The historical local
-1.0.5 deployment's read-only check found an accessible import root in the
-container's writable layer and **zero registered media files**. Its settings and
-existing paths were retained; no files were imported or moved. That observation
-does not verify a real media import. Choose a root under the mounted media parent
-before using the instance for downloads, and review existing series paths before
-changing them.
+**0.1.0 is a version reset from 1.1.0, not an older database format.** Stop the
+existing application and back up `/config` consistently before upgrading. Keep
+the exact configuration/media mounts, Compose project identity, port and
+authentication. Changing a display/service name must not select a new empty
+configuration volume. Preserve the old image and matching backup for rollback.
 
-Hardlinks require downloads and the library to be on the **same underlying
-filesystem**, with permissions that allow the import. One parent mount helps
-preserve that relationship; it does not make separate disks or network shares
-support hardlinks. Enable Sonarr's hardlink option where supported. Torrent files
-can then remain available for seeding without duplicating file content. Imports
-that cannot hardlink may copy files instead, consuming additional space.
-
-## First-run configuration and authentication
-
-Configure authentication in **Settings -> General**. Select Forms authentication,
-set a unique username and password, and require authentication for every client
-address when the instance is accessible beyond your local workstation. The API
-uses its own API key; treat that key and configuration backups as secrets.
-
-The default **Instance Name** is `Tanukarr`. When saving General settings, an
-instance name must start or end with **`Tanukarr`** or legacy **`Sonarr`**, for
-example `Tanukarr Home` or `Anime Sonarr`. This retains the existing anchored
-prefix/suffix policy while accepting the renamed product. Reading an existing
-custom instance name does not rename it automatically; a newly saved name must
-pass the current validation.
-
-The Compose port binds to loopback. For LAN access, deliberately replace
-`127.0.0.1` with the host's LAN address and configure the allowed hostnames under
-**Settings -> General** (`AllowedHosts` in `config.xml`). Use the actual hostname
-or address clients send in the Host header. If using a reverse proxy, configure
-its host and URL base consistently, enable HTTPS, and require authentication.
-Do not expose an unauthenticated instance directly to the Internet.
-
-Add root folders, indexers and download clients for your TV/anime library before
-starting searches. Select a metadata source per title in Add New Series:
-TheTVDB/TMDB offer TV catalogue entries, while AniList/MyAnimeList/Jikan offer
-anime catalogue entries. For TMDB metadata or episode groups, configure a TMDB
-v3 API key under **Settings -> Metadata Source**; import-list access tokens are
-different credentials. See [Metadata providers](metadata-providers.md) for
-catalogue coverage and the implemented access requirements.
-AniList account-list status, anime release status and custom-list
-membership are separate filters; see [Library tools](library-tools.md).
-AniList lets you include several custom lists and veto entries by excluded
-custom-list membership, within the enabled Import membership/release statuses.
-Version 1.1.0 retains the 1.0.2 rule: excluded custom-list members are removed,
-including overlap with an included list. The six separate account-status
-exclusion controls and their behavior remain removed; the immutable 1.0.1 image
-retains its original settings.
-Use a verified 1.1.0 image and check its source revision.
-The list-control changes introduced in 1.0.2 also remove the
-duplicate legacy custom-list textbox, moving its saved name into Included
-Custom Lists tags without discarding the filter.
-
-The snapshot import process introduced in 1.0.5 remains in 1.1.0. Supported
-providers first validate a complete selected-account or selected-list snapshot,
-then apply each import definition's filters. Definitions with the same account,
-grant and request projection can share that read during
-one synchronization; a new synchronization or unsaved **Test** gets a fresh
-scope. Private temporary responses are released after the operation. Saved list
-membership and SIMKL's required incremental baseline remain. A failed or
-incomplete response retains the previous successful membership.
-
-Each import list also offers **Metadata provider for new series**. **Automatic**
-keeps the existing selection order; an explicit catalogue is used only when the
-item supplies its verified positive ID. If that ID is unavailable, Automatic
-remains the fallback. Native AniList, MAL, TMDB and TheTVDB IDs stay in separate
-namespaces; a negative internal TVDB placeholder is not a real TheTVDB identity.
-Changing the preference does not move or renumber existing series. See
-[complete list snapshots and provider identity](import-list-snapshots.md) for
-provider boundaries, native-ID safeguards, container/log clocks, local API
-requests and the distinction between software licensing and remote-service
-access.
-
-For Jellyfin, configure the dedicated
-connection under **Settings -> Connect** and select one initialized library;
-see [Jellyfin refresh](jellyfin.md) for the three refresh modes and networking.
-To record Played state, enable the separate watched reader and select one user;
-use [Jellyfin watched status](jellyfin-watched.md) for polling, path-prefix
-translation, optional monitoring changes and separately authorized list writes.
-
-An existing upstream configuration must be **copied** to a separate Tanukarr
-configuration directory or volume while the source instance is stopped for a
-consistent backup. Migrations can make that copy incompatible with upstream.
-Never point both running instances at the same `/config`, and retain the original
-backup. Reusing a configuration does not validate every existing client or library
-setting for the new instance.
-
-## Pulling from GitHub Container Registry
-
-A **public** GHCR package supports anonymous pulls:
-
-```sh
-docker pull ghcr.io/kvasexpert/tanukarr:1.1.0
-```
-
-If GitHub reports `denied` or `unauthorized`, confirm that the tag exists and that
-the package visibility is public. A public source repository does not by itself
-make its container package public. Authorized users of a private package can
-authenticate using their GitHub username and a token with `read:packages`:
-
-```sh
-docker login ghcr.io --username YOUR_GITHUB_USERNAME
-```
-
-Enter the token at the password prompt. Organization policies may also require
-SSO authorization. Do not paste tokens into Compose YAML, documentation or a
-shell command that saves them in command history.
-
-## Version pins and updates
-
-`1.1.0` is the Tanukarr release version; the application's inherited internal
-Sonarr version may use a different numbering scheme. Prefer the exact release
-tag above. For a reproducible deployment, replace the image line with the digest
-recorded for that release:
-
-```yaml
-    image: ghcr.io/kvasexpert/tanukarr@sha256:40b0404c862c9df5fb658d9356f3d2d4a92c04a1786fe2e08c58e23db9f750b0
-```
-
-This is the verified Linux amd64 **platform manifest**. Its configuration digest
-is `sha256:99b21c1d60fd4cdedd8371b78b7154666f928aa4a878aff72be2eccea12b55b5`;
-the hosted verification reports identify that configuration, while the anonymous
-pull uses the manifest identity above. The publication proof
-ties both identities to source
-`3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`. Use the manifest digest in Compose.
-The verified published-image v3/v5 status responses report Tanukarr **1.1.0**,
-internal Core **10.0.0.18155**, .NET **10.0.13** and schema **252**.
-
-Release workflows also produce `latest` for release builds, `edge` for untagged
-`main` development builds and `sha-<full-commit>` for a particular build. Tags can
-be reassigned; a digest fixes the exact image. Architecture support and execution
-results belong to the published release's validation evidence.
-
-Before updating, back up `/config` consistently: stop the container before taking
-a filesystem copy or volume backup. Read the new release notes, change the image
-tag or digest in `compose.yaml`, then run:
+Change the image in the existing Compose file, then run:
 
 ```sh
 docker compose pull
@@ -286,180 +144,66 @@ docker compose ps
 docker compose logs --tail=100 tanukarr
 ```
 
-Recreating the container uses the new image with the existing configuration.
-`docker compose restart` keeps the container's old image. A database migration
-may prevent downgrading; restore the pre-update backup into a separate configuration
-location when a rollback requires it. Never overwrite your only backup.
+`docker compose restart` keeps the old image. Database migrations can prevent
+rollback; restore a compatible backup into a separate location when necessary.
+The reset keeps migrations 251/252 from 1.1.0 and v3/v5 APIs. The inherited
+internal Core version differs from Tanukarr's product version.
 
-In 1.1.0, migration **251** adds quality criteria and profile codec factors;
-migration **252** adds the native collection display title. These additive
-migrations do not move existing media or change native provider identities.
-Retain the previous image and compatible configuration backup before upgrading.
+The release workflow assigns `latest` to the tested release, `edge` to main,
+and `sha-<full-commit>` to a build. A digest pins exact image bytes; use the
+published platform manifest from the new verification ledger in the form
+`ghcr.io/kvasexpert/tanukarr@sha256:<published-manifest>`. Do not reuse the
+historical 1.1.0 digest for the new release. Only use assets whose publication
+and checks are actually recorded in the ledger.
 
-The historical local 1.0.4-to-1.0.5 upgrade preserved all old protected columns
-and rows across **37 protected tables**. Migration **250** adds only
-`ImportLists.PreferredMetadataSource`, defaulting existing lists to Automatic.
-Raw before/after hashes were retained; this is not a claim of identical database
-bytes or unchanged volatile task data. The post-upgrade V3/V5 status endpoints
-reported Tanukarr 1.0.5, internal Core 10.0.0.10489, .NET 10.0.12 and schema 250.
-Read-only local GETs returned a healthy `/ping`; `/` and `/series` redirected to
-the local login page. No private provider account, download or media import was
-triggered by that owner check. See the
-[publication follow-up](releases/1.0.5-publication.md) for the evidence and limits.
+Anonymous pulls should work for public packages. If registry policy requires
+authentication, use `docker login ghcr.io -u <github-user>` and enter an
+appropriately scoped token at its password prompt. Do not put it on a command
+line or in committed files.
 
-## Release archive fallback
+## Offline image and source builds
 
-If a release includes a Docker image archive, download that archive and its
-checksum from the verified [GitHub release](https://github.com/KvasExpert/Tanukarr/releases/tag/v1.1.0).
-Choose an architecture compatible with your Docker host. Verify the filename
-listed in the release's checksum file before loading it:
+Download the image archive and `SHA256SUMS` from the actual GitHub release.
+Verify its filename and checksum before loading:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-1.1.0-linux-amd64-docker.tar.gz
-```
-
-On Windows, use `Get-FileHash -Algorithm SHA256` and compare its output with
-`SHA256SUMS`. A matching hash verifies the downloaded bytes against that file;
-it is not a separate signature or publisher identity check. `docker load` prints
-the loaded image tag. Set `image:` in Compose to that exact tag and start without
-pulling:
-
-```sh
+docker load --input Tanukarr-0.1.0-linux-amd64-docker.tar.gz
 docker compose up -d --pull never
 ```
 
-Use the actual asset name shown for the release; the command above illustrates
-the verified 1.1.0 Linux amd64 archive. This is an offline image import,
-not a source build. Asset availability, architectures, SBOMs, manifests and test
-receipts must be checked on the corresponding release. GitHub source archives
-are source code and cannot be loaded with `docker load`. Source and image assets
-must preserve the project's GPL license and contributor notices.
+On Windows use `Get-FileHash -Algorithm SHA256`. A checksum verifies downloaded
+bytes against the checksum file; it is not a separate publisher signature.
+Use the exact image tag printed by `docker load`. GitHub source archives cannot
+be loaded as Docker images.
 
-The verified 1.1.0 release provides `provider-verification.json`, alongside
-the primary verification/manifest assets, to identify required provider/runtime
-checks for the same tested image. It aggregates seventeen additional reports
-beyond smoke and functional/security, for nineteen required publishing gates
-totaling 342 checks. The import-snapshot fixture verifies two definitions sharing one
-complete read, independent local filters, a fresh subsequent sync and account/grant
-isolation through controlled provider endpoints. The
-backup fixture checks actual archive integrity and success/failure task timing;
-the watched fixture changes Played state on a disposable real local Jellyfin.
-Custom-quality checks import generated 4K HEVC media; artwork and collection-browser
-checks exercise catalogue fallback and decoded desktop/mobile covers. A genuine
-disposable qBittorrent server verifies client settings and generated collection
-imports, while selected-library Jellyfin refresh uses actual one-minute ticks.
-Quality/codec checks retain local RSS coverage. These controlled fixtures do not
-claim public downloads or access to the owner's library or private accounts.
-The verified nine assets comprise the image archive, corresponding source archive,
-SBOM, smoke report, functional/security report, provider aggregate, Compose YAML,
-release manifest and checksum file. Inspect the actual published asset list,
-checksums and manifest; a configured workflow alone does not prove publication
-or successful execution.
-
-The initial 0.0.1 release provides an image archive for **Linux amd64** and
-its matching source archive, SBOM, manifest and verification receipts. Its
-immutable assets and dated reports remain historical checkpoints; they do not
-establish that an equivalent later asset has been published or tested. The
-1.1.0 publication has its own proof rather than inheriting those early results.
-
-## Building from the GitHub source
-
-To build the tagged source instead of pulling the published image:
+To build the released source:
 
 ```sh
-git clone --branch v1.1.0 --depth 1 https://github.com/KvasExpert/Tanukarr.git
+git clone --branch v0.1.0 --depth 1 https://github.com/KvasExpert/Tanukarr.git
 cd Tanukarr
-docker build --progress=plain \
-  --build-arg TANUKARR_SOURCE=https://github.com/KvasExpert/Tanukarr \
-  --build-arg TANUKARR_VERSION=1.1.0 \
-  --build-arg TANUKARR_REVISION=3c997ff8ed5e022a04a54a2f1c90b8682eccdc89 \
-  -t tanukarr:1.1.0 .
+docker build --progress=plain --build-arg TANUKARR_VERSION=0.1.0 \
+  --build-arg TANUKARR_REVISION="$(git rev-parse HEAD)" -t tanukarr:0.1.0 .
 ```
 
-Use `image: tanukarr:1.1.0` in the standalone Compose example above and run
-`docker compose up -d --pull never`. The build downloads dependencies and runs
-the checks encoded in the Dockerfile, using .NET SDK **10.0.402** and runtime
-**10.0.13**. Further test commands are in
-[CONTRIBUTING.md](../CONTRIBUTING.md).
+Use `image: tanukarr:0.1.0` in Compose. The repository's own Compose file remains
+a local-build deployment using `tanukarr:local`; it does not pull the release.
+Build requirements and actual test scope are in [CONTRIBUTING.md](../CONTRIBUTING.md)
+and the [container test guide](../docker/tests/README.md). Build/test configuration
+alone does not establish that a release was published or verified.
 
-The explicit source argument uses the current canonical repository URL. The
-verified annotated `v1.1.0` tag has object ID
-`97bae6f98b78fc34fba2bb9a2b34a56092836d1d` and resolves to source
-`3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`.
-To build development code instead, clone `main`
-and check the repository's `VERSION` file.
-An untagged main checkout can include changes added after a release, so record
-the full Git commit when reproducing a build.
-
-The repository's own `docker-compose.yml` remains a local-build deployment with
-`tanukarr:local`. Use `TANUKARR_*` overrides; older aliases remain accepted for
-existing installations. In that checkout, `docker compose up -d --build`
-rebuilds from source; it does not pull the GHCR release. Existing local users should preserve
-their configuration mount and Compose project identity when changing images.
-
-## Upgrading an existing installation
-
-The repository and product are now named **Tanukarr**. New installations use
-`ghcr.io/kvasexpert/tanukarr:1.1.0`. Historical
-[0.0.1](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.0.1) and
-[0.1.0](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.1.0) releases retain
-the image paths and filenames recorded in their manifests. A GitHub repository
-rename does not rename an existing GHCR package or move the host's directories.
-
-Stop the existing container and take a consistent backup first. Edit its image
-to the new Tanukarr tag, while retaining the exact original configuration volume
-or bind mount, media mounts, Compose project identity, port and authentication.
-For example, keep `<existing-config-volume>:/config` mounted using its actual
-existing volume name. Replacing it with `tanukarr-config` creates a new empty volume.
-Container/service display names can change separately, but do not let Compose
-silently select a different configuration volume.
-
-The inherited Sonarr assembly and configuration names remain intentional:
-`Sonarr`, `config.xml`, `sonarr.db` and container port 8989 do not change.
-Existing database migrations, API keys and provider identities are preserved.
-API clients can continue using `/api/v3` and `/api/v5`; `/api/v4` is not supported.
-Both checked-in local Compose and the standalone release YAML resolve each
-setting from **`TANUKARR_*`**, then existing compatibility aliases, then defaults.
-An unset or empty value falls through to the next name. This includes both
-configuration and media paths; an old `.env` need not be renamed to preserve
-its mounts. New installations should use `TANUKARR_*` names.
-
-| Suffix after the prefix | Default | Purpose |
-| --- | --- | --- |
-| `BIND_ADDRESS` | `127.0.0.1` | Host address used for the published port |
-| `PORT` | `6970` | Host port; container port remains 8989 |
-| `PUID` | `1000` | Application UID |
-| `PGID` | `1000` | Application GID |
-| `UMASK` | `002` | File creation mask |
-| `TZ` | `Etc/UTC` | Application timezone |
-| `CONFIG_PATH` | `./config` | Configuration bind mount |
-| `MEDIA_PATH` | `./media` | Shared library/download bind mount |
-
-Keep your actual WSL distribution and local tool-directory names. Set
-`TANUKARR_WSL_DISTRIBUTION` to the existing configured distribution when using
-[docker/start-wsl.ps1](../docker/start-wsl.ps1). `<build-distribution>` and
-`<local-tool-directory>` are documentation placeholders, not new installation
-names or instructions to rename existing directories.
-
-See [compatibility and backups](compatibility-and-backups.md) for ZIP restore,
-the outstanding raw-XML restore limitation and PostgreSQL backup requirements.
+The release assets include the image, corresponding source, SBOM, verification
+reports, manifest, Compose configuration and checksums. Preserve the GPL license
+and contributor notices. Superseded GitHub release assets are backed up before
+the requested replacement; dated reports retain their original evidence. The
+former 0.1.0 source is distinguished by its archive tag and
+[legacy report](releases/legacy-0.1.0-verification.md).
 
 ## Troubleshooting
 
-| Symptom | What to check |
-| --- | --- |
-| Registry denies the pull | Correct owner/image/tag, finished publishing run, public package visibility or authorized GHCR login |
-| `no matching manifest` | Published architecture versus the host's `docker info`; use a supported release/image archive |
-| Port 6970 already in use | Change the host side only, for example `127.0.0.1:6971:8989`, and use that port in the browser |
-| Media permission errors | Host directory ownership, PUID/PGID, group permissions, and the download client's UID/GID |
-| Downloads cannot be imported | Shared mounts, reported paths, Remote Path Mapping and the common filesystem required for hardlinks |
-| Invalid or rejected Host header | AllowedHosts and proxy hostname/URL-base settings |
-| Configuration appears empty | Correct named volume or bind path and unchanged Compose project/volume name |
-
-Use `docker compose logs` and the application logs for diagnosis, removing keys,
-passwords, private account data and sensitive paths before sharing. Report this
-release's problems in the [Tanukarr issue tracker](https://github.com/KvasExpert/Tanukarr/issues).
-For vulnerabilities, follow [SECURITY.md](../SECURITY.md). The
-[container test guide](../docker/tests/README.md) describes tests with disposable
-data, and the [documentation index](README.md) links the dated validation reports.
+Check `docker compose ps`, `/ping`, login and sanitized logs. Permission errors
+usually require matching UID/GID and mount ownership. For search problems, verify
+provider credentials, enabled sources, native numbering and indexer/client tests.
+Share the Tanukarr version, source/image digest, reproduction and sanitized logs
+in [this project's tracker](https://github.com/KvasExpert/Tanukarr/issues).
+Remove API keys, cookies, passwords and private paths before sharing diagnostics.

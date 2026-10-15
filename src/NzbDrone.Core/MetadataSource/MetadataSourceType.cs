@@ -17,6 +17,8 @@ namespace NzbDrone.Core.MetadataSource
 
         AniList = 2,
 
-        MyAnimeList = 3
+        MyAnimeList = 3,
+
+        TvMaze = 4
     }
 }

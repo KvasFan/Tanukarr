@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Tv;
 using Sonarr.Http.REST;
 
@@ -18,6 +19,11 @@ namespace Sonarr.Api.V3.Series
 
         // View Only
         public string Title { get; set; }
+        public MetadataSourceType? MetadataSource { get; set; }
+        public string ForeignId { get; set; }
+        public string OrderingId { get; set; }
+        public HashSet<int> MalIds { get; set; }
+        public HashSet<int> AniListIds { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Include)]
         public string CollectionTitle { get; set; }
@@ -111,6 +117,11 @@ namespace Sonarr.Api.V3.Series
                        Id = model.Id,
 
                        Title = model.Title,
+                       MetadataSource = model.MetadataSource,
+                       ForeignId = model.ForeignId,
+                       OrderingId = model.OrderingId,
+                       MalIds = model.MalIds,
+                       AniListIds = model.AniListIds,
                        CollectionTitle = model.CollectionTitle,
 
                        // AlternateTitles
@@ -196,6 +207,11 @@ namespace Sonarr.Api.V3.Series
                        Id = resource.Id,
 
                        Title = resource.Title,
+                       MetadataSource = resource.MetadataSource ?? MetadataSourceType.Tvdb,
+                       ForeignId = resource.ForeignId,
+                       OrderingId = resource.OrderingId,
+                       MalIds = resource.MalIds ?? new HashSet<int>(),
+                       AniListIds = resource.AniListIds ?? new HashSet<int>(),
 
                        // AlternateTitles
                        SortTitle = resource.SortTitle,

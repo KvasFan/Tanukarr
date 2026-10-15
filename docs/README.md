@@ -15,6 +15,8 @@ repeat past verification or rename existing releases, volumes or tools.
 
 | Document | Purpose |
 | --- | --- |
+| [Tanukarr 0.1.0 reset](releases/0.1.0.md) | 1.1.0-derived account setup, collection/UI fixes, metadata source controls and container hardening |
+| [0.1.0 reset verification](releases/0.1.0-verification.md) | New executed evidence and publication state, separate from the former version |
 | [Tanukarr 1.1.0](releases/1.1.0.md) | Full collection pages, alternate artwork, custom qualities and editable profile codec factors |
 | [1.1.0 publication and deployment](releases/1.1.0-publication.md) | Exact source/image/assets, nineteen hosted gates, public security findings and protected upgrade evidence |
 | [1.1.0 image-security inventory](releases/1.1.0-image-security.json) | Actual public-image scan summary with exact package/CVE versions, severities and verification limits |
@@ -43,8 +45,8 @@ repeat past verification or rename existing releases, volumes or tools.
 | [Tanukarr 1.0.0](releases/1.0.0.md) | Rename, Tanuki artwork, retained features, upgrade guidance and release limits |
 | [1.0.0 release verification](releases/1.0.0-verification.md) | Executed checks, exact source/image identity, remaining findings and publication |
 | [Compatibility and backups](compatibility-and-backups.md) | v3/v5 APIs, preserved core/configuration names, safe migration and backup/restore limits |
-| [historical 0.1.0](releases/0.1.0.md) | Historical Jellyfin/AniList release scope and upgrade guidance |
-| [0.1.0 release verification](releases/0.1.0-verification.md) | Historical published source/image identity, executed checks, scan and deployment |
+| [historical 0.1.0](releases/legacy-0.1.0.md) | Historical Jellyfin/AniList release scope and upgrade guidance |
+| [historical 0.1.0 verification](releases/legacy-0.1.0-verification.md) | Original source/image identity, executed checks, scan and deployment |
 | [historical 0.0.1](releases/0.0.1.md) | Initial release scope, download assets, core/API version compatibility and known limits |
 | [0.0.1 release verification](releases/0.0.1-verification.md) | Actual packaging tests, image identity and publication checkpoint |
 | [Fork design](../FORK.md) | Provider ownership, numbering, acquisition rules and trade-offs |

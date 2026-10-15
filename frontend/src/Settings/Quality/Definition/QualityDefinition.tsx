@@ -85,7 +85,7 @@ function QualityDefinition({
   ] as const;
 
   return (
-    <div className={styles.qualityDefinition}>
+    <div className={styles.qualityDefinition} data-quality-definition-id={id}>
       <div className={styles.quality}>{quality.name}</div>
 
       <div className={styles.title}>

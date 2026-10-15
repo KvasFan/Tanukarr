@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { MetadataSource } from 'AddSeries/AddNewSeries/useAddSeries';
 import Alert from 'Components/Alert';
 import FieldSet from 'Components/FieldSet';
 import Form from 'Components/Form/Form';
@@ -51,6 +52,16 @@ function MetadataSourceSettings() {
     ({ value }: InputChanged<string>) => {
       updateSetting('tmdbApiKey', value);
     },
+    [updateSetting]
+  );
+
+  const handleOrderChange = useCallback(
+    (value: MetadataSource[]) => updateSetting('metadataSourceOrder', value),
+    [updateSetting]
+  );
+  const handleDisabledChange = useCallback(
+    (value: MetadataSource[]) =>
+      updateSetting('disabledMetadataSources', value),
     [updateSetting]
   );
 
@@ -117,10 +128,15 @@ function MetadataSourceSettings() {
                   />
                 </FormRow>
               </FieldSet>
+              <Sources
+                order={settings.metadataSourceOrder.value}
+                disabled={settings.disabledMetadataSources.value}
+                hasTmdbKey={settings.tmdbApiKeyConfigured.value}
+                onOrderChange={handleOrderChange}
+                onDisabledChange={handleDisabledChange}
+              />
             </Form>
           ) : null}
-
-          <Sources />
         </div>
       </PageContentBody>
     </SettingsPage>

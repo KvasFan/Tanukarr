@@ -54,7 +54,8 @@
 
 .formGroupWrapper,
 .formatItemLarge {
-  flex: 0 0 calc(var(--formGroupSmallWidth) - 100px);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .qualitiesColumn {

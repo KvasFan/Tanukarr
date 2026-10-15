@@ -164,7 +164,15 @@ class BackupTasks(functional.FunctionalSecurity):
             require(time.monotonic() < deadline, "Scheduler did not run the overdue owned backup")
             time.sleep(1)
         require(command["status"] == "completed", "Scheduled backup did not complete")
-        after = self.task()
+        # Command completion is visible before CommandExecutedEvent updates the
+        # scheduled task. Wait for the same observable state as the manual case.
+        deadline = time.monotonic() + 10
+        while True:
+            after = self.task()
+            if after["lastStartTime"] == command["started"]:
+                break
+            require(time.monotonic() < deadline, "Scheduled Backup start time differs from its command")
+            time.sleep(0.2)
         self.compare_apis(after)
         archive = self.verify_archive("scheduled", prior_names)
         self.evidence.append({"case": "actual overdue scheduler", "commandStatus": command["status"],

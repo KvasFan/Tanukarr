@@ -226,6 +226,30 @@ class CollectionsBrowser(groups.AnimeGroups):
         require(self.raw("/api/v5/indexer/test", "POST", resource)[0] == 204, "Generated Nyaa RSS Test failed")
         self.api_json("/api/v5/indexer?skipTesting=true", "POST", resource)
         self.check("generated native TV, anime chain, mixed movie chain, pure movie saga, Specials, real image files and interactive-only Nyaa")
+        member = self.series[900402]
+        source = self.root / "media" / "incoming" / "Fixture Linear Anime Sequel - S01E01.mkv"
+        generated = subprocess.run(
+            [self.args.ffmpeg, "-nostdin", "-v", "error", "-f", "lavfi", "-i", "color=c=blue:s=1280x720:r=1",
+             "-t", "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-y", str(source)],
+            capture_output=True, text=True, timeout=60)
+        require(generated.returncode == 0 and source.is_file(), "Could not generate the owned browser video")
+        source.chmod(0o644)
+        episode = next(item for item in self.episodes(member) if item["seasonNumber"] == 1 and item["episodeNumber"] == 1)
+        self.command({"name": "ManualImport", "importMode": "copy", "files": [{
+            "path": "/media/incoming/" + source.name, "seriesId": member["id"], "episodeIds": [episode["id"]],
+            "quality": {"quality": {"id": 5}, "revision": {"version": 1}},
+            "languages": [{"id": 1, "name": "English"}],
+        }]})
+        self.until(lambda: self.api_json(f"/api/v5/episode/{episode['id']}")["hasFile"], "Owned browser video did not import")
+        imported = self.api_json(f"/api/v5/episode/{episode['id']}")
+        self.browser_file = self.api_json(f"/api/v5/episodefile/{imported['episodeFileId']}")
+        self.imported_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+        self.command({"name": "RescanSeries", "seriesId": member["id"]})
+        naming = self.api_json("/api/v5/settings/naming")
+        naming["animeEpisodeFormat"] = "{Series Title} - S{season:00}E{episode:00} - Browser Renamed"
+        self.api_json("/api/v5/settings/naming/1", "PUT", naming)
+        require(self.api_json(f"/api/v5/rename?seriesId={member['id']}&seasonNumber=1"), "Owned video does not have a rename preview")
+        self.check("actual generated video imports and rescans under its native episode, with a deliberate browser rename preview")
 
 
 def main():
@@ -234,6 +258,7 @@ def main():
     parser.add_argument("--mock-image", default=PINNED_MOCK)
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--openssl", default="openssl")
+    parser.add_argument("--ffmpeg", default="ffmpeg")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--browser-node", default="node")
     parser.add_argument("--playwright-module", default="playwright")
@@ -272,6 +297,7 @@ def main():
                    "sourceRevision": audit.image_labels.get("org.opencontainers.image.revision"),
                    "series": series, "nativeId": native["id"], "playwrightModule": args.playwright_module,
                    "playwrightVersion": args.playwright_version, "artifactDirectory": browser_path(directory),
+                   "generatedFile": audit.browser_file,
                    "canonicalPresentation": presentation}
         payload["episodeIdentities"] = sorted((episode["id"], item["id"], episode["seasonNumber"], episode["episodeNumber"])
                                              for item in series for episode in audit.episodes(item))
@@ -285,7 +311,15 @@ def main():
         require(result.returncode == 0 and browser["passed"], "Packaged collection browser checks failed")
         require(audit.api_json("/api/v5/downloadclient") == [] and audit.api_json("/api/v5/queue")["totalRecords"] == 0,
                 "Browser fixture created acquisition state")
-        require(audit.api_json("/api/v5/history")["totalRecords"] == 0, "Browser fixture acquired media")
+        history = audit.api_json("/api/v5/history?pageSize=1000")
+        require(not any(item["eventType"] in ("grabbed", "downloadFailed") for item in history["records"]),
+                "Browser fixture acquired media")
+        saved_file = audit.api_json(f"/api/v5/episodefile/{audit.browser_file['id']}")
+        generated_path = audit.root / "media" / Path(saved_file["path"]).relative_to("/media")
+        require(generated_path.is_file() and hashlib.sha256(generated_path.read_bytes()).hexdigest() == audit.imported_hash,
+                "Browser management or rename changed the owned generated media bytes")
+        require("Browser Renamed" in saved_file["path"], "Browser did not complete the owned rename")
+        audit.check("actual browser Manage Episodes and Preview Rename preserve the generated video's bytes and native file identity")
         require(not any(item["name"] in ("SeriesSearch", "SeasonSearch", "EpisodeSearch", "CompleteSeriesSearch")
                         for item in audit.api_json("/api/v5/command")), "Browser scheduled acquisition")
         audit.check("actual packaged browser never configures a download client, acquires media or schedules acquisition")
@@ -312,6 +346,8 @@ def main():
                   "scope": {"ownedFixture": True, "ownerConfigurationAccessed": False, "privateAccountUsed": False,
                             "publicMetadataRequests": False, "acquisitionTested": False, "internalNetwork": True,
                             "externalRoutingAllowed": False, "trustedCatalogueTls": True, "realLibraryTested": False,
+                            "generatedVideoImportTested": hasattr(audit, "browser_file"),
+                            "generatedVideoManagementAndRenameTested": error is None and hasattr(audit, "browser_file"),
                             "apiBindAddress": "127.0.0.1:random", "keptData": False},
                   "keptApp": None, "keptMock": None, "keptNetwork": None, "keptData": None}
         args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

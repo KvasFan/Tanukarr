@@ -21,7 +21,12 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(110deg, rgba(9, 15, 22, 0.96), rgba(9, 15, 22, 0.68) 65%, rgba(9, 15, 22, 0.80));
+  background: linear-gradient(
+    110deg,
+    rgba(9, 15, 22, 0.96),
+    rgba(9, 15, 22, 0.68) 65%,
+    rgba(9, 15, 22, 0.8)
+  );
   content: '';
 }
 
@@ -39,7 +44,7 @@
   width: 210px;
   height: 310px;
   border-radius: 14px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.40);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
   object-fit: cover;
 }
 
@@ -238,17 +243,9 @@
   & button {
     display: inline-flex;
     align-items: center;
+    min-height: 36px;
     gap: 6px;
   }
-}
-
-.openEntry {
-  display: inline-flex;
-  align-items: center;
-  margin-left: auto;
-  color: var(--inkSoft);
-  font-size: 13px;
-  gap: 6px;
 }
 
 .searchProgress {
@@ -311,9 +308,5 @@
   .cardActions {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .openEntry {
-    margin-left: 0;
   }
 }

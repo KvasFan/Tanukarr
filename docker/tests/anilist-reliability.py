@@ -277,7 +277,7 @@ class AniListReliability(_groups.AnimeGroups):
             "create", "--name", "tanukarr-anilist-reliability-" + suffix,
             "--label", "tanukarr.anilist-reliability-test=true", "--label", "sonarr.smoke-test=true",
             "--network", self.network, "--network-alias", "fixture-app",
-            "--env", "PUID=1000", "--env", "PGID=1000", "--env", "UMASK=002",
+            "--env", "PUID=1000", "--env", f"PGID={self.fixture_gid}", "--env", "UMASK=002",
             "--env", "HTTP_PROXY=", "--env", "HTTPS_PROXY=", "--env", "ALL_PROXY=",
             "--mount", f"type=bind,source={config},target=/config", "--mount", f"type=bind,source={media},target=/media",
             "--mount", f"type=bind,source={tls / 'ca.crt'},target=/fixture-ca.crt,readonly",

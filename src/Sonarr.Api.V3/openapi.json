@@ -186,6 +186,75 @@
         }
       }
     },
+    "/login/setup": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "passwordConfirmation": {
+                    "type": "string"
+                  }
+                }
+              },
+              "encoding": {
+                "token": {
+                  "style": "form"
+                },
+                "username": {
+                  "style": "form"
+                },
+                "password": {
+                  "style": "form"
+                },
+                "passwordConfirmation": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Found"
+          }
+        }
+      }
+    },
     "/reset-password": {
       "post": {
         "tags": [
@@ -4927,25 +4996,6 @@
         }
       }
     },
-    "/api/v3/config/metadatasource": {
-      "get": {
-        "tags": [
-          "MetadataSourceConfig"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MetadataSourceConfigResource"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v3/config/metadatasource/{id}": {
       "put": {
         "tags": [
@@ -5021,6 +5071,25 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v3/config/metadatasource": {
+      "get": {
+        "tags": [
+          "MetadataSourceConfig"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSourceConfigResource"
+                }
+              }
+            }
           }
         }
       }
@@ -7679,6 +7748,21 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "metadataSource",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MetadataSourceType"
+            }
+          },
+          {
+            "name": "allSources",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -11024,6 +11108,23 @@
             "type": "integer",
             "format": "int32"
           },
+          "metadataSourceOrder": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataSourceType"
+            },
+            "nullable": true
+          },
+          "disabledMetadataSources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataSourceType"
+            },
+            "nullable": true
+          },
+          "tmdbApiKeyConfigured": {
+            "type": "boolean"
+          },
           "tmdbApiKey": {
             "type": "string",
             "nullable": true
@@ -11036,7 +11137,8 @@
           "tvdb",
           "tmdb",
           "aniList",
-          "myAnimeList"
+          "myAnimeList",
+          "tvMaze"
         ],
         "type": "string"
       },
@@ -12827,6 +12929,35 @@
           },
           "title": {
             "type": "string",
+            "nullable": true
+          },
+          "metadataSource": {
+            "$ref": "#/components/schemas/MetadataSourceType"
+          },
+          "foreignId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "malIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "aniListIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           },
           "collectionTitle": {

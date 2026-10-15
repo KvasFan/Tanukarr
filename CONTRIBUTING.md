@@ -247,6 +247,16 @@ A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
+The **0.1.0 product reset** derives from 1.1.0, retaining schema 252 and the
+original source authors. Use its [new notes](docs/releases/0.1.0.md) and
+[verification ledger](docs/releases/0.1.0-verification.md) for this build.
+`yarn test:metadata-sources` covers mounted enable/order controls and search
+payloads and is included in `yarn test:queue-details`. The new first-run Docker
+gate exercises actual graphical account creation, antiforgery rejection,
+persistence and password absence from logs. Historical 0.1.0 reports now use
+`legacy-0.1.0` filenames to distinguish them from this reset. Preserve backups
+and historical source refs before reusing a release tag.
+
 The public project is
 [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The verified **1.0.5** release
 uses Git tag `v1.0.5` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.5`.

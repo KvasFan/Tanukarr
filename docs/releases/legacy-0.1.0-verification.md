@@ -1,0 +1,108 @@
+# Historical 0.1.0 release verification
+
+> Version-reset note (October 15): original hashes and results below remain
+> scoped to the former SonarrWeeb release. Its source is preserved under
+> `archive/sonarrweeb/v0.1.0`; the reused public `v0.1.0` tag and release page
+> identify the newer Tanukarr reset. Retained local release backups preserve
+> the old assets. No historical test result is applied to the new build.
+
+> Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](../README.md) and [Tanukarr 1.0.0 verification](../releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
+
+This October 13, 2026 checkpoint covers the product-version change, English
+documentation, release packaging and deployment. The immutable release source
+is [`961d8abe176008aa335bb539ae02ec2c1edd061f`](https://github.com/KvasExpert/Tanukarr/commit/961d8abe176008aa335bb539ae02ec2c1edd061f),
+tagged `v0.1.0`. Later verification-document updates do not change that artifact.
+The initial `v0.0.1` release and dated feature reports retain their own identities.
+
+## Fresh checks
+
+| Check | Executed result |
+| --- | --- |
+| Complete Windows Debug solution | Passed; zero warnings and errors |
+| `BuildInfoFixture` | Three tests passed, zero failures or skips |
+| Frontend typecheck and Vite build | Passed; inherited large-chunk warning remains |
+| Version consistency | `VERSION`, package version and Docker default are 0.1.0; assembly/core remains `10.0.0.*` |
+| Jellyfin test client | Reads its version from `VERSION`; Python syntax checked |
+| Documentation before tagging | 26 Markdown files, 176 local links, nine tag-pinned paths and six anchors validated |
+| Tag image backend tests | Core 6,304; API 56; HTTP 57; focused Common 96: **6,513 passes**, zero failures, 27 Core skips |
+| Tag image frontend checks | **16 tests passed**; lint, stylelint, typecheck and production build passed |
+| Tag image container checks | **12 smoke and 16 functional/security checks passed** |
+| Published-image local smoke | All **12 checks passed** against the immutable registry digest below |
+
+The [main CI](https://github.com/KvasExpert/Tanukarr/actions/runs/38318647300),
+[main Docker run](https://github.com/KvasExpert/Tanukarr/actions/runs/38318647715)
+and [tag build/release run](https://github.com/KvasExpert/Tanukarr/actions/runs/38318647641)
+all completed successfully. The tag workflow tested its image before pushing it,
+packaged the release assets and verified downloaded checksums before publication.
+Its runtime checks did not request live AniList or browser scenarios.
+
+## Published release and image identity
+
+[historical 0.1.0](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.1.0)
+is a public, non-draft, non-prerelease release. It was published at
+`2026-10-12T22:59:53Z`, October 13 in Europe/Rome.
+
+The versioned Linux amd64 image is [the historical 0.1.0 image](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.1.0).
+Its immutable registry digest is:
+
+```text
+sha256:39ceb00be64219959634a6c72738e6a284f45ef3030e7fd59ca8fa971d8225d9
+```
+
+An anonymous pull using a fresh Docker configuration succeeded. OCI title,
+version, source revision and platform matched the release. The runtime reports
+product version **0.1.0**, internal Sonarr **10.0.0.41058**, .NET **10.0.12** and
+migration **243**.
+
+The attached manifest and CI reports use Docker's configuration image ID
+`sha256:d7f716936282c8b74bdd6d6fe5b63e7caa6628f3f01739b43e145f1cbca10d41`.
+The local containerd image store identifies the pulled artifact by its registry
+digest above. These identify different levels of the same image representation;
+the registry digest is the deployment pin.
+
+All eight expected assets were present: `compose.yaml`, the Docker and source
+archives, CycloneDX SBOM, `SHA256SUMS`, `release-manifest.json`, `smoke.json` and
+`functional-security.json`. Five small assets were downloaded locally; SHA256
+entries for Compose, the manifest and both reports were independently verified.
+The large archives were not downloaded again locally. The workflow verified
+the saved Docker archive's configuration/layers and all packaged asset checksums.
+An SBOM is an inventory; checksums establish integrity rather than a separate
+publisher-signature check.
+
+## Security and deployment
+
+Trivy **0.75.0** freshly scanned the exact published digest for vulnerabilities
+and secrets. It reported **15 distinct CVEs: zero critical, three high, nine
+medium and three low**, with **zero discovered secrets** and no scanner errors.
+Findings affect inherited ImageSharp 3.1.12 and Ubuntu 24.04 packages. The database
+was updated `2026-10-12T13:18:23Z` and remained valid through
+`2026-10-13T13:18:23Z`. The version/documentation changes do not patch those
+dependencies or constitute a security certification.
+
+The existing `sonarr-pro` Compose instance at `http://localhost:6970` was updated
+to this immutable release digest after a private configuration/database backup.
+The running image and runtime metadata matched the release; authentication/API
+key settings were preserved. The Jellyfin provider and AniList inclusion,
+exclusion and six status-exclusion fields remained available. Both before and
+after deployment the user database had zero series, so this check does not
+establish migration of a populated user library.
+
+Local logs, TRX files, scanner results, publication/deployment receipts and
+downloaded small assets are retained under the ignored
+`_artifacts/release-0.1.0/` directory. Published container reports and the manifest
+are attached to the release. Installation instructions are in the
+[Docker guide](../docker-installation.md).
+
+## Scope and attribution
+
+The [Jellyfin](../jellyfin-verification-2026-10-12.md) and
+[AniList filter](../anilist-filters-verification-2026-10-13.md) reports record
+earlier complete-suite, browser and disposable-server evidence. Their full-suite
+counts and image hashes are not assigned to this version bump. Private AniList
+OAuth, real user downloads, hardware VAAPI and an arm64 runtime were not tested
+for this checkpoint. Jellyfin HTTP 204 acknowledges queued work rather than
+completed asynchronous scanning.
+
+Original authors and source-declared AI labels remain in
+[CONTRIBUTORS.md](../../CONTRIBUTORS.md). This release work used **OpenAI Codex
+based on GPT-6**; no more specific model variant is established.

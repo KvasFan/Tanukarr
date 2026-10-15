@@ -126,7 +126,7 @@ class JellyfinRefresh(JellyfinIntegration):
             "create", "--name", "tanukarr-jf-refresh-app-" + suffix,
             "--label", "sonarr.smoke-test=true", "--label", "tanukarr.jellyfin-refresh-test=true",
             "--network", self.network, "--network-alias", "fixture-app",
-            "--env", "PUID=1000", "--env", "PGID=1000", "--env", "UMASK=002",
+            "--env", "PUID=1000", "--env", f"PGID={self.fixture_gid}", "--env", "UMASK=002",
             "--env", "HTTP_PROXY=", "--env", "HTTPS_PROXY=", "--env", "ALL_PROXY=",
             "--mount", f"type=bind,source={config},target=/config",
             "--mount", f"type=bind,source={media},target=/media", self.args.image)

@@ -48,12 +48,24 @@ namespace NzbDrone.Core.Tv
             var orderedEpisodes = OrderEpisodes(series, dupeFreeRemoteEpisodes).ToList();
             var episodesPerSeason = orderedEpisodes.GroupBy(s => s.SeasonNumber).ToDictionary(g => g.Key, g => g.Count());
             var latestSeason = seasons.MaxBy(s => s.SeasonNumber);
+            var uniqueRemoteIds = orderedEpisodes.Where(episode => episode.ForeignId.IsNotNullOrWhiteSpace())
+                .GroupBy(episode => episode.ForeignId, StringComparer.Ordinal).Where(group => group.Count() == 1)
+                .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
+            var nativeMatches = existingEpisodes.Where(episode => episode.SeriesId == series.Id && uniqueRemoteIds.Contains(episode.ForeignId ?? string.Empty))
+                .GroupBy(episode => episode.ForeignId, StringComparer.Ordinal).Where(group => group.Count() == 1)
+                .ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);
+            var reservedNativeRows = nativeMatches.Values.ToHashSet();
 
             foreach (var episode in orderedEpisodes)
             {
                 try
                 {
-                    var episodeToUpdate = existingEpisodes.FirstOrDefault(e => e.SeasonNumber == episode.SeasonNumber && e.EpisodeNumber == episode.EpisodeNumber);
+                    nativeMatches.TryGetValue(episode.ForeignId ?? string.Empty, out var episodeToUpdate);
+                    episodeToUpdate ??= existingEpisodes.FirstOrDefault(existing =>
+                        existing.SeasonNumber == episode.SeasonNumber && existing.EpisodeNumber == episode.EpisodeNumber &&
+                        !reservedNativeRows.Contains(existing) &&
+                        (episode.ForeignId.IsNullOrWhiteSpace() || existing.ForeignId.IsNullOrWhiteSpace() ||
+                         string.Equals(episode.ForeignId, existing.ForeignId, StringComparison.Ordinal)));
 
                     if (episodeToUpdate != null)
                     {
@@ -77,6 +89,11 @@ namespace NzbDrone.Core.Tv
 
                     episodeToUpdate.SeriesId = series.Id;
                     episodeToUpdate.TvdbId = episode.TvdbId;
+                    if (episode.ForeignId.IsNotNullOrWhiteSpace())
+                    {
+                        episodeToUpdate.ForeignId = episode.ForeignId;
+                    }
+
                     episodeToUpdate.EpisodeNumber = episode.EpisodeNumber;
                     episodeToUpdate.SeasonNumber = episode.SeasonNumber;
                     episodeToUpdate.AbsoluteEpisodeNumber = episode.AbsoluteEpisodeNumber;

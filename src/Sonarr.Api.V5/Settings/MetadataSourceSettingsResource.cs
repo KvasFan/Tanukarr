@@ -1,5 +1,6 @@
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.MetadataSource;
 using Sonarr.Http.REST;
 
 namespace Sonarr.Api.V5.Settings;
@@ -7,6 +8,8 @@ namespace Sonarr.Api.V5.Settings;
 public class MetadataSourceSettingsResource : RestResource
 {
     public int? PreferredMetadataLanguage { get; set; }
+    public List<MetadataSourceType>? MetadataSourceOrder { get; set; }
+    public List<MetadataSourceType>? DisabledMetadataSources { get; set; }
 
     /// <summary>
     /// Stands in for a key that is already stored. The real key is never sent to the
@@ -36,6 +39,8 @@ public static class MetadataSourceSettingsResourceMapper
         return new MetadataSourceSettingsResource
         {
             PreferredMetadataLanguage = model.PreferredMetadataLanguage,
+            MetadataSourceOrder = MetadataSourcePolicy.Order(model),
+            DisabledMetadataSources = MetadataSourcePolicy.Disabled(model),
             TmdbApiKey = configured ? MetadataSourceSettingsResource.Mask : string.Empty,
             TmdbApiKeyConfigured = configured
         };

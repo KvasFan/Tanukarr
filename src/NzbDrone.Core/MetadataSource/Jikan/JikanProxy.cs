@@ -119,7 +119,9 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 Title = anime.TitleEnglish.IsNotNullOrWhiteSpace() ? anime.TitleEnglish : anime.Title,
                 Format = anime.Type?.ToUpperInvariant().Replace(' ', '_'),
                 PrequelIds = RelationIds(relations, "Prequel"),
-                SequelIds = RelationIds(relations, "Sequel")
+                SequelIds = RelationIds(relations, "Sequel"),
+                ParentIds = RelationIds(relations, "Parent story"),
+                SideStoryIds = RelationIds(relations, "Side story")
             };
         }
 

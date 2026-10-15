@@ -130,6 +130,87 @@ function fixture({ copy, retired = false, action = false, fail = false, factors 
   };
 }
 
+function profileFixture(qualitySettings = false, id = 1) {
+  const changes = [];
+  const wrap = ({ children }) => React.createElement('div', {}, children);
+  const values = { name: 'Generated profile', upgradeAllowed: false, cutoff: 2, minFormatScore: 0,
+    minUpgradeFormatScore: 1, cutoffFormatScore: 0, formatItems: [], codecMultipliers: { H264: 1 },
+    items: [{ quality: { id: 2, name: 'HDTV-720p' }, allowed: true, minSize: 1, preferredSize: 95, maxSize: 199.9 },
+      { quality: { id: 3, name: 'WEB-720p' }, allowed: true, minSize: 2, preferredSize: 100, maxSize: 200 },
+      { id: 1001, name: 'Generated group', allowed: true, items: [{ quality: { id: 4, name: 'Grouped quality' }, allowed: true, minSize: 3, preferredSize: 105, maxSize: 210 }] }] };
+  let qualityProps = null;
+  const mocks = {
+    '@dnd-kit/react': { DragDropProvider: wrap },
+    'Utilities/String/translate': (key) => english[key] ?? key,
+    'Helpers/Props': { icons: {}, inputTypes: {}, kinds: {} },
+    'Helpers/Hooks/usePrevious': () => false,
+    'Settings/Profiles/Quality/useQualityProfileInUse': () => ({ seriesCount: 0, importListCount: 0 }),
+    './useQualityProfiles': { useManageQualityProfile: () => ({
+      item: Object.fromEntries(Object.entries(values).map(([name, value]) => [name, { value }])),
+      isSaving: false, isSchemaLoading: false, isSchemaFetched: true, saveError: null,
+      updateValue: (name, value) => changes.push({ name, value }), saveProvider: () => undefined,
+      validationErrors: [], validationWarnings: []
+    }) },
+    './useQualityProfileDnd': () => ({ displayItems: [], handleDragStart: () => undefined, handleDragOver: () => undefined, handleDragEnd: () => undefined }),
+    './QualityProfileItems': (props) => {
+      qualityProps = props;
+      return React.createElement('div', { 'data-quality-controls': true });
+    },
+    './QualityProfileCodecFactors': () => React.createElement('div', { 'data-codec-controls': true }),
+    './QualityProfileFormatItems': wrap,
+    'Components/Form/FormInput': (props) => React.createElement('input', { name: props.name, value: props.value, readOnly: true }),
+    'Components/Form/FormInputHelpText': wrap,
+    'Components/Icon': () => null,
+    'Components/Loading/LoadingIndicator': () => null,
+    'Components/Link/Button': wrap,
+    'Components/Link/SpinnerErrorButton': wrap,
+    'Components/Tooltip/Popover': wrap,
+    'Components/Alert': wrap
+  };
+
+  for (const component of ['Form/Form', 'Form/FormLabel', 'Form/FormRow', 'Modal/ModalBody', 'Modal/ModalContent', 'Modal/ModalFooter', 'Modal/ModalHeader']) {
+    mocks[`Components/${component}`] = wrap;
+  }
+
+  const Component = loader(mocks)('Settings/Profiles/Quality/EditQualityProfileModalContent.tsx').default;
+  let renderer = null;
+  TestRenderer.act(() => {
+    renderer = TestRenderer.create(React.createElement(Component, { id: id === null ? undefined : id, qualitySettings, onModalClose: () => undefined }));
+  });
+  return { renderer, changes, values, qualityProps, close: () => TestRenderer.act(() => renderer.unmount()) };
+}
+
+test('the profile policy dialog keeps quality and codec management in Settings Quality', () => {
+  const item = profileFixture();
+  assert.equal(item.renderer.root.findAllByProps({ 'data-quality-controls': true }).length, 0);
+  assert.equal(item.renderer.root.findAllByProps({ 'data-codec-controls': true }).length, 0);
+  assert.equal(item.renderer.root.findAllByType('input').filter((input) => input.props.name === 'name').length, 1);
+  assert.deepEqual(item.changes, []);
+  item.close();
+});
+
+test('the Settings Quality dialog edits one quality limit while preserving plain and grouped peers', () => {
+  const item = profileFixture(true);
+  assert.equal(item.renderer.root.findAllByProps({ 'data-quality-controls': true }).length, 1);
+  assert.equal(item.renderer.root.findAllByProps({ 'data-codec-controls': true }).length, 1);
+  assert.equal(item.renderer.root.findAllByProps({ name: 'name' }).length, 0);
+  TestRenderer.act(() => item.qualityProps.onSizeChange({ qualityId: 2, minSize: 4, preferredSize: 95, maxSize: 199.9 }));
+  assert.equal(item.changes.at(-1).name, 'items');
+  assert.equal(item.changes.at(-1).value[0].minSize, 4);
+  assert.deepEqual(item.changes.at(-1).value.slice(1), item.values.items.slice(1));
+  item.close();
+});
+
+test('new profiles created under Settings Quality expose both a name and selectable qualities', () => {
+  const item = profileFixture(true, null);
+  assert.equal(item.renderer.root.findAllByType('input').filter((input) => input.props.name === 'name').length, 1);
+  assert.equal(item.renderer.root.findAllByProps({ 'data-quality-controls': true }).length, 1);
+  TestRenderer.act(() => item.qualityProps.onItemAllowedChange(3, false));
+  assert.equal(item.changes.at(-1).value[1].allowed, false);
+  assert.equal(item.changes.at(-1).value[0].allowed, true);
+  item.close();
+});
+
 test('new quality editor submits individually selected source, resolution, codec and expression', () => {
   const item = fixture();
   item.edit('newQualityTitle', 'Generated BdRip4k');

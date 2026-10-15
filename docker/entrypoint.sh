@@ -8,6 +8,15 @@ set -e
 
 PUID=${PUID:-1000}
 PGID=${PGID:-1000}
+for identity in "$PUID" "$PGID"; do
+    case "$identity" in
+        ''|*[!0-9]*) echo "PUID and PGID must be positive numeric IDs" >&2; exit 1 ;;
+    esac
+    if [ "$identity" -eq 0 ]; then
+        echo "PUID and PGID must be non-root IDs" >&2
+        exit 1
+    fi
+done
 # Keep new media files writable by the media group; UMASK_SET is supported for
 # compatibility with existing deployments, while UMASK takes precedence.
 umask "${UMASK:-${UMASK_SET:-002}}"
@@ -26,7 +35,10 @@ if [ "$(id -u)" = "0" ]; then
     # of files, and walking them on every start would delay startup for minutes; they are
     # expected to already be readable by PUID/PGID.
     mkdir -p /config
-    chown -R "$PUID:$PGID" /config 2>/dev/null || true
+    chown -R --no-dereference "$PUID:$PGID" /config
+    # API keys, authentication state and reset tokens must not be readable by
+    # unrelated host/container users, while the media umask stays configurable.
+    chmod 0750 /config
 
     echo "Tanukarr starting as ${PUID}:${PGID}"
     exec gosu "$PUID:$PGID" "$@"

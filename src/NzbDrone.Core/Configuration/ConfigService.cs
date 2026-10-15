@@ -437,6 +437,18 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("UILanguage", value); }
         }
 
+        public string MetadataSourceOrder
+        {
+            get { return GetValue("MetadataSourceOrder", string.Empty); }
+            set { SetValue("MetadataSourceOrder", value); }
+        }
+
+        public string DisabledMetadataSources
+        {
+            get { return GetValue("DisabledMetadataSources", string.Empty); }
+            set { SetValue("DisabledMetadataSources", value); }
+        }
+
         public int PreferredMetadataLanguage
         {
             get { return GetValueInt("PreferredMetadataLanguage", (int)Language.English); }

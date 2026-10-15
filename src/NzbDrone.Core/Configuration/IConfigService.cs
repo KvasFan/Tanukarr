@@ -84,6 +84,8 @@ namespace NzbDrone.Core.Configuration
         bool EnableColorImpairedMode { get; set; }
         int UILanguage { get; set; }
         int PreferredMetadataLanguage { get; set; }
+        string MetadataSourceOrder { get; set; }
+        string DisabledMetadataSources { get; set; }
 
         // Internal
         bool CleanupMetadataImages { get; set; }

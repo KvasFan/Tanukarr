@@ -122,7 +122,7 @@ namespace NzbDrone.Core.Tv
             // Only overwrite when the incoming series actually carries an id. A series added
             // from a provider that keys on something else arrives without one, and zeroing it
             // would discard the id the provider resolved.
-            if (otherSeries.TvdbId != 0)
+            if (otherSeries.TvdbId > 0)
             {
                 TvdbId = otherSeries.TvdbId;
             }

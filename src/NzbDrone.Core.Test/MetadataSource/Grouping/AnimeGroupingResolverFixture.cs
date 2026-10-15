@@ -72,6 +72,65 @@ namespace NzbDrone.Core.Test.MetadataSource.Grouping
             Resolve("1").AnimeGroupSeasonNumber.Should().Be(1);
         }
 
+        [TestCase("21613", AnimeGroupMemberKind.Season, 1, null)]
+        [TestCase("100878", AnimeGroupMemberKind.Movie, null, 1)]
+        [TestCase("135865", AnimeGroupMemberKind.Season, 2, null)]
+        public void should_resolve_tanya_main_story_when_a_verified_side_story_is_also_a_prequel(string id, AnimeGroupMemberKind kind, int? season, int? movie)
+        {
+            // Public AniList relations observed on 2026-10-15. The film lists
+            // both the TV parent and Operation Desert Pasta as prequels.
+            _nodes["21613"] = new AnimeRelationNode
+            {
+                ForeignId = "21613", Title = "Youjo Senki", Format = "TV",
+                SequelIds = new List<string> { "100878" }, SideStoryIds = new List<string> { "135866" }
+            };
+            _nodes["100878"] = new AnimeRelationNode
+            {
+                ForeignId = "100878", Title = "Youjo Senki Movie", Format = "MOVIE",
+                PrequelIds = new List<string> { "21613", "135866" }, SequelIds = new List<string> { "135865" }
+            };
+            _nodes["135865"] = new AnimeRelationNode
+            {
+                ForeignId = "135865", Title = "Youjo Senki II", Format = "TV", PrequelIds = new List<string> { "100878" }
+            };
+            _nodes["135866"] = new AnimeRelationNode
+            {
+                ForeignId = "135866", Title = "Youjo Senki: Sabaku no Pasta Daisakusen", Format = "ONA",
+                ParentIds = new List<string> { "21613" }, SequelIds = new List<string> { "100878" }
+            };
+
+            var result = Resolve(id);
+
+            result.Status.Should().Be(AnimeGroupingStatus.Resolved);
+            result.AnimeGroupId.Should().Be("anilist:21613");
+            result.AnimeGroupMemberKind.Should().Be(kind);
+            result.AnimeGroupSeasonNumber.Should().Be(season);
+            result.AnimeGroupMovieNumber.Should().Be(movie);
+            _requests.Should().OnlyHaveUniqueItems();
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_keep_multiple_prequels_ambiguous_without_reciprocal_side_story_evidence(bool parentOnly)
+        {
+            Chain(2);
+            _nodes["3"] = new AnimeRelationNode
+            {
+                ForeignId = "3", Title = "Unverified supplementary story", Format = "ONA", SequelIds = new List<string> { "2" }
+            };
+            _nodes["2"].PrequelIds.Add("3");
+            if (parentOnly)
+            {
+                _nodes["3"].ParentIds.Add("1");
+            }
+            else
+            {
+                _nodes["1"].SideStoryIds.Add("3");
+            }
+
+            Resolve("2").Status.Should().Be(AnimeGroupingStatus.Ambiguous);
+        }
+
         [Test]
         public void should_leave_an_unrelated_entry_ungrouped()
         {
@@ -177,6 +236,24 @@ namespace NzbDrone.Core.Test.MetadataSource.Grouping
                 result.AnimeGroupId.Should().Be("anilist:1");
                 result.AnimeGroupSeasonNumber.Should().Be(int.Parse(id));
             }
+        }
+
+        [Test]
+        public void should_decline_multiple_movie_alternatives_beside_a_tv_continuation()
+        {
+            Chain(3);
+            foreach (var id in new[] { "4", "5" })
+            {
+                _nodes["2"].SequelIds.Add(id);
+                _nodes[id] = new AnimeRelationNode
+                {
+                    ForeignId = id, Title = "Alternative Movie " + id, Format = "MOVIE", PrequelIds = new List<string> { "2" }
+                };
+            }
+
+            Resolve("4").Status.Should().Be(AnimeGroupingStatus.Ambiguous);
+            Resolve("5").Status.Should().Be(AnimeGroupingStatus.Ambiguous);
+            Resolve("3").AnimeGroupSeasonNumber.Should().Be(3);
         }
 
         [Test]

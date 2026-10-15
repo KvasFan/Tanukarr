@@ -5,7 +5,6 @@ import { useCommands, useExecuteCommand } from 'Commands/useCommands';
 import Icon from 'Components/Icon';
 import Label from 'Components/Label';
 import IconButton from 'Components/Link/IconButton';
-import Link from 'Components/Link/Link';
 import SpinnerIconButton from 'Components/Link/SpinnerIconButton';
 import Menu from 'Components/Menu/Menu';
 import MenuButton from 'Components/Menu/MenuButton';
@@ -36,7 +35,6 @@ import { Statistics } from 'Series/Series';
 import { useSingleSeries, useToggleSeasonMonitored } from 'Series/useSeries';
 import { TableOptionsChangePayload } from 'typings/Table';
 import { findCommand, isCommandExecuting } from 'Utilities/Command';
-import isAfter from 'Utilities/Date/isAfter';
 import isBefore from 'Utilities/Date/isBefore';
 import formatBytes from 'Utilities/Number/formatBytes';
 import translate from 'Utilities/String/translate';
@@ -107,9 +105,6 @@ interface SeriesDetailsSeasonProps {
   seasonNumber: number;
   statistics?: Statistics;
   title?: string;
-  isExpanded?: boolean;
-  isAnchorTarget?: boolean;
-  onExpandPress: (seasonNumber: number, isExpanded: boolean) => void;
 }
 
 function SeriesDetailsSeason({
@@ -118,9 +113,6 @@ function SeriesDetailsSeason({
   seasonNumber,
   statistics = {} as Statistics,
   title,
-  isExpanded,
-  isAnchorTarget,
-  onExpandPress,
 }: SeriesDetailsSeasonProps) {
   const executeCommand = useExecuteCommand();
   const { monitored: seriesMonitored, path } = useSingleSeries(seriesId)!;
@@ -157,7 +149,6 @@ function SeriesDetailsSeason({
     useToggleSeasonMonitored(seriesId);
 
   const lastToggledEpisode = useRef<number | null>(null);
-  const hasSetInitalExpand = useRef(false);
 
   const seasonNumberTitle =
     seasonNumber === 0
@@ -173,10 +164,6 @@ function SeriesDetailsSeason({
     },
     [seasonNumber, toggleSeasonMonitored]
   );
-
-  const handleExpandPress = useCallback(() => {
-    onExpandPress(seasonNumber, !isExpanded);
-  }, [seasonNumber, isExpanded, onExpandPress]);
 
   const handleMonitorEpisodePress = useCallback(
     (
@@ -263,25 +250,6 @@ function SeriesDetailsSeason({
   );
 
   useEffect(() => {
-    if (hasSetInitalExpand.current || items.length === 0) {
-      return;
-    }
-
-    hasSetInitalExpand.current = true;
-
-    const expand =
-      items.some(
-        (item) =>
-          isAfter(item.airDateUtc) || isAfter(item.airDateUtc, { days: -30 })
-      ) || items.every((item) => !item.airDateUtc);
-
-    onExpandPress(
-      seasonNumber,
-      !!isAnchorTarget || (expand && seasonNumber > 0)
-    );
-  }, [items, seriesId, seasonNumber, onExpandPress, isAnchorTarget]);
-
-  useEffect(() => {
     if ((previousEpisodeFileCount ?? 0) > 0 && episodeFileCount === 0) {
       setIsOrganizeModalOpen(false);
       setIsManageEpisodesOpen(false);
@@ -364,18 +332,6 @@ function SeriesDetailsSeason({
           </div>
         </div>
 
-        <Link className={styles.expandButton} onPress={handleExpandPress}>
-          <Icon
-            className={styles.expandButtonIcon}
-            name={isExpanded ? icons.COLLAPSE : icons.EXPAND}
-            title={
-              isExpanded ? translate('HideEpisodes') : translate('ShowEpisodes')
-            }
-            size={24}
-          />
-          {isSmallScreen ? null : <span>&nbsp;</span>}
-        </Link>
-
         <SeasonReleaseSearchButton
           seriesId={seriesId}
           seasonNumber={seasonNumber}
@@ -429,10 +385,7 @@ function SeriesDetailsSeason({
                 {translate('PreviewRename')}
               </MenuItem>
 
-              <MenuItem
-                isDisabled={!episodeFileCount}
-                onPress={handleManageEpisodesPress}
-              >
+              <MenuItem onPress={handleManageEpisodesPress}>
                 <Icon
                   className={styles.actionMenuIcon}
                   name={icons.EPISODE_FILE}
@@ -495,7 +448,6 @@ function SeriesDetailsSeason({
               title={translate('ManageEpisodesSeason')}
               aria-label={translate('ManageEpisodesSeason')}
               size={20}
-              isDisabled={!episodeFileCount}
               onPress={handleManageEpisodesPress}
             />
 
@@ -513,50 +465,37 @@ function SeriesDetailsSeason({
       </div>
 
       <div>
-        {isExpanded ? (
-          <div className={styles.episodes}>
-            {items.length ? (
-              <Table
-                columns={columns}
-                sortKey={sortKey}
-                sortDirection={sortDirection}
-                onSortPress={handleSortPress}
-                onTableOptionChange={handleTableOptionChange}
-              >
-                <TableBody>
-                  {items.map((item) => {
-                    return (
-                      <EpisodeRow
-                        key={item.id}
-                        columns={columns}
-                        {...item}
-                        isSaving={
-                          isToggling && togglingEpisodeIds.includes(item.id)
-                        }
-                        onMonitorEpisodePress={handleMonitorEpisodePress}
-                      />
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className={styles.noEpisodes}>
-                {translate('NoEpisodesInThisSeason')}
-              </div>
-            )}
-
-            <div className={styles.collapseButtonContainer}>
-              <IconButton
-                iconClassName={styles.collapseButtonIcon}
-                name={icons.COLLAPSE}
-                size={20}
-                title={translate('HideEpisodes')}
-                aria-label={translate('HideEpisodes')}
-                onPress={handleExpandPress}
-              />
+        <div className={styles.episodes}>
+          {items.length ? (
+            <Table
+              columns={columns}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onSortPress={handleSortPress}
+              onTableOptionChange={handleTableOptionChange}
+            >
+              <TableBody>
+                {items.map((item) => {
+                  return (
+                    <EpisodeRow
+                      key={item.id}
+                      columns={columns}
+                      {...item}
+                      isSaving={
+                        isToggling && togglingEpisodeIds.includes(item.id)
+                      }
+                      onMonitorEpisodePress={handleMonitorEpisodePress}
+                    />
+                  );
+                })}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className={styles.noEpisodes}>
+              {translate('NoEpisodesInThisSeason')}
             </div>
-          </div>
-        ) : null}
+          )}
+        </div>
       </div>
 
       <OrganizePreviewModal

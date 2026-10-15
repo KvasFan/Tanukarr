@@ -158,11 +158,6 @@ jobs:
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-quality-codecs.json"
 
-      - name: Isolated backup task timestamps, archive integrity and failure recovery
-        run: |
-          python3 docker/tests/backup-tasks.py --image tanukarr:verified \
-            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-backup-tasks.json"
-
       - name: Isolated custom qualities, profile codec factors and generated imports
         run: |
           python3 docker/tests/custom-qualities.py --image tanukarr:verified \
@@ -209,6 +204,26 @@ jobs:
             --playwright-version 1.64.0 --timeout 300 \
             --report "${RUNNER_TEMP}/tanukarr-collections-browser.json"
 
+      - name: Packaged backup button, task timestamps, archive integrity and recovery
+        run: |
+          python3 docker/tests/backup-tasks.py --image tanukarr:verified \
+            --browser-node "$(command -v node)" \
+            --playwright-module "${RUNNER_TEMP}/tanukarr-browser/node_modules/playwright" \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-backup-tasks.json"
+
+      - name: Packaged first-run account creation and authentication security
+        run: |
+          python3 docker/tests/first-run.py --image tanukarr:verified \
+            --browser-node "$(command -v node)" \
+            --playwright-module "${RUNNER_TEMP}/tanukarr-browser/node_modules/playwright" \
+            --playwright-version 1.64.0 --timeout 300 \
+            --report "${RUNNER_TEMP}/tanukarr-first-run.json"
+
+      - name: Packaged metadata-source order, enablement and native TVmaze refresh
+        run: |
+          python3 docker/tests/metadata-sources.py --image tanukarr:verified \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-metadata-sources.json"
+
       - name: Upload verification reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -217,6 +232,12 @@ jobs:
           path: |
             ${{ runner.temp }}/tanukarr-smoke.json
             ${{ runner.temp }}/tanukarr-functional-security.json
+            ${{ runner.temp }}/tanukarr-first-run.json
+            ${{ runner.temp }}/tanukarr-metadata-sources.json
+            ${{ runner.temp }}/tanukarr-metadata-sources.log
+            ${{ runner.temp }}/tanukarr-first-run-browser/first-run-browser.json
+            ${{ runner.temp }}/tanukarr-first-run-browser/create-account.png
+            ${{ runner.temp }}/tanukarr-first-run-browser/create-account-mobile.png
             ${{ runner.temp }}/tanukarr-groups.json
             ${{ runner.temp }}/tanukarr-nyaa-fixture.json
             ${{ runner.temp }}/tanukarr-series-packs.json
@@ -228,16 +249,16 @@ jobs:
             ${{ runner.temp }}/tanukarr-simkl-reliability.json
             ${{ runner.temp }}/tanukarr-quality-codecs.json
             ${{ runner.temp }}/tanukarr-backup-tasks.json
+            ${{ runner.temp }}/backup-ui.json
+            ${{ runner.temp }}/backup-browser.log
             ${{ runner.temp }}/tanukarr-jellyfin-watched.json
             ${{ runner.temp }}/tanukarr-custom-qualities.json
             ${{ runner.temp }}/tanukarr-artwork-reliability.json
             ${{ runner.temp }}/tanukarr-download-client-folders.json
             ${{ runner.temp }}/tanukarr-jellyfin-refresh.json
             ${{ runner.temp }}/tanukarr-collections-browser.json
-            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-anime-desktop.png
-            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-mixed-desktop.png
-            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-native-desktop.png
-            ${{ runner.temp }}/tanukarr-collections-browser-browser/collection-mixed-mobile.png
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/*.png
+            ${{ runner.temp }}/tanukarr-collections-browser-browser/collections-browser.json
           if-no-files-found: ignore
 
       - name: Log in to GitHub Container Registry
@@ -300,6 +321,8 @@ jobs:
             --verification-report "${RUNNER_TEMP}/tanukarr-download-client-folders.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-jellyfin-refresh.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-collections-browser.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-first-run.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-metadata-sources.json" \
             --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets

@@ -9,8 +9,10 @@ are related decisions with distinct responsibilities.
 ## Choose the source when adding a series
 
 Open **Add New Series** and use the source dropdown above the search box.
-Its four sources are **TheTVDB**, **TMDB**, **AniList** and **MyAnimeList**;
-TheTVDB is the default. Search within the selected catalogue and confirm the
+Its sources are **TheTVDB**, **TMDB**, **AniList**, **MyAnimeList** and **TVmaze**.
+Settings → Metadata Source enables catalogues and arranges their priority. Choose
+**All enabled sources** to search in that order, or select a single catalogue.
+Results retain their native source and identity. Search and confirm the
 entry that represents your TV series, anime, edition, recut or special.
 Set the root folder, quality profile and monitoring options before adding it.
 Check **Series Type** as well: Standard uses season/episode release conventions,
@@ -25,11 +27,18 @@ classification is not a reliable setup step here. Existing user-selected Series
 Type is retained during refresh.
 
 The separate **Library Import** workflow currently searches TheTVDB and does
-not offer this four-provider selector. For a folder whose intended metadata
-owner is TMDB, AniList or MyAnimeList, use Add New Series, select the correct
+not offer this multi-provider selector. For a folder whose intended metadata
+owner is TMDB, AniList, MyAnimeList or TVmaze, use Add New Series, select the correct
 catalogue entry and use the appropriate existing root/folder. Review the
 generated path and episode matches before importing files. This is a per-series
-workflow, not a claim of bulk import through all four providers.
+workflow, not a claim of bulk import through every provider.
+
+Disabling a catalogue removes it from discovery and optional presentation
+enrichment. Existing series continue to refresh from their owning provider;
+changing search priority never reassigns metadata ownership or episode numbering.
+At least one catalogue must remain enabled. Unknown/duplicate source settings
+are rejected before saving either order or enabled state. Older clients omitting
+these settings preserve them, and newly added sources are appended to old orders.
 
 ## Missing artwork and descriptions
 
@@ -58,9 +67,12 @@ Check the selected entry's episode list and numbering against your releases.
 A title missing from one catalogue may be available in another configured
 source; no provider is guaranteed to cover every title or genre.
 
-API clients must use `/api/v5/series/lookup` and its `metadataSource` query
-parameter to select these catalogues. The legacy `/api/v3/series/lookup` remains
-TheTVDB-only. Other supported v3 compatibility routes retain their own contracts;
+API clients can use `/api/v5/series/lookup` or `/api/v3/series/lookup` and the
+`metadataSource` parameter (`tvdb`, `tmdb`, `aniList`, `myAnimeList`, `tvMaze`).
+`allSources=true` searches the enabled sources in saved order. Omitting both
+parameters preserves the existing TheTVDB default. Explicit disabled sources
+are rejected. Source settings are available at `/api/v5/settings/metadata` and
+`/api/v3/config/metadatasource`; both mask the stored TMDB key. Other v3 routes retain their own contracts;
 see [API compatibility](compatibility-and-backups.md#api-and-internal-names).
 
 ## Catalogue coverage and current access requirements
@@ -71,6 +83,7 @@ see [API compatibility](compatibility-and-backups.md#api-and-internal-names).
 | TMDB | TV catalogue, including listed anime; artwork, external IDs and episode groups where available | Configure a **TMDB v3 API key** under **Settings → Metadata Source**. The metadata client sends it as `api_key`; a TMDB API Read Access Token is a different credential. |
 | AniList | Anime catalogue, alternative titles, release status and list membership | Public catalogue lookup uses AniList GraphQL without OAuth. Authenticated account-list import is a separate connection and requires its configured OAuth fields. |
 | MyAnimeList | Anime catalogue, accessed through Jikan | Public metadata lookup uses Jikan's MyAnimeList API; the client does not require a MyAnimeList account or API key. Available episode detail depends on Jikan/MyAnimeList responses. |
+| TVmaze | TV series, native seasons, episode titles/dates and cover artwork | Public [TVmaze API](https://www.tvmaze.com/api), without an API key. Requests share pacing and a bounded retry/cooldown. Native `tvmaze:ID` lookup is supported. Data is licensed [CC BY-SA](https://www.tvmaze.com/api#licensing), with TVmaze attribution in the source controls. |
 
 The current metadata clients use `https://skyhook.sonarr.tv/v2/tvdb`,
 `https://api.themoviedb.org/3`, `https://graphql.anilist.co` and

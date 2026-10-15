@@ -3,7 +3,6 @@ using System.Linq;
 using System.Xml.Linq;
 using Microsoft.Extensions.Options;
 using NLog;
-using NzbDrone.Common;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
@@ -17,7 +16,6 @@ namespace NzbDrone.Core.Authentication
     public class InitialUserService : IHandle<ApplicationStartedEvent>
     {
         private const string DefaultUsername = "sonarr";
-        private const int GeneratedPasswordLength = 20;
 
         private readonly IUserService _userService;
         private readonly IConfigFileProvider _configFileProvider;
@@ -25,8 +23,6 @@ namespace NzbDrone.Core.Authentication
         private readonly IDiskProvider _diskProvider;
         private readonly AuthOptions _authOptions;
         private readonly Logger _logger;
-
-        private static readonly Logger _authLogger = LogManager.GetLogger("Auth");
 
         public InitialUserService(IUserService userService,
                                   IConfigFileProvider configFileProvider,
@@ -74,24 +70,16 @@ namespace NzbDrone.Core.Authentication
 
             var username = _authOptions.InitialUsername.IsNullOrWhiteSpace() ? DefaultUsername : _authOptions.InitialUsername;
             var password = _authOptions.InitialPassword;
-            var isGenerated = password.IsNullOrWhiteSpace();
-
-            if (isGenerated)
+            if (password.IsNullOrWhiteSpace())
             {
-                password = SecretGenerator.Generate(GeneratedPasswordLength);
+                _logger.Info("No user is configured. Open Tanukarr in your browser to create your account.");
+
+                return;
             }
 
             _userService.Add(username, password);
 
-            if (isGenerated)
-            {
-                _authLogger.Warn("Authentication is enabled and no user existed, created '{0}' with the password: {1}", username, password);
-                _authLogger.Warn("Change this password from Settings: General once you have signed in.");
-            }
-            else
-            {
-                _logger.Info("Authentication is enabled and no user existed, created '{0}' with the configured password", username);
-            }
+            _logger.Info("Authentication is enabled and no user existed, created the account with the configured password");
         }
 
         private bool MigrateFromConfigFile()

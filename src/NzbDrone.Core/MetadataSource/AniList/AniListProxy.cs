@@ -158,6 +158,10 @@ namespace NzbDrone.Core.MetadataSource.AniList
                     .Select(e => e.Node.Id.ToString()).ToList(),
                 SequelIds = edges.Where(e => e.RelationType == "SEQUEL" && e.Node?.Type == "ANIME" && e.Node.Id > 0)
                     .Select(e => e.Node.Id.ToString()).ToList(),
+                ParentIds = edges.Where(e => e.RelationType == "PARENT" && e.Node?.Type == "ANIME" && e.Node.Id > 0)
+                    .Select(e => e.Node.Id.ToString()).ToList(),
+                SideStoryIds = edges.Where(e => e.RelationType == "SIDE_STORY" && e.Node?.Type == "ANIME" && e.Node.Id > 0)
+                    .Select(e => e.Node.Id.ToString()).ToList(),
                 RelationFormats = edges.Where(e => (e.RelationType == "PREQUEL" || e.RelationType == "SEQUEL") &&
                                                    e.Node?.Type == "ANIME" && e.Node.Id > 0)
                     .GroupBy(e => e.Node.Id.ToString())

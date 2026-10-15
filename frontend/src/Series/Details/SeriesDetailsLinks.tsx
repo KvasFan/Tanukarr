@@ -48,7 +48,7 @@ function SeriesDetailsLinks(props: SeriesDetailsLinksProps) {
       });
     }
 
-    if (tvMazeId > 0) {
+    if (tvMazeId > 0 && !validLinks.some((link) => link.name === 'TVmaze')) {
       validLinks.push({
         externalId: tvMazeId,
         name: 'TV Maze',

@@ -15,6 +15,8 @@ namespace NzbDrone.Core.MetadataSource.Grouping
         public string Format { get; set; }
         public List<string> PrequelIds { get; set; } = new List<string>();
         public List<string> SequelIds { get; set; } = new List<string>();
+        public List<string> ParentIds { get; set; } = new List<string>();
+        public List<string> SideStoryIds { get; set; } = new List<string>();
         public Dictionary<string, string> RelationFormats { get; set; } = new Dictionary<string, string>();
     }
 }

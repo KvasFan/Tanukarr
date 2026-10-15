@@ -4,16 +4,16 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 1.1.0 is published.** It manages TV series, anime
-and movie collections in one Sonarr-derived application. This version adds
-full collection pages, reliable artwork fallback, custom quality presets and
-editable codec factors in each quality profile. Existing list filtering,
+**Tanukarr 0.1.0 derives from 1.1.0.** It manages TV series, anime
+and movie collections in one Sonarr-derived application. This version resets
+the product version and adds graphical account creation, collection and quality
+fixes, configurable metadata sources and TVmaze. Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
 
-See the [1.1.0 release notes](docs/releases/1.1.0.md),
-[publication report](docs/releases/1.1.0-publication.md) and
-[verification ledger](docs/releases/1.1.0-verification.md) for executed checks,
-exact source/image identities and remaining findings. The [upstream review](docs/upstream-audit-2026-10-14.md)
+See the [0.1.0 release notes](docs/releases/0.1.0.md) and
+[verification ledger](docs/releases/0.1.0-verification.md) for executed checks,
+exact source/image identities and remaining findings. The [1.1.0 publication](docs/releases/1.1.0-publication.md)
+retains the base release's original evidence. The [upstream review](docs/upstream-audit-2026-10-14.md)
 records the latest fetched Sonarr, Kakarotto, gaboy and ikatun heads and the
 compatibility decisions. Source attribution remains in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
@@ -254,12 +254,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexpert/tanukarr:1.1.0
+docker pull ghcr.io/kvasexpert/tanukarr:0.1.0
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:1.1.0
+  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:0.1.0
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -319,6 +319,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `0.1.0` | Version reset derived from 1.1.0: graphical first-run setup, collection/quality fixes, ordered metadata sources and TVmaze. Publication and exact checks are recorded in the new verification ledger. |
 | `1.1.0` | Published and locally deployed: full collection pages, alternate artwork, custom qualities and editable profile codec factors. Nineteen runtime gates passed (342 checks); public assets/image and the protected upgrade verified. See the publication report for remaining findings. |
 | `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |
 | `1.0.4` | Published and deployed: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. All thirteen hosted gates passed; source/assets, immutable image and protected-data preservation verified. |

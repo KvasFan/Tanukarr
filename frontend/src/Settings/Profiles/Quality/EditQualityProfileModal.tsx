@@ -7,6 +7,7 @@ interface EditQualityProfileModalProps {
   id?: number;
   cloneId?: number;
   isOpen: boolean;
+  qualitySettings?: boolean;
   onDeleteQualityProfilePress?: () => void;
   onModalClose: () => void;
 }
@@ -15,6 +16,7 @@ function EditQualityProfileModal({
   id,
   cloneId,
   isOpen,
+  qualitySettings,
   onDeleteQualityProfilePress,
   onModalClose,
 }: EditQualityProfileModalProps) {
@@ -23,6 +25,7 @@ function EditQualityProfileModal({
       <EditQualityProfileModalContent
         id={id}
         cloneId={cloneId}
+        qualitySettings={qualitySettings}
         onDeleteQualityProfilePress={onDeleteQualityProfilePress}
         onModalClose={onModalClose}
       />

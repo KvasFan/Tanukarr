@@ -26,12 +26,18 @@ function CollectionPoster({
     () =>
       [preferredImages ?? [], ...members.map((member) => member.images)].filter(
         (images) =>
-          images.some((image) => image.coverType === 'poster' && !!image.url)
+          images.some(
+            (image) =>
+              image.coverType === 'poster' && !!(image.url || image.remoteUrl)
+          )
       ),
     [members, preferredImages]
   );
   const identity = candidates
-    .map((images) => images.find((image) => image.coverType === 'poster')?.url)
+    .map((images) => {
+      const poster = images.find((image) => image.coverType === 'poster');
+      return poster?.url || poster?.remoteUrl;
+    })
     .join('|');
   const [index, setIndex] = useState(0);
   useEffect(() => setIndex(0), [identity]);
@@ -40,9 +46,7 @@ function CollectionPoster({
 
   return candidate ? (
     <SeriesPoster
-      key={`${
-        candidate.find((image) => image.coverType === 'poster')?.url
-      }:${index}:${lazy && isSmallScreen ? 'window' : 'page'}`}
+      key={`${identity}:${index}:${lazy && isSmallScreen ? 'window' : 'page'}`}
       className={className}
       style={style}
       images={candidate}

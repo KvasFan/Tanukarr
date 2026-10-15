@@ -337,7 +337,7 @@ class AnimeGroups(ContainerSmoke):
         self.container = self.docker(
             "create", "--name", "tanukarr-anime-groups-" + suffix,
             "--label", "tanukarr.anime-group-test=true", "--network", self.network,
-            "--network-alias", "fixture-app", "--env", "PUID=1000", "--env", "PGID=1000", "--env", "UMASK=002",
+            "--network-alias", "fixture-app", "--env", "PUID=1000", "--env", f"PGID={self.fixture_gid}", "--env", "UMASK=002",
             "--env", "HTTP_PROXY=", "--env", "HTTPS_PROXY=", "--env", "ALL_PROXY=",
             "--mount", f"type=bind,source={config},target=/config",
             "--mount", f"type=bind,source={media},target=/media",

@@ -17,21 +17,19 @@ namespace Sonarr.Api.V5.Series;
 [V5ApiController("series/lookup")]
 public class SeriesLookupController : Controller
 {
-    private readonly IMetadataProviderFactory _metadataProviderFactory;
-    private readonly ISearchForNewSeries _searchProxy;
     private readonly IBuildFileNames _fileNameBuilder;
     private readonly IMapCoversToLocal _coverMapper;
     private readonly IImportListExclusionService _importListExclusionService;
     private readonly IConfigService _configService;
+    private readonly IMetadataSearchService _metadataSearch;
 
-    public SeriesLookupController(IMetadataProviderFactory metadataProviderFactory, ISearchForNewSeries searchProxy, IBuildFileNames fileNameBuilder, IMapCoversToLocal coverMapper, IImportListExclusionService importListExclusionService, IConfigService configService)
+    public SeriesLookupController(IBuildFileNames fileNameBuilder, IMapCoversToLocal coverMapper, IImportListExclusionService importListExclusionService, IConfigService configService, IMetadataSearchService metadataSearch)
     {
-        _metadataProviderFactory = metadataProviderFactory;
-        _searchProxy = searchProxy;
         _fileNameBuilder = fileNameBuilder;
         _coverMapper = coverMapper;
         _importListExclusionService = importListExclusionService;
         _configService = configService;
+        _metadataSearch = metadataSearch;
     }
 
     /// <summary>
@@ -41,7 +39,7 @@ public class SeriesLookupController : Controller
     /// </summary>
     [HttpGet]
     [Produces("application/json")]
-    public Ok<IEnumerable<SeriesResource>> Search([FromQuery] string term, [FromQuery] int? language = null, [FromQuery] MetadataSourceType metadataSource = MetadataSourceType.Tvdb)
+    public Ok<IEnumerable<SeriesResource>> Search([FromQuery] string term, [FromQuery] int? language = null, [FromQuery] MetadataSourceType? metadataSource = MetadataSourceType.Tvdb, [FromQuery] bool allSources = false)
     {
         var languageId = language ?? _configService.PreferredMetadataLanguage;
         var searchLanguage = Language.All.FirstOrDefault(l => l.Id == languageId);
@@ -51,9 +49,12 @@ public class SeriesLookupController : Controller
             throw new BadRequestException($"Invalid language: {languageId}");
         }
 
-        var results = metadataSource == MetadataSourceType.Tvdb
-            ? _searchProxy.SearchForNewSeries(term, searchLanguage)
-            : _metadataProviderFactory.GetProvider(metadataSource).SearchForNewSeries(term);
+        if (!allSources && metadataSource.HasValue && !MetadataSourcePolicy.Enabled(_configService).Contains(metadataSource.Value))
+        {
+            throw new BadRequestException("The selected metadata source is disabled or unknown.");
+        }
+
+        var results = _metadataSearch.Search(term, searchLanguage, allSources ? null : metadataSource);
 
         return TypedResults.Ok(MapToResource(results));
     }

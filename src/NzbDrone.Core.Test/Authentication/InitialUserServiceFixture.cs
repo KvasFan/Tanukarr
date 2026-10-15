@@ -46,14 +46,12 @@ namespace NzbDrone.Core.Test.Authentication
         }
 
         [Test]
-        public void should_seed_default_user_with_generated_password()
+        public void should_wait_for_browser_setup_without_generating_a_password()
         {
             Subject.Handle(new ApplicationStartedEvent());
 
             Mocker.GetMock<IUserService>()
-                .Verify(c => c.Add("sonarr", It.Is<string>(p => p.Length == 20)), Times.Once());
-
-            ExceptionVerification.ExpectedWarns(2);
+                .Verify(c => c.Add(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
 
         [Test]
@@ -67,6 +65,19 @@ namespace NzbDrone.Core.Test.Authentication
 
             Mocker.GetMock<IUserService>()
                 .Verify(c => c.Add("someone", "somepassword"), Times.Once());
+        }
+
+        [Test]
+        public void should_preserve_password_only_environment_provisioning()
+        {
+            Mocker.GetMock<IOptions<AuthOptions>>()
+                .Setup(c => c.Value)
+                .Returns(new AuthOptions { InitialPassword = "configuredpassword" });
+
+            Subject.Handle(new ApplicationStartedEvent());
+
+            Mocker.GetMock<IUserService>()
+                .Verify(c => c.Add("sonarr", "configuredpassword"), Times.Once());
         }
 
         [Test]
@@ -111,7 +122,7 @@ namespace NzbDrone.Core.Test.Authentication
         }
 
         [Test]
-        public void should_seed_a_new_user_when_config_file_credentials_are_empty()
+        public void should_wait_for_browser_setup_when_config_file_credentials_are_empty()
         {
             File.WriteAllText(_configPath, "<Config><Username></Username><Password></Password></Config>");
 
@@ -125,14 +136,16 @@ namespace NzbDrone.Core.Test.Authentication
                 .Verify(c => c.Add(string.Empty, string.Empty), Times.Never());
 
             Mocker.GetMock<IUserService>()
-                .Verify(c => c.Add("sonarr", It.Is<string>(p => p.Length == 20)), Times.Once());
-
-            ExceptionVerification.ExpectedWarns(2);
+                .Verify(c => c.Add(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
 
         [Test]
         public void should_log_and_continue_when_seeding_fails()
         {
+            Mocker.GetMock<IOptions<AuthOptions>>()
+                .Setup(c => c.Value)
+                .Returns(new AuthOptions { InitialPassword = "configuredpassword" });
+
             Mocker.GetMock<IUserService>()
                 .Setup(c => c.Add(It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new InvalidOperationException("database is locked"));

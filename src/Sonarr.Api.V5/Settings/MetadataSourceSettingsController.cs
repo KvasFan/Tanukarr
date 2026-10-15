@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Languages;
+using NzbDrone.Core.MetadataSource;
 using Sonarr.Http;
 using Sonarr.Http.REST.Attributes;
 
@@ -43,12 +44,14 @@ public class MetadataSourceSettingsController : SettingsController<MetadataSourc
     [Produces("application/json")]
     public override Results<Accepted<MetadataSourceSettingsResource>, NotFound> SaveSettings([FromBody] MetadataSourceSettingsResource resource)
     {
+        MetadataSourcePolicy.Save(_configService, resource.MetadataSourceOrder, resource.DisabledMetadataSources);
+
         if (resource.PreferredMetadataLanguage.HasValue)
         {
             _configService.PreferredMetadataLanguage = resource.PreferredMetadataLanguage.Value;
         }
 
-        if (resource.TmdbApiKey != MetadataSourceSettingsResource.Mask)
+        if (resource.TmdbApiKey != null && resource.TmdbApiKey != MetadataSourceSettingsResource.Mask)
         {
             _configService.TmdbApiKey = resource.TmdbApiKey.IsNullOrWhiteSpace()
                 ? string.Empty

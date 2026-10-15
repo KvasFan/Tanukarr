@@ -49,6 +49,8 @@ services:
     image: IMAGE_REFERENCE
     container_name: tanukarr
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "${TANUKARR_BIND_ADDRESS:-${SONARRWEEB_BIND_ADDRESS:-${SONARR_PRO_BIND_ADDRESS:-127.0.0.1}}}:${TANUKARR_PORT:-${SONARRWEEB_PORT:-${SONARR_PRO_PORT:-6970}}}:8989"
     environment:

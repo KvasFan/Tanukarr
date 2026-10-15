@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { MetadataSource } from 'AddSeries/AddNewSeries/useAddSeries';
 import {
   useManageSettings,
   useSaveSettings,
@@ -13,6 +14,8 @@ export interface MetadataSourceSettingsModel {
    */
   tmdbApiKey: string;
   tmdbApiKeyConfigured: boolean;
+  metadataSourceOrder: MetadataSource[];
+  disabledMetadataSources: MetadataSource[];
 }
 
 const PATH = '/settings/metadata';

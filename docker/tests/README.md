@@ -5,6 +5,27 @@ is recorded in [CONTRIBUTORS.md](../../CONTRIBUTORS.md); the
 [documentation index](../../docs/README.md) links the build, integration and
 security reports.
 
+## Metadata source policy and TVmaze
+
+Run the packaged policy and TVmaze gate with an already built image:
+
+```sh
+python3 docker/tests/metadata-sources.py --image tanukarr:verified \
+  --timeout 300 --report metadata-sources.json
+```
+
+The fixture uses the pinned Python TLS sidecar, an owned temporary configuration,
+an internal Docker network and generated TVmaze/AniList responses. It checks
+v3/v5 source ordering and enablement, masked-key and older-client preservation,
+invalid-policy rejection before mutation, native identities across multiple
+catalogues, TVmaze episodes and specials, refresh ownership and malformed-response
+retention. It restarts the application to verify saved state and creates no
+download configuration. The report records actual image identity, checks and
+cleanup. Public-provider availability and a real library are outside its scope.
+Pass `--live-tvmaze` to also run a separate disposable, read-only title lookup
+through the packaged TVmaze provider. That optional check writes its own
+`*-public-tvmaze.json` report, adds no series and is omitted from CI.
+
 The current **1.1.0 preparation** adds five publishing gates to the fourteen
 required reports from 1.0.5: alternate artwork, custom qualities, genuine
 qBittorrent/folder imports, selected-library Jellyfin refresh, and actual packaged
@@ -693,6 +714,43 @@ client or a private AniList account. Cleanup removes only the instance and tempo
 directories created by the invocation.
 
 ## Coverage and evidence
+
+### First-run account creation
+
+Run the account setup check against the exact built candidate image:
+
+```sh
+python3 docker/tests/first-run.py --image tanukarr:local --timeout 300 \
+  --report first-run-report.json
+```
+
+The fixture starts with an empty owned configuration, never a real library. It
+checks protected anonymous access, the account creation form, antiforgery
+cookie/token validation, server-side username/password validation, successful
+creation and login, stale-form rejection, restart persistence, salted password
+storage and password absence from process/application logs. Optional
+`--browser-node /path/to/node --playwright-module /path/to/playwright` runs
+Chromium against the actual form, mismatch feedback, authenticated navigation,
+logout and another login. A 375x812 viewport check verifies every field and the
+submit button fit without horizontal clipping. Desktop and mobile screenshots
+are captured before credentials are entered; requests outside the owned local
+fixture are blocked and fail the check.
+The Docker workflow requires that browser gate and packages its image-qualified
+report. Existing accounts and explicitly configured initial credentials are
+preserved; a fresh installation no longer generates a password in startup logs.
+
+The entrypoint rejects root or malformed PUID/PGID, stops on config ownership
+failure and restricts the config directory to its owner and group. Media umask
+behavior remains configurable. Compose sets `no-new-privileges`; a deployment
+with `--user` can also avoid the root ownership preparation step, provided its
+mounted configuration and media already have the required permissions.
+
+Disposable fixtures keep UID 1000 and use the host runner's non-root primary
+group as PGID (1000 when the runner is root or on Windows). This lets an ordinary
+CI runner inspect its own generated SQLite and artwork while retaining config
+mode 0750. Ownership preparation for a stopped database still verifies the exact
+fixture container, labels and mounted temporary path before making changes;
+restart restores the application's UID and configured group.
 
 These scripts return exit code 1 on a failed check. `--report` records results and
 the exercised options. Functional reports include the inspected image ID and

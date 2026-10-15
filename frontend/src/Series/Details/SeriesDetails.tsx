@@ -22,7 +22,6 @@ import PageContentBody from 'Components/Page/PageContentBody';
 import { OverflowDivider } from 'Components/Page/Toolbar/Overflow';
 import PageToolbar from 'Components/Page/Toolbar/PageToolbar';
 import PageToolbarSeparator from 'Components/Page/Toolbar/PageToolbarSeparator';
-import PageToolbarSpacer from 'Components/Page/Toolbar/PageToolbarSpacer';
 import ToolbarItem from 'Components/Page/Toolbar/ToolbarItem';
 import Popover from 'Components/Tooltip/Popover';
 import Tooltip from 'Components/Tooltip/Tooltip';
@@ -64,7 +63,6 @@ import {
 } from 'Utilities/pagePopulator';
 import filterAlternateTitles from 'Utilities/Series/filterAlternateTitles';
 import translate from 'Utilities/String/translate';
-import toggleSelected from 'Utilities/Table/toggleSelected';
 import SeriesAlternateTitles from './SeriesAlternateTitles';
 import SeriesCompression from './SeriesCompression';
 import SeriesDetailsLinks from './SeriesDetailsLinks';
@@ -96,12 +94,6 @@ function getRunningYears(
   return status === 'ended' && lastAired
     ? `${year}-${getDateYear(lastAired)}`
     : `${year}-`;
-}
-
-interface ExpandedState {
-  allExpanded: boolean;
-  allCollapsed: boolean;
-  seasons: Record<number, boolean>;
 }
 
 interface SeriesDetailsProps {
@@ -152,10 +144,6 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
       return;
     }
 
-    setExpandedState((state) => ({
-      ...state,
-      seasons: { ...state.seasons, [requestedSeason]: true },
-    }));
     pageBodyRef.current
       ?.querySelector(`#season-${requestedSeason}`)
       ?.scrollIntoView({ block: 'start' });
@@ -259,11 +247,6 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
     useState(false);
   const [isMonitorOptionsModalOpen, setIsMonitorOptionsModalOpen] =
     useState(false);
-  const [expandedState, setExpandedState] = useState<ExpandedState>({
-    allExpanded: false,
-    allCollapsed: false,
-    seasons: {},
-  });
   const wasRefreshing = usePrevious(isRefreshing);
   const wasRenaming = usePrevious(isRenaming);
 
@@ -336,53 +319,6 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
     setIsMonitorOptionsModalOpen(false);
   }, []);
 
-  const handleExpandAllPress = useCallback(() => {
-    const expandAll = !expandedState.allExpanded;
-
-    const newSeasons = Object.keys(expandedState.seasons).reduce<
-      Record<number | string, boolean>
-    >((acc, item) => {
-      acc[item] = expandAll;
-      return acc;
-    }, {});
-
-    setExpandedState({
-      allExpanded: expandAll,
-      allCollapsed: !expandAll,
-      seasons: newSeasons,
-    });
-  }, [expandedState]);
-
-  const handleExpandPress = useCallback(
-    (seasonNumber: number, isExpanded: boolean) => {
-      setExpandedState((state) => {
-        const { allExpanded, allCollapsed } = state;
-
-        const convertedState = {
-          allSelected: allExpanded,
-          allUnselected: allCollapsed,
-          selectedState: state.seasons,
-          lastToggled: null,
-        };
-
-        const newState = toggleSelected(
-          convertedState,
-          [],
-          seasonNumber,
-          isExpanded,
-          false
-        );
-
-        return {
-          allExpanded: newState.allSelected,
-          allCollapsed: newState.allUnselected,
-          seasons: newState.selectedState,
-        };
-      });
-    },
-    []
-  );
-
   const handleMonitorToggle = useCallback(() => {
     toggleSeriesMonitored({
       monitored: !monitored,
@@ -450,14 +386,6 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
 
     return () => observer.disconnect();
   }, [series?.overview, isOverviewExpanded]);
-
-  let expandIcon = icons.EXPAND_INDETERMINATE;
-
-  if (expandedState.allExpanded) {
-    expandIcon = icons.COLLAPSE;
-  } else if (expandedState.allCollapsed) {
-    expandIcon = icons.EXPAND;
-  }
 
   if (!series) {
     return null;
@@ -627,21 +555,6 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
             label={translate('Delete')}
             iconName={icons.DELETE}
             onPress={handleDeleteSeriesPress}
-          />
-
-          <PageToolbarSpacer />
-
-          <ToolbarItem
-            id="expand-all"
-            priority={2}
-            groupId="right"
-            label={
-              expandedState.allExpanded
-                ? translate('CollapseAll')
-                : translate('ExpandAll')
-            }
-            iconName={expandIcon}
-            onPress={handleExpandAllPress}
           />
         </PageToolbar>
 
@@ -1006,13 +919,6 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
                           key={season.seasonNumber}
                           seriesId={seriesId}
                           {...season}
-                          isExpanded={
-                            expandedState.seasons[season.seasonNumber]
-                          }
-                          isAnchorTarget={
-                            requestedSeason === season.seasonNumber
-                          }
-                          onExpandPress={handleExpandPress}
                         />
                       </div>
                     );

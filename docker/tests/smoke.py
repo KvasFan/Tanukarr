@@ -39,6 +39,9 @@ class ContainerSmoke:
         self.image_id = None
         self.runtime_metadata = {}
         self.fixture_config_ownership = []
+        # Keep /config at its production 0750 while letting a non-root fixture
+        # runner inspect its own generated database and covers through the group.
+        self.fixture_gid = os.getgid() if os.name == "posix" and os.getgid() > 0 else 1000
         # These requests must remain local even when the host configures a proxy.
         self.http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
@@ -127,12 +130,13 @@ class ContainerSmoke:
             return
         status = self.docker("exec", self.container, "cat", "/proc/1/status")
         app_uid = int(next(line for line in status.splitlines() if line.startswith("Uid:")).split()[1])
+        app_gid = int(next(line for line in status.splitlines() if line.startswith("Gid:")).split()[1])
         config_uid = (self.root / "config").stat().st_uid
         database_uid = (self.root / "config" / "sonarr.db").stat().st_uid
-        require(app_uid == 1000 and config_uid == 1000 and database_uid == 1000,
+        require(app_uid == 1000 and app_gid == self.fixture_gid and config_uid == 1000 and database_uid == 1000,
                 "Restart did not restore the fixture app/config/database to PUID 1000")
         self.fixture_config_ownership[-1].update(appUidAfterRestart=app_uid, configUidAfterRestart=config_uid,
-                                                 databaseUidAfterRestart=database_uid)
+                                                 databaseUidAfterRestart=database_uid, appGidAfterRestart=app_gid)
 
     def wait_ready(self):
         deadline = time.monotonic() + self.args.timeout
@@ -181,7 +185,7 @@ class ContainerSmoke:
             "create", "--name", name,
             "--label", "sonarr.smoke-test=true",
             "--publish", "127.0.0.1::8989",
-            "--env", "PUID=1000", "--env", "PGID=1000", "--env", "UMASK=002",
+            "--env", "PUID=1000", "--env", f"PGID={self.fixture_gid}", "--env", "UMASK=002",
             "--mount", f"type=bind,source={config},target=/config",
             "--mount", f"type=bind,source={media},target=/media",
             self.args.image,
@@ -253,9 +257,9 @@ class ContainerSmoke:
         script = r"""
 set -eu
 test "$(id -u)" = 1000
-test "$(id -g)" = 1000
+test "$(id -g)" = EXPECTED_GID
 test "$(awk '$1 == "Uid:" { print $2 }' /proc/1/status)" = 1000
-test "$(awk '$1 == "Gid:" { print $2 }' /proc/1/status)" = 1000
+test "$(awk '$1 == "Gid:" { print $2 }' /proc/1/status)" = EXPECTED_GID
 mask=$(awk '$1 == "Umask:" { print $2 }' /proc/1/status)
 test "$mask" = 0002
 umask "$mask"
@@ -264,15 +268,16 @@ for parent in /config /media; do
   directory="$parent/.smoke-directory"
   printf 'permission probe\n' > "$file"
   mkdir "$directory"
-  test "$(stat -c '%u:%g:%a' "$file")" = 1000:1000:664
-  test "$(stat -c '%u:%g:%a' "$directory")" = 1000:1000:775
+  test "$(stat -c '%u:%g:%a' "$file")" = 1000:EXPECTED_GID:664
+  test "$(stat -c '%u:%g:%a' "$directory")" = 1000:EXPECTED_GID:775
   rm "$file"
   rmdir "$directory"
 done
 test -s /config/sonarr.db
 """
-        self.docker("exec", "--user", "1000:1000", self.container, "sh", "-c", script)
-        self.check("app UID/GID 1000, umask 002, writable config/media with file 664 and directory 775")
+        script = script.replace("EXPECTED_GID", str(self.fixture_gid))
+        self.docker("exec", "--user", f"1000:{self.fixture_gid}", self.container, "sh", "-c", script)
+        self.check(f"app UID 1000/GID {self.fixture_gid}, umask 002, writable config/media with file 664 and directory 775")
 
     def check_metadata(self):
         settings = self.api("/api/v5/settings/metadata")

@@ -5,6 +5,7 @@
 # image and shadow what the container actually compiled.
 _output*
 _artifacts
+tmp-export/
 _temp*
 _testout
 _tests

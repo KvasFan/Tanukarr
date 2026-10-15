@@ -5,6 +5,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Cache;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Test.Framework;
@@ -23,11 +24,23 @@ namespace NzbDrone.Core.Test.MetadataSource
         [SetUp]
         public void Setup()
         {
+            Mocker.GetMock<IConfigService>().SetupGet(config => config.MetadataSourceOrder).Returns("1,2,3,0");
             _aniList = Provider(MetadataSourceType.AniList);
             _mal = Provider(MetadataSourceType.MyAnimeList);
             _tmdb = Provider(MetadataSourceType.Tmdb);
             _tvdb = Provider(MetadataSourceType.Tvdb);
             Mocker.SetConstant<IEnumerable<ISeriesPresentationProvider>>(new[] { _aniList.Object, _mal.Object, _tmdb.Object, _tvdb.Object });
+        }
+
+        [Test]
+        public void should_skip_disabled_optional_presentation_and_collection_lookups()
+        {
+            Mocker.GetMock<IConfigService>().SetupGet(config => config.DisabledMetadataSources).Returns("3,2");
+            var series = Anime();
+            Subject.Enrich(series);
+            Subject.GetCollectionPresentation("anilist:100").Should().BeNull();
+            _mal.Verify(provider => provider.GetPresentation(It.IsAny<Series>()), Times.Never());
+            _aniList.Verify(provider => provider.GetPresentation(It.IsAny<Series>()), Times.Never());
         }
 
         private static Mock<ISeriesPresentationProvider> Provider(MetadataSourceType source)
@@ -214,7 +227,7 @@ namespace NzbDrone.Core.Test.MetadataSource
             series.Images.Clear();
             series.Overview = null;
             var cache = new SeriesPresentationCache(Mocker.Resolve<ICacheManager>());
-            var another = new SeriesPresentationService(new[] { _mal.Object }, cache, TestLogger);
+            var another = new SeriesPresentationService(new[] { _mal.Object }, cache, Mocker.Resolve<IConfigService>(), TestLogger);
             another.Enrich(series);
 
             _mal.Verify(provider => provider.GetPresentation(It.IsAny<Series>()), Times.Once());

@@ -484,7 +484,7 @@ namespace NzbDrone.Core.IndexerSearch
             // and Ensure episode has an airdate and has already aired
             var episodesToSearch = episodes
                 .Where(ep => interactiveSearch || !monitoredOnly || ep.Monitored)
-                .Where(ep => ep.AirDateUtc.HasValue && ep.AirDateUtc.Value.Before(DateTime.UtcNow))
+                .Where(ep => interactiveSearch || (ep.AirDateUtc.HasValue && ep.AirDateUtc.Value.Before(DateTime.UtcNow)))
                 .ToList();
 
             var seasonEpisodes = episodes.Select(e => e.SeasonNumber).Distinct()
@@ -528,7 +528,7 @@ namespace NzbDrone.Core.IndexerSearch
             var downloadDecisions = await AnimeSeasonPackSearch(series, episodes, monitoredOnly, userInvokedSearch, interactiveSearch);
             var episodesToSearch = episodes
                 .Where(ep => interactiveSearch || !monitoredOnly || ep.Monitored)
-                .Where(ep => ep.AirDateUtc.HasValue && ep.AirDateUtc.Value.Before(DateTime.UtcNow));
+                .Where(ep => interactiveSearch || (ep.AirDateUtc.HasValue && ep.AirDateUtc.Value.Before(DateTime.UtcNow)));
 
             var packFirst = !interactiveSearch && _options.Read()?.PreferAnimeSeasonPacks == true;
             var coveredEpisodeIds = downloadDecisions.Where(d => !d.Rejections.Any() && d.RemoteEpisode.ParsedEpisodeInfo.FullSeason).SelectMany(d => d.RemoteEpisode.Episodes.Select(e => e.Id)).ToHashSet();

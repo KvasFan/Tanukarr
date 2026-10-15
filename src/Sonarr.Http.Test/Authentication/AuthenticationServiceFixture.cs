@@ -1,4 +1,5 @@
 using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -37,6 +38,100 @@ namespace Sonarr.Http.Test.Authentication
 
             _request = new DefaultHttpContext().Request;
             _request.HttpContext.Connection.RemoteIpAddress = IPAddress.Parse("192.0.2.10");
+        }
+
+        [Test]
+        public void should_create_an_initial_user_only_when_forms_has_no_account()
+        {
+            Mocker.GetMock<IUserService>().Setup(c => c.FindUser()).Returns((User)null);
+
+            Subject.IsInitialSetupRequired.Should().BeTrue();
+            Subject.CreateInitialUser(" newuser ", "long-password-example", "long-password-example").Should().BeTrue();
+
+            Mocker.GetMock<IUserService>().Verify(c => c.Add("newuser", "long-password-example"), Times.Once());
+        }
+
+        [Test]
+        public void should_never_replace_an_existing_account_during_setup()
+        {
+            Subject.IsInitialSetupRequired.Should().BeFalse();
+            Subject.CreateInitialUser("attacker", "long-password-example", "long-password-example").Should().BeFalse();
+
+            Mocker.GetMock<IUserService>().Verify(c => c.Add(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
+        public void should_not_allow_browser_setup_when_initial_password_is_explicitly_provisioned()
+        {
+            Mocker.GetMock<IUserService>().Setup(c => c.FindUser()).Returns((User)null);
+            Mocker.GetMock<IOptions<AuthOptions>>().Setup(c => c.Value)
+                .Returns(new AuthOptions { InitialPassword = "provisioned-password" });
+
+            Subject.IsInitialSetupRequired.Should().BeFalse();
+            Subject.CreateInitialUser("attacker", "long-password-example", "long-password-example").Should().BeFalse();
+
+            Mocker.GetMock<IUserService>().Verify(c => c.Add(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
+        public void should_create_only_one_account_for_concurrent_setup_requests()
+        {
+            User currentUser = null;
+            Mocker.GetMock<IUserService>().Setup(c => c.FindUser()).Returns(() => currentUser);
+            Mocker.GetMock<IUserService>()
+                .Setup(c => c.Add(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns((string username, string password) => currentUser = new User { Username = username });
+            var subject = Subject;
+
+            Parallel.For(0, 8, _ => subject.CreateInitialUser("newuser", "long-password-example", "long-password-example"));
+
+            Mocker.GetMock<IUserService>().Verify(c => c.Add("newuser", "long-password-example"), Times.Once());
+            subject.IsInitialSetupRequired.Should().BeFalse();
+        }
+
+        [TestCase(AuthenticationType.External)]
+        [TestCase(AuthenticationType.Oidc)]
+        public void should_not_create_a_forms_account_for_other_authentication_methods(AuthenticationType method)
+        {
+            Mocker.GetMock<IUserService>().Setup(c => c.FindUser()).Returns((User)null);
+            Mocker.GetMock<IConfigFileProvider>().SetupGet(c => c.AuthenticationMethod).Returns(method);
+            if (method == AuthenticationType.Oidc)
+            {
+                Mocker.GetMock<IConfigFileProvider>().SetupGet(c => c.OidcAuthority).Returns("https://identity.invalid");
+                Mocker.GetMock<IConfigFileProvider>().SetupGet(c => c.OidcClientId).Returns("client");
+                Mocker.GetMock<IConfigFileProvider>().SetupGet(c => c.OidcClientSecret).Returns("secret");
+                Mocker.GetMock<IConfigFileProvider>().SetupGet(c => c.OidcUserIdentifier).Returns("user");
+                Mocker.GetMock<IConfigFileProvider>().SetupGet(c => c.OidcScopes).Returns("openid");
+            }
+
+            Subject.IsInitialSetupRequired.Should().BeFalse();
+            Subject.CreateInitialUser("newuser", "long-password-example", "long-password-example").Should().BeFalse();
+        }
+
+        [TestCase("", "long-password-example", "long-password-example")]
+        [TestCase("   ", "long-password-example", "long-password-example")]
+        [TestCase("bad\nuser", "long-password-example", "long-password-example")]
+        [TestCase("user", "short", "short")]
+        [TestCase("user", "long-password-example", "different-password")]
+        [TestCase("user", "            ", "            ")]
+        public void should_validate_initial_account_before_inserting(string username, string password, string confirmation)
+        {
+            Mocker.GetMock<IUserService>().Setup(c => c.FindUser()).Returns((User)null);
+
+            Subject.CreateInitialUser(username, password, confirmation).Should().BeFalse();
+
+            Mocker.GetMock<IUserService>().Verify(c => c.Add(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
+        public void should_reject_oversized_initial_credentials()
+        {
+            Mocker.GetMock<IUserService>().Setup(c => c.FindUser()).Returns((User)null);
+
+            Subject.CreateInitialUser(new string('u', 65), "long-password-example", "long-password-example").Should().BeFalse();
+            Subject.CreateInitialUser("user", new string('p', 129), new string('p', 129)).Should().BeFalse();
+
+            Mocker.GetMock<IUserService>().Verify(c => c.Add(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
 
         [Test]

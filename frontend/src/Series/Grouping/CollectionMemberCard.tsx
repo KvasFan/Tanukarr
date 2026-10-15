@@ -4,7 +4,6 @@ import Button from 'Components/Link/Button';
 import Link from 'Components/Link/Link';
 import { icons } from 'Helpers/Props';
 import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
-import EditSeriesModal from 'Series/Edit/EditSeriesModal';
 import SeasonInteractiveSearchModal from 'Series/Search/SeasonInteractiveSearchModal';
 import SeasonReleaseSearchButton from 'Series/Search/SeasonReleaseSearchButton';
 import translate from 'Utilities/String/translate';
@@ -21,7 +20,6 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
   const { member, season, displayNumber, section } = entry;
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   let label = translate('AnimeGroupSeasonLabel', { season: displayNumber });
 
@@ -37,14 +35,9 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
   const closeSearch = useCallback(() => setIsSearchOpen(false), []);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
-  const closeEdit = useCallback(() => setIsEditOpen(false), []);
   const closeDelete = useCallback(() => setIsDeleteOpen(false), []);
-  const editEntry = useCallback(() => {
-    setIsSettingsOpen(false);
-    setIsEditOpen(true);
-  }, []);
   const deleteEntry = useCallback(() => {
-    setIsEditOpen(false);
+    setIsSettingsOpen(false);
     setIsDeleteOpen(true);
   }, []);
   const episodeCount =
@@ -92,6 +85,7 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
         <div className={styles.cardActions}>
           {season.seasonNumber > 0 ? (
             <SeasonReleaseSearchButton
+              size="medium"
               seriesId={member.id}
               seasonNumber={season.seasonNumber}
               displaySeasonNumber={displayNumber}
@@ -105,10 +99,6 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
             <Icon name={icons.EDIT} />{' '}
             {translate(section === 'movies' ? 'Settings' : 'SeasonSettings')}
           </Button>
-          <Link className={styles.openEntry} to={link}>
-            {translate(section === 'movies' ? 'OpenMovie' : 'OpenSeason')}{' '}
-            <Icon name={icons.PAGE_NEXT} />
-          </Link>
         </div>
       </div>
       <SeasonInteractiveSearchModal
@@ -117,7 +107,7 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
         seasonNumber={season.seasonNumber}
         displaySeasonNumber={displayNumber}
         episodeCount={episodeCount}
-        initialSelectedFilterKey="not-season-pack"
+        initialSelectedFilterKey="all"
         onModalClose={closeSearch}
       />
       <CollectionSeasonSettingsModal
@@ -126,12 +116,6 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
         season={season}
         title={label}
         onModalClose={closeSettings}
-        onEditEntry={editEntry}
-      />
-      <EditSeriesModal
-        isOpen={isEditOpen}
-        seriesId={member.id}
-        onModalClose={closeEdit}
         onDeleteSeriesPress={deleteEntry}
       />
       <DeleteSeriesModal

@@ -75,7 +75,9 @@
       ).matches;
 
       document.documentElement.dataset.theme =
-        theme === 'dark' || (theme === 'auto' && defaultDark) ? 'dark' : 'light';
+        theme === 'dark' || (theme === 'auto' && defaultDark)
+          ? 'dark'
+          : 'light';
     </script>
 
     <style>
@@ -278,6 +280,14 @@
         display: none;
       }
 
+      .setup-required #sign-in-panel {
+        display: none;
+      }
+
+      .setup-required #setup-panel {
+        display: block;
+      }
+
       .oidc-misconfigured-message {
         display: none;
         line-height: 1.4;
@@ -314,12 +324,72 @@
     </style>
   </head>
 
-  <body class="auth-_AUTH_METHOD_">
+  <body class="auth-_AUTH_METHOD_ _SETUP_CLASS_">
     <div class="center">
       <div class="content">
         <div class="panel">
           <div class="panel-header">
             <img src="/Content/Images/logo.svg" alt="Tanukarr" class="logo" />
+          </div>
+
+          <div id="setup-panel" class="panel-body hidden">
+            <div class="sign-in">CREATE YOUR ACCOUNT</div>
+            <form role="form" method="POST" action="__URL_BASE__/login/setup">
+              <input
+                type="hidden"
+                name="__RequestVerificationToken"
+                value="_SETUP_TOKEN_"
+              />
+              <div class="form-group">
+                <label for="setup-username">Username</label>
+                <input
+                  id="setup-username"
+                  type="text"
+                  name="username"
+                  class="form-input"
+                  autocomplete="username"
+                  autocapitalize="none"
+                  maxlength="64"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="setup-password">Password</label>
+                <input
+                  id="setup-password"
+                  type="password"
+                  name="password"
+                  class="form-input"
+                  autocomplete="new-password"
+                  minlength="12"
+                  maxlength="128"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="setup-password-confirmation"
+                  >Confirm password</label
+                >
+                <input
+                  id="setup-password-confirmation"
+                  type="password"
+                  name="passwordConfirmation"
+                  class="form-input"
+                  autocomplete="new-password"
+                  minlength="12"
+                  maxlength="128"
+                  required
+                />
+              </div>
+              <p class="reset-note">
+                Choose a password with 12 to 128 characters.
+              </p>
+              <button type="submit" class="button">Create account</button>
+              <div id="setup-invalid" class="login-failed hidden" role="alert">
+                Enter a username and matching passwords with 12 to 128
+                characters.
+              </div>
+            </form>
           </div>
 
           <div id="sign-in-panel" class="panel-body">
@@ -334,11 +404,11 @@
             >
               <div class="form-group">
                 <input
-                  type="email"
+                  type="text"
                   name="username"
                   class="form-input"
                   placeholder="Username"
-                  autocomplete="off"
+                  autocomplete="username"
                   pattern=".{1,}"
                   required
                   title="User name is required"
@@ -353,6 +423,7 @@
                   name="password"
                   class="form-input"
                   placeholder="Password"
+                  autocomplete="current-password"
                   required
                 />
               </div>
@@ -404,12 +475,14 @@
 
             <form role="form" method="POST" action="reset-password/request">
               <div class="reset-note">
-                Tanukarr will write a single-use reset token to its log file. Copy
-                it from the <code>Auth-ResetRequested</code> line in the latest
-                log.
+                Tanukarr will write a single-use reset token to its log file.
+                Copy it from the <code>Auth-ResetRequested</code> line in the
+                latest log.
               </div>
 
-              <button type="submit" class="button">Write a reset token to the log</button>
+              <button type="submit" class="button">
+                Write a reset token to the log
+              </button>
             </form>
 
             <a
@@ -426,10 +499,10 @@
 
             <form role="form" method="POST" action="reset-password">
               <div class="reset-note">
-                Enter the token from the <code>Auth-ResetRequested</code> line in
-                the log. It's valid for 15 minutes and can only be used once.
-                If you set <code>SONARR__AUTH__RESETTOKEN</code>, enter its value
-                instead.
+                Enter the token from the <code>Auth-ResetRequested</code> line
+                in the log. It's valid for 15 minutes and can only be used once.
+                If you set <code>SONARR__AUTH__RESETTOKEN</code>, enter its
+                value instead.
               </div>
 
               <div class="form-group">
@@ -489,8 +562,8 @@
 
               <div id="token-unavailable" class="reset-note hidden">
                 A new reset token wasn't written to the log. One may already be
-                active, so check the log first. Restarting Tanukarr clears it and
-                lets you request another.
+                active, so check the log first. Restarting Tanukarr clears it
+                and lets you request another.
               </div>
             </form>
 
@@ -517,7 +590,13 @@
 
     var searchParams = new URLSearchParams(window.location.search);
 
-    if (searchParams.get('resetPassword') === 'true') {
+    if (searchParams.get('setupInvalid') === 'true') {
+      document.getElementById('setup-invalid').classList.remove('hidden');
+    }
+
+    if (document.body.classList.contains('setup-required')) {
+      document.title = 'Create account - Tanukarr';
+    } else if (searchParams.get('resetPassword') === 'true') {
       document.getElementById('sign-in-panel').classList.add('hidden');
 
       if (searchParams.get('tokenSent') === 'true') {
@@ -532,10 +611,14 @@
         }
 
         if (searchParams.get('tokenUnavailable') === 'true') {
-          document.getElementById('token-unavailable').classList.remove('hidden');
+          document
+            .getElementById('token-unavailable')
+            .classList.remove('hidden');
         }
       } else {
-        document.getElementById('reset-request-panel').classList.remove('hidden');
+        document
+          .getElementById('reset-request-panel')
+          .classList.remove('hidden');
       }
     }
 
@@ -572,7 +655,9 @@
           var remaining = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
           loginFailedDiv.innerHTML =
-            'Too many failed sign in attempts. Please try again in ' + remaining + '.';
+            'Too many failed sign in attempts. Please try again in ' +
+            remaining +
+            '.';
         };
 
         updateLockout();
@@ -595,7 +680,8 @@
       var params = new URLSearchParams(window.location.search);
       var returnUrl = params.get('returnUrl');
       if (returnUrl) {
-        ssoButton.href = ssoButton.href + '?returnUrl=' + encodeURIComponent(returnUrl);
+        ssoButton.href =
+          ssoButton.href + '?returnUrl=' + encodeURIComponent(returnUrl);
       }
     }
   </script>

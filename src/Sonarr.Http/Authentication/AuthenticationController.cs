@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -26,13 +27,15 @@ namespace Sonarr.Http.Authentication
         private readonly IAuthenticationService _authService;
         private readonly IConfigFileProvider _configFileProvider;
         private readonly IAppFolderInfo _appFolderInfo;
+        private readonly IAntiforgery _antiforgery;
         private readonly Logger _logger;
 
-        public AuthenticationController(IAuthenticationService authService, IConfigFileProvider configFileProvider, IAppFolderInfo appFolderInfo, Logger logger)
+        public AuthenticationController(IAuthenticationService authService, IConfigFileProvider configFileProvider, IAppFolderInfo appFolderInfo, IAntiforgery antiforgery, Logger logger)
         {
             _authService = authService;
             _configFileProvider = configFileProvider;
             _appFolderInfo = appFolderInfo;
+            _antiforgery = antiforgery;
             _logger = logger;
         }
 
@@ -123,6 +126,35 @@ namespace Sonarr.Http.Authentication
             }
 
             return TypedResults.Redirect("~/login?resetPassword=true&tokenSent=true");
+        }
+
+        [HttpPost("login/setup")]
+        [RequestSizeLimit(4096)]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<Results<RedirectHttpResult, UnauthorizedHttpResult, BadRequest>> Setup([FromForm] ResetPasswordResource resource)
+        {
+            try
+            {
+                await _antiforgery.ValidateRequestAsync(HttpContext);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                return TypedResults.BadRequest();
+            }
+
+            if (!_authService.CreateInitialUser(resource.Username, resource.Password, resource.PasswordConfirmation))
+            {
+                return TypedResults.Redirect("~/login?setupInvalid=true");
+            }
+
+            var result = await Login(new LoginResource { Username = resource.Username.Trim(), Password = resource.Password });
+
+            return result.Result switch
+            {
+                RedirectHttpResult redirect => redirect,
+                _ => TypedResults.Unauthorized()
+            };
         }
 
         [HttpPost("reset-password")]

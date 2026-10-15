@@ -1,5 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { hashKey, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo, useRef } from 'react';
 import ModelBase from 'App/ModelBase';
 import useApiMutation from 'Helpers/Hooks/useApiMutation';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
@@ -37,7 +37,20 @@ const useInteractiveImport = (params: InteractiveImportParams) => {
   });
 
   const items = data ?? DEFAULT_ITEMS;
-  const originalItems = [...items];
+  const originalState = useRef<{
+    key: string;
+    populated: boolean;
+    items: InteractiveImport[];
+  }>({ key: '', populated: false, items: [] });
+  const key = hashKey(['/manualimport', params]);
+
+  if (originalState.current.key !== key || !originalState.current.populated) {
+    originalState.current = {
+      key,
+      populated: data !== undefined,
+      items: [...items],
+    };
+  }
 
   const { data: sortedItems } = useMemo(() => {
     const sortPredicates = {
@@ -56,7 +69,7 @@ const useInteractiveImport = (params: InteractiveImportParams) => {
 
   return {
     data: sortedItems,
-    originalItems,
+    originalItems: originalState.current.items,
     isFetching,
     isFetched,
     error,

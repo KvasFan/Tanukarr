@@ -159,6 +159,23 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             allCriteria.Should().BeEmpty();
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public async Task interactive_anime_episode_search_should_include_entries_without_a_past_airdate(bool futureDate)
+        {
+            WithEpisodes();
+            _xemSeries.SeriesType = SeriesTypes.Anime;
+            _xemEpisodes.ForEach(episode => episode.AirDateUtc = futureDate ? DateTime.UtcNow.AddDays(5) : null);
+            Mocker.GetMock<IIndexerFactory>().Setup(service => service.InteractiveSearchEnabled(true))
+                .Returns(new List<IIndexer> { _mockIndexer.Object });
+            var criteria = WatchForSearchCriteria();
+
+            await Subject.SeasonSearch(_xemSeries.Id, 1, false, false, true, true);
+
+            criteria.OfType<AnimeEpisodeSearchCriteria>().Should().HaveCount(2);
+            criteria.OfType<AnimeSeasonSearchCriteria>().Should().NotBeEmpty();
+        }
+
         private void WithEpisode(int seasonNumber, int episodeNumber, int? sceneSeasonNumber, int? sceneEpisodeNumber, string airDate = null)
         {
             var episode = Builder<Episode>.CreateNew()

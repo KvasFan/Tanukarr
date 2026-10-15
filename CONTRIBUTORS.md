@@ -1,5 +1,19 @@
 # Contributors and feature provenance
 
+The October 15, 2026 **0.1.0 version reset** derives from 1.1.0 source
+`3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`, retaining all original Git authors
+and co-author trailers. **OpenAI Codex based on GPT-6** implemented the local
+first-run account form, collection/quality/artwork/grouping corrections,
+metadata source policy and TVmaze provider, container hardening and new
+regressions. Roles were adapted from the MIT-licensed
+[wshobson/agents](https://github.com/wshobson/agents/tree/02f339e42ed73f762c9de2afd47f4102a6847c26) frontend-developer,
+backend-architect and security-auditor definitions; those role documents do not
+establish a different runtime model. TVmaze metadata attribution and licensing
+are documented in the [provider guide](docs/metadata-providers.md). The new
+[verification ledger](docs/releases/0.1.0-verification.md) owns this build's
+evidence. The former 0.1.0 report is retained under its
+[legacy filename](docs/releases/legacy-0.1.0-verification.md).
+
 This Tanukarr register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have
 authored every feature in their repository. AI credit records tool/model provenance
@@ -122,7 +136,7 @@ independently verify that a particular runtime model executed those sessions.
 
 ## Tanukarr release identity
 
-The current **Tanukarr 1.1.0** release is published under
+The preceding **Tanukarr 1.1.0** release was published under
 [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr), with annotated
 tag `v1.1.0` and image `ghcr.io/kvasexpert/tanukarr:1.1.0`. Its
 [publication report](docs/releases/1.1.0-publication.md) records the exact source,
@@ -151,7 +165,7 @@ for inherited features to the publishing account. The
 [installation guide](docs/docker-installation.md) link the public source and
 distribution, while the Git log records release changes and preserved trailers.
 The historical [0.0.1](docs/releases/0.0.1.md) and
-[0.1.0](docs/releases/0.1.0.md) releases and their immutable tags retain their own
+[0.1.0](docs/releases/legacy-0.1.0.md) releases and their historical source retain their own
 source, image filenames and verification history. Tanukarr 1.0.0 includes the
 subsequent AniList request-limit and Nyaa encoding fixes without reassigning any
 original contributor credits. The product version remains separate from

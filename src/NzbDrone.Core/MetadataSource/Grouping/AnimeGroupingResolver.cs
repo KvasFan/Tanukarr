@@ -91,6 +91,28 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                     : Movie(Read(id));
             }
 
+            List<string> Predecessors(AnimeRelationNode owner)
+            {
+                var ids = Links(owner, owner.PrequelIds);
+                if (ids == null || ids.Count < 2)
+                {
+                    return ids;
+                }
+
+                var nodes = ids.Select(Read).ToList();
+                if (nodes.Any(node => node == null))
+                {
+                    return null;
+                }
+
+                // A catalogue may list both the main story and its supplementary
+                // side story as prequels. Only a reciprocal PARENT/SIDE_STORY pair
+                // establishes which one is the main predecessor; titles never do.
+                return nodes.Where(node => !nodes.Any(parent => parent.ForeignId != node.ForeignId &&
+                        node.ParentIds.Contains(parent.ForeignId) && parent.SideStoryIds.Contains(node.ForeignId)))
+                    .Select(node => node.ForeignId).ToList();
+            }
+
             bool Reciprocal(AnimeRelationNode parent, AnimeRelationNode child)
             {
                 if (!Compatible(parent) || !Compatible(child))
@@ -99,7 +121,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                     return false;
                 }
 
-                var previous = Links(child, child.PrequelIds);
+                var previous = Predecessors(child);
                 var next = Links(parent, parent.SequelIds);
                 var childNext = Links(child, child.SequelIds);
 
@@ -183,7 +205,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                 ancestors.Add(current);
                 anchor ??= existingSeries.FirstOrDefault(s => s.MetadataSource == source && s.ForeignId == current.ForeignId &&
                     s.AnimeGroupingMode != AnimeGroupingMode.Disabled && AnimeGroupingService.HasValidGroup(s));
-                var previousIds = Links(current, current.PrequelIds);
+                var previousIds = Predecessors(current);
 
                 if (previousIds == null)
                 {

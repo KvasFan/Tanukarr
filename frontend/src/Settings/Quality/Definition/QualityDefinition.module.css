@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 1fr) repeat(3, minmax(120px, 1fr));
 
-  align-items: center;
+  align-items: start;
   padding: 12px 0;
   border-bottom: 1px solid var(--hairline);
   gap: 16px;
@@ -10,6 +10,7 @@
 
 .quality {
   overflow: hidden;
+  padding-top: 10px;
   min-width: 0;
   color: var(--ink);
   text-overflow: ellipsis;

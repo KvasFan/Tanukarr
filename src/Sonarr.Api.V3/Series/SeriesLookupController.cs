@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MetadataSource;
@@ -15,19 +16,21 @@ namespace Sonarr.Api.V3.Series
     [V3ApiController("series/lookup")]
     public class SeriesLookupController : Controller
     {
-        private readonly ISearchForNewSeries _searchProxy;
         private readonly IBuildFileNames _fileNameBuilder;
         private readonly IMapCoversToLocal _coverMapper;
+        private readonly IMetadataSearchService _metadataSearch;
+        private readonly IConfigService _configService;
 
-        public SeriesLookupController(ISearchForNewSeries searchProxy, IBuildFileNames fileNameBuilder, IMapCoversToLocal coverMapper)
+        public SeriesLookupController(IBuildFileNames fileNameBuilder, IMapCoversToLocal coverMapper, IMetadataSearchService metadataSearch, IConfigService configService)
         {
-            _searchProxy = searchProxy;
             _fileNameBuilder = fileNameBuilder;
             _coverMapper = coverMapper;
+            _metadataSearch = metadataSearch;
+            _configService = configService;
         }
 
         [HttpGet]
-        public IEnumerable<SeriesResource> Search([FromQuery] string term, [FromQuery] int? language = null)
+        public IEnumerable<SeriesResource> Search([FromQuery] string term, [FromQuery] int? language = null, [FromQuery] MetadataSourceType metadataSource = MetadataSourceType.Tvdb, [FromQuery] bool allSources = false)
         {
             var languageId = language ?? Language.English.Id;
             var searchLanguage = Language.All.FirstOrDefault(l => l.Id == languageId);
@@ -37,7 +40,12 @@ namespace Sonarr.Api.V3.Series
                 throw new BadRequestException($"Invalid language: {languageId}");
             }
 
-            var tvDbResults = _searchProxy.SearchForNewSeries(term, searchLanguage);
+            if (!allSources && !MetadataSourcePolicy.Enabled(_configService).Contains(metadataSource))
+            {
+                throw new BadRequestException("The selected metadata source is disabled or unknown.");
+            }
+
+            var tvDbResults = _metadataSearch.Search(term, searchLanguage, allSources ? null : metadataSource);
             return MapToResource(tvDbResults);
         }
 

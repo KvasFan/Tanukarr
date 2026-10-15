@@ -9,7 +9,23 @@
 
 .header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  gap: 8px;
+
+  flex-wrap: wrap;
+}
+
+.toggle {
+  composes: container from 'Components/Form/CheckInput.module.css';
+
+  flex: 0 0 auto;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+
+  margin-left: auto;
 }
 
 .name {

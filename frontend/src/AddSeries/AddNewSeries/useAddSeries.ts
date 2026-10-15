@@ -23,11 +23,16 @@ const DEFAULT_SERIES: AddSeries[] = [];
  * The metadata source searched, which becomes the source that owns any series added
  * from the results. A series is owned by exactly one provider.
  */
-export type MetadataSource = 'tvdb' | 'tmdb' | 'aniList' | 'myAnimeList';
+export type MetadataSource =
+  | 'tvdb'
+  | 'tmdb'
+  | 'aniList'
+  | 'myAnimeList'
+  | 'tvMaze';
 
 interface LookupSeriesOptions {
   language: Language;
-  metadataSource?: MetadataSource;
+  metadataSource?: MetadataSource | 'all';
   isEnabled?: boolean;
 }
 
@@ -40,7 +45,8 @@ export const useLookupSeries = (
     queryParams: {
       term: query.trim(),
       language: language.id,
-      metadataSource,
+      metadataSource: metadataSource === 'all' ? undefined : metadataSource,
+      allSources: metadataSource === 'all' || undefined,
     },
     queryOptions: {
       enabled: isEnabled && !!query.trim(),

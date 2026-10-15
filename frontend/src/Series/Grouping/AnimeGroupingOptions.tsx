@@ -264,10 +264,8 @@ function AnimeGroupingOptions({
           ]}
           onChange={handleModeChange}
         />
-        {mode === 'automatic' ? (
-          <FormInputHelpText text={automaticHelp} />
-        ) : null}
       </FormRow>
+      {mode === 'automatic' ? <FormInputHelpText text={automaticHelp} /> : null}
       {mode === 'manual' ? (
         <>
           <FormRow>
@@ -307,6 +305,9 @@ function AnimeGroupingOptions({
                   : 'AnimeGroupSeason'
               )}
             </FormLabel>
+            <FormInputHelpText
+              text={translate('AnimeGroupManualMemberRequired')}
+            />
             <NumberInput
               name={
                 memberKind === 'movie'
@@ -321,9 +322,6 @@ function AnimeGroupingOptions({
               min={1}
               max={999}
               onChange={handleSeasonChange}
-            />
-            <FormInputHelpText
-              text={translate('AnimeGroupManualMemberRequired')}
             />
           </FormRow>
           <FormRow>

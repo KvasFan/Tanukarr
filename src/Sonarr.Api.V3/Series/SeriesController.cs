@@ -12,6 +12,7 @@ using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.MetadataSource.Grouping;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.SeriesStats;
@@ -106,7 +107,14 @@ namespace Sonarr.Api.V3.Series
                 .SetValidator(qualityProfileExistsValidator);
 
             PostValidator.RuleFor(s => s.Title).NotEmpty();
-            PostValidator.RuleFor(s => s.TvdbId).GreaterThan(0).SetValidator(seriesExistsValidator);
+            SharedValidator.RuleFor(s => s.MetadataSource.Value).IsInEnum().When(s => s.MetadataSource.HasValue);
+            PostValidator.RuleFor(s => s.TvdbId).GreaterThan(0).SetValidator(seriesExistsValidator)
+                .When(s => (s.MetadataSource ?? MetadataSourceType.Tvdb) == MetadataSourceType.Tvdb);
+            PostValidator.RuleFor(s => s.ForeignId).NotEmpty()
+                .When(s => s.MetadataSource.HasValue && s.MetadataSource != MetadataSourceType.Tvdb)
+                .WithMessage("A series from this metadata source must be identified by its foreign ID");
+            PostValidator.RuleFor(s => s.TvdbId).SetValidator(seriesExistsValidator)
+                .When(s => s.MetadataSource.HasValue && s.MetadataSource != MetadataSourceType.Tvdb && s.TvdbId > 0);
         }
 
         [HttpGet]

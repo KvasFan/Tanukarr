@@ -14,6 +14,7 @@ import { icons, kinds } from 'Helpers/Props';
 import { usePreferredMetadataLanguage } from 'Language/useLanguages';
 import { useHasSeries } from 'Series/useSeries';
 import MetadataSettingsModal from 'Settings/MetadataSource/MetadataSettingsModal';
+import { orderedMetadataSources } from 'Settings/MetadataSource/metadataSources';
 import { useMetadataSourceSettings } from 'Settings/MetadataSource/useMetadataSourceSettings';
 import { InputChanged } from 'typings/inputs';
 import getErrorMessage from 'Utilities/Object/getErrorMessage';
@@ -26,28 +27,22 @@ import {
 import { MetadataSource, useLookupSeries } from './useAddSeries';
 import styles from './AddNewSeries.module.css';
 
-const METADATA_SOURCES: { key: MetadataSource; value: string }[] = [
-  { key: 'tvdb', value: 'TheTVDB' },
-  { key: 'tmdb', value: 'TMDB' },
-  { key: 'aniList', value: 'AniList' },
-
-  // Offered alongside AniList rather than instead of it: AniList knows more
-  // alternative titles, but only MyAnimeList publishes per-episode titles.
-  { key: 'myAnimeList', value: 'MyAnimeList' },
-];
-
-const SOURCE_DESCRIPTIONS: Record<MetadataSource, string> = {
+const SOURCE_DESCRIPTIONS: Record<MetadataSource | 'all', string> = {
+  all: 'MetadataSourcesAllHelp',
   tvdb: 'MetadataSourceTvdbDescription',
   tmdb: 'MetadataSourceTmdbDescription',
   aniList: 'MetadataSourceAniListDescription',
   myAnimeList: 'MetadataSourceMyAnimeListDescription',
+  tvMaze: 'MetadataSourceTvMazeDescription',
 };
 
-const SOURCE_SEARCH_EXAMPLES: Record<MetadataSource, string> = {
+const SOURCE_SEARCH_EXAMPLES: Record<MetadataSource | 'all', string> = {
+  all: 'eg. Breaking Bad, One Piece',
   tvdb: 'eg. Breaking Bad, tvdb:####',
   tmdb: 'eg. Breaking Bad, One Piece',
   aniList: 'eg. One Piece',
   myAnimeList: 'eg. One Piece',
+  tvMaze: 'eg. Breaking Bad, tvmaze:####',
 };
 
 function AddNewSeries() {
@@ -56,10 +51,16 @@ function AddNewSeries() {
   const language = usePreferredMetadataLanguage();
   const [term, setTerm] = useState(initialTerm);
   const savedSource = useMetadataSourceOption();
-  const metadataSource = METADATA_SOURCES.some(({ key }) => key === savedSource)
-    ? savedSource
-    : 'tvdb';
-  const { data: metadataSettings } = useMetadataSourceSettings();
+  const { data: metadataSettings, isFetched: settingsFetched } =
+    useMetadataSourceSettings();
+  const sources = orderedMetadataSources(
+    metadataSettings?.metadataSourceOrder,
+    metadataSettings?.disabledMetadataSources
+  );
+  const metadataSource =
+    savedSource === 'all' || sources.some(({ key }) => key === savedSource)
+      ? savedSource
+      : 'all';
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isMetadataSettingsModalOpen, setIsMetadataSettingsModalOpen] =
     useState(false);
@@ -68,7 +69,7 @@ function AddNewSeries() {
 
   const handleMetadataSourceChange = useCallback(
     ({ value }: InputChanged<string>) => {
-      setMetadataSourceOption(value as MetadataSource);
+      setMetadataSourceOption(value as MetadataSource | 'all');
       searchInputRef.current?.focus();
     },
     []
@@ -98,7 +99,11 @@ function AddNewSeries() {
     isFetching: isFetchingApi,
     error,
     data,
-  } = useLookupSeries(query, { language, metadataSource });
+  } = useLookupSeries(query, {
+    language,
+    metadataSource,
+    isEnabled: settingsFetched,
+  });
 
   const isFetching = !!searchTerm && (query !== searchTerm || isFetchingApi);
   const needsTmdbKey =
@@ -154,7 +159,10 @@ function AddNewSeries() {
                 className={styles.metadataSourceSelect}
                 name="metadataSource"
                 value={metadataSource}
-                values={METADATA_SOURCES}
+                values={[
+                  { key: 'all', value: translate('MetadataSourcesAll') },
+                  ...sources,
+                ]}
                 onChange={handleMetadataSourceChange}
               />
             </label>

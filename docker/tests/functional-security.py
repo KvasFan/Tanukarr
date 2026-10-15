@@ -106,7 +106,8 @@ class FunctionalSecurity(ContainerSmoke):
         self.container = self.docker(
             "create", "--name", "sonarr-security-" + secrets.token_hex(6),
             "--label", "sonarr.security-test=true", "--publish", "127.0.0.1::8989",
-            "--env", "PUID=1000", "--env", "PGID=1000", "--env", "UMASK=002",
+            "--security-opt", "no-new-privileges=true",
+            "--env", "PUID=1000", "--env", f"PGID={self.fixture_gid}", "--env", "UMASK=002",
             "--mount", f"type=bind,source={config},target=/config",
             "--mount", f"type=bind,source={media},target=/media", self.args.image)
         self.docker("start", self.container)
@@ -222,13 +223,37 @@ class FunctionalSecurity(ContainerSmoke):
         require(not any("docker.sock" in m["Source"] for m in details["Mounts"]), "Docker socket exposed")
         status = self.docker("exec", self.container, "cat", "/proc/1/status")
         require(re.search(r"^Uid:\s+1000\s+1000\s+1000\s+1000$", status, re.M), "Application is not UID 1000")
+        require(re.search(rf"^Gid:\s+{self.fixture_gid}\s+{self.fixture_gid}\s+{self.fixture_gid}\s+{self.fixture_gid}$", status, re.M),
+                "Application does not use the fixture runner's configured non-root group")
         require(re.search(r"^CapEff:\s+0+$", status, re.M), "Application has effective Linux capabilities")
         require(re.search(r"^Seccomp:\s+2$", status, re.M), "Docker seccomp filter is not active")
+        require(re.search(r"^NoNewPrivs:\s+1$", status, re.M), "No-new-privileges is not active")
+        self.docker("exec", self.container, "sh", "-c", "test \"$(stat -c %a /config)\" = 750")
         self.docker("exec", "--user", "1000:1000", self.container, "sh", "-c",
                     "test -f /entrypoint.sh && test ! -w /app && test ! -w /app/Sonarr && test ! -w /entrypoint.sh")
         self.observations.append("Default Docker seccomp applies; process has no effective capabilities. Entrypoint starts as root to set volume ownership.")
         self.check_permissions()
         self.check_runtime()
+
+        for identity in (("PUID", "0"), ("PGID", "0"), ("PUID", "invalid"), ("PGID", "-1")):
+            result = subprocess.run([self.args.docker, "run", "--rm", "--network", "none",
+                                     "--env", "=".join(identity), self.args.image, "sh", "-c", "echo UNSAFE_STARTED"],
+                                    capture_output=True, text=True, timeout=30)
+            require(result.returncode != 0 and "UNSAFE_STARTED" not in result.stdout,
+                    "Entrypoint accepted a root or invalid process identity")
+        self.check("config directory denies unrelated users; root and invalid PUID/PGID fail before execution")
+        before = self.docker("exec", self.container, "stat", "-c", "%u:%g:%a", "/app/Sonarr")
+        self.docker("exec", "--user", "1000:1000", self.container, "ln", "-s", "/app/Sonarr", "/config/ownership-link")
+        try:
+            self.docker("restart", "--time", "20", self.container)
+            self.refresh_binding()
+            self.wait_ready()
+            after = self.docker("exec", self.container, "stat", "-c", "%u:%g:%a", "/app/Sonarr")
+            require(before == after, "Restart followed a config symlink and changed the application executable")
+            self.docker("exec", "--user", "1000:1000", self.container, "sh", "-c", "test ! -w /app/Sonarr")
+        finally:
+            self.docker("exec", "--user", "1000:1000", self.container, "rm", "/config/ownership-link")
+        self.check("config ownership repair on restart does not follow symlinks into immutable application files")
 
     def companion_permissions(self):
         created = []

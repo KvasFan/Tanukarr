@@ -16,6 +16,7 @@ import {
 } from 'typings/Settings/SettingsState';
 import translate from 'Utilities/String/translate';
 import QualityDefinitions from './Definition/QualityDefinitions';
+import QualityProfileQualitySettings from './QualityProfileQualitySettings';
 
 function Quality() {
   const executeCommand = useExecuteCommand();
@@ -103,6 +104,7 @@ function Quality() {
             setChildSave={handleSetChildSave}
             onChildStateChange={handleChildStateChange}
           />
+          <QualityProfileQualitySettings />
         </div>
       </PageContentBody>
 

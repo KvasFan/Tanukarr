@@ -197,6 +197,9 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Manual
                 localEpisode.Languages = finalLanguages;
                 localEpisode.IndexerFlags = (IndexerFlags)indexerFlags;
                 localEpisode.ReleaseType = releaseType;
+                localEpisode.ManualEpisodeMapping = true;
+                localEpisode.NumberingRejection = null;
+                localEpisode.VerifiedNumbering = null;
 
                 return MapItem(_importDecisionMaker.GetDecision(localEpisode, downloadClientItem), rootFolder, downloadId, null);
             }
@@ -452,6 +455,17 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Manual
             if (decision.LocalEpisode.Series != null)
             {
                 item.Series = decision.LocalEpisode.Series;
+
+                if (decision.LocalEpisode.ExistingFile)
+                {
+                    var relativePath = item.Series.Path.GetRelativePath(item.Path);
+                    var existingFiles = _mediaFileService.GetFilesWithRelativePath(item.Series.Id, relativePath);
+
+                    if (existingFiles is { Count: 1 })
+                    {
+                        item.EpisodeFileId = existingFiles[0].Id;
+                    }
+                }
 
                 if (item.SeasonNumber.HasValue)
                 {

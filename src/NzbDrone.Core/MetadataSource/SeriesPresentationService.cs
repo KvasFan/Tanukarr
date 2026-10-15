@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.Tv;
 
@@ -21,12 +22,14 @@ namespace NzbDrone.Core.MetadataSource
         private readonly ISeriesPresentationProvider[] _providers;
         private readonly SeriesPresentationCache _cache;
         private readonly Logger _logger;
+        private readonly IConfigService _config;
 
-        public SeriesPresentationService(IEnumerable<ISeriesPresentationProvider> providers, SeriesPresentationCache cache, Logger logger)
+        public SeriesPresentationService(IEnumerable<ISeriesPresentationProvider> providers, SeriesPresentationCache cache, IConfigService config, Logger logger)
         {
             _providers = providers.ToArray();
             _cache = cache;
             _logger = logger;
+            _config = config;
         }
 
         public void Enrich(Series metadata, Series previous = null)
@@ -41,7 +44,7 @@ namespace NzbDrone.Core.MetadataSource
 
             var identity = VerifiedIdentity(metadata, previous != null && SameIdentity(metadata, previous) ? previous : null);
             var attempts = 0;
-            foreach (var source in new[] { MetadataSourceType.Tmdb, MetadataSourceType.AniList, MetadataSourceType.MyAnimeList, MetadataSourceType.Tvdb })
+            foreach (var source in MetadataSourcePolicy.Enabled(_config))
             {
                 if (source == metadata.MetadataSource || !NeedsPresentation(metadata, source) || attempts >= MaxAlternativeLookups)
                 {
@@ -91,6 +94,11 @@ namespace NzbDrone.Core.MetadataSource
                 AniListIds = source == MetadataSourceType.AniList ? new HashSet<int> { id } : new HashSet<int>(),
                 MalIds = source == MetadataSourceType.MyAnimeList ? new HashSet<int> { id } : new HashSet<int>()
             };
+            if (MetadataSourcePolicy.Disabled(_config).Contains(source))
+            {
+                return null;
+            }
+
             var provider = _providers.FirstOrDefault(candidate => candidate.Source == source);
             return provider == null ? null : GetPresentation(provider, identity, PresentationKey(source, identity));
         }

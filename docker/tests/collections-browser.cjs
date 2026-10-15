@@ -25,7 +25,7 @@ async function main(input) {
     return result;
   };
   const createContext = async (options = {}) => {
-    const context = await browser.newContext({ viewport: { width: 1600, height: 1100 }, locale: 'en-US', ...options });
+    const context = await browser.newContext({ viewport: { width: 1600, height: 1100 }, locale: 'en-US', colorScheme: 'dark', ...options });
     contexts.push(context);
     await context.route('**/*', async (route) => {
       const url = new URL(route.request().url());
@@ -67,10 +67,38 @@ async function main(input) {
     assert.equal(response.status(), 200, `GET ${resource} must succeed`);
     return response.json();
   };
+  const waitCommand = async (command) => {
+    let state = command;
+    for (let attempt = 0; attempt < 150 && !['completed', 'failed', 'aborted'].includes(state.status); attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      state = await api('command/' + command.id);
+    }
+    assert.equal(state.status, 'completed', `${command.body.name} must complete`);
+    return state;
+  };
   const snapshot = (series) => series.map((item) => ({ id: item.id, title: item.title, path: item.path, tvdbId: item.tvdbId, foreignId: item.foreignId, metadataSource: item.metadataSource })).sort((a, b) => a.id - b.id);
   const groupRoute = (id) => `/collections/${encodeURIComponent('group:' + id)}`;
   const nativeRoute = `/collections/${encodeURIComponent('series:' + input.nativeId)}`;
   const close = async () => page.getByRole('button', { name: 'Close', exact: true }).last().click();
+  const checkbox = async (locator, checked) => {
+    if (await locator.isChecked() !== checked) await locator.locator('..').click();
+    assert.equal(await locator.isChecked(), checked);
+  };
+  const dialogFitsViewport = async () => {
+    const bounds = await page.getByRole('dialog').boundingBox();
+    const viewport = page.viewportSize();
+    assert.ok(bounds && bounds.x >= -1 && bounds.y >= -1 && bounds.x + bounds.width <= viewport.width + 1 && bounds.y + bounds.height <= viewport.height + 1,
+      'the dialog and its fixed action footer fit inside the actual viewport');
+  };
+  const sourceLabelsStayTogether = async () => {
+    const spacing = await page.locator('#metadataSourceSettings input[name="aniList"]').evaluate((input) => {
+      const control = input.closest('label').getBoundingClientRect();
+      const name = input.closest('label').parentElement.nextElementSibling.getBoundingClientRect();
+      return { gap: name.left - control.right, rowOffset: Math.abs(name.top + name.height / 2 - control.top - control.height / 2) };
+    });
+    assert.ok(spacing.gap >= 0 && spacing.gap <= 16 && spacing.rowOffset <= 2, 'the catalogue checkbox stays beside its name');
+    return spacing;
+  };
   const visibleCovers = async (activePage) => {
     const cards = activePage.locator('article[data-native-season]');
     await cards.first().waitFor({ state: 'visible' });
@@ -89,11 +117,11 @@ async function main(input) {
     });
     return activePage.locator('article[data-native-season] img').evaluateAll((elements) => elements.map((image) => ({ src: new URL(image.src).pathname, width: image.naturalWidth, height: image.naturalHeight })));
   };
-  const screenshot = async (name, activePage = page) => {
-    await activePage.locator('main').evaluate((main) => [...main.querySelectorAll('*')].forEach((node) => {
+  const screenshot = async (name, activePage = page, resetScroll = true) => {
+    if (resetScroll) await activePage.locator('main').evaluate((main) => [...main.querySelectorAll('*')].forEach((node) => {
       if (node.scrollHeight > node.clientHeight && ['auto', 'scroll'].includes(getComputedStyle(node).overflowY)) node.scrollTop = 0;
     }));
-    await activePage.screenshot({ path: path.join(directory, name), fullPage: true, style: 'input[type="password"] { visibility: hidden !important; }' });
+    await activePage.screenshot({ path: path.join(directory, name), fullPage: activePage.viewportSize().width > 768, style: 'input[type="password"] { visibility: hidden !important; }' });
     screenshots.push(name);
     const bytes = fs.readFileSync(path.join(directory, name));
     assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -136,6 +164,43 @@ async function main(input) {
     await page.waitForURL((url) => url.pathname === '/series/' + secondMember.titleSlug && url.searchParams.get('season') === '1');
     await page.locator('#season-1 table').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#season-1 table tbody tr').count(), 3);
+    assert.equal(await page.getByRole('button', { name: /^(Show Episodes|Hide Episodes|Expand All|Collapse All)$/ }).count(), 0);
+    await screenshot('season-episodes-expanded-desktop.png', page, false);
+
+    await page.locator('#season-1').getByRole('button', { name: 'Manage Episodes files in this season', exact: true }).click();
+    await page.getByRole('dialog').locator('table tbody tr').first().waitFor({ state: 'visible' });
+    await page.getByRole('dialog').getByTitle('Click to change release group', { exact: true }).first().click();
+    await page.locator('input[name="releaseGroup"]').fill('BrowserFixture');
+    const reprocessedFile = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v5/manualimport');
+    await page.getByRole('button', { name: 'Set Release Group', exact: true }).click();
+    assert.equal((await reprocessedFile).ok(), true);
+    await page.getByRole('dialog').getByText('BrowserFixture', { exact: true }).waitFor({ state: 'visible' });
+    await screenshot('season-manage-episodes-desktop.png');
+    const appliedFile = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v5/episodeFile/bulk');
+    await page.getByRole('dialog').getByRole('button', { name: 'Apply', exact: true }).click();
+    assert.equal((await appliedFile).ok(), true);
+    assert.equal((await api('episodefile/' + input.generatedFile.id)).releaseGroup, 'BrowserFixture');
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+
+    await page.locator('#season-1').getByRole('button', { name: 'Preview Rename for this season', exact: true }).click();
+    await page.getByRole('dialog').getByText(/Browser Renamed/).first().waitFor({ state: 'visible' });
+    await screenshot('season-preview-rename-desktop.png');
+    const renamedFile = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v5/command');
+    await page.getByRole('button', { name: 'Organize', exact: true }).click();
+    const renamedCommand = await renamedFile;
+    assert.equal(renamedCommand.status(), 201);
+    const renameCommand = await renamedCommand.json();
+    assert.equal(renameCommand.body.name, 'RenameFiles');
+    assert.deepEqual(renameCommand.body.files, [input.generatedFile.id]);
+    await waitCommand(renameCommand);
+    const renamed = await api('episodefile/' + input.generatedFile.id);
+    assert.ok(renamed.path.includes('Browser Renamed'));
+    assert.equal(renamed.id, input.generatedFile.id);
+    observations.generatedFileActions = { id: renamed.id, seriesId: renamed.seriesId, seasonNumber: renamed.seasonNumber, releaseGroup: renamed.releaseGroup, renamedPath: renamed.path };
+    await page.locator('#season-1').getByRole('button', { name: 'View history for this season', exact: true }).click();
+    await page.getByRole('dialog').locator('table tbody tr').first().waitFor({ state: 'visible' });
+    await close();
+    checks.push('Manage Episodes edits the real generated file and Preview Rename executes a successful native RenameFiles command');
     await page.getByRole('link', { name: 'Collection', exact: true }).click();
     await page.waitForURL((url) => url.pathname === groupRoute('anilist:900401'));
     checks.push('logical Season 2 card opens native Season 1, expands actual episodes and links back to its collection');
@@ -173,14 +238,17 @@ async function main(input) {
 
     const searchStart = requests.length;
     await page.getByRole('button', { name: 'Search Collection', exact: true }).click();
+    const selector = page.locator('select[name="collectionSearchSeries"]');
+    await selector.waitFor({ state: 'visible' });
+    assert.equal(await selector.inputValue(), String(firstMember.id), 'the native title is selected from the moment the automatic search opens');
     await page.getByRole('status').filter({ hasText: 'Searched 3 of 3 entries' }).waitFor({ state: 'visible' });
     const allSearches = requests.slice(searchStart).filter((item) => item.path === '/api/v5/release' && item.query.completeSeries === 'true');
     assert.equal(allSearches.length, 3);
     assert.deepEqual(allSearches.map((item) => Number(item.query.seriesId)).sort((a, b) => a - b), groupMembers.map((item) => item.id).sort((a, b) => a - b));
-    const selector = page.locator('select[name="collectionSearchSeries"]');
     await selector.selectOption(String(secondMember.id));
     await page.getByText('Fixture Linear Anime Sequel.S01.1080p.WEB-DL.H264-Fixture', { exact: true }).first().waitFor({ state: 'visible' });
     assert.equal(requests.slice(searchStart).filter((item) => item.path === '/api/v5/release' && item.query.completeSeries === 'true').length, 3);
+    await screenshot('collection-search-desktop.png');
     await close();
     checks.push('Search Collection performs actual read-only complete-series release queries for every member and changing results reuses the native cache');
 
@@ -200,39 +268,38 @@ async function main(input) {
     await close();
     checks.push('each logical season pack and episode button initially displays its real parsed RSS releases using native identities without changing the other search preference');
 
-    await secondCard.getByRole('button', { name: 'Season Settings', exact: true }).click();
-    await page.locator('input[name="monitored"]').locator('..').click();
-    assert.equal(await page.locator('input[name="monitored"]').isChecked(), true);
-    const savedSeason = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === `/api/v5/series/${secondMember.id}/season`);
-    await page.getByRole('button', { name: 'Save', exact: true }).last().click();
-    const seasonResponse = await savedSeason;
-    assert.equal(seasonResponse.status(), 200);
-    const seasonBody = await seasonResponse.json();
-    assert.equal(seasonBody.seasonNumber, 1);
-    assert.equal(seasonBody.monitored, true);
-    assert.equal(Object.hasOwn(seasonBody, 'seasons'), false);
-    observations.mutationResponseContracts.seasonMonitor = { status: seasonResponse.status(), singleSeason: true,
-      seasonNumber: seasonBody.seasonNumber, monitored: seasonBody.monitored, statisticsNullable: seasonBody.statistics == null };
-    assert.equal((await api('series/' + secondMember.id)).seasons.find((season) => season.seasonNumber === 1).monitored, true);
-    assert.equal((await api('series/' + firstMember.id)).seasons.find((season) => season.seasonNumber === 1).monitored, false);
-    checks.push('season settings persist monitoring only for the selected native season');
+    const actionHeights = await secondCard.getByRole('button').evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+    assert.equal(actionHeights.length, 3);
+    assert.ok(Math.max(...actionHeights) - Math.min(...actionHeights) <= 1, 'season card action buttons share one height');
+    assert.equal(await secondCard.getByRole('link', { name: /^Open Season/ }).count(), 0);
 
     await secondCard.getByRole('button', { name: 'Season Settings', exact: true }).click();
-    await page.getByRole('button', { name: 'Edit Series', exact: true }).last().click();
+    for (const name of ['seasonMonitored', 'monitored', 'seasonFolder', 'path', 'tags']) {
+      assert.ok(await page.getByRole('dialog').locator(`[name="${name}"]`).count() > 0, `the complete season editor exposes ${name}`);
+    }
+    for (const label of ['Monitor New Seasons', 'Use Season Folder', 'Quality Profile', 'Series Type', 'Language', 'Episode Order', 'Path', 'Tags']) {
+      assert.ok(await page.getByRole('dialog').locator('label').filter({ hasText: label }).count() > 0, `the complete season editor labels ${label}`);
+    }
+    await page.locator('input[name="seasonMonitored"]').locator('..').click();
+    assert.equal(await page.locator('input[name="seasonMonitored"]').isChecked(), true);
     await page.locator('input[name="monitored"]').locator('..').click();
-    assert.equal(await page.locator('input[name="monitored"]').isChecked(), true);
-    const savedEntry = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v5/series');
+    await screenshot('season-settings-desktop.png');
+    await page.getByRole('dialog').locator('input[name="path"]').scrollIntoViewIfNeeded();
+    await page.getByRole('dialog').locator('input[name="tags"]').scrollIntoViewIfNeeded();
+    await screenshot('season-settings-details-desktop.png');
+    const savedSeason = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v5/series');
     await page.getByRole('button', { name: 'Save', exact: true }).last().click();
-    const entryResponse = await savedEntry;
-    assert.equal(entryResponse.status(), 202);
-    const entryBody = await entryResponse.json();
-    assert.equal(entryBody.id, secondMember.id);
-    assert.equal(Array.isArray(entryBody.seasons), true);
-    observations.mutationResponseContracts.nativeEntry = { status: entryResponse.status(), nativeSeriesId: entryBody.id,
-      seasons: entryBody.seasons.map((season) => season.seasonNumber), statisticsPresent: entryBody.statistics != null };
+    const seasonResponse = await savedSeason;
+    assert.equal(seasonResponse.status(), 202);
+    const seasonBody = await seasonResponse.json();
+    assert.equal(seasonBody.id, secondMember.id);
+    assert.equal(seasonBody.seasons.find((season) => season.seasonNumber === 1).monitored, true);
+    observations.mutationResponseContracts.seasonEditor = { status: seasonResponse.status(), seriesId: seasonBody.id, nativeSeasonNumber: 1, monitoringAndSharedSettings: true };
+    assert.equal((await api('series/' + secondMember.id)).seasons.find((season) => season.seasonNumber === 1).monitored, true);
+    assert.equal((await api('series/' + firstMember.id)).seasons.find((season) => season.seasonNumber === 1).monitored, false);
     assert.equal((await api('series/' + secondMember.id)).monitored, true);
     assert.equal(await secondCard.getByRole('button', { name: 'Search Season 2 Packs', exact: true }).isEnabled(), true);
-    checks.push('native entry editing uses the real Accepted SeriesResource response and immediately retains usable season actions');
+    checks.push('full season settings save native monitoring and shared profile/language/path controls through the existing Accepted SeriesResource contract');
 
     await page.goto(input.baseUrl + groupRoute('anilist:900501'));
     await page.locator('article[data-native-season]').first().waitFor({ state: 'visible' });
@@ -280,7 +347,141 @@ async function main(input) {
     await screenshot('collection-native-desktop.png');
     checks.push('native TV collections include every real season and Specials, open native episode tables and persist an independent display name');
 
+    const profiles = await api('qualityprofile');
+    const profile = profiles[0];
+    await page.goto(input.baseUrl + '/settings/profiles');
+    await page.getByRole('button', { name: `Edit Quality Profile, ${profile.name}`, exact: true }).click();
+    await page.getByRole('dialog').locator('input[name="name"]').waitFor({ state: 'visible' });
+    assert.equal(await page.getByRole('dialog').locator('[data-mode-key]').count(), 0);
+    assert.equal(await page.getByRole('dialog').locator('input[name^="codecMultipliers."]').count(), 0);
+    await screenshot('profile-settings-desktop.png');
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+
+    await page.getByRole('button', { name: 'Add Quality Profile', exact: true }).click();
+    await page.waitForURL((url) => url.pathname === '/settings/quality' && url.searchParams.get('addProfile') === 'true');
+    await page.getByRole('dialog').locator('input[name="name"]').fill('Generated Browser Profile');
+    await checkbox(page.getByRole('dialog').locator('input[type="checkbox"]:enabled').first(), true);
+    assert.equal(await page.getByRole('dialog').locator('[data-mode-key]').count(), 3);
+    await screenshot('quality-profile-create-desktop.png');
+    const profileCreated = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v5/qualityprofile');
+    await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
+    const newProfileResponse = await profileCreated;
+    assert.equal(newProfileResponse.ok(), true);
+    const newProfile = await newProfileResponse.json();
+    assert.equal(newProfile.name, 'Generated Browser Profile');
+    assert.ok(newProfile.items.some((item) => item.allowed));
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    checks.push('Profiles Add routes into Quality and creates a valid named profile with explicit allowed quality and the full quality controls');
+
+    await page.goto(input.baseUrl + '/settings/quality');
+    await page.locator('[data-quality-definition-id]').first().waitFor({ state: 'visible' });
+    observations.qualityAlignment = await page.locator('[data-quality-definition-id]').evaluateAll((rows) => rows.map((row) => ({
+      id: row.getAttribute('data-quality-definition-id'),
+      inputTops: [...row.querySelectorAll('input')].slice(0, 4).map((field) => field.getBoundingClientRect().top),
+    })));
+    assert.ok(observations.qualityAlignment.length >= 22);
+    assert.ok(observations.qualityAlignment.every((row) => row.inputTops.length === 4 && Math.max(...row.inputTops) - Math.min(...row.inputTops) <= 1), 'title and all three size limits align on every quality row');
+    await screenshot('quality-settings-desktop.png');
+    await page.getByRole('button', { name: profile.name, exact: true }).click();
+    await page.getByRole('dialog').locator('input[name="codecMultipliers.HEVC"]').waitFor({ state: 'visible' });
+    assert.equal(await page.getByRole('dialog').locator('[data-mode-key]').count(), 3);
+    await page.getByRole('dialog').locator('input[name="codecMultipliers.HEVC"]').fill('2');
+    await page.getByRole('dialog').locator('input[name="codecMultipliers.HEVC"]').blur();
+    await page.getByRole('dialog').locator('[data-mode-key="editSizes"]').click();
+    assert.ok(await page.getByRole('dialog').locator('input[name$=".min"]').count() > 0);
+    await screenshot('quality-profile-controls-desktop.png');
+    const factorSaved = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === `/api/v5/qualityprofile/${profile.id}`);
+    await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
+    assert.equal((await factorSaved).ok(), true);
+    assert.equal((await api('qualityprofile/' + profile.id)).codecMultipliers.HEVC, 2);
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    checks.push('Profiles exposes profile identity and upgrade rules while Quality owns qualities, groups, sizes and persisted codec factors');
+
+    await page.getByRole('button', { name: 'Add quality', exact: true }).click();
+    await page.locator('input[name="newQualityTitle"]').fill('Generated Browser Quality');
+    await page.locator('select[name="source"]').selectOption('bluray');
+    await page.locator('select[name="resolution"]').selectOption('2160');
+    await page.locator('select[name="codec"]').selectOption('HEVC');
+    await page.locator('input[name="titlePattern"]').fill('BrowserFixture');
+    const qualityCreated = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v5/qualitydefinition');
+    await page.getByRole('button', { name: 'Save', exact: true }).last().click();
+    const createdResponse = await qualityCreated;
+    assert.equal(createdResponse.ok(), true);
+    const createdQuality = await createdResponse.json();
+    assert.equal(createdQuality.isCustom, true);
+    assert.equal(createdQuality.codec, 'HEVC');
+    const createdRow = page.locator(`[data-quality-definition-id="${createdQuality.id}"]`);
+    await createdRow.waitFor({ state: 'visible' });
+    await createdRow.getByRole('button', { name: 'Delete', exact: true }).click();
+    const qualityDeleted = page.waitForResponse((response) => response.request().method() === 'DELETE' && new URL(response.url()).pathname === `/api/v5/qualitydefinition/${createdQuality.id}`);
+    await createdRow.getByRole('button', { name: 'Confirm delete', exact: true }).click();
+    assert.equal((await qualityDeleted).status(), 204);
+    await createdRow.waitFor({ state: 'hidden' });
+    await page.getByRole('button', { name: 'Show deleted qualities', exact: true }).click();
+    await createdRow.getByRole('button', { name: 'Restore', exact: true }).click();
+    await createdRow.getByRole('button', { name: 'Delete', exact: true }).waitFor({ state: 'visible' });
+    assert.equal((await api('qualitydefinition')).find((item) => item.id === createdQuality.id).quality.id, createdQuality.quality.id);
+    checks.push('real Quality UI creates, retires and restores a custom source/resolution/codec expression without changing its identity');
+
+    await page.goto(input.baseUrl + '/settings/metadatasource');
+    await page.locator('#metadataSourceSettings input[name="aniList"]').waitFor({ state: 'attached' });
+    const sourceKeys = ['tvdb', 'tmdb', 'aniList', 'myAnimeList', 'tvMaze'];
+    for (const key of sourceKeys) await checkbox(page.locator(`#metadataSourceSettings input[name="${key}"]`), true);
+    for (let attempt = 0; attempt < sourceKeys.length && await page.getByTitle('Move up AniList', { exact: true }).isEnabled(); attempt++) {
+      await page.getByTitle('Move up AniList', { exact: true }).click();
+    }
+    await checkbox(page.locator('#metadataSourceSettings input[name="tmdb"]'), false);
+    const metadataSaved = page.waitForResponse((response) => response.request().method() === 'PUT' && /\/api\/v5\/settings\/metadata(?:\/\d+)?$/.test(new URL(response.url()).pathname));
+    await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    assert.equal((await metadataSaved).ok(), true);
+    const metadata = await api('settings/metadata');
+    assert.equal(metadata.metadataSourceOrder[0], 'aniList');
+    assert.ok(metadata.disabledMetadataSources.includes('tmdb'));
+    await page.reload();
+    await page.locator('#metadataSourceSettings input[name="aniList"]').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('#metadataSourceSettings input[name="tmdb"]').isChecked(), false);
+    assert.equal(await page.locator('#metadataSourceSettings input[type="checkbox"]').first().getAttribute('name'), 'aniList');
+    observations.metadataSourceSpacing = { desktop: await sourceLabelsStayTogether() };
+    await screenshot('metadata-source-controls-desktop.png');
+    await page.goto(input.baseUrl + '/add/new');
+    const sourceSelector = page.locator('select[name="metadataSource"]');
+    await sourceSelector.locator('option[value="aniList"]').waitFor({ state: 'attached' });
+    const choices = await sourceSelector.locator('option').evaluateAll((options) => options.map((option) => option.value));
+    assert.deepEqual(choices, ['all', ...metadata.metadataSourceOrder.filter((key) => !metadata.disabledMetadataSources.includes(key))]);
+    observations.metadataSourceChoices = choices;
+    checks.push('metadata catalogue enablement and search order persist after reload and govern Add New Series choices');
+
+    await page.goto(input.baseUrl + '/settings/metadatasource');
+    for (const key of sourceKeys.filter((key) => key !== 'aniList')) await checkbox(page.locator(`#metadataSourceSettings input[name="${key}"]`), false);
+    const isolatedSourcesSaved = page.waitForResponse((response) => response.request().method() === 'PUT' && /\/api\/v5\/settings\/metadata(?:\/\d+)?$/.test(new URL(response.url()).pathname));
+    await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    assert.equal((await isolatedSourcesSaved).ok(), true);
+    assert.equal(await page.locator('#metadataSourceSettings input[name="aniList"]').isDisabled(), true, 'the last enabled catalogue cannot be disabled');
+    await page.goto(input.baseUrl + '/add/new');
+    await sourceSelector.locator('option[value="aniList"]').waitFor({ state: 'attached' });
+    await sourceSelector.selectOption('all');
+    const allSourceRequest = page.waitForResponse((response) => response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/v5/series/lookup' && new URL(response.url()).searchParams.get('allSources') === 'true');
+    await page.locator('input[name="seriesLookup"]').fill('Fixture Linear Anime');
+    const allSourceResponse = await allSourceRequest;
+    assert.equal(allSourceResponse.ok(), true);
+    const allSourceResults = await allSourceResponse.json();
+    assert.ok(allSourceResults.some((item) => item.metadataSource === 'aniList' && item.foreignId === '900401'));
+    await page.getByRole('link', { name: 'Fixture Linear Anime', exact: true }).first().waitFor({ state: 'visible' });
+    await screenshot('metadata-source-search-desktop.png');
+    checks.push('All enabled sources executes the real federated lookup using only the enabled owned AniList catalogue fixture');
+
     const storageState = await context.storageState();
+    const lightContext = await createContext({ colorScheme: 'light', storageState });
+    const lightPage = await lightContext.newPage();
+    diagnosticPage = lightPage;
+    await lightPage.goto(input.baseUrl + '/settings/quality');
+    await lightPage.locator('[data-quality-definition-id]').first().waitFor({ state: 'visible' });
+    assert.equal(await lightPage.locator('html').getAttribute('data-theme'), 'light');
+    await screenshot('quality-settings-light-desktop.png', lightPage);
+    await lightContext.close();
+    diagnosticPage = page;
+    assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+    checks.push('quality rows render under both light and dark system themes');
     for (const dpr of [1, 2, 3]) {
       const dpiContext = await createContext({ deviceScaleFactor: dpr, storageState });
       const dpiPage = await dpiContext.newPage();
@@ -317,6 +518,47 @@ async function main(input) {
     await screenshot('collection-mixed-mobile.png');
     checks.push('collection layout remains within a narrow mobile viewport with reachable native actions');
 
+    await card.getByRole('button', { name: 'Season Settings', exact: true }).click();
+    await page.getByRole('dialog').locator('input[name="seasonMonitored"]').waitFor({ state: 'attached' });
+    await dialogFitsViewport();
+    await screenshot('season-settings-mobile.png');
+    await page.getByRole('dialog').locator('input[name="path"]').scrollIntoViewIfNeeded();
+    await page.getByRole('dialog').locator('input[name="tags"]').scrollIntoViewIfNeeded();
+    await dialogFitsViewport();
+    await screenshot('season-settings-details-mobile.png');
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.goto(input.baseUrl + '/settings/quality');
+    await page.locator('[data-quality-definition-id]').first().waitFor({ state: 'visible' });
+    assert.equal(await page.locator('main').evaluate((main) => main.scrollWidth <= main.clientWidth + 1), true);
+    await screenshot('quality-settings-mobile.png');
+    await page.getByRole('button', { name: profile.name, exact: true }).click();
+    await page.getByRole('dialog').locator('input[name="codecMultipliers.HEVC"]').waitFor({ state: 'visible' });
+    assert.equal(await page.getByRole('dialog').locator('[data-mode-key]').count(), 3);
+    await dialogFitsViewport();
+    await screenshot('quality-profile-controls-mobile.png');
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.goto(input.baseUrl + '/settings/metadatasource');
+    await page.locator('#metadataSourceSettings input[name="aniList"]').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('main').evaluate((main) => main.scrollWidth <= main.clientWidth + 1), true);
+    await page.getByTitle('Move down AniList', { exact: true }).click();
+    const mobileMetadataSaved = page.waitForResponse((response) => response.request().method() === 'PUT' && /\/api\/v5\/settings\/metadata(?:\/\d+)?$/.test(new URL(response.url()).pathname));
+    await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    assert.equal((await mobileMetadataSaved).ok(), true);
+    assert.equal((await api('settings/metadata')).metadataSourceOrder[1], 'aniList');
+    observations.metadataSourceSpacing.mobile = await sourceLabelsStayTogether();
+    await screenshot('metadata-source-controls-mobile.png');
+    await page.goto(input.baseUrl + `/series/${secondMember.titleSlug}?season=1#season-1`);
+    await page.locator('#season-1 table tbody tr').first().waitFor({ state: 'visible' });
+    assert.equal(await page.getByRole('button', { name: /^(Show Episodes|Hide Episodes|Expand All|Collapse All)$/ }).count(), 0);
+    await screenshot('season-episodes-expanded-mobile.png', page, false);
+    await page.locator('#season-1 button[aria-haspopup="dialog"]').click();
+    await page.getByRole('button', { name: 'Manage Episodes', exact: true }).click();
+    await page.getByRole('dialog').locator('table tbody tr').first().waitFor({ state: 'visible' });
+    await dialogFitsViewport();
+    await screenshot('season-manage-episodes-mobile.png');
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+    checks.push('complete season settings, relocated quality controls and persisted metadata reordering remain usable within a narrow mobile viewport');
+
     const allEpisodes = [];
     for (const item of input.series) allEpisodes.push(...await api('episode?seriesId=' + item.id));
     assert.deepEqual(allEpisodes.map((item) => [item.id, item.seriesId, item.seasonNumber, item.episodeNumber]).sort((a, b) => a[0] - b[0]), input.episodeIdentities.sort((a, b) => a[0] - b[0]));
@@ -324,7 +566,11 @@ async function main(input) {
     assert.deepEqual(errors, []);
     assert.deepEqual(consoleErrors.filter((entry) => !(entry.path === '/MediaCover/100/poster-500.jpg' && entry.text.includes('Failed to load resource'))), []);
     assert.deepEqual(outside, []);
-    assert.ok(mutations.every((entry) => (entry.method === 'PUT' && (entry.path === '/api/v5/series' || entry.path === '/api/v5/series/editor' || /\/series\/\d+\/season$/.test(entry.path))) || (entry.method === 'POST' && entry.path === '/api/v5/command' && entry.body.name === 'RefreshSeries')));
+    assert.ok(mutations.every((entry) =>
+      (entry.method === 'PUT' && (['/api/v5/series', '/api/v5/series/editor', '/api/v5/episodeFile/bulk'].includes(entry.path) || /\/qualityprofile\/\d+$/.test(entry.path) || /\/settings\/metadata(?:\/\d+)?$/.test(entry.path))) ||
+      (entry.method === 'POST' && entry.path === '/api/v5/command' && ['RefreshSeries', 'RenameFiles'].includes(entry.body.name)) ||
+      (entry.method === 'POST' && (['/api/v5/qualitydefinition', '/api/v5/qualityprofile', '/api/v5/manualimport'].includes(entry.path) || /\/qualitydefinition\/\d+\/restore$/.test(entry.path))) ||
+      (entry.method === 'DELETE' && /\/qualitydefinition\/\d+$/.test(entry.path))));
     assert.ok(images.every((image) => !/poster-(750|1000|1500)\.jpg/.test(image.path)));
     checks.push('browser preserves native identities and paths, has no JavaScript errors or outside requests, and performs no acquisition mutation');
   } catch (error) {
@@ -352,7 +598,8 @@ async function main(input) {
   }
   const report = { passed: !failure, imageId: input.imageId, sourceRevision: input.sourceRevision, checks, observations,
     javascriptErrors: errors, consoleErrors, outsideRequests: outside, requests, mutations, imageResponses: images, screenshots, screenshotProofs, failure,
-    scope: { ownedFixture: true, ownerConfigurationAccessed: false, privateAccountUsed: false, publicMetadataRequests: false, acquisitionTested: false } };
+    scope: { ownedFixture: true, ownerConfigurationAccessed: false, privateAccountUsed: false, publicMetadataRequests: false, acquisitionTested: false,
+      generatedFileManagementTested: !!observations.generatedFileActions, generatedFileRenameTested: !!observations.generatedFileActions } };
   fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\n', 'utf8');
   console.log(JSON.stringify({ passed: report.passed, checks: checks.length, failure }));
   process.exitCode = failure ? 1 : 0;
