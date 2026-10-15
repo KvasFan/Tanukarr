@@ -124,6 +124,11 @@ class FunctionalSecurity(ContainerSmoke):
                 "Successful health probe produced diagnostic output")
         require(self.docker("exec", "--env", "HTTP_PROXY=http://127.0.0.1:1", self.container, "/healthcheck.sh") == "",
                 "Health probe used a configured external HTTP proxy")
+        require(self.docker("exec", self.container, "flock", "--exclusive", "/config/config.xml", "/healthcheck.sh") == "",
+                "Read-only health probe conflicted with an exclusive configuration writer lock")
+        self.docker("exec", self.container, "sh", "-c",
+                    "! grep -zq '^DOTNET_SYSTEM_IO_DISABLEFILELOCKING=1$' /proc/1/environ")
+        self.observations.append("Health probe succeeds while an exclusive configuration writer lock is held; the advisory-lock override is confined to the read-only health child, not the application.")
         failed = subprocess.run(
             [self.args.docker, "exec", "--env", "SONARR__SERVER__PORT=1", self.container, "/healthcheck.sh"],
             capture_output=True, text=True, timeout=15)

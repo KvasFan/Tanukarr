@@ -404,6 +404,9 @@ async function auditGuiWorkflows({ input, context, createContext, api, screensho
       await screenshot(`gui-library-import-movie-match-${view}.png`, page, false);
       await result.getByRole('button').click();
       await card.getByTitle('Change match', { exact: true }).waitFor({ state: 'visible' });
+      for (const name of ['Monitored', 'Any', 'English']) {
+        await card.getByRole('button', { name, exact: true }).waitFor({ state: 'visible' });
+      }
       for (const name of ['seriesType', 'seasonType', 'seasonFolder']) assert.equal(await card.locator(`[name="${name}"]`).count(), 0, 'matched movies hide episodic import controls');
       const bounds = await geometry(page);
       assert.deepEqual(bounds.clippedFields, []);

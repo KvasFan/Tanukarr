@@ -340,6 +340,7 @@ async function main(input) {
     const savedNative = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v5/series/editor');
     await page.getByRole('button', { name: 'Save', exact: true }).last().click();
     assert.equal((await savedNative).status(), 200);
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
     await page.getByRole('heading', { name: 'Generated Native Display Name', exact: true }).waitFor({ state: 'visible' });
     const native = await api('series/' + input.nativeId);
     assert.equal(native.collectionTitle, 'Generated Native Display Name');
