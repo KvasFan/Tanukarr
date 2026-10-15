@@ -31,7 +31,8 @@ jobs:
       # which is only defined for a solution build. Building a bare .csproj silently
       # drops the StyleCop configuration and fails on every using directive in the repo.
       - name: Build
-        run: dotnet build src/Sonarr.sln -c Debug
+        # Platform projects share _output; serialize copies as in the Docker build.
+        run: dotnet build src/Sonarr.sln -c Debug -maxcpucount:1 -p:BuildInParallel=false
 
       - name: Prepare media probe for tests
         run: chmod +x _tests/net10.0/ffprobe
