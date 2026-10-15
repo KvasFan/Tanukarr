@@ -1,9 +1,7 @@
 # Historical 0.1.0 release
 
-> Version-reset note (October 15): this page records the former SonarrWeeb
-> release. Its original source is preserved as `archive/sonarrweeb/v0.1.0`.
-> The public `v0.1.0` name is reused for the 1.1.0-derived Tanukarr reset;
-> old release URLs below describe historical publication, not the new assets.
+> Historical source checkpoint: `961d8abe176008aa335bb539ae02ec2c1edd061f`.
+> Results and assets on this page apply only to that source revision.
 
 > Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](../README.md) and [Tanukarr 1.0.0 verification](../releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 

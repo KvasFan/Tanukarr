@@ -8,6 +8,7 @@ using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Tv;
 using Sonarr.Http.REST;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Sonarr.Api.V3.Series
 {
@@ -67,6 +68,8 @@ namespace Sonarr.Api.V3.Series
         public int TvRageId { get; set; }
         public int TvMazeId { get; set; }
         public int TmdbId { get; set; }
+        [SwaggerSchema(ReadOnly = true)]
+        public MediaType MediaType { get; set; }
         public DateTime? FirstAired { get; set; }
         public DateTime? LastAired { get; set; }
         public SeriesTypes SeriesType { get; set; }
@@ -79,6 +82,7 @@ namespace Sonarr.Api.V3.Series
         public AnimeGroupKind? AnimeGroupKind { get; set; }
         public AnimeGroupMovieFolderStyle? AnimeGroupMovieFolderStyle { get; set; }
         public int? AnimeGroupMovieNumber { get; set; }
+        public int? AnimeGroupSpecialNumber { get; set; }
         public string AnimeGroupMemberFolder { get; set; }
         public string CleanTitle { get; set; }
         public string OriginalTitle { get; set; }
@@ -162,6 +166,7 @@ namespace Sonarr.Api.V3.Series
                        TvRageId = model.TvRageId,
                        TvMazeId = model.TvMazeId,
                        TmdbId = model.TmdbId,
+                       MediaType = model.MediaType,
                        FirstAired = model.FirstAired,
                        LastAired = model.LastAired,
                        SeriesType = model.SeriesType,
@@ -174,6 +179,7 @@ namespace Sonarr.Api.V3.Series
                        AnimeGroupKind = model.AnimeGroupKind,
                        AnimeGroupMovieFolderStyle = model.AnimeGroupMovieFolderStyle,
                        AnimeGroupMovieNumber = model.AnimeGroupMovieNumber,
+                       AnimeGroupSpecialNumber = model.AnimeGroupSpecialNumber,
                        AnimeGroupMemberFolder = model.AnimeGroupMemberFolder,
                        CleanTitle = model.CleanTitle,
                        OriginalTitle = model.OriginalTitle,
@@ -259,6 +265,7 @@ namespace Sonarr.Api.V3.Series
                        AnimeGroupKind = resource.AnimeGroupKind ?? AnimeGroupKind.Series,
                        AnimeGroupMovieFolderStyle = resource.AnimeGroupMovieFolderStyle ?? AnimeGroupMovieFolderStyle.Automatic,
                        AnimeGroupMovieNumber = resource.AnimeGroupMovieNumber,
+                       AnimeGroupSpecialNumber = resource.AnimeGroupSpecialNumber,
                        CleanTitle = resource.CleanTitle,
                        OriginalTitle = resource.OriginalTitle,
                        CleanOriginalTitle = resource.CleanOriginalTitle,
@@ -289,12 +296,18 @@ namespace Sonarr.Api.V3.Series
                 updatedSeries.AnimeGroupKind = series.AnimeGroupKind;
                 updatedSeries.AnimeGroupMovieFolderStyle = series.AnimeGroupMovieFolderStyle;
                 updatedSeries.AnimeGroupMovieNumber = series.AnimeGroupMovieNumber;
+                updatedSeries.AnimeGroupSpecialNumber = series.AnimeGroupSpecialNumber;
             }
             else
             {
                 updatedSeries.AnimeGroupMemberKind = resource.AnimeGroupMemberKind ?? series.AnimeGroupMemberKind;
                 updatedSeries.AnimeGroupKind = resource.AnimeGroupKind ?? series.AnimeGroupKind;
                 updatedSeries.AnimeGroupMovieFolderStyle = resource.AnimeGroupMovieFolderStyle ?? series.AnimeGroupMovieFolderStyle;
+                if (resource.AnimeGroupMemberKind == null && resource.AnimeGroupSpecialNumber == null)
+                {
+                    updatedSeries.AnimeGroupSpecialNumber = series.AnimeGroupSpecialNumber;
+                }
+
                 if (resource.AnimeGroupMemberKind == null && resource.AnimeGroupMovieNumber == null)
                 {
                     updatedSeries.AnimeGroupMovieNumber = series.AnimeGroupMovieNumber;

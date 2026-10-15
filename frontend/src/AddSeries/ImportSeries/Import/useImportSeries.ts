@@ -1,6 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import useApiMutation from 'Helpers/Hooks/useApiMutation';
+import getMediaType from 'Series/getMediaType';
+import isSameSeriesIdentity, {
+  getSeriesIdentityKey,
+} from 'Series/isSameSeriesIdentity';
 import Series from 'Series/Series';
 import {
   getImportSeriesItems,
@@ -43,20 +47,23 @@ export const useImportSeries = () => {
         // Make sure we have a selected series and the same series hasn't been added yet.
         if (
           selectedSeries &&
-          !acc.some((a) => a.tvdbId === selectedSeries.tvdbId)
+          getSeriesIdentityKey(selectedSeries) &&
+          !acc.some((a) => isSameSeriesIdentity(a, selectedSeries))
         ) {
+          const isMovie = getMediaType(selectedSeries) === 'movie';
           const newSeries: Series = {
             ...selectedSeries,
             monitored: true,
             monitorNewItems: 'all',
             qualityProfileId: item.qualityProfileId,
             path: item.path,
-            seriesType: item.seriesType,
+            seriesType: isMovie ? selectedSeries.seriesType : item.seriesType,
             language: item.language,
-            seasonType: item.seasonType,
-            seasonFolder: item.seasonFolder,
+            seasonType: isMovie ? selectedSeries.seasonType : item.seasonType,
+            seasonFolder: isMovie ? false : item.seasonFolder,
             addOptions: {
-              monitor: item.monitor,
+              monitor:
+                isMovie && item.monitor !== 'none' ? 'all' : item.monitor,
               searchForMissingEpisodes: false,
               searchForCutoffUnmetEpisodes: false,
             },

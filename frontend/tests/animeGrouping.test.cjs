@@ -27,6 +27,7 @@ function loadSource(relative, mocks = {}) {
     if (Object.hasOwn(mocks, name)) {
       return mocks[name];
     }
+    if (name === 'Series/getMediaType') return loadSource('Series/getMediaType.ts');
 
     return projectRequire(name);
   };
@@ -39,6 +40,16 @@ function loadSource(relative, mocks = {}) {
 const grouping = loadSource('Series/Grouping/animeGrouping.ts');
 const presentation = loadSource('Series/Grouping/collectionPresentation.ts', { './animeGrouping': grouping });
 const { groupAnimeSeries, hasAnimeGroup } = grouping;
+
+test('multi-season members reserve consecutive logical slots independently of movies and specials', () => {
+  const tv = { id: 1, animeGroupSeasonNumber: 1, seasons: [{ seasonNumber: 0 }, { seasonNumber: 2 }, { seasonNumber: 4 }] };
+  const sequel = { id: 2, animeGroupSeasonNumber: 4, seasons: [{ seasonNumber: 1 }] };
+  const special = { id: 3, animeGroupMemberKind: 'special', animeGroupSpecialNumber: 1 };
+  assert.equal(grouping.getAvailableGroupMemberNumber([tv, sequel, special], 'season'), 3);
+  assert.equal(grouping.getAvailableGroupMemberNumber([tv, sequel, special], 'season', undefined, 2), 5);
+  assert.equal(grouping.getAvailableGroupMemberNumber([tv, sequel, special], 'movie'), 1);
+  assert.equal(grouping.getAvailableGroupMemberNumber([tv, sequel, special], 'special'), 2);
+});
 
 function makeSeries(id, season, groupId = 'anilist:10', overrides = {}) {
   return {

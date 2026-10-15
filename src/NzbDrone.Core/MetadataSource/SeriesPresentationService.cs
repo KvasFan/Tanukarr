@@ -201,6 +201,7 @@ namespace NzbDrone.Core.MetadataSource
             var identity = new Series
             {
                 MetadataSource = series.MetadataSource,
+                MediaType = series.MediaType,
                 ForeignId = series.ForeignId,
                 TvdbId = Math.Max(series.TvdbId > 0 ? series.TvdbId : previous?.TvdbId ?? 0, 0),
                 TmdbId = Math.Max(series.TmdbId > 0 ? series.TmdbId : previous?.TmdbId ?? 0, 0),
@@ -235,7 +236,7 @@ namespace NzbDrone.Core.MetadataSource
             var mal = SinglePositiveId(identity.MalIds);
             return source switch
             {
-                MetadataSourceType.Tmdb when identity.TmdbId > 0 => "tmdb:" + identity.TmdbId,
+                MetadataSourceType.Tmdb when identity.MediaType != MediaType.Movie && identity.TmdbId > 0 => "tmdb:" + identity.TmdbId,
                 MetadataSourceType.AniList when aniList > 0 => "anilist:" + aniList,
                 MetadataSourceType.AniList when mal > 0 => "anilist:mal:" + mal,
                 MetadataSourceType.MyAnimeList when mal > 0 => "jikan:" + mal,

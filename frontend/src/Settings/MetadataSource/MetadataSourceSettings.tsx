@@ -54,6 +54,10 @@ function MetadataSourceSettings() {
     },
     [updateSetting]
   );
+  const handleOmdbApiKeyChange = useCallback(
+    ({ value }: InputChanged<string>) => updateSetting('omdbApiKey', value),
+    [updateSetting]
+  );
 
   const handleOrderChange = useCallback(
     (value: MetadataSource[]) => updateSetting('metadataSourceOrder', value),
@@ -128,10 +132,26 @@ function MetadataSourceSettings() {
                   />
                 </FormRow>
               </FieldSet>
+              <FieldSet legend="OMDb">
+                <FormRow>
+                  <FormLabel>{translate('OmdbApiKey')}</FormLabel>
+                  <FormInputHelpText
+                    text={translate('OmdbApiKeyHelpText')}
+                    link="https://www.omdbapi.com/apikey.aspx"
+                  />
+                  <FormInput
+                    type={inputTypes.PASSWORD}
+                    name="omdbApiKey"
+                    onChange={handleOmdbApiKeyChange}
+                    {...settings.omdbApiKey}
+                  />
+                </FormRow>
+              </FieldSet>
               <Sources
                 order={settings.metadataSourceOrder.value}
                 disabled={settings.disabledMetadataSources.value}
                 hasTmdbKey={settings.tmdbApiKeyConfigured.value}
+                hasOmdbKey={settings.omdbApiKeyConfigured?.value ?? false}
                 onOrderChange={handleOrderChange}
                 onDisabledChange={handleDisabledChange}
               />

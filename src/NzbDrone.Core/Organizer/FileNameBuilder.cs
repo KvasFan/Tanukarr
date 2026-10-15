@@ -189,6 +189,12 @@ namespace NzbDrone.Core.Organizer
                 pattern = namingConfig.AnimeEpisodeFormat;
             }
 
+            if (series.MediaType == MediaType.Movie &&
+                series.MetadataSource is MetadataSourceType.TmdbMovie or MetadataSourceType.Omdb)
+            {
+                pattern = namingConfig.MovieFormat ?? NamingConfig.Default.MovieFormat;
+            }
+
             var splitPatterns = pattern.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
             var components = new List<string>();
 
@@ -351,6 +357,16 @@ namespace NzbDrone.Core.Organizer
         public string GetAnimeGroupMemberFolder(Series series, NamingConfig namingConfig = null)
         {
             namingConfig ??= _namingConfigService.GetConfig();
+            if (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Special)
+            {
+                if (series.AnimeGroupSpecialNumber is not > 0)
+                {
+                    throw new NamingFormatException("Assign a special member number before generating its directory.");
+                }
+
+                return AnimeGroupingService.CreateGroupFolder($"Special {series.AnimeGroupSpecialNumber:00} - {series.Title}");
+            }
+
             if (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Season)
             {
                 var useArc = series.AnimeGroupMovieFolderStyle == AnimeGroupMovieFolderStyle.Title ||
@@ -863,7 +879,7 @@ namespace NzbDrone.Core.Organizer
 
         private static string GetPlexId(Series series)
         {
-            if (series.MetadataSource == MetadataSourceType.Tmdb && series.TmdbId > 0)
+            if (series.MetadataSource is MetadataSourceType.Tmdb or MetadataSourceType.TmdbMovie && series.TmdbId > 0)
             {
                 return $"{{tmdb-{series.TmdbId}}}";
             }

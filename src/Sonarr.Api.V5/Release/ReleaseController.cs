@@ -102,10 +102,18 @@ public class ReleaseController : RestController<ReleaseResource>
             throw new NzbDroneClientException(HttpStatusCode.NotFound, "Couldn't find requested release in cache, try searching again");
         }
 
-        if (release.SearchInfo?.CompleteSeries == true &&
-            !CompleteSeriesReleaseParser.HasMappedSeasonCoverage(remoteEpisode, release.SearchInfo.SeriesId.GetValueOrDefault()))
+        if (release.SearchInfo?.CompleteSeries == true)
         {
-            throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
+            var verified = remoteEpisode.Series?.MediaType == MediaType.Movie
+                ? MovieReleaseParser.HasMappedFeatureCoverage(
+                    remoteEpisode,
+                    release.SearchInfo.SeriesId.GetValueOrDefault(),
+                    remoteEpisode.ParsedEpisodeInfo is { IsMovieCollectionPack: true } ? _seriesService.GetAllSeries() : null)
+                : CompleteSeriesReleaseParser.HasMappedSeasonCoverage(remoteEpisode, release.SearchInfo.SeriesId.GetValueOrDefault());
+            if (!verified)
+            {
+                throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
+            }
         }
 
         try

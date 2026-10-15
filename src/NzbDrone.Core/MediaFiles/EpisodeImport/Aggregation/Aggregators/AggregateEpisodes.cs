@@ -14,16 +14,34 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Aggregation.Aggregators
 
         private readonly IParsingService _parsingService;
         private readonly IEpisodeNumberingResolver _numberingResolver;
+        private readonly IMovieFileIdentityService _movieFileIdentity;
 
-        public AggregateEpisodes(IParsingService parsingService, IEpisodeNumberingResolver numberingResolver)
+        public AggregateEpisodes(IParsingService parsingService, IEpisodeNumberingResolver numberingResolver, IMovieFileIdentityService movieFileIdentity)
         {
             _parsingService = parsingService;
             _numberingResolver = numberingResolver;
+            _movieFileIdentity = movieFileIdentity;
         }
 
         public LocalEpisode Aggregate(LocalEpisode localEpisode, DownloadClientItem downloadClientItem)
         {
             localEpisode.VerifiedNumbering = null;
+            if (localEpisode.Series.MediaType == MediaType.Movie)
+            {
+                var persistedEpisodes = _movieFileIdentity.GetPersistedEpisodes(localEpisode);
+                if (persistedEpisodes?.Count == 1)
+                {
+                    localEpisode.Episodes = persistedEpisodes;
+                    localEpisode.NumberingRejection = null;
+                    return localEpisode;
+                }
+
+                var parsedMovie = MovieReleaseParser.Match(localEpisode.Path, localEpisode.Series);
+                localEpisode.Episodes = parsedMovie == null ? new List<Episode>() : _parsingService.GetEpisodes(parsedMovie, localEpisode.Series, false);
+                localEpisode.NumberingRejection = localEpisode.Episodes.Count == 1 ? null : "Unable to identify exactly one native movie feature from the physical filename.";
+                return localEpisode;
+            }
+
             if (localEpisode.SceneSource && !localEpisode.ExistingFile && localEpisode.Series.UseSceneNumbering)
             {
                 // Aggregation catches exceptions; retain a rejection if verification fails.

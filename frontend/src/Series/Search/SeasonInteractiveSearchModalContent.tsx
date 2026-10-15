@@ -10,6 +10,7 @@ import InteractiveSearch from 'InteractiveSearch/InteractiveSearch';
 import InteractiveSearchPayload from 'InteractiveSearch/InteractiveSearchPayload';
 import { useClearReleasesOnUnmount } from 'InteractiveSearch/useReleases';
 import formatSeason from 'Season/formatSeason';
+import { MediaType } from 'Series/Series';
 import translate from 'Utilities/String/translate';
 import styles from './SeasonInteractiveSearchModalContent.module.css';
 
@@ -20,6 +21,7 @@ export interface SeasonInteractiveSearchModalContentProps {
   displaySeasonNumber?: number;
   seasonPacksOnly?: true;
   initialSelectedFilterKey?: SelectedFilterKey;
+  mediaType?: MediaType;
   onModalClose(): void;
 }
 
@@ -30,6 +32,7 @@ function SeasonInteractiveSearchModalContent({
   displaySeasonNumber = seasonNumber,
   seasonPacksOnly,
   initialSelectedFilterKey,
+  mediaType = 'series',
   onModalClose,
 }: SeasonInteractiveSearchModalContentProps) {
   const searchPayload: InteractiveSearchPayload = {
@@ -39,16 +42,18 @@ function SeasonInteractiveSearchModalContent({
   };
   useClearReleasesOnUnmount(searchPayload);
   const modalBodyRef = useRef<HTMLDivElement>(null);
+  let header =
+    seasonNumber === null
+      ? translate('InteractiveSearchModalHeader')
+      : translate('InteractiveSearchModalHeaderSeason', {
+          season: formatSeason(displaySeasonNumber) as string,
+        });
+  if (mediaType !== 'series')
+    header = translate(mediaType === 'movie' ? 'SearchMovie' : 'SearchSpecial');
 
   return (
     <ModalContent onModalClose={onModalClose}>
-      <ModalHeader className={styles.modalHeader}>
-        {seasonNumber === null
-          ? translate('InteractiveSearchModalHeader')
-          : translate('InteractiveSearchModalHeaderSeason', {
-              season: formatSeason(displaySeasonNumber) as string,
-            })}
-      </ModalHeader>
+      <ModalHeader className={styles.modalHeader}>{header}</ModalHeader>
 
       <ModalBody ref={modalBodyRef} innerClassName={styles.modalBody}>
         {seasonPacksOnly ? (
@@ -58,15 +63,20 @@ function SeasonInteractiveSearchModalContent({
           type="season"
           searchPayload={searchPayload}
           scrollerRef={modalBodyRef}
-          initialSelectedFilterKey={initialSelectedFilterKey}
+          initialSelectedFilterKey={
+            initialSelectedFilterKey ??
+            (mediaType === 'series' ? undefined : 'all')
+          }
         />
       </ModalBody>
 
       <ModalFooter className={styles.modalFooter}>
         <div>
-          {translate('EpisodesInSeason', {
-            episodeCount,
-          })}
+          {mediaType === 'movie'
+            ? translate('Movie')
+            : translate('EpisodesInSeason', {
+                episodeCount,
+              })}
         </div>
 
         <Button onPress={onModalClose}>{translate('Close')}</Button>

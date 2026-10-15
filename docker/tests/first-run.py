@@ -41,6 +41,7 @@ class FirstRun(functional.FunctionalSecurity):
 
         payload = {"ownedFixture": True, "baseUrl": self.base_url, "imageId": self.image_id,
                    "username": self.username, "password": self.password,
+                   "apiKey": self.api_key,
                    "playwrightModule": self.args.playwright_module, "playwrightVersion": self.args.playwright_version,
                    "artifactDirectory": browser_path(artifacts)}
         result = subprocess.run([self.args.browser_node, browser_path(TESTS / "first-run-browser.cjs")],

@@ -36,6 +36,18 @@ export const metadataSources: {
     url: 'https://www.tvmaze.com/api',
     description: 'MetadataSourceTvMazeDescription',
   },
+  {
+    key: 'tmdbMovie',
+    value: 'TMDB Movies',
+    url: 'https://www.themoviedb.org/movie',
+    description: 'MetadataSourceTmdbMovieDescription',
+  },
+  {
+    key: 'omdb',
+    value: 'OMDb (IMDb IDs)',
+    url: 'https://www.omdbapi.com',
+    description: 'MetadataSourceOmdbDescription',
+  },
 ];
 
 export function orderedMetadataSources(

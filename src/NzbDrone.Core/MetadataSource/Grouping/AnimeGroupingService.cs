@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.MetadataSource.Tmdb;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Tv;
 
@@ -27,13 +28,15 @@ namespace NzbDrone.Core.MetadataSource.Grouping
         private static readonly Regex ReservedFolderRegex = new Regex(@"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IAnimeRelationProvider[] _providers;
+        private readonly IMovieCollectionProvider[] _movieProviders;
         private readonly ISeriesService _seriesService;
         private readonly IBuildFileNames _fileNameBuilder;
         private readonly Logger _logger;
 
-        public AnimeGroupingService(IEnumerable<IAnimeRelationProvider> providers, ISeriesService seriesService, IBuildFileNames fileNameBuilder, Logger logger)
+        public AnimeGroupingService(IEnumerable<IAnimeRelationProvider> providers, ISeriesService seriesService, IBuildFileNames fileNameBuilder, Logger logger, IEnumerable<IMovieCollectionProvider> movieProviders = null)
         {
             _providers = providers.ToArray();
+            _movieProviders = movieProviders?.ToArray() ?? Array.Empty<IMovieCollectionProvider>();
             _seriesService = seriesService;
             _fileNameBuilder = fileNameBuilder;
             _logger = logger;
@@ -88,6 +91,20 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                 return WithFolders(series, FromSeries(series, AnimeGroupingStatus.Existing), _seriesService.GetAllSeries() ?? new List<Series>());
             }
 
+            if (series.MediaType == MediaType.Movie && _movieProviders.FirstOrDefault(candidate => candidate.Source == series.MetadataSource) is { } movieProvider)
+            {
+                try
+                {
+                    var movieGroup = movieProvider.GetMovieCollection(series);
+                    return movieGroup.IsResolved ? WithFolders(series, movieGroup, _seriesService.GetAllSeries() ?? new List<Series>()) : movieGroup;
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Optional movie collection lookup failed ({0}); existing membership is retained", ex.GetType().Name);
+                    return Result(series, AnimeGroupingStatus.Unavailable);
+                }
+            }
+
             var provider = _providers.FirstOrDefault(p => p.Source == series.MetadataSource);
 
             if (provider == null ||
@@ -123,6 +140,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                 series.AnimeGroupSeasonNumber = null;
                 series.AnimeGroupFolder = null;
                 series.AnimeGroupMovieNumber = null;
+                series.AnimeGroupSpecialNumber = null;
                 series.AnimeGroupMemberFolder = null;
             }
             else if (result.IsResolved)
@@ -135,6 +153,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                 series.AnimeGroupKind = result.AnimeGroupKind;
                 series.AnimeGroupMovieFolderStyle = result.AnimeGroupMovieFolderStyle;
                 series.AnimeGroupMovieNumber = result.AnimeGroupMovieNumber;
+                series.AnimeGroupSpecialNumber = result.AnimeGroupSpecialNumber;
                 series.AnimeGroupMemberFolder = result.AnimeGroupMemberFolder;
             }
         }
@@ -144,10 +163,9 @@ namespace NzbDrone.Core.MetadataSource.Grouping
             return IsValidGroupId(series.AnimeGroupId) && IsValidGroupTitle(series.AnimeGroupTitle) &&
                    Enum.IsDefined(series.AnimeGroupMemberKind) && Enum.IsDefined(series.AnimeGroupKind) &&
                    Enum.IsDefined(series.AnimeGroupMovieFolderStyle) &&
-                   (series.AnimeGroupMemberKind != AnimeGroupMemberKind.Season || series.AnimeGroupKind != AnimeGroupKind.MovieSaga) &&
-                   (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie
-                       ? series.AnimeGroupMovieNumber is >= 1 and <= MaxSeasonNumber && series.AnimeGroupSeasonNumber == null
-                       : series.AnimeGroupSeasonNumber is >= 1 and <= MaxSeasonNumber && series.AnimeGroupMovieNumber == null);
+                   (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie || series.AnimeGroupKind != AnimeGroupKind.MovieSaga) &&
+                   AnimeGroupingValidator.MemberNumber(series) is >= 1 and <= MaxSeasonNumber &&
+                   new[] { series.AnimeGroupSeasonNumber, series.AnimeGroupMovieNumber, series.AnimeGroupSpecialNumber }.Count(value => value.HasValue) == 1;
         }
 
         internal static AnimeGroupingResult FromSeries(Series series, AnimeGroupingStatus status)
@@ -164,6 +182,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                 AnimeGroupKind = series.AnimeGroupKind,
                 AnimeGroupMovieFolderStyle = series.AnimeGroupMovieFolderStyle,
                 AnimeGroupMovieNumber = series.AnimeGroupMovieNumber,
+                AnimeGroupSpecialNumber = series.AnimeGroupSpecialNumber,
                 AnimeGroupMemberFolder = series.AnimeGroupMemberFolder
             };
         }
@@ -207,6 +226,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
                 AnimeGroupMemberKind = result.AnimeGroupMemberKind,
                 AnimeGroupSeasonNumber = result.AnimeGroupSeasonNumber,
                 AnimeGroupMovieNumber = result.AnimeGroupMovieNumber,
+                AnimeGroupSpecialNumber = result.AnimeGroupSpecialNumber,
                 AnimeGroupMovieFolderStyle = result.AnimeGroupMovieFolderStyle
             };
 

@@ -124,6 +124,10 @@ function Naming({ setChildSave, onChildStateChange }: NamingProps) {
       additional: true,
     });
   }, [setNamingModalOpen, setNamingModalOptions]);
+  const handleMovieNamingModalOpenClick = useCallback(() => {
+    setNamingModalOpen();
+    setNamingModalOptions({ name: 'movieFormat', additional: true });
+  }, [setNamingModalOpen, setNamingModalOptions]);
 
   const handleSeriesFolderNamingModalOpenClick = useCallback(() => {
     setNamingModalOpen();
@@ -472,6 +476,30 @@ function Naming({ setChildSave, onChildStateChange }: NamingProps) {
               </FormRow>
             </>
           ) : null}
+
+          <FormRow size={sizes.LARGE}>
+            <FormLabel>{translate('MovieFormat')}</FormLabel>
+            <FormInputHelpText text={translate('MovieFormatHelpText')} />
+            <FormInputHelpText
+              text={
+                examples?.movieExample
+                  ? `${translate('Example')}: ${examples.movieExample}`
+                  : undefined
+              }
+            />
+            <FormInput
+              inputClassName={styles.namingInput}
+              type={inputTypes.TEXT}
+              name="movieFormat"
+              buttons={
+                <FormInputButton onPress={handleMovieNamingModalOpenClick}>
+                  ?
+                </FormInputButton>
+              }
+              onChange={handleInputChange}
+              {...settings.movieFormat}
+            />
+          </FormRow>
 
           <FormRow
             advancedSettings={advancedSettings}

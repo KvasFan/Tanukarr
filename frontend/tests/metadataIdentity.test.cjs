@@ -70,3 +70,11 @@ test('provider links reject injected/invalid foreign IDs and preserve IMDb title
   assert.equal(provider({ metadataSource: 'imdb', foreignId: 'tt1234' }).url, 'https://www.imdb.com/title/tt1234/');
   assert.equal(provider({ metadataSource: 'imdb', foreignId: 'tt1234/../' }).url, undefined);
 });
+
+test('TMDB movie and TV namespaces remain distinct while OMDb retains its IMDb identity', () => {
+  assert.equal(sameSeries({ metadataSource: 'tmdbMovie', foreignId: '42' }, { metadataSource: 'tmdb', foreignId: '42' }), false);
+  assert.deepEqual(provider({ metadataSource: 'tmdbMovie', foreignId: '42', tvdbId: -42 }), { name: 'TMDB Movies', externalId: '42', url: 'https://www.themoviedb.org/movie/42' });
+  assert.deepEqual(provider({ metadataSource: 'omdb', foreignId: 'tt0245429', tvdbId: -42 }), { name: 'OMDb', externalId: 'tt0245429', url: 'https://www.imdb.com/title/tt0245429/' });
+  assert.equal(provider({ metadataSource: 'omdb', foreignId: '42' }).url, undefined);
+  assert.equal(provider({ metadataSource: 'tmdbMovie', foreignId: '../42' }).url, undefined);
+});

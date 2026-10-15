@@ -84,10 +84,18 @@ namespace Sonarr.Api.V3.Indexers
                 throw new NzbDroneClientException(HttpStatusCode.NotFound, "Couldn't find requested release in cache, try searching again");
             }
 
-            if (release.CompleteSeries &&
-                !CompleteSeriesReleaseParser.HasMappedSeasonCoverage(remoteEpisode, release.SeriesId.Value))
+            if (release.CompleteSeries)
             {
-                throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
+                var verified = remoteEpisode.Series?.MediaType == MediaType.Movie
+                    ? MovieReleaseParser.HasMappedFeatureCoverage(
+                        remoteEpisode,
+                        release.SeriesId.Value,
+                        remoteEpisode.ParsedEpisodeInfo is { IsMovieCollectionPack: true } ? _seriesService.GetAllSeries() : null)
+                    : CompleteSeriesReleaseParser.HasMappedSeasonCoverage(remoteEpisode, release.SeriesId.Value);
+                if (!verified)
+                {
+                    throw new NzbDroneClientException(HttpStatusCode.BadRequest, "The cached release does not match the complete-series search; search again.");
+                }
             }
 
             try

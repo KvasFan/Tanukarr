@@ -45,6 +45,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         private readonly IDownloadHistoryService _downloadHistoryService;
         private readonly IRemoteEpisodeAggregationService _aggregationService;
         private readonly ICustomFormatCalculationService _formatCalculator;
+        private readonly IMovieGrabContextService _movieGrabContext;
         private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
 
@@ -58,6 +59,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                                       IDownloadHistoryService downloadHistoryService,
                                       IRemoteEpisodeAggregationService aggregationService,
                                       ICustomFormatCalculationService formatCalculator,
+                                      IMovieGrabContextService movieGrabContext,
                                       IEventAggregator eventAggregator,
                                       ICacheManager cacheManager,
                                       Logger logger)
@@ -70,6 +72,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             _downloadHistoryService = downloadHistoryService;
             _aggregationService = aggregationService;
             _formatCalculator = formatCalculator;
+            _movieGrabContext = movieGrabContext;
             _eventAggregator = eventAggregator;
             _logger = logger;
 
@@ -179,7 +182,8 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                     {
                         // Try parsing the original source title and if that fails, try parsing it as a special
                         // TODO: Pass the TVDB ID and TVRage IDs in as well so we have a better chance for finding the item
-                        parsedEpisodeInfo = Parser.Parser.ParseTitle(sourceHistoryItem.SourceTitle) ??
+                        parsedEpisodeInfo = _movieGrabContext.GetContext(downloadItem.DownloadId)?.ParsedEpisodeInfo ??
+                                            Parser.Parser.ParseTitle(sourceHistoryItem.SourceTitle) ??
                                             _parsingService.ParseSpecialEpisodeTitle(parsedEpisodeInfo, sourceHistoryItem.SourceTitle, 0, 0, null) ??
                                             ParseCompleteSeriesGrab(historyItems) ?? parsedEpisodeInfo;
 
@@ -347,7 +351,8 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             var oldRelease = trackedDownload.RemoteEpisode?.Release;
             if (grab != null)
             {
-                parsedEpisodeInfo = Parser.Parser.ParseTitle(grab.SourceTitle) ??
+                parsedEpisodeInfo = _movieGrabContext.GetContext(trackedDownload.DownloadItem.DownloadId)?.ParsedEpisodeInfo ??
+                    Parser.Parser.ParseTitle(grab.SourceTitle) ??
                     _parsingService.ParseSpecialEpisodeTitle(parsedEpisodeInfo, grab.SourceTitle, 0, 0, null) ??
                     ParseCompleteSeriesGrab(history);
                 var grabbedEpisodeIds = history.Where(h => h.EventType == EpisodeHistoryEventType.Grabbed && h.SeriesId == grab.SeriesId)

@@ -182,6 +182,12 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("EnableFakeReleaseProtection", value); }
         }
 
+        public string OmdbApiKey
+        {
+            get { return GetValue("OmdbApiKey", string.Empty); }
+            set { SetValue("OmdbApiKey", value); }
+        }
+
         public string TmdbApiKey
         {
             get { return GetValue("TmdbApiKey", string.Empty); }
@@ -543,7 +549,7 @@ namespace NzbDrone.Core.Configuration
                 return dbValue;
             }
 
-            _logger.Trace("Using default config value for '{0}' defaultValue:'{1}'", key, defaultValue);
+            _logger.Trace("Using default config value for '{0}'", key);
 
             if (persist)
             {
@@ -577,7 +583,7 @@ namespace NzbDrone.Core.Configuration
         {
             key = key.ToLowerInvariant();
 
-            _logger.Trace("Writing Setting to database. Key:'{0}' Value:'{1}'", key, value);
+            _logger.Trace("Writing Setting to database. Key:'{0}'", key);
             _repository.Upsert(key, value);
 
             ClearCache();

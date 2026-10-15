@@ -10,6 +10,7 @@ namespace Sonarr.Api.V3.Config
         public string CustomColonReplacementFormat { get; set; }
         public int MultiEpisodeStyle { get; set; }
         public string StandardEpisodeFormat { get; set; }
+        public string MovieFormat { get; set; }
         public string DailyEpisodeFormat { get; set; }
         public string AnimeEpisodeFormat { get; set; }
         public string SeriesFolderFormat { get; set; }

@@ -6,7 +6,7 @@ using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Core.Test.Framework;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 
 namespace NzbDrone.Core.Test.MediaCoverTests
 {
@@ -47,7 +47,7 @@ namespace NzbDrone.Core.Test.MediaCoverTests
             fileInfo.Length.Should().BeGreaterThan(0);
             fileInfo.Length.Should().BeLessThan(new FileInfo(mainFile).Length);
 
-            using (var image = Image.Load(resizedFile))
+            using (var image = SKBitmap.Decode(resizedFile))
             {
                 image.Height.Should().Be(170);
                 image.Width.Should().Be(170);

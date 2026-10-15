@@ -44,9 +44,9 @@ const common = {
 function searchFixture(initial = {}) {
   const requests = [];
   const clears = [];
-  function InteractiveSearch({ searchPayload }) {
+  function InteractiveSearch({ searchPayload, initialSelectedFilterKey }) {
     React.useEffect(() => { requests.push(searchPayload); }, []);
-    return React.createElement('output', { 'data-search': JSON.stringify(searchPayload) });
+    return React.createElement('output', { 'data-search': JSON.stringify(searchPayload), 'data-filter': initialSelectedFilterKey });
   }
   const searchMocks = {
     ...common,
@@ -113,11 +113,47 @@ test('complete-series search remains a read-only release query with the complete
   TestRenderer.act(() => { renderer.unmount(); fixture.renderer.unmount(); });
 });
 
+for (const mediaType of ['movie', 'special']) {
+  test(`${mediaType} search uses the native catalogue entry without TV pack criteria`, () => {
+    const fixture = searchFixture({ mediaType });
+    const { renderer, requests, clears } = fixture;
+    const label = mediaType === 'movie' ? 'SearchMovie' : 'SearchSpecial';
+    assert.match(renderer.root.findByType('button').children.join(''), new RegExp(label));
+    TestRenderer.act(() => renderer.root.findByType('button').props.onClick());
+    assert.deepEqual(requests, [{ seriesId: 42, seasonNumber: 1 }]);
+    assert.equal(renderer.root.findByType('output').props['data-filter'], 'all', 'a saved TV season-pack filter cannot hide a feature or special');
+    assert.deepEqual(clears.at(-1), requests[0]);
+    assert.match(JSON.stringify(renderer.toJSON()), new RegExp(label));
+    assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /SearchSeasonPacksHelpText|InteractiveSearchModalHeaderSeason/);
+    TestRenderer.act(() => renderer.unmount());
+  });
+
+  test(`${mediaType} primary search queries native files and reveals unnumbered results`, () => {
+    const fixture = searchFixture();
+    const Content = loadSource('Series/Search/CompleteSeriesSearchModalContent.tsx', fixture.searchMocks).default;
+    let renderer;
+    TestRenderer.act(() => { renderer = TestRenderer.create(React.createElement(Content, { seriesId: 91, mediaType, onModalClose: () => undefined })); });
+    assert.deepEqual(fixture.requests, [{ seriesId: 91, seasonNumber: 1 }]);
+    assert.equal(renderer.root.findByType('output').props['data-filter'], 'all');
+    assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /SearchCompleteSeriesHelpText/);
+    TestRenderer.act(() => { renderer.unmount(); fixture.renderer.unmount(); });
+  });
+}
+
+test('a caller-specific movie filter takes precedence without rewriting the TV season preference', () => {
+  const fixture = searchFixture();
+  let renderer;
+  TestRenderer.act(() => { renderer = TestRenderer.create(React.createElement(fixture.Content, { seriesId: 77, seasonNumber: 1, episodeCount: 1, mediaType: 'movie', initialSelectedFilterKey: 7, onModalClose: () => undefined })); });
+  assert.equal(renderer.root.findByType('output').props['data-filter'], 7);
+  assert.deepEqual(fixture.requests, [{ seriesId: 77, seasonNumber: 1 }]);
+  TestRenderer.act(() => { renderer.unmount(); fixture.renderer.unmount(); });
+});
+
 function namingFixture() {
   const updates = [];
   const defaults = {
     renameEpisodes: true, replaceIllegalCharacters: false, colonReplacementFormat: 0, customColonReplacementFormat: '', multiEpisodeStyle: 0,
-    standardEpisodeFormat: '{Series Title} S{season:00}E{episode:00}', dailyEpisodeFormat: '{Series Title} {Air-Date}', animeEpisodeFormat: '{Series Title} {absolute:000}',
+    standardEpisodeFormat: '{Series Title} S{season:00}E{episode:00}', movieFormat: '{Series Title} ({Series Year}) {Quality Full}', dailyEpisodeFormat: '{Series Title} {Air-Date}', animeEpisodeFormat: '{Series Title} {absolute:000}',
     seriesFolderFormat: '{Series Title}', seasonFolderFormat: 'Season {season:00}', specialsFolderFormat: 'Specials',
     animeGroupFolderFormat: '{Group Title}', animeGroupSeasonFolderFormat: 'Season {Group Season:00}', animeGroupArcFolderFormat: '{Group Arc Title}', animeGroupMovieFolderFormat: '{Series Title}', animeGroupMovieSagaFolderFormat: 'Film {Group Movie:00}'
   };
@@ -158,7 +194,7 @@ function namingFixture() {
         const updateSetting = React.useCallback((name, value) => { updates.push({ name, value }); setValues((old) => ({ ...old, [name]: value })); }, []);
         return { settings: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value, errors: [], warnings: [] }])), updateSetting, isFetching: false, error: null, hasSettings: true, hasPendingChanges: false, isSaving: false, saveSettings };
       },
-      useNamingExamples: () => ({ examples: { singleEpisodeExample: 'Native S01E01', multiEpisodeExample: 'Native S01E01-E02', dailyEpisodeExample: 'Native 2026-10-13', animeEpisodeExample: 'Native 001', animeMultiEpisodeExample: 'Native 001-002', seriesFolderExample: 'Native', seasonFolderExample: 'Season 01', specialsFolderExample: 'Specials', animeGroupFolderExample: 'Group', animeGroupSeasonFolderExample: 'Season 02', animeGroupArcFolderExample: 'War Of Three Titans Arc', animeGroupMovieFolderExample: 'Movie title', animeGroupMovieSagaFolderExample: 'Film 01', animeGroupMovieEpisodeExample: 'Group Film 01 Native episode 001' } })
+      useNamingExamples: () => ({ examples: { singleEpisodeExample: 'Native S01E01', movieExample: 'Native Movie (2024) WEB-DL-1080p', multiEpisodeExample: 'Native S01E01-E02', dailyEpisodeExample: 'Native 2026-10-13', animeEpisodeExample: 'Native 001', animeMultiEpisodeExample: 'Native 001-002', seriesFolderExample: 'Native', seasonFolderExample: 'Season 01', specialsFolderExample: 'Specials', animeGroupFolderExample: 'Group', animeGroupSeasonFolderExample: 'Season 02', animeGroupArcFolderExample: 'War Of Three Titans Arc', animeGroupMovieFolderExample: 'Movie title', animeGroupMovieSagaFolderExample: 'Film 01', animeGroupMovieEpisodeExample: 'Group Film 01 Native episode 001' } })
     },
     './Naming.module.css': {}
   }).default;
@@ -180,6 +216,27 @@ test('all five group folder formats retain distinct settings, examples and edita
     TestRenderer.act(() => renderer.root.findAllByType('button').at(-1).props.onClick());
   }
   assert.match(JSON.stringify(renderer.toJSON()), /Group Film 01 Native episode 001/);
+  TestRenderer.act(() => renderer.unmount());
+});
+
+test('movie naming exposes year and quality tokens without episode numbering', () => {
+  const { renderer, defaults, updates } = namingFixture();
+  const input = renderer.root.findByProps({ 'data-input': 'movieFormat' });
+  assert.equal(input.props['data-value'], defaults.movieFormat);
+  assert.match(JSON.stringify(renderer.toJSON()), /Native Movie \(2024\) WEB-DL-1080p/);
+  TestRenderer.act(() => input.findByType('button').props.onClick());
+  assert.equal(renderer.root.findByType('textarea').props.name, 'movieFormat');
+  const tokens = renderer.root.findByType('aside').findAllByType('div')
+    .filter((item) => item.children.length === 1 && typeof item.children[0] === 'string' && item.children[0].startsWith('{'))
+    .map((item) => item.children[0]);
+  for (const expected of ['{Series Title}', '{Series Year}', '{Quality Full}']) {
+    assert.ok(tokens.includes(expected), `movie naming exposes ${expected}`);
+  }
+  assert.ok(tokens.every((token) => !/season|episode|absolute/i.test(token)), 'movie files do not offer misleading native episode tokens');
+  const preset = renderer.root.findAllByType('button').find((item) => item.findAllByType('div').some((element) => element.children[0] === '{Series Title} ({Series Year}) {Quality Full}'));
+  assert.ok(preset);
+  TestRenderer.act(() => preset.props.onClick());
+  assert.deepEqual(updates.at(-1), { name: 'movieFormat', value: defaults.movieFormat });
   TestRenderer.act(() => renderer.unmount());
 });
 

@@ -11,6 +11,7 @@ import ModalHeader from 'Components/Modal/ModalHeader';
 import { kinds, sizes } from 'Helpers/Props';
 import InteractiveSearch from 'InteractiveSearch/InteractiveSearch';
 import { Release } from 'InteractiveSearch/useReleases';
+import getMediaType from 'Series/getMediaType';
 import { InputChanged } from 'typings/inputs';
 import fetchJson from 'Utilities/Fetch/fetchJson';
 import getQueryPath from 'Utilities/Fetch/getQueryPath';
@@ -47,7 +48,17 @@ function CollectionSearchContent({
               0) > 0
         )
       )
-      .map((member) => ({ seriesId: member.id, title: member.title }))
+      .map((member, index, members) => ({
+        seriesId: member.id,
+        title: member.title,
+        payload:
+          getMediaType(member) === 'series' ||
+          (getMediaType(member) === 'movie' &&
+            members.findIndex((item) => getMediaType(item) === 'movie') ===
+              index)
+            ? { seriesId: member.id, completeSeries: true as const }
+            : { seriesId: member.id, seasonNumber: 1 },
+      }))
   ).current;
   const [statuses, setStatuses] = useState<SearchStatus[]>(() =>
     jobs.map((job) => ({ ...job, state: 'pending', count: 0 }))
@@ -80,10 +91,7 @@ function CollectionSearchContent({
           break;
         }
 
-        const payload = {
-          seriesId: job.seriesId,
-          completeSeries: true as const,
-        };
+        const payload = job.payload;
         update(job.seriesId, 'searching');
 
         try {
@@ -116,10 +124,7 @@ function CollectionSearchContent({
       controller.abort();
       jobs.forEach((job) =>
         queryClient.removeQueries({
-          queryKey: [
-            '/release',
-            { seriesId: job.seriesId, completeSeries: true },
-          ],
+          queryKey: ['/release', job.payload],
           exact: true,
         })
       );
@@ -134,6 +139,7 @@ function CollectionSearchContent({
   const selectedStatus = statuses.find(
     (status) => status.seriesId === selectedId
   );
+  const selectedJob = jobs.find((job) => job.seriesId === selectedId);
 
   useEffect(() => {
     if (selectedStatus?.state === 'failed') {
@@ -183,7 +189,7 @@ function CollectionSearchContent({
           <InteractiveSearch
             key={selectedId}
             type="series"
-            searchPayload={{ seriesId: selectedId, completeSeries: true }}
+            searchPayload={selectedJob!.payload}
             scrollerRef={bodyRef}
             initialSelectedFilterKey="all"
           />

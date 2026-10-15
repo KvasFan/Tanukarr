@@ -268,5 +268,37 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
             Mocker.GetMock<ISceneMappingService>()
                 .Verify(s => s.GetSceneNames(It.IsAny<int>(), It.IsAny<List<int>>(), It.IsAny<List<int>>()), Times.Never());
         }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void should_preserve_verified_movie_context_before_legacy_numeric_title_parsing_and_after_edits(bool edit)
+        {
+            const string title = "Generated Feature Collection.2019-2021.720p.WEB-DL.H264-Fixture";
+            _series.MediaType = MediaType.Movie;
+            _series.MetadataSource = MetadataSourceType.TmdbMovie;
+            _series.ForeignId = "970001";
+            _series.TvdbId = -1;
+            _episodes = _episodes.Take(1).ToList();
+            _history = _history.Take(1).ToList();
+            _history[0].SourceTitle = title;
+            _item.Title = title;
+            var parsed = new ParsedEpisodeInfo
+            {
+                IsMovie = true, IsMovieCollectionPack = true, MovieCollectionId = "manual:feature-collection",
+                ReleaseTitle = title, SeasonNumber = 1, EpisodeNumbers = new[] { 1 }
+            };
+            Mocker.GetMock<IMovieGrabContextService>().Setup(service => service.GetContext(_item.DownloadId))
+                .Returns(new MovieGrabContext { Series = _series, ParsedEpisodeInfo = parsed });
+            var tracked = Subject.TrackDownload(_client, _item);
+            if (edit)
+            {
+                tracked.State = TrackedDownloadState.ImportPending;
+                Subject.Handle(new SeriesEditedEvent(_series, _series));
+            }
+
+            tracked.RemoteEpisode.ParsedEpisodeInfo.Should().BeSameAs(parsed);
+            tracked.RemoteEpisode.Series.ForeignId.Should().Be("970001");
+            tracked.RemoteEpisode.Episodes.Should().ContainSingle(episode => episode.SeriesId == 93 && episode.SeasonNumber == 1 && episode.EpisodeNumber == 1);
+        }
     }
 }

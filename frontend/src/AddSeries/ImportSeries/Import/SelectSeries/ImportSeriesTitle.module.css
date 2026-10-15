@@ -7,9 +7,11 @@
 }
 
 .title {
-  @add-mixin truncate;
-
+  overflow: hidden;
+  max-width: 100%;
   color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .year {
@@ -24,4 +26,21 @@
   flex-shrink: 0;
   margin-left: 4px;
   color: var(--inkMuted);
+}
+
+@media (--breakpointSmall) {
+  .titleContainer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .title {
+    overflow-wrap: anywhere;
+
+    white-space: normal;
+  }
+
+  .year {
+    margin-left: 0;
+  }
 }

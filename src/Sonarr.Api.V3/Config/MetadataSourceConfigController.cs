@@ -19,6 +19,11 @@ namespace Sonarr.Api.V3.Config
         public override ActionResult<MetadataSourceConfigResource> SaveConfig([FromBody] MetadataSourceConfigResource resource)
         {
             MetadataSourcePolicy.Save(_configService, resource.MetadataSourceOrder, resource.DisabledMetadataSources);
+            if (resource.OmdbApiKey != null && resource.OmdbApiKey != "********")
+            {
+                _configService.OmdbApiKey = resource.OmdbApiKey.Trim();
+            }
+
             if (resource.TmdbApiKey != null && resource.TmdbApiKey != "********")
             {
                 _configService.TmdbApiKey = resource.TmdbApiKey.Trim();

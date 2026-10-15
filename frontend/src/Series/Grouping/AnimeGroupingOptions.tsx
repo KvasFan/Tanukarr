@@ -17,6 +17,7 @@ import { InputChanged } from 'typings/inputs';
 import translate from 'Utilities/String/translate';
 import {
   createManualGroupId,
+  getAnimeGroupMemberNumber,
   getAvailableGroupMemberNumber,
   groupAnimeSeries,
   hasAnimeGroup,
@@ -31,6 +32,41 @@ interface AnimeGroupingOptionsProps {
   isEditing?: boolean;
   onChange: (value: AnimeGroupingFields) => void;
 }
+
+function memberNumbers(kind: AnimeGroupMemberKind, number: number | null) {
+  return {
+    animeGroupSeasonNumber: kind === 'season' ? number : null,
+    animeGroupMovieNumber: kind === 'movie' ? number : null,
+    animeGroupSpecialNumber: kind === 'special' ? number : null,
+  };
+}
+
+const MEMBER_FIELDS = {
+  season: {
+    number: 'animeGroupSeasonNumber',
+    label: 'AnimeGroupSeason',
+    resolved: 'AnimeGroupSeasonLabel',
+    folder: 'AnimeGroupSeasonFolderStyle',
+    numbered: 'AnimeGroupFolderNumberedSeason',
+    title: 'AnimeGroupFolderArcTitle',
+  },
+  movie: {
+    number: 'animeGroupMovieNumber',
+    label: 'AnimeGroupMovieNumber',
+    resolved: 'AnimeGroupMovieLabel',
+    folder: 'AnimeGroupMovieFolderStyle',
+    numbered: 'AnimeGroupFolderNumbered',
+    title: 'AnimeGroupFolderTitle',
+  },
+  special: {
+    number: 'animeGroupSpecialNumber',
+    label: 'AnimeGroupSpecialNumber',
+    resolved: 'AnimeGroupSpecialLabel',
+    folder: 'AnimeGroupSpecialFolderStyle',
+    numbered: 'AnimeGroupFolderNumberedSpecial',
+    title: 'AnimeGroupFolderSpecialTitle',
+  },
+} as const;
 
 function AnimeGroupingOptions({
   series,
@@ -52,6 +88,7 @@ function AnimeGroupingOptions({
     value.animeGroupKind ??
     preview?.animeGroupKind ??
     (memberKind === 'movie' ? 'movieSaga' : 'series');
+  const fields = MEMBER_FIELDS[memberKind];
   const groups = useMemo(
     () =>
       Array.from(
@@ -93,18 +130,12 @@ function AnimeGroupingOptions({
                 value.animeGroupTitle ||
                 preview?.animeGroupTitle ||
                 series.title,
-              animeGroupSeasonNumber:
-                memberKind === 'season'
-                  ? value.animeGroupSeasonNumber ||
-                    preview?.animeGroupSeasonNumber ||
-                    1
-                  : null,
-              animeGroupMovieNumber:
-                memberKind === 'movie'
-                  ? value.animeGroupMovieNumber ||
-                    preview?.animeGroupMovieNumber ||
-                    1
-                  : null,
+              ...memberNumbers(
+                memberKind,
+                getAnimeGroupMemberNumber(value) ||
+                  getAnimeGroupMemberNumber(preview ?? {}) ||
+                  1
+              ),
               animeGroupMemberKind: memberKind,
               animeGroupKind: groupKind,
               animeGroupMovieFolderStyle:
@@ -114,8 +145,7 @@ function AnimeGroupingOptions({
               animeGroupingMode,
               animeGroupId: null,
               animeGroupTitle: null,
-              animeGroupSeasonNumber: null,
-              animeGroupMovieNumber: null,
+              ...memberNumbers(memberKind, null),
               animeGroupMemberKind: memberKind,
               animeGroupKind: groupKind,
               animeGroupMovieFolderStyle:
@@ -132,7 +162,14 @@ function AnimeGroupingOptions({
       const number = getAvailableGroupMemberNumber(
         group?.members ?? [],
         memberKind,
-        series.id
+        series.id,
+        memberKind === 'season'
+          ? Math.max(
+              1,
+              series.seasons?.filter((season) => season.seasonNumber > 0)
+                .length ?? 0
+            )
+          : 1
       );
 
       onChange({
@@ -140,8 +177,7 @@ function AnimeGroupingOptions({
         animeGroupId: id,
         animeGroupTitle: group?.title ?? series.title,
         animeGroupMemberKind: memberKind,
-        animeGroupSeasonNumber: memberKind === 'season' ? number : null,
-        animeGroupMovieNumber: memberKind === 'movie' ? number : null,
+        ...memberNumbers(memberKind, number),
         animeGroupKind:
           memberKind === 'season'
             ? 'series'
@@ -150,7 +186,15 @@ function AnimeGroupingOptions({
           group?.members[0].animeGroupMovieFolderStyle ?? 'automatic',
       });
     },
-    [groupKind, groups, memberKind, onChange, series.id, series.title]
+    [
+      groupKind,
+      groups,
+      memberKind,
+      onChange,
+      series.id,
+      series.title,
+      series.seasons,
+    ]
   );
 
   const handleTitleChange = useCallback(
@@ -161,19 +205,7 @@ function AnimeGroupingOptions({
   );
   const handleSeasonChange = useCallback(
     ({ value: season }: NumberInputChanged) => {
-      onChange(
-        memberKind === 'movie'
-          ? {
-              ...value,
-              animeGroupMovieNumber: season,
-              animeGroupSeasonNumber: null,
-            }
-          : {
-              ...value,
-              animeGroupSeasonNumber: season,
-              animeGroupMovieNumber: null,
-            }
-      );
+      onChange({ ...value, ...memberNumbers(memberKind, season) });
     },
     [memberKind, onChange, value]
   );
@@ -184,17 +216,23 @@ function AnimeGroupingOptions({
       const number = getAvailableGroupMemberNumber(
         group?.members ?? [],
         kind,
-        series.id
+        series.id,
+        kind === 'season'
+          ? Math.max(
+              1,
+              series.seasons?.filter((season) => season.seasonNumber > 0)
+                .length ?? 0
+            )
+          : 1
       );
       onChange({
         ...value,
         animeGroupMemberKind: kind,
-        animeGroupSeasonNumber: kind === 'season' ? number : null,
-        animeGroupMovieNumber: kind === 'movie' ? number : null,
+        ...memberNumbers(kind, number),
         animeGroupKind: kind === 'season' ? 'series' : groupKind,
       });
     },
-    [groupKind, groups, onChange, series.id, value]
+    [groupKind, groups, onChange, series.id, series.seasons, value]
   );
   const handleGroupKindChange = useCallback(
     ({ value: selected }: InputChanged<string>) => {
@@ -222,14 +260,11 @@ function AnimeGroupingOptions({
   if (isFetching) {
     automaticHelp = translate('AnimeGroupingLoading');
   } else if (hasAnimeGroup(automatic ?? {})) {
-    const member =
-      automatic?.animeGroupMemberKind === 'movie'
-        ? translate('AnimeGroupMovieLabel', {
-            number: automatic?.animeGroupMovieNumber ?? 1,
-          })
-        : translate('AnimeGroupSeasonLabel', {
-            season: automatic?.animeGroupSeasonNumber ?? 1,
-          });
+    const number = getAnimeGroupMemberNumber(automatic ?? {}) ?? 1;
+    const member = translate(
+      MEMBER_FIELDS[automatic?.animeGroupMemberKind ?? 'season'].resolved,
+      { number, season: number }
+    );
     automaticHelp = translate('AnimeGroupingMemberResolved', {
       title: automatic?.animeGroupTitle ?? '',
       member,
@@ -293,32 +328,19 @@ function AnimeGroupingOptions({
               values={[
                 { key: 'season', value: translate('AnimeGroupSeasonMember') },
                 { key: 'movie', value: translate('AnimeGroupMovieMember') },
+                { key: 'special', value: translate('AnimeGroupSpecialMember') },
               ]}
               onChange={handleMemberKindChange}
             />
           </FormRow>
           <FormRow>
-            <FormLabel>
-              {translate(
-                memberKind === 'movie'
-                  ? 'AnimeGroupMovieNumber'
-                  : 'AnimeGroupSeason'
-              )}
-            </FormLabel>
+            <FormLabel>{translate(fields.label)}</FormLabel>
             <FormInputHelpText
               text={translate('AnimeGroupManualMemberRequired')}
             />
             <NumberInput
-              name={
-                memberKind === 'movie'
-                  ? 'animeGroupMovieNumber'
-                  : 'animeGroupSeasonNumber'
-              }
-              value={
-                memberKind === 'movie'
-                  ? value.animeGroupMovieNumber
-                  : value.animeGroupSeasonNumber
-              }
+              name={fields.number}
+              value={getAnimeGroupMemberNumber(value)}
               min={1}
               max={999}
               onChange={handleSeasonChange}
@@ -341,13 +363,7 @@ function AnimeGroupingOptions({
             />
           </FormRow>
           <FormRow>
-            <FormLabel>
-              {translate(
-                memberKind === 'movie'
-                  ? 'AnimeGroupMovieFolderStyle'
-                  : 'AnimeGroupSeasonFolderStyle'
-              )}
-            </FormLabel>
+            <FormLabel>{translate(fields.folder)}</FormLabel>
             <SelectInput
               name="animeGroupMovieFolderStyle"
               value={value.animeGroupMovieFolderStyle ?? 'automatic'}
@@ -358,19 +374,11 @@ function AnimeGroupingOptions({
                 },
                 {
                   key: 'numbered',
-                  value: translate(
-                    memberKind === 'movie'
-                      ? 'AnimeGroupFolderNumbered'
-                      : 'AnimeGroupFolderNumberedSeason'
-                  ),
+                  value: translate(fields.numbered),
                 },
                 {
                   key: 'title',
-                  value: translate(
-                    memberKind === 'movie'
-                      ? 'AnimeGroupFolderTitle'
-                      : 'AnimeGroupFolderArcTitle'
-                  ),
+                  value: translate(fields.title),
                 },
               ]}
               onChange={handleFolderStyleChange}

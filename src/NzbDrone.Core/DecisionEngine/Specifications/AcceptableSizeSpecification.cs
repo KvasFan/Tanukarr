@@ -68,6 +68,11 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
                 runtime += episode.Runtime > 0 ? episode.Runtime : seriesRuntime;
             }
 
+            if (subject.ParsedEpisodeInfo.IsMovieCollectionPack && subject.ParsedEpisodeInfo.MovieCollectionRuntime > 0)
+            {
+                runtime = subject.ParsedEpisodeInfo.MovieCollectionRuntime;
+            }
+
             // Reject if the run time is 0
             if (runtime == 0)
             {

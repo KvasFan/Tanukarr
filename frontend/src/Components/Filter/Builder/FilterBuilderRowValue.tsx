@@ -68,13 +68,13 @@ function getValue<T>(
         case 'tib':
           return convertToBytes(value, 4, true);
         default:
-          return parseInt(value);
+          return parseInt(value, 10);
       }
     }
   }
 
   if (selectedFilterBuilderProp.type === filterBuilderTypes.NUMBER) {
-    return parseInt(input as string);
+    return parseInt(input as string, 10);
   }
 
   return input;

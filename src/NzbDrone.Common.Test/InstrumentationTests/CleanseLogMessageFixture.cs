@@ -1,4 +1,8 @@
+using System;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
+using NLog;
+using NLog.Targets;
 using NUnit.Framework;
 using NzbDrone.Common.Instrumentation;
 
@@ -26,6 +30,8 @@ namespace NzbDrone.Common.Test.InstrumentationTests
         [TestCase(@"https://api.themoviedb.org/3/search/tv?api_key=mySecret&query=Cowboy")]
         [TestCase(@"https://api.themoviedb.org/3/tv/30991?language=en&API_KEY=mySecret")]
         [TestCase(@"Req: [GET] https://api.themoviedb.org/3/tv/30991?api_key=mySecret")]
+        [TestCase(@"https://www.omdbapi.com/?apikey=mySecret&i=tt9700101&type=movie&plot=full")]
+        [TestCase(@"Req: [GET] https://www.omdbapi.com/?s=Generated&type=movie&APIKEY=mySecret")]
         [TestCase(@"https://provider.example/api?provider_api_key=mySecret&query=show")]
 
         // NzbGet
@@ -154,6 +160,49 @@ namespace NzbDrone.Common.Test.InstrumentationTests
             var cleansedMessage = CleanseLogMessage.Cleanse(message);
 
             cleansedMessage.Should().Be(message);
+        }
+
+        [TestCase(ConsoleLogFormat.Standard, "https://api.themoviedb.org/3/search/movie?api_key=console-private-probe&query=Owned")]
+        [TestCase(ConsoleLogFormat.Clef, "https://api.themoviedb.org/3/search/movie?api_key=console-private-probe&query=Owned")]
+        [TestCase(ConsoleLogFormat.Standard, "https://www.omdbapi.com/?apikey=console-private-probe&type=movie&s=Owned")]
+        [TestCase(ConsoleLogFormat.Clef, "https://www.omdbapi.com/?apikey=console-private-probe&type=movie&s=Owned")]
+        [TestCase(ConsoleLogFormat.Standard, "http://127.0.0.1:8989/api/v3/series?apikey=console-private-probe&title=Owned")]
+        [TestCase(ConsoleLogFormat.Clef, "http://127.0.0.1:8989/api/v3/series?apikey=console-private-probe&title=Owned")]
+        public void should_cleanse_actual_console_formats_for_local_and_test_builds(ConsoleLogFormat format, string uri)
+        {
+            var rendered = RenderConsole(format, $"Req: [GET] {uri}");
+            rendered.Should().NotContain("console-private-probe").And.Contain("Owned").And.Contain("(removed)");
+
+            if (format == ConsoleLogFormat.Clef)
+            {
+                Action parse = () => JObject.Parse(rendered);
+                parse.Should().NotThrow();
+            }
+        }
+
+        [TestCase(ConsoleLogFormat.Standard)]
+        [TestCase(ConsoleLogFormat.Clef)]
+        public void should_cleanse_actual_console_exception_details(ConsoleLogFormat format)
+        {
+            var exception = new InvalidOperationException("Provider failed at https://www.omdbapi.com/?apikey=exception-private-probe&s=Owned");
+            var rendered = RenderConsole(format, "Owned operation failed", exception);
+            rendered.Should().Contain("Owned operation failed").And.Contain("InvalidOperationException");
+            rendered.Should().NotContain("exception-private-probe").And.Contain("(removed)");
+        }
+
+        [TestCase(ConsoleLogFormat.Standard)]
+        [TestCase(ConsoleLogFormat.Clef)]
+        public void should_preserve_console_trace_diagnostics(ConsoleLogFormat format)
+        {
+            var rendered = RenderConsole(format, "Processed 7 owned records in 12ms");
+            rendered.Should().Contain("Processed 7 owned records in 12ms");
+        }
+
+        private static string RenderConsole(ConsoleLogFormat format, string message, Exception exception = null)
+        {
+            using var target = new ColoredConsoleTarget();
+            NzbDroneLogger.ConfigureConsoleLayout(target, format);
+            return target.Layout.Render(new LogEventInfo(LogLevel.Trace, "ConsolePrivacyProbe", message) { Exception = exception });
         }
     }
 }

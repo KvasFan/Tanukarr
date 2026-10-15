@@ -28,6 +28,7 @@ import { align, icons, sortDirections, tooltipPositions } from 'Helpers/Props';
 import { SortDirection } from 'Helpers/Props/sortDirections';
 import InteractiveImportModal from 'InteractiveImport/InteractiveImportModal';
 import OrganizePreviewModal from 'Organize/OrganizePreviewModal';
+import getMediaType from 'Series/getMediaType';
 import SeriesHistoryModal from 'Series/History/SeriesHistoryModal';
 import SeasonInteractiveSearchModal from 'Series/Search/SeasonInteractiveSearchModal';
 import SeasonReleaseSearchButton from 'Series/Search/SeasonReleaseSearchButton';
@@ -115,7 +116,9 @@ function SeriesDetailsSeason({
   title,
 }: SeriesDetailsSeasonProps) {
   const executeCommand = useExecuteCommand();
-  const { monitored: seriesMonitored, path } = useSingleSeries(seriesId)!;
+  const series = useSingleSeries(seriesId)!;
+  const { monitored: seriesMonitored, path } = series;
+  const mediaType = getMediaType(series);
   const { data: items } = useSeasonEpisodes(seriesId, seasonNumber);
 
   const { columns, sortKey, sortDirection } = useEpisodeOptions();
@@ -150,10 +153,10 @@ function SeriesDetailsSeason({
 
   const lastToggledEpisode = useRef<number | null>(null);
 
-  const seasonNumberTitle =
-    seasonNumber === 0
-      ? translate('Specials')
-      : translate('SeasonNumberToken', { seasonNumber });
+  let seasonNumberTitle = translate('SeasonNumberToken', { seasonNumber });
+  if (seasonNumber === 0) seasonNumberTitle = translate('Specials');
+  if (mediaType !== 'series')
+    seasonNumberTitle = translate(mediaType === 'movie' ? 'Movie' : 'Special');
 
   const handleMonitorSeasonPress = useCallback(
     (value: boolean) => {
@@ -336,6 +339,7 @@ function SeriesDetailsSeason({
           seriesId={seriesId}
           seasonNumber={seasonNumber}
           episodeCount={totalEpisodeCount}
+          mediaType={mediaType}
         />
 
         {isSmallScreen ? (
@@ -533,6 +537,7 @@ function SeriesDetailsSeason({
         episodeCount={totalEpisodeCount}
         seriesId={seriesId}
         seasonNumber={seasonNumber}
+        mediaType={mediaType}
         onModalClose={handleInteractiveSearchModalClose}
       />
     </div>

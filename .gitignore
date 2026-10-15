@@ -176,3 +176,8 @@ frontend/src/**/*.module.css.d.ts
 !.env.example
 __pycache__/
 *.pyc
+
+# Yarn's project-scoped package manager is source; its cache and install state are not.
+.yarn/cache/
+.yarn/install-state.gz
+.yarn/unplugged/

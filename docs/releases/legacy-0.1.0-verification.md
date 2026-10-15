@@ -1,10 +1,8 @@
 # Historical 0.1.0 release verification
 
-> Version-reset note (October 15): original hashes and results below remain
-> scoped to the former SonarrWeeb release. Its source is preserved under
-> `archive/sonarrweeb/v0.1.0`; the reused public `v0.1.0` tag and release page
-> identify the newer Tanukarr reset. Retained local release backups preserve
-> the old assets. No historical test result is applied to the new build.
+> Historical source checkpoint: `961d8abe176008aa335bb539ae02ec2c1edd061f`.
+> Original hashes and results below apply only to that source revision.
+> No historical test result is applied to another build.
 
 > Historical checkpoint: this project is now **Tanukarr**. See the [current documentation](../README.md) and [Tanukarr 1.0.0 verification](../releases/1.0.0-verification.md). Current product terminology is used in this archive. Numeric results, hashes, tags and original published assets retain their recorded identities; historical commands use placeholders for their original local names. This wording update does not repeat verification.
 

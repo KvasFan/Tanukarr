@@ -12,6 +12,7 @@ import PageContentFooter from 'Components/Page/PageContentFooter';
 import Popover from 'Components/Tooltip/Popover';
 import Tooltip from 'Components/Tooltip/Tooltip';
 import { icons, kinds, tooltipPositions } from 'Helpers/Props';
+import { getSeriesIdentityKey } from 'Series/isSameSeriesIdentity';
 import useSeries from 'Series/useSeries';
 import MetadataSettingsModal from 'Settings/MetadataSource/MetadataSettingsModal';
 import { CheckInputChanged } from 'typings/inputs';
@@ -43,8 +44,13 @@ function ImportSeriesFooter() {
   const isLookingUpSeries = useLookupQueueHasItems();
   const { data: existingSeries = [] } = useSeries();
 
-  const existingTvdbIds = useMemo(() => {
-    return new Set(existingSeries.map((series) => series.tvdbId));
+  const existingIdentities = useMemo(() => {
+    return new Set(
+      existingSeries.flatMap((series) => {
+        const key = getSeriesIdentityKey(series);
+        return key ? [key] : [];
+      })
+    );
   }, [existingSeries]);
 
   const { setItemStates, unselectAll, useSelectedIds } =
@@ -54,8 +60,8 @@ function ImportSeriesFooter() {
   const { importSeries, isImporting, importError } = useImportSeries();
 
   const eligibility = useMemo(
-    () => getImportSeriesEligibility(items, existingTvdbIds),
-    [items, existingTvdbIds]
+    () => getImportSeriesEligibility(items, existingIdentities),
+    [items, existingIdentities]
   );
 
   const { importableIds } = useMemo(
@@ -69,7 +75,7 @@ function ImportSeriesFooter() {
   );
 
   const selectableCount = useMemo(() => {
-    let count = eligibility.duplicateIdsByTvdbId.size;
+    let count = eligibility.duplicateIdsByIdentity.size;
 
     eligibility.eligibilityById.forEach((status) => {
       if (status === 'ready') {
@@ -135,7 +141,7 @@ function ImportSeriesFooter() {
         const selectedIdSet = new Set(selectedIds);
         const duplicateChoiceIds = new Set<string>();
 
-        eligibility.duplicateIdsByTvdbId.forEach((ids) => {
+        eligibility.duplicateIdsByIdentity.forEach((ids) => {
           duplicateChoiceIds.add(
             ids.find((id) => selectedIdSet.has(id)) ?? ids[0]
           );

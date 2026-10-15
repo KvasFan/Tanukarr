@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import Button from 'Components/Link/Button';
 import { sizes } from 'Helpers/Props';
+import { MediaType } from 'Series/Series';
 import translate from 'Utilities/String/translate';
 import SeasonInteractiveSearchModal from './SeasonInteractiveSearchModal';
 
@@ -10,6 +11,7 @@ interface SeasonReleaseSearchButtonProps {
   seasonNumber: number;
   displaySeasonNumber?: number;
   episodeCount: number;
+  mediaType?: MediaType;
 }
 
 function SeasonReleaseSearchButton({
@@ -18,6 +20,7 @@ function SeasonReleaseSearchButton({
   seasonNumber,
   displaySeasonNumber = seasonNumber,
   episodeCount,
+  mediaType = 'series',
 }: SeasonReleaseSearchButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const onOpen = useCallback(() => {
@@ -26,6 +29,11 @@ function SeasonReleaseSearchButton({
     }
   }, [episodeCount, isOpen]);
   const onClose = useCallback(() => setIsOpen(false), []);
+  let label = translate('SearchSeasonPacksWithNumber', {
+    season: displaySeasonNumber,
+  });
+  if (mediaType !== 'series')
+    label = translate(mediaType === 'movie' ? 'SearchMovie' : 'SearchSpecial');
 
   return (
     <>
@@ -34,16 +42,15 @@ function SeasonReleaseSearchButton({
         isDisabled={isOpen || episodeCount === 0}
         onPress={onOpen}
       >
-        {translate('SearchSeasonPacksWithNumber', {
-          season: displaySeasonNumber,
-        })}
+        {label}
       </Button>
       <SeasonInteractiveSearchModal
         isOpen={isOpen}
         seriesId={seriesId}
         seasonNumber={seasonNumber}
         displaySeasonNumber={displaySeasonNumber}
-        seasonPacksOnly={true}
+        seasonPacksOnly={mediaType === 'series' ? true : undefined}
+        mediaType={mediaType}
         episodeCount={episodeCount}
         onModalClose={onClose}
       />

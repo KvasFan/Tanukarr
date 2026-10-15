@@ -4,16 +4,17 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 0.1.0 derives from 1.1.0.** It manages TV series, anime
-and movie collections in one Sonarr-derived application. This version resets
-the product version and adds graphical account creation, collection and quality
-fixes, configurable metadata sources and TVmaze. Existing list filtering,
+**Tanukarr 0.1.0** manages TV series, anime
+and movie collections in one Sonarr-derived application. It includes
+graphical account creation, collection and quality
+fixes, seven configurable metadata catalogues, native films and IMDb lookup.
+Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md),
 [publication report](docs/releases/0.1.0-publication.md) and
 [preparation ledger](docs/releases/0.1.0-verification.md) for executed checks,
-exact source/image identities, completed release replacement and remaining
+exact source/image identities and remaining
 findings. The [1.1.0 publication](docs/releases/1.1.0-publication.md)
 retains the base release's original evidence. The [upstream review](docs/upstream-audit-2026-10-14.md)
 records the latest fetched Sonarr, Kakarotto, gaboy and ikatun heads and the
@@ -28,7 +29,7 @@ The [1.0.5 publication report](docs/releases/1.0.5-publication.md) preserves the
 earlier release's exact source, image, hosted tests and protected deployment
 evidence. Historical reports retain their original tested scope.
 
-A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series and anime,
+A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series, anime and films,
 with a metadata provider selected per title, flexible episode orderings and
 shared library, search, download and import tools in a single Docker image.
 
@@ -59,27 +60,32 @@ upstream legal notices. This fork accepts AI contributions under its own
 
 ---
 
-## TV series and anime in one library
+## TV series, anime and films in one library
 
 Tanukarr keeps Sonarr's shared library, monitoring, indexer, download-client and
-import workflows for episodic TV and anime. Choose the catalogue that identifies
+import workflows for episodic TV and anime, with native movie search and import.
+Choose the catalogue that identifies
 each title and check its numbering against the releases you intend to import.
 TheTVDB and TMDB cover TV series, including anime listed in those catalogues;
-AniList and MyAnimeList/Jikan provide anime-specific catalogues.
+AniList and MyAnimeList/Jikan provide anime-specific catalogues. TVmaze provides
+another TV catalogue. TMDB Movies and OMDb identify films, including IMDb-ID
+lookups through their official APIs.
 
 The metadata provider is selected for each series when adding it. Episode
 ordering is a separate choice: TMDB-owned series can use available TMDB episode
 groups. Use **Default** for TheTVDB, AniList and MyAnimeList owners; selecting a
 TMDB group for those owners is not applied. The inherited IMDb choices are also
-not applied by the current backend. IMDb is not a fifth metadata source. See the
+not applied by the current backend. IMDb IDs for films are resolved by TMDB
+Movies or OMDb; the application does not scrape IMDb. See the
 [metadata provider guide](docs/metadata-providers.md) for selection, identity,
 configuration and catalogue limits.
 
 ## What's added
 
-**Four metadata sources, picked per series** — TheTVDB and TMDB for their TV
-catalogues, plus AniList and MyAnimeList/Jikan for anime. Choose a source from the
-dropdown above the Add New Series search box and confirm the matching entry.
+**Seven metadata catalogues, picked per title** — TheTVDB, TMDB TV and TVmaze
+for TV; AniList and MyAnimeList/Jikan for anime; TMDB Movies and OMDb for films.
+Enable sources and choose their order in Settings → Metadata Source, then select
+a catalogue or search all enabled catalogues when adding a title.
 The selected provider owns that series' metadata; sources are not automatically
 merged. Provider setup and credential requirements are described in the
 [metadata provider guide](docs/metadata-providers.md).
@@ -321,7 +327,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `0.1.0` | Version reset derived from 1.1.0: graphical first-run setup, collection/quality fixes, ordered metadata sources and TVmaze. Publication and exact checks are recorded in the new verification ledger. |
+| `0.1.0` | Graphical first-run setup, collection/quality fixes, ordered metadata sources and TVmaze. Publication and exact checks are recorded in the verification ledger. |
 | `1.1.0` | Published and locally deployed: full collection pages, alternate artwork, custom qualities and editable profile codec factors. Nineteen runtime gates passed (342 checks); public assets/image and the protected upgrade verified. See the publication report for remaining findings. |
 | `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |
 | `1.0.4` | Published and deployed: optional Jellyfin watched state, guarded source-account progress and corrected manual backup timing. All thirteen hosted gates passed; source/assets, immutable image and protected-data preservation verified. |
@@ -424,7 +430,7 @@ dotnet build src/Sonarr.sln -c Debug
 Build the **solution**, not individual project files. `Directory.Build.props` loads `stylecop.json` through `$(SolutionDir)`, which is only defined for a solution build — building a bare `.csproj` silently drops the StyleCop config and then fails on every `using` directive in the repo.
 
 ```bash
-yarn install --frozen-lockfile
+yarn install --immutable
 yarn typecheck
 yarn build
 ```

@@ -114,10 +114,10 @@ function QualityProfile({
         segments={[
           translate(upgradeAllowed ? 'UpgradesOn' : 'UpgradesOff'),
           cutoffName ? (
-            <>
+            <React.Fragment key="cutoff">
               {translate('Cutoff')}{' '}
               <SettingsCardStatusValue>{cutoffName}</SettingsCardStatusValue>
-            </>
+            </React.Fragment>
           ) : null,
         ]}
       />

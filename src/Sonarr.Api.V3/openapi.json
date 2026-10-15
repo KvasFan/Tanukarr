@@ -5373,6 +5373,13 @@
             }
           },
           {
+            "name": "movieFormat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "dailyEpisodeFormat",
             "in": "query",
             "schema": {
@@ -8457,7 +8464,8 @@
       "AnimeGroupMemberKind": {
         "enum": [
           "season",
-          "movie"
+          "movie",
+          "special"
         ],
         "type": "string"
       },
@@ -8513,6 +8521,11 @@
             "$ref": "#/components/schemas/AnimeGroupMovieFolderStyle"
           },
           "animeGroupMovieNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "animeGroupSpecialNumber": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -11042,6 +11055,14 @@
         },
         "additionalProperties": false
       },
+      "MediaType": {
+        "enum": [
+          "series",
+          "movie",
+          "special"
+        ],
+        "type": "string"
+      },
       "MetadataResource": {
         "type": "object",
         "properties": {
@@ -11125,6 +11146,13 @@
           "tmdbApiKeyConfigured": {
             "type": "boolean"
           },
+          "omdbApiKeyConfigured": {
+            "type": "boolean"
+          },
+          "omdbApiKey": {
+            "type": "string",
+            "nullable": true
+          },
           "tmdbApiKey": {
             "type": "string",
             "nullable": true
@@ -11138,7 +11166,9 @@
           "tmdb",
           "aniList",
           "myAnimeList",
-          "tvMaze"
+          "tvMaze",
+          "tmdbMovie",
+          "omdb"
         ],
         "type": "string"
       },
@@ -11202,6 +11232,10 @@
             "format": "int32"
           },
           "standardEpisodeFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "movieFormat": {
             "type": "string",
             "nullable": true
           },
@@ -13098,6 +13132,9 @@
             "type": "integer",
             "format": "int32"
           },
+          "mediaType": {
+            "$ref": "#/components/schemas/MediaType"
+          },
           "firstAired": {
             "type": "string",
             "format": "date-time",
@@ -13141,6 +13178,11 @@
             "$ref": "#/components/schemas/AnimeGroupMovieFolderStyle"
           },
           "animeGroupMovieNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "animeGroupSpecialNumber": {
             "type": "integer",
             "format": "int32",
             "nullable": true

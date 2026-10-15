@@ -1,3 +1,4 @@
+import { getSeriesIdentityKey } from 'Series/isSameSeriesIdentity';
 import type { ImportSeriesItem } from './importSeriesStore';
 
 type ImportSeriesEligibilityItem = Pick<
@@ -13,7 +14,7 @@ export type ImportSeriesEligibility =
 
 export interface ImportSeriesEligibilityResult {
   eligibilityById: Map<string, ImportSeriesEligibility>;
-  duplicateIdsByTvdbId: Map<number, string[]>;
+  duplicateIdsByIdentity: Map<string, string[]>;
 }
 
 export interface ImportSeriesSelectionResult {
@@ -22,14 +23,14 @@ export interface ImportSeriesSelectionResult {
 }
 
 export function getImportSeriesSelection(
-  { eligibilityById, duplicateIdsByTvdbId }: ImportSeriesEligibilityResult,
+  { eligibilityById, duplicateIdsByIdentity }: ImportSeriesEligibilityResult,
   selectedIds: string[]
 ): ImportSeriesSelectionResult {
   const selectedIdSet = new Set(selectedIds);
   const chosenDuplicateIds = new Set<string>();
   const duplicateIdsToDeselect = new Set<string>();
 
-  duplicateIdsByTvdbId.forEach((duplicateIds) => {
+  duplicateIdsByIdentity.forEach((duplicateIds) => {
     let hasChosenId = false;
 
     duplicateIds.forEach((duplicateId) => {
@@ -57,18 +58,18 @@ export function getImportSeriesSelection(
 
 export function getImportSeriesEligibility(
   items: ImportSeriesEligibilityItem[],
-  existingTvdbIds: Set<number>
+  existingIdentities: Set<string>
 ): ImportSeriesEligibilityResult {
-  const idsByTvdbId = items.reduce<Map<number, string[]>>((ids, item) => {
-    const tvdbId = item.selectedSeries?.tvdbId;
+  const idsByIdentity = items.reduce<Map<string, string[]>>((ids, item) => {
+    const identity = getSeriesIdentityKey(item.selectedSeries ?? {});
 
-    if (tvdbId != null) {
-      const existingIds = ids.get(tvdbId);
+    if (identity != null) {
+      const existingIds = ids.get(identity);
 
       if (existingIds) {
         existingIds.push(item.id);
       } else {
-        ids.set(tvdbId, [item.id]);
+        ids.set(identity, [item.id]);
       }
     }
 
@@ -77,14 +78,17 @@ export function getImportSeriesEligibility(
 
   const eligibilityById = items.reduce<Map<string, ImportSeriesEligibility>>(
     (eligibility, item) => {
-      const tvdbId = item.selectedSeries?.tvdbId;
+      const identity = getSeriesIdentityKey(item.selectedSeries ?? {});
       let status: ImportSeriesEligibility = 'unmatched';
 
-      if (tvdbId != null && existingTvdbIds.has(tvdbId)) {
+      if (identity != null && existingIdentities.has(identity)) {
         status = 'existing';
-      } else if (tvdbId != null && (idsByTvdbId.get(tvdbId)?.length ?? 0) > 1) {
+      } else if (
+        identity != null &&
+        (idsByIdentity.get(identity)?.length ?? 0) > 1
+      ) {
         status = 'duplicate';
-      } else if (tvdbId != null) {
+      } else if (identity != null) {
         status = 'ready';
       }
 
@@ -95,16 +99,16 @@ export function getImportSeriesEligibility(
     new Map()
   );
 
-  const duplicateIdsByTvdbId = new Map<number, string[]>();
+  const duplicateIdsByIdentity = new Map<string, string[]>();
 
-  idsByTvdbId.forEach((ids, tvdbId) => {
-    if (ids.length > 1 && !existingTvdbIds.has(tvdbId)) {
-      duplicateIdsByTvdbId.set(tvdbId, ids);
+  idsByIdentity.forEach((ids, identity) => {
+    if (ids.length > 1 && !existingIdentities.has(identity)) {
+      duplicateIdsByIdentity.set(identity, ids);
     }
   });
 
   return {
     eligibilityById,
-    duplicateIdsByTvdbId,
+    duplicateIdsByIdentity,
   };
 }

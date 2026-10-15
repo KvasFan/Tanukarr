@@ -42,7 +42,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
 
         public SeriesPresentation GetPresentation(Series identity)
         {
-            if (identity.TmdbId <= 0)
+            if (identity.TmdbId <= 0 || identity.MediaType == MediaType.Movie)
             {
                 return null;
             }

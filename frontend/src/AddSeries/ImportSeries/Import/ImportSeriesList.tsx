@@ -11,6 +11,7 @@ import { ListChildComponentProps, VariableSizeList } from 'react-window';
 import { useAppDimensions } from 'App/appStore';
 import { useSelect } from 'App/Select/SelectContext';
 import useMeasure from 'Helpers/Hooks/useMeasure';
+import { getSeriesIdentityKey } from 'Series/isSameSeriesIdentity';
 import useSeries from 'Series/useSeries';
 import ImportSeriesCard from './ImportSeriesCard';
 import {
@@ -98,8 +99,13 @@ function ImportSeriesList({ items, scrollerRef }: ImportSeriesListProps) {
 
   useEnsureImportSeriesItems(items);
 
-  const existingTvdbIds = useMemo(() => {
-    return new Set(existingSeries.map((series) => series.tvdbId));
+  const existingIdentities = useMemo(() => {
+    return new Set(
+      existingSeries.flatMap((series) => {
+        const key = getSeriesIdentityKey(series);
+        return key ? [key] : [];
+      })
+    );
   }, [existingSeries]);
 
   const importSeriesItemById = useMemo(() => {
@@ -107,8 +113,8 @@ function ImportSeriesList({ items, scrollerRef }: ImportSeriesListProps) {
   }, [importSeriesItems]);
 
   const eligibility = useMemo(
-    () => getImportSeriesEligibility(importSeriesItems, existingTvdbIds),
-    [importSeriesItems, existingTvdbIds]
+    () => getImportSeriesEligibility(importSeriesItems, existingIdentities),
+    [importSeriesItems, existingIdentities]
   );
 
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -116,15 +122,17 @@ function ImportSeriesList({ items, scrollerRef }: ImportSeriesListProps) {
   const rows = useMemo(() => {
     return items.map((item) => {
       const importSeriesItem = importSeriesItemById.get(item.id);
-      const tvdbId = importSeriesItem?.selectedSeries?.tvdbId;
+      const identity = getSeriesIdentityKey(
+        importSeriesItem?.selectedSeries ?? {}
+      );
       const status = eligibility.eligibilityById.get(item.id) ?? 'unmatched';
 
       return {
         item,
         duplicateIds:
-          tvdbId == null
+          identity == null
             ? []
-            : eligibility.duplicateIdsByTvdbId.get(tvdbId) ?? [],
+            : eligibility.duplicateIdsByIdentity.get(identity) ?? [],
         eligibility: status,
         isReady:
           status === 'ready' ||

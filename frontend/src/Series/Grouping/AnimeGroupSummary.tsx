@@ -7,7 +7,10 @@ import { CheckInputChanged } from 'typings/inputs';
 import translate from 'Utilities/String/translate';
 import { AnimeSeriesGroup } from './animeGrouping';
 import CollectionPoster from './CollectionPoster';
-import { getCollectionLink } from './collectionPresentation';
+import {
+  getCollectionEntries,
+  getCollectionLink,
+} from './collectionPresentation';
 import styles from './AnimeGroupSummary.module.css';
 
 export interface AnimeGroupViewProps {
@@ -42,12 +45,10 @@ function AnimeGroupSummary({
     selectionValue = true;
   }
 
-  const seasons = group.members.filter(
-    (member) => member.animeGroupMemberKind !== 'movie'
-  );
-  const movies = group.members.filter(
-    (member) => member.animeGroupMemberKind === 'movie'
-  );
+  const entries = getCollectionEntries(group);
+  const seasons = entries.filter((entry) => entry.section === 'seasons');
+  const movies = entries.filter((entry) => entry.section === 'movies');
+  const specials = entries.filter((entry) => entry.section === 'specials');
   const totalEpisodeCount = group.members.reduce(
     (sum, member) => sum + (member.statistics?.episodeCount ?? 0),
     0
@@ -110,6 +111,9 @@ function AnimeGroupSummary({
             seasons: seasons.length,
             movies: movies.length,
           })}
+          {specials.length
+            ? ` · ${translate('CountSpecials', { count: specials.length })}`
+            : null}
         </div>
         <div className={styles.count}>
           {totalEpisodeFileCount}/{totalEpisodeCount} {translate('Episodes')}
@@ -117,7 +121,7 @@ function AnimeGroupSummary({
         {group.members.length === 1 && seasons.length === 1 ? (
           <span className={styles.singletonSeason}>
             {translate('AnimeGroupSeasonLabel', {
-              season: seasons[0].animeGroupSeasonNumber!,
+              season: seasons[0].displayNumber,
             })}
           </span>
         ) : null}

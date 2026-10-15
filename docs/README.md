@@ -9,17 +9,18 @@ results, source/image hashes, tags and published assets keep their recorded
 identities. Historical release pages and manifests identify original asset
 names; angle-bracket paths in historical commands are placeholders for the
 actual existing local directories and files. Historical wording edits do not
-repeat past verification. The separate October 15 version reset replaced the
-old public release objects; its publication report records that operation.
+repeat past verification.
 
 ## Using and contributing to this integration
 
 | Document | Purpose |
 | --- | --- |
-| [Tanukarr 0.1.0 reset](releases/0.1.0.md) | 1.1.0-derived account setup, collection/UI fixes, metadata source controls and container hardening |
-| [0.1.0 publication and release replacement](releases/0.1.0-publication.md) | Exact source/public digest, 21 hosted gates, verified assets, interface evidence and replacement of all nine former GitHub releases |
-| [0.1.0 public-image security](releases/0.1.0-image-security.json) | Actual public-image CVEs, scanner/registry identities and vendor remedies, including the licensed v3 backport |
-| [0.1.0 reset verification](releases/0.1.0-verification.md) | New executed evidence and publication state, separate from the former version |
+| [Tanukarr 0.1.0](releases/0.1.0.md) | Account setup, collection/UI fixes, metadata source controls and container hardening |
+| [0.1.0 publication](releases/0.1.0-publication.md) | Exact source/public digest, hosted gates, verified assets and interface evidence |
+| [0.1.0 public-image security](releases/0.1.0-image-security.json) | Actual public-image CVEs, scanner/registry identities and remaining findings |
+| [0.1.0 maintenance verification](releases/0.1.0-maintenance-verification.md) | Movie catalogues, mixed collection migration, generated downloads, Jellyfin and hardening checks |
+| [0.1.0 initial publication checkpoint](releases/0.1.0-publication-initial.md) | Preserved source90 image, tests, assets and security evidence |
+| [0.1.0 verification](releases/0.1.0-verification.md) | Source-qualified executed evidence and publication state |
 | [Tanukarr 1.1.0](releases/1.1.0.md) | Full collection pages, alternate artwork, custom qualities and editable profile codec factors |
 | [1.1.0 publication and deployment](releases/1.1.0-publication.md) | Exact source/image/assets, nineteen hosted gates, public security findings and protected upgrade evidence |
 | [1.1.0 image-security inventory](releases/1.1.0-image-security.json) | Actual public-image scan summary with exact package/CVE versions, severities and verification limits |
@@ -92,7 +93,7 @@ work that followed the initial Tanukarr 1.0.0 rename. It retains selected-librar
 Jellyfin refresh, AniList inclusion/exclusion and Nyaa query encoding. Its release
 verification report records only checks actually executed for the new source and
 image; older release and feature reports retain their original identities and
-results. Original tags and assets remain unchanged.
+results.
 
 Tanukarr 1.0.2 adds the simplified current list controls, final exclusion-veto
 rule and guarded complete AniList membership recovery. Service-specific list

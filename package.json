@@ -4,18 +4,17 @@
   "description": "Tanukarr manages TV series and anime with per-series TheTVDB, TMDB, AniList and MyAnimeList metadata for Usenet and BitTorrent users",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "prebuild": "yarn clean",
+    "build": "yarn clean && vite build",
     "clean": "rimraf ./_output/UI && rimraf --glob \"**/*.js.map\"",
     "start": "vite",
     "watch": "vite build --watch",
     "types:css": "tcm frontend/src --camelCase --pattern \"**/*.module.css\"",
     "typecheck": "yarn types:css && tsc --noEmit -p frontend/tsconfig.json",
-    "test:queue-details": "node --test frontend/tests/queueDetails.test.cjs frontend/tests/episodeBatches.test.cjs frontend/tests/metadataIdentity.test.cjs frontend/tests/addSeriesModal.test.cjs frontend/tests/animeGrouping.test.cjs frontend/tests/groupNamingAndSearch.test.cjs frontend/tests/anilistListChoices.test.cjs frontend/tests/seriesImageInterop.test.cjs frontend/tests/oauthCallback.test.cjs frontend/tests/providerListChoices.test.cjs frontend/tests/qualityHourlyLimits.test.cjs frontend/tests/collections.test.cjs frontend/tests/customQualities.test.cjs frontend/tests/metadataSources.test.cjs",
+    "test:queue-details": "node --test frontend/tests/queueDetails.test.cjs frontend/tests/episodeBatches.test.cjs frontend/tests/metadataIdentity.test.cjs frontend/tests/addSeriesModal.test.cjs frontend/tests/animeGrouping.test.cjs frontend/tests/groupNamingAndSearch.test.cjs frontend/tests/anilistListChoices.test.cjs frontend/tests/seriesImageInterop.test.cjs frontend/tests/oauthCallback.test.cjs frontend/tests/providerListChoices.test.cjs frontend/tests/qualityHourlyLimits.test.cjs frontend/tests/collections.test.cjs frontend/tests/customQualities.test.cjs frontend/tests/metadataSources.test.cjs frontend/tests/timeZoneData.test.cjs frontend/tests/lintPolicies.test.cjs frontend/tests/libraryImport.test.cjs",
     "test:metadata-sources": "node --test frontend/tests/metadataSources.test.cjs",
     "test:add-series-modal": "node --test frontend/tests/addSeriesModal.test.cjs",
     "test:anime-grouping": "node --test frontend/tests/addSeriesModal.test.cjs frontend/tests/animeGrouping.test.cjs",
-    "lint": "eslint --config frontend/.eslintrc.cjs --ignore-path frontend/.eslintignore frontend/",
+    "lint": "eslint --config frontend/eslint.config.cjs frontend/",
     "lint-fix": "yarn lint --fix",
     "stylelint": "stylelint \"frontend/**/*.css\" --config frontend/.stylelintrc"
   },
@@ -85,8 +84,11 @@
   },
   "devDependencies": {
     "@babel/core": "7.29.7",
-    "@babel/eslint-parser": "7.29.9",
     "@csstools/postcss-global-data": "4.0.0",
+    "@eslint-react/eslint-plugin": "5.26.7",
+    "@eslint/compat": "2.1.1",
+    "@eslint/js": "10.0.1",
+    "@stylistic/eslint-plugin": "5.10.0",
     "@types/lodash": "4.17.26",
     "@types/mousetrap": "1.6.15",
     "@types/qs": "6.15.1",
@@ -96,41 +98,56 @@
     "@types/react-slider": "1.3.6",
     "@types/react-text-truncate": "0.19.0",
     "@types/react-window": "1.8.8",
-    "@typescript-eslint/eslint-plugin": "8.71.1",
-    "@typescript-eslint/parser": "8.71.1",
+    "@typescript-eslint/eslint-plugin": "8.71.2",
+    "@typescript-eslint/parser": "8.71.2",
     "@vitejs/plugin-react": "6.1.2",
     "autoprefixer": "10.6.1",
     "core-js": "3.50.0",
-    "eslint": "8.57.1",
-    "eslint-config-prettier": "8.10.2",
+    "eslint": "10.12.0",
+    "eslint-config-prettier": "10.1.8",
     "eslint-plugin-filenames": "1.3.2",
-    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-import-x": "4.17.1",
     "eslint-plugin-prettier": "4.2.5",
-    "eslint-plugin-react": "7.37.5",
-    "eslint-plugin-react-hooks": "5.2.0",
-    "eslint-plugin-simple-import-sort": "12.1.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-x": "5.26.7",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "globals": "17.13.0",
     "postcss": "8.5.29",
     "postcss-custom-media": "12.0.3",
-    "postcss-mixins": "9.0.4",
-    "postcss-nested": "6.2.0",
+    "postcss-mixins": "12.1.2",
+    "postcss-nested": "8.0.1",
     "prettier": "2.8.8",
     "react-test-renderer": "18.3.1",
     "rimraf": "6.1.3",
-    "stylelint": "15.11.0",
-    "stylelint-order": "6.0.4",
+    "stylelint": "17.16.0",
+    "stylelint-order": "8.1.2",
+    "type-fest": "5.10.0",
     "typed-css-modules": "0.9.1",
     "typescript-plugin-css-modules": "5.2.0",
     "vite": "8.3.4",
     "vite-css-modules": "1.16.0"
   },
+  "dependenciesMeta": {
+    "@parcel/watcher": {
+      "built": false
+    },
+    "core-js": {
+      "built": false
+    },
+    "unrs-resolver": {
+      "built": true
+    }
+  },
   "resolutions": {
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
-    "postcss-selector-parser": "7.1.6"
+    "glob@npm:^10.3.10": "13.0.6",
+    "glob@npm:^10.4.5": "13.0.6",
+    "postcss-selector-parser": "7.1.6",
+    "stylus": "0.64.0"
   },
   "volta": {
-    "node": "24.19.0",
-    "yarn": "1.22.22"
+    "node": "24.19.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@4.18.1"
 }

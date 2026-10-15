@@ -119,6 +119,10 @@
   min-width: 0;
 }
 
+.movieSettings {
+  grid-template-columns: repeat(3, minmax(112px, 180px));
+}
+
 .settingLabel {
   composes: label from './ImportSeriesFooter.module.css';
 }

@@ -12,6 +12,7 @@ import SeasonTypeSelectInput from 'Components/Form/Select/SeasonTypeSelectInput'
 import SeriesTypeSelectInput from 'Components/Form/Select/SeriesTypeSelectInput';
 import Label from 'Components/Label';
 import { kinds } from 'Helpers/Props';
+import getMediaType from 'Series/getMediaType';
 import SeriesPoster from 'Series/SeriesPoster';
 import { CheckInputChanged, InputChanged } from 'typings/inputs';
 import translate from 'Utilities/String/translate';
@@ -78,6 +79,7 @@ function ImportSeriesCard({
   const needsAttention =
     isBlocked || (eligibility === 'duplicate' && !isSelected);
   const matchStatusLabel = getMatchStatusLabel(eligibility);
+  const isMovie = getMediaType(selectedSeries ?? {}) === 'movie';
 
   const handleInputChange = useCallback(
     ({ name, value }: InputChanged) => {
@@ -147,6 +149,7 @@ function ImportSeriesCard({
 
   return (
     <div
+      data-import-folder={id}
       className={classNames(
         styles.rowLayout,
         isCompact && styles.compact,
@@ -235,17 +238,35 @@ function ImportSeriesCard({
             )}
           </>
         ) : (
-          <div className={styles.settingsRow}>
+          <div
+            className={classNames(
+              styles.settingsRow,
+              isMovie && styles.movieSettings
+            )}
+          >
             <div className={styles.setting}>
               <div className={styles.settingLabel}>{translate('Monitor')}</div>
 
-              <MonitorEpisodesSelectInput
-                name="monitor"
-                value={monitor}
-                modalTitle={translate('Monitor')}
-                isDisabled={!selectedSeries}
-                onChange={handleInputChange}
-              />
+              {isMovie ? (
+                <EnhancedSelectInput
+                  name="monitor"
+                  value={monitor === 'none' ? 'none' : 'all'}
+                  modalTitle={translate('Monitor')}
+                  values={[
+                    { key: 'all', value: translate('Monitored') },
+                    { key: 'none', value: translate('Unmonitored') },
+                  ]}
+                  onChange={handleInputChange}
+                />
+              ) : (
+                <MonitorEpisodesSelectInput
+                  name="monitor"
+                  value={monitor}
+                  modalTitle={translate('Monitor')}
+                  isDisabled={!selectedSeries}
+                  onChange={handleInputChange}
+                />
+              )}
             </div>
 
             <div className={styles.setting}>
@@ -262,37 +283,41 @@ function ImportSeriesCard({
               />
             </div>
 
-            <div className={styles.setting}>
-              <div className={styles.settingLabel}>
-                {translate('SeriesType')}
+            {isMovie ? null : (
+              <div className={styles.setting}>
+                <div className={styles.settingLabel}>
+                  {translate('SeriesType')}
+                </div>
+
+                <SeriesTypeSelectInput
+                  name="seriesType"
+                  value={seriesType}
+                  modalTitle={translate('SeriesType')}
+                  isDisabled={!selectedSeries}
+                  selectedValueOptions={HIDE_HINT}
+                  onChange={handleInputChange}
+                />
               </div>
+            )}
 
-              <SeriesTypeSelectInput
-                name="seriesType"
-                value={seriesType}
-                modalTitle={translate('SeriesType')}
-                isDisabled={!selectedSeries}
-                selectedValueOptions={HIDE_HINT}
-                onChange={handleInputChange}
-              />
-            </div>
+            {isMovie ? null : (
+              <div className={styles.setting}>
+                <div className={styles.settingLabel}>
+                  {translate('SeasonType')}
+                </div>
 
-            <div className={styles.setting}>
-              <div className={styles.settingLabel}>
-                {translate('SeasonType')}
+                <SeasonTypeSelectInput
+                  name="seasonType"
+                  value={seasonType}
+                  seasonTypes={seasonTypes}
+                  modalTitle={translate('SeasonType')}
+                  isDisabled={!selectedSeries}
+                  includeMixed={false}
+                  includeNoChange={false}
+                  onChange={handleInputChange}
+                />
               </div>
-
-              <SeasonTypeSelectInput
-                name="seasonType"
-                value={seasonType}
-                seasonTypes={seasonTypes}
-                modalTitle={translate('SeasonType')}
-                isDisabled={!selectedSeries}
-                includeMixed={false}
-                includeNoChange={false}
-                onChange={handleInputChange}
-              />
-            </div>
+            )}
 
             <div className={styles.setting}>
               <div className={styles.settingLabel}>
@@ -309,20 +334,22 @@ function ImportSeriesCard({
               />
             </div>
 
-            <div className={styles.setting}>
-              <div className={styles.settingLabel}>
-                {translate('SeasonFolder')}
-              </div>
+            {isMovie ? null : (
+              <div className={styles.setting}>
+                <div className={styles.settingLabel}>
+                  {translate('SeasonFolder')}
+                </div>
 
-              <EnhancedSelectInput
-                name="seasonFolder"
-                value={seasonFolder}
-                modalTitle={translate('SeasonFolder')}
-                values={seasonFolderOptions}
-                isDisabled={!selectedSeries}
-                onChange={handleInputChange}
-              />
-            </div>
+                <EnhancedSelectInput
+                  name="seasonFolder"
+                  value={seasonFolder}
+                  modalTitle={translate('SeasonFolder')}
+                  values={seasonFolderOptions}
+                  isDisabled={!selectedSeries}
+                  onChange={handleInputChange}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

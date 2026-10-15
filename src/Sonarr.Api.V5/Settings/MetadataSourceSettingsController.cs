@@ -45,6 +45,10 @@ public class MetadataSourceSettingsController : SettingsController<MetadataSourc
     public override Results<Accepted<MetadataSourceSettingsResource>, NotFound> SaveSettings([FromBody] MetadataSourceSettingsResource resource)
     {
         MetadataSourcePolicy.Save(_configService, resource.MetadataSourceOrder, resource.DisabledMetadataSources);
+        if (resource.OmdbApiKey != null && resource.OmdbApiKey != MetadataSourceSettingsResource.Mask)
+        {
+            _configService.OmdbApiKey = resource.OmdbApiKey.Trim();
+        }
 
         if (resource.PreferredMetadataLanguage.HasValue)
         {

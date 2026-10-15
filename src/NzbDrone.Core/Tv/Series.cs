@@ -30,6 +30,7 @@ namespace NzbDrone.Core.Tv
         public int TvMazeId { get; set; }
         public string ImdbId { get; set; }
         public int TmdbId { get; set; }
+        public MediaType MediaType { get; set; }
 
         /// <summary>
         /// Which provider owns this series' metadata. Exactly one provider owns a series;
@@ -67,6 +68,7 @@ namespace NzbDrone.Core.Tv
         public AnimeGroupKind AnimeGroupKind { get; set; }
         public AnimeGroupMovieFolderStyle AnimeGroupMovieFolderStyle { get; set; }
         public int? AnimeGroupMovieNumber { get; set; }
+        public int? AnimeGroupSpecialNumber { get; set; }
         public string AnimeGroupMemberFolder { get; set; }
         public HashSet<int> MalIds { get; set; }
         public HashSet<int> AniListIds { get; set; }
@@ -162,6 +164,7 @@ namespace NzbDrone.Core.Tv
                 AnimeGroupMovieFolderStyle = otherSeries.AnimeGroupMovieFolderStyle;
                 AnimeGroupSeasonNumber = AnimeGroupMemberKind == AnimeGroupMemberKind.Season ? otherSeries.AnimeGroupSeasonNumber : null;
                 AnimeGroupMovieNumber = AnimeGroupMemberKind == AnimeGroupMemberKind.Movie ? otherSeries.AnimeGroupMovieNumber : null;
+                AnimeGroupSpecialNumber = AnimeGroupMemberKind == AnimeGroupMemberKind.Special ? otherSeries.AnimeGroupSpecialNumber : null;
 
                 if (previousGroupId != AnimeGroupId)
                 {
@@ -180,6 +183,7 @@ namespace NzbDrone.Core.Tv
                 AnimeGroupSeasonNumber = null;
                 AnimeGroupFolder = null;
                 AnimeGroupMovieNumber = null;
+                AnimeGroupSpecialNumber = null;
                 AnimeGroupMemberFolder = null;
             }
         }

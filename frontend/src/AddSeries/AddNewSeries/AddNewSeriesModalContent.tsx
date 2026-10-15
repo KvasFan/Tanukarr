@@ -27,6 +27,7 @@ import { getValidationFailures } from 'Helpers/Hooks/useApiMutation';
 import { icons, inputTypes, kinds, tooltipPositions } from 'Helpers/Props';
 import Language, { DEFAULT_LANGUAGE } from 'Language/Language';
 import { useLanguageById } from 'Language/useLanguages';
+import getMediaType from 'Series/getMediaType';
 import {
   canConfigureAnimeGrouping,
   hasAnimeGroup,
@@ -55,6 +56,7 @@ function AddNewSeriesModalContent({
   initialSeriesType,
   onModalClose,
 }: AddNewSeriesModalContentProps) {
+  const isMovie = getMediaType(series) === 'movie';
   const {
     title: lookupTitle,
     originalTitle,
@@ -99,7 +101,7 @@ function AddNewSeriesModalContent({
   }, [options, addError]);
 
   const [seriesType, setSeriesType] = useState<SeriesType>(
-    initialSeriesType === 'standard'
+    !isMovie && initialSeriesType === 'standard'
       ? settings.seriesType.value
       : initialSeriesType
   );
@@ -120,6 +122,7 @@ function AddNewSeriesModalContent({
     animeGroupSeasonNumber: series.animeGroupSeasonNumber,
     animeGroupMemberKind: series.animeGroupMemberKind,
     animeGroupMovieNumber: series.animeGroupMovieNumber,
+    animeGroupSpecialNumber: series.animeGroupSpecialNumber,
     animeGroupKind: series.animeGroupKind,
     animeGroupMovieFolderStyle: series.animeGroupMovieFolderStyle,
   });
@@ -140,7 +143,11 @@ function AddNewSeriesModalContent({
   const isGrouped = canGroup && hasAnimeGroup(resolvedGrouping ?? {});
   const generatesGroupedPath = isGrouped && !series.path?.trim();
 
-  const { data: orderings } = useEpisodeOrderings(series.tmdbId, series.imdbId);
+  const { data: orderings } = useEpisodeOrderings(
+    series.tmdbId,
+    series.imdbId,
+    !isMovie
+  );
 
   const orderingOptions = useMemo(() => {
     return orderings.map((ordering) => ({
@@ -216,7 +223,7 @@ function AddNewSeriesModalContent({
       ...(canGroup ? grouping : {}),
       rootFolderPath: rootFolderPath.value,
       addOptions: {
-        monitor: monitor.value,
+        monitor: isMovie && monitor.value !== 'none' ? 'all' : monitor.value,
         searchForMissingEpisodes: searchForMissingEpisodes.value,
         searchForCutoffUnmetEpisodes: searchForCutoffUnmetEpisodes.value,
       },
@@ -224,7 +231,8 @@ function AddNewSeriesModalContent({
       seriesType,
       seasonType,
       language,
-      seasonFolder: generatesGroupedPath ? false : seasonFolder.value,
+      seasonFolder:
+        isMovie || generatesGroupedPath ? false : seasonFolder.value,
       tags: tags.value,
       orderingId: orderingId || null,
     });
@@ -233,6 +241,7 @@ function AddNewSeriesModalContent({
     canGroup,
     grouping,
     generatesGroupedPath,
+    isMovie,
     seriesType,
     seasonType,
     orderingId,
@@ -323,17 +332,37 @@ function AddNewSeriesModalContent({
                       <Icon className={styles.labelIcon} name={icons.INFO} />
                     }
                     title={translate('MonitoringOptions')}
-                    body={<SeriesMonitoringOptionsPopoverContent />}
+                    body={
+                      isMovie ? (
+                        translate('MovieMonitoringHelp')
+                      ) : (
+                        <SeriesMonitoringOptionsPopoverContent />
+                      )
+                    }
                     position={tooltipPositions.RIGHT}
                   />
                 </FormLabel>
 
-                <FormInput
-                  type={inputTypes.MONITOR_EPISODES_SELECT}
-                  name="monitor"
-                  onChange={handleInputChange}
-                  {...monitor}
-                />
+                {isMovie ? (
+                  <FormInput
+                    type={inputTypes.SELECT}
+                    name="monitor"
+                    values={[
+                      { key: 'all', value: translate('Monitored') },
+                      { key: 'none', value: translate('Unmonitored') },
+                    ]}
+                    onChange={handleInputChange}
+                    {...monitor}
+                    value={monitor.value === 'none' ? 'none' : 'all'}
+                  />
+                ) : (
+                  <FormInput
+                    type={inputTypes.MONITOR_EPISODES_SELECT}
+                    name="monitor"
+                    onChange={handleInputChange}
+                    {...monitor}
+                  />
+                )}
               </FormRow>
 
               {orderingOptions.length > 1 ? (
@@ -352,18 +381,20 @@ function AddNewSeriesModalContent({
                 </FormRow>
               ) : null}
 
-              <FormRow>
-                <FormLabel>{translate('SeasonFolder')}</FormLabel>
+              {isMovie ? null : (
+                <FormRow>
+                  <FormLabel>{translate('SeasonFolder')}</FormLabel>
 
-                <FormInput
-                  type={inputTypes.CHECK}
-                  name="seasonFolder"
-                  onChange={handleInputChange}
-                  {...seasonFolder}
-                  value={generatesGroupedPath ? false : seasonFolder.value}
-                  isDisabled={generatesGroupedPath}
-                />
-              </FormRow>
+                  <FormInput
+                    type={inputTypes.CHECK}
+                    name="seasonFolder"
+                    onChange={handleInputChange}
+                    {...seasonFolder}
+                    value={generatesGroupedPath ? false : seasonFolder.value}
+                    isDisabled={generatesGroupedPath}
+                  />
+                </FormRow>
+              )}
 
               <FormRow>
                 <FormLabel>{translate('QualityProfile')}</FormLabel>
@@ -376,28 +407,30 @@ function AddNewSeriesModalContent({
                 />
               </FormRow>
 
-              <FormRow>
-                <FormLabel>
-                  {translate('SeriesType')}
+              {isMovie ? null : (
+                <FormRow>
+                  <FormLabel>
+                    {translate('SeriesType')}
 
-                  <Popover
-                    anchor={
-                      <Icon className={styles.labelIcon} name={icons.INFO} />
-                    }
-                    title={translate('SeriesTypes')}
-                    body={<SeriesTypePopoverContent />}
-                    position={tooltipPositions.RIGHT}
+                    <Popover
+                      anchor={
+                        <Icon className={styles.labelIcon} name={icons.INFO} />
+                      }
+                      title={translate('SeriesTypes')}
+                      body={<SeriesTypePopoverContent />}
+                      position={tooltipPositions.RIGHT}
+                    />
+                  </FormLabel>
+                  <FormInputHelpText text={translate('SeriesTypesHelpText')} />
+                  <FormInput
+                    type={inputTypes.SERIES_TYPE_SELECT}
+                    name="seriesType"
+                    onChange={handleInputChange}
+                    {...seriesTypeSetting}
+                    value={seriesType}
                   />
-                </FormLabel>
-                <FormInputHelpText text={translate('SeriesTypesHelpText')} />
-                <FormInput
-                  type={inputTypes.SERIES_TYPE_SELECT}
-                  name="seriesType"
-                  onChange={handleInputChange}
-                  {...seriesTypeSetting}
-                  value={seriesType}
-                />
-              </FormRow>
+                </FormRow>
+              )}
 
               {canGroup ? (
                 <AnimeGroupingOptions
@@ -422,20 +455,22 @@ function AddNewSeriesModalContent({
                 />
               </FormRow>
 
-              <FormRow>
-                <FormLabel>{translate('SeasonType')}</FormLabel>
+              {isMovie ? null : (
+                <FormRow>
+                  <FormLabel>{translate('SeasonType')}</FormLabel>
 
-                <FormInputHelpText text={translate('SeasonTypeHelpText')} />
-                <FormInput
-                  type={inputTypes.SEASON_TYPE_SELECT}
-                  name="seasonType"
-                  value={seasonType}
-                  seasonTypes={seasonTypes}
-                  includeNoChange={false}
-                  includeMixed={false}
-                  onChange={handleSeasonTypeChange}
-                />
-              </FormRow>
+                  <FormInputHelpText text={translate('SeasonTypeHelpText')} />
+                  <FormInput
+                    type={inputTypes.SEASON_TYPE_SELECT}
+                    name="seasonType"
+                    value={seasonType}
+                    seasonTypes={seasonTypes}
+                    includeNoChange={false}
+                    includeMixed={false}
+                    onChange={handleSeasonTypeChange}
+                  />
+                </FormRow>
+              )}
             </Form>
           </div>
         </div>

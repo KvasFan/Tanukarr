@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
+import React, { Suspense } from 'react';
 import {
   createBrowserRouter,
   createRoutesFromElements,
@@ -7,6 +7,7 @@ import {
   Route,
   RouterProvider,
 } from 'react-router-dom';
+import LoadingIndicator from 'Components/Loading/LoadingIndicator';
 import Page from 'Components/Page/Page';
 import ApplyTheme from './ApplyTheme';
 import { appRouteElements } from './AppRoutes';
@@ -17,7 +18,9 @@ function PageLayout() {
     <>
       <ApplyTheme />
       <Page>
-        <Outlet />
+        <Suspense fallback={<LoadingIndicator />}>
+          <Outlet />
+        </Suspense>
       </Page>
     </>
   );

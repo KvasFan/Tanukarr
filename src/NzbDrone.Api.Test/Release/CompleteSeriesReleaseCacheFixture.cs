@@ -11,6 +11,7 @@ using NzbDrone.Core.History;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Profiles.Qualities;
 using NzbDrone.Core.Qualities;
@@ -139,6 +140,88 @@ namespace NzbDrone.Api.Test.Release
                     SearchInfo = new V5.SearchInfoResource { CompleteSeries = complete, SeriesId = seriesId }
                 });
             }
+        }
+
+        private void ConfigureMovie(bool collectionPack)
+        {
+            _complete.Series.MediaType = MediaType.Movie;
+            _complete.Series.MetadataSource = MetadataSourceType.TmdbMovie;
+            _complete.Series.Title = "Generated Feature One";
+            _complete.Series.Year = 2019;
+            _complete.Series.Runtime = 96;
+            _complete.Series.Monitored = true;
+            _complete.Series.AnimeGroupingMode = AnimeGroupingMode.Manual;
+            _complete.Series.AnimeGroupId = "manual:feature-collection";
+            _complete.Series.AnimeGroupTitle = "Generated Feature Collection";
+            _complete.Series.AnimeGroupMemberKind = AnimeGroupMemberKind.Movie;
+            _complete.Series.AnimeGroupMovieNumber = 1;
+            _complete.Episodes = _complete.Episodes.Take(1).ToList();
+            var movies = new List<Series>
+            {
+                _complete.Series,
+                new Series
+                {
+                    Id = ForeignSeriesId, Title = "Generated Feature Two", Year = 2021, Runtime = 97,
+                    MediaType = MediaType.Movie, Monitored = true, AnimeGroupingMode = AnimeGroupingMode.Manual,
+                    AnimeGroupId = _complete.Series.AnimeGroupId, AnimeGroupTitle = _complete.Series.AnimeGroupTitle,
+                    AnimeGroupMemberKind = AnimeGroupMemberKind.Movie, AnimeGroupMovieNumber = 2
+                }
+            };
+            _complete.Release.Title = collectionPack
+                ? "Generated Feature Collection.2019-2021.720p.WEB-DL.H264-Fixture"
+                : "Generated Feature One.2019.720p.WEB-DL.H264-Fixture";
+            _complete.ParsedEpisodeInfo = collectionPack
+                ? MovieCollectionPackParser.Match(_complete.Release.Title, new NzbDrone.Core.IndexerSearch.Definitions.MovieSearchCriteria { Series = _complete.Series, CollectionMovies = movies })
+                : MovieReleaseParser.Match(_complete.Release.Title, _complete.Series);
+            Mocker.GetMock<ISeriesService>().Setup(s => s.GetAllSeries()).Returns(movies);
+        }
+
+        [TestCase(3, false)]
+        [TestCase(5, false)]
+        [TestCase(3, true)]
+        [TestCase(5, true)]
+        public async Task movie_complete_context_can_grab_verified_native_feature_or_collection_pack(int version, bool collectionPack)
+        {
+            ConfigureMovie(collectionPack);
+            await SearchComplete(version);
+            await Grab(version, true);
+
+            Mocker.GetMock<IDownloadService>().Verify(s => s.DownloadReport(_complete, null), Times.Once());
+            _complete.Episodes.Should().ContainSingle(episode => episode.SeriesId == NativeSeriesId && episode.SeasonNumber == 1 && episode.EpisodeNumber == 1);
+        }
+
+        [TestCase(3, "foreignEpisode")]
+        [TestCase(5, "foreignEpisode")]
+        [TestCase(3, "duplicateFeature")]
+        [TestCase(5, "duplicateFeature")]
+        [TestCase(3, "nativeEpisode")]
+        [TestCase(5, "nativeEpisode")]
+        [TestCase(3, "wrongYear")]
+        [TestCase(5, "wrongYear")]
+        [TestCase(3, "staleCollection")]
+        [TestCase(5, "staleCollection")]
+        [TestCase(3, "wrongCollectionMarker")]
+        [TestCase(5, "wrongCollectionMarker")]
+        [TestCase(3, "unmonitoredCollection")]
+        [TestCase(5, "unmonitoredCollection")]
+        public async Task movie_complete_context_must_reject_inconsistent_native_or_collection_coverage(int version, string defect)
+        {
+            var pack = defect is "staleCollection" or "wrongCollectionMarker" or "unmonitoredCollection";
+            ConfigureMovie(pack);
+            switch (defect)
+            {
+                case "foreignEpisode": _complete.Episodes[0].SeriesId = ForeignSeriesId; break;
+                case "duplicateFeature": _complete.Episodes.Add(_complete.Episodes[0]); break;
+                case "nativeEpisode": _complete.Episodes[0].EpisodeNumber = 2; break;
+                case "wrongYear": _complete.Release.Title = "Generated Feature One.2020.720p.WEB-DL.H264-Fixture"; break;
+                case "staleCollection": _complete.Series.AnimeGroupId = "manual:changed-collection"; break;
+                case "wrongCollectionMarker": _complete.ParsedEpisodeInfo.MovieCollectionId = "manual:changed-collection"; break;
+                case "unmonitoredCollection": Mocker.GetMock<ISeriesService>().Object.GetAllSeries()[1].Monitored = false; break;
+            }
+
+            await SearchComplete(version);
+            Assert.ThrowsAsync<NzbDroneClientException>(async () => await Grab(version, true));
+            Mocker.GetMock<IDownloadService>().VerifyNoOtherCalls();
         }
 
         [TestCase(3, false)]

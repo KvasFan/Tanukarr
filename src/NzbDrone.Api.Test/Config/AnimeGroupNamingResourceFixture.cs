@@ -37,6 +37,7 @@ namespace NzbDrone.Api.Test.ConfigTests
             _existing.AnimeGroupArcFolderFormat = "Arc - {Group Arc Title}";
             _existing.AnimeGroupMovieFolderFormat = "Movie - {Series Title}";
             _existing.AnimeGroupMovieSagaFolderFormat = "Feature {Group Movie:00}";
+            _existing.MovieFormat = "{Series Title} ({Series Year}) [{Quality Full}]";
             _saved = null;
             Mocker.GetMock<INamingConfigService>().Setup(s => s.GetConfig()).Returns(() => _existing);
             Mocker.GetMock<INamingConfigService>().Setup(s => s.Save(It.IsAny<NamingConfig>())).Callback<NamingConfig>(saved => _saved = saved);
@@ -55,6 +56,7 @@ namespace NzbDrone.Api.Test.ConfigTests
             resource.AnimeGroupArcFolderFormat = null;
             resource.AnimeGroupMovieFolderFormat = null;
             resource.AnimeGroupMovieSagaFolderFormat = null;
+            resource.MovieFormat = null;
 
             Update(resource);
 
@@ -63,6 +65,7 @@ namespace NzbDrone.Api.Test.ConfigTests
             _saved.AnimeGroupArcFolderFormat.Should().Be(_existing.AnimeGroupArcFolderFormat);
             _saved.AnimeGroupMovieFolderFormat.Should().Be(_existing.AnimeGroupMovieFolderFormat);
             _saved.AnimeGroupMovieSagaFolderFormat.Should().Be(_existing.AnimeGroupMovieSagaFolderFormat);
+            _saved.MovieFormat.Should().Be(_existing.MovieFormat);
         }
 
         [Test]

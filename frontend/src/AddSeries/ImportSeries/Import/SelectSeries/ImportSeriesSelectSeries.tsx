@@ -26,7 +26,11 @@ import LoadingIndicator from 'Components/Loading/LoadingIndicator';
 import useDebounce from 'Helpers/Hooks/useDebounce';
 import { icons, kinds } from 'Helpers/Props';
 import { usePreferredMetadataLanguage } from 'Language/useLanguages';
+import getMediaType from 'Series/getMediaType';
+import { getSeriesIdentityKey } from 'Series/isSameSeriesIdentity';
+import Series from 'Series/Series';
 import useExistingSeries from 'Series/useExistingSeries';
+import useEnabledMetadataSource from 'Settings/MetadataSource/useEnabledMetadataSource';
 import { InputChanged } from 'typings/inputs';
 import getErrorMessage from 'Utilities/Object/getErrorMessage';
 import translate from 'Utilities/String/translate';
@@ -63,8 +67,10 @@ function ImportSeriesSelectSeries({
   const { selectedSeries, name } = importSeriesItem ?? {};
   const language = usePreferredMetadataLanguage();
   const isExistingSeries = useExistingSeries(selectedSeries);
+  const { metadataSource, isFetched: sourcesFetched } =
+    useEnabledMetadataSource();
 
-  const [term, setTerm] = useState(name);
+  const [term, setTerm] = useState(name ?? '');
   const [editText, setEditText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -78,7 +84,8 @@ function ImportSeriesSelectSeries({
 
   const { isFetching, isFetched, error, data } = useLookupSeries(query, {
     language,
-    isEnabled: isCurrentLookupQueueItem,
+    metadataSource,
+    isEnabled: sourcesFetched && isCurrentLookupQueueItem,
   });
 
   const errorMessage = getErrorMessage(error);
@@ -148,10 +155,8 @@ function ImportSeriesSelectSeries({
   );
 
   const handleSeriesSelect = useCallback(
-    (tvdbId: number) => {
-      const nextSeries = data.find((item) => item.tvdbId === tvdbId);
-
-      if (!nextSeries) {
+    (nextSeries: Series) => {
+      if (!getSeriesIdentityKey(nextSeries)) {
         return;
       }
 
@@ -159,11 +164,18 @@ function ImportSeriesSelectSeries({
       setIsEditing(false);
       inputRef.current?.blur();
 
-      if (nextSeries.seriesType !== 'standard') {
+      if (
+        getMediaType(nextSeries) === 'movie' ||
+        nextSeries.seriesType !== 'standard'
+      ) {
         onInputChange({ name: 'seriesType', value: nextSeries.seriesType });
       }
+
+      if (getMediaType(nextSeries) === 'movie') {
+        onInputChange({ name: 'seasonFolder', value: false });
+      }
     },
-    [id, data, onInputChange]
+    [id, onInputChange]
   );
 
   const handleKeyDown = useCallback(
@@ -179,7 +191,7 @@ function ImportSeriesSelectSeries({
 
         if (item) {
           event.preventDefault();
-          handleSeriesSelect(item.tvdbId);
+          handleSeriesSelect(item);
         }
       } else if (event.key === 'Escape') {
         setIsEditing(false);
@@ -214,7 +226,7 @@ function ImportSeriesSelectSeries({
   }, [isEditing, onEditingChange]);
 
   useEffect(() => {
-    setTerm(name);
+    setTerm(name ?? '');
   }, [name]);
 
   useEffect(() => {
@@ -335,12 +347,9 @@ function ImportSeriesSelectSeries({
               {data.map((item, index) => {
                 return (
                   <ImportSeriesSearchResult
-                    key={item.tvdbId}
+                    key={getSeriesIdentityKey(item)}
                     id={`${resultsId}_${index}`}
-                    tvdbId={item.tvdbId}
-                    title={item.title}
-                    year={item.year}
-                    network={item.network}
+                    series={item}
                     isHighlighted={index === highlightedIndex}
                     onPress={handleSeriesSelect}
                   />

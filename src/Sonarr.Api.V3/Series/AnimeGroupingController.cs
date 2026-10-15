@@ -30,7 +30,8 @@ namespace Sonarr.Api.V3.Series
             return TypedResults.Ok(_groupingService.Resolve(new NzbDrone.Core.Tv.Series
             {
                 MetadataSource = metadataSource,
-                ForeignId = id.ToString()
+                ForeignId = id.ToString(),
+                MediaType = metadataSource == MetadataSourceType.TmdbMovie ? NzbDrone.Core.Tv.MediaType.Movie : NzbDrone.Core.Tv.MediaType.Series
             }));
         }
     }

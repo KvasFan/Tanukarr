@@ -27,7 +27,7 @@
   },
   "include": [
       "./src/**/*",
-      "./.eslintrc.cjs",
+      "./eslint*.cjs",
       "../vite.config.ts",
       "./typings/*.ts",
   ],

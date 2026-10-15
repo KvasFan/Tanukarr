@@ -14,6 +14,8 @@ export interface MetadataSourceSettingsModel {
    */
   tmdbApiKey: string;
   tmdbApiKeyConfigured: boolean;
+  omdbApiKey: string;
+  omdbApiKeyConfigured: boolean;
   metadataSourceOrder: MetadataSource[];
   disabledMetadataSources: MetadataSource[];
 }

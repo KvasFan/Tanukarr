@@ -16,6 +16,9 @@ bin/
 
 # Reinstalled inside the image; a host copy is the wrong platform for Linux.
 node_modules
+.yarn/cache/
+.yarn/install-state.gz
+.yarn/unplugged/
 
 # Compose runtime data and local environment settings are not source files.
 config/
@@ -40,7 +43,8 @@ media/
 # deliberately not excluded: the image is a binary distribution of GPL software and
 # ships its licence.
 docs/
-distribution/
+distribution/*
+!distribution/licenses/
 docker/tests/
 docker/release/
 docker-compose.yml

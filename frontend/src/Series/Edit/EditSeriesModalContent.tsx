@@ -24,6 +24,7 @@ import {
   sizes,
   tooltipPositions,
 } from 'Helpers/Props';
+import getMediaType from 'Series/getMediaType';
 import { canConfigureAnimeGrouping } from 'Series/Grouping/animeGrouping';
 import AnimeGroupingOptions from 'Series/Grouping/AnimeGroupingOptions';
 import useAnimeGroupingPreview from 'Series/Grouping/useAnimeGroupingPreview';
@@ -54,6 +55,7 @@ function EditSeriesModalContent({
   onDeleteSeriesPress,
 }: EditSeriesModalContentProps) {
   const series = useSingleSeries(seriesId)!;
+  const isMovie = getMediaType(series) === 'movie';
 
   const {
     title,
@@ -204,6 +206,10 @@ function EditSeriesModalContent({
       setPendingChange('animeGroupSeasonNumber', value.animeGroupSeasonNumber);
       setPendingChange('animeGroupMemberKind', value.animeGroupMemberKind);
       setPendingChange('animeGroupMovieNumber', value.animeGroupMovieNumber);
+      setPendingChange(
+        'animeGroupSpecialNumber',
+        value.animeGroupSpecialNumber
+      );
       setPendingChange('animeGroupKind', value.animeGroupKind);
       setPendingChange(
         'animeGroupMovieFolderStyle',
@@ -309,37 +315,47 @@ function EditSeriesModalContent({
             />
           </FormRow>
 
-          <FormRow size={sizes.MEDIUM}>
-            <FormLabel>
-              {translate('MonitorNewSeasons')}
-              <Popover
-                anchor={<Icon className={styles.labelIcon} name={icons.INFO} />}
-                title={translate('MonitorNewSeasons')}
-                body={<SeriesMonitorNewItemsOptionsPopoverContent />}
-                position={tooltipPositions.RIGHT}
-              />
-            </FormLabel>
+          {isMovie ? null : (
+            <>
+              <FormRow size={sizes.MEDIUM}>
+                <FormLabel>
+                  {translate('MonitorNewSeasons')}
+                  <Popover
+                    anchor={
+                      <Icon className={styles.labelIcon} name={icons.INFO} />
+                    }
+                    title={translate('MonitorNewSeasons')}
+                    body={<SeriesMonitorNewItemsOptionsPopoverContent />}
+                    position={tooltipPositions.RIGHT}
+                  />
+                </FormLabel>
 
-            <FormInputHelpText text={translate('MonitorNewSeasonsHelpText')} />
-            <FormInput
-              type={inputTypes.MONITOR_NEW_ITEMS_SELECT}
-              name="monitorNewItems"
-              {...settings.monitorNewItems}
-              onChange={handleInputChange}
-            />
-          </FormRow>
+                <FormInputHelpText
+                  text={translate('MonitorNewSeasonsHelpText')}
+                />
+                <FormInput
+                  type={inputTypes.MONITOR_NEW_ITEMS_SELECT}
+                  name="monitorNewItems"
+                  {...settings.monitorNewItems}
+                  onChange={handleInputChange}
+                />
+              </FormRow>
 
-          <FormRow size={sizes.MEDIUM}>
-            <FormLabel>{translate('UseSeasonFolder')}</FormLabel>
+              <FormRow size={sizes.MEDIUM}>
+                <FormLabel>{translate('UseSeasonFolder')}</FormLabel>
 
-            <FormInputHelpText text={translate('UseSeasonFolderHelpText')} />
-            <FormInput
-              type={inputTypes.CHECK}
-              name="seasonFolder"
-              {...settings.seasonFolder}
-              onChange={handleInputChange}
-            />
-          </FormRow>
+                <FormInputHelpText
+                  text={translate('UseSeasonFolderHelpText')}
+                />
+                <FormInput
+                  type={inputTypes.CHECK}
+                  name="seasonFolder"
+                  {...settings.seasonFolder}
+                  onChange={handleInputChange}
+                />
+              </FormRow>
+            </>
+          )}
 
           <FormRow size={sizes.MEDIUM}>
             <FormLabel>{translate('QualityProfile')}</FormLabel>
@@ -352,17 +368,19 @@ function EditSeriesModalContent({
             />
           </FormRow>
 
-          <FormRow size={sizes.MEDIUM}>
-            <FormLabel>{translate('SeriesType')}</FormLabel>
+          {isMovie ? null : (
+            <FormRow size={sizes.MEDIUM}>
+              <FormLabel>{translate('SeriesType')}</FormLabel>
 
-            <FormInputHelpText text={translate('SeriesTypesHelpText')} />
-            <FormInput
-              type={inputTypes.SERIES_TYPE_SELECT}
-              name="seriesType"
-              {...settings.seriesType}
-              onChange={handleInputChange}
-            />
-          </FormRow>
+              <FormInputHelpText text={translate('SeriesTypesHelpText')} />
+              <FormInput
+                type={inputTypes.SERIES_TYPE_SELECT}
+                name="seriesType"
+                {...settings.seriesType}
+                onChange={handleInputChange}
+              />
+            </FormRow>
+          )}
 
           {canGroup ? (
             <AnimeGroupingOptions
@@ -387,21 +405,23 @@ function EditSeriesModalContent({
             />
           </FormRow>
 
-          <FormRow size={sizes.MEDIUM}>
-            <FormLabel>{translate('SeasonType')}</FormLabel>
+          {isMovie ? null : (
+            <FormRow size={sizes.MEDIUM}>
+              <FormLabel>{translate('SeasonType')}</FormLabel>
 
-            <FormInputHelpText text={translate('SeasonTypeHelpText')} />
-            <FormInput
-              type={inputTypes.SEASON_TYPE_SELECT}
-              name="seasonType"
-              {...settings.seasonType}
-              seasonTypes={seasonTypes}
-              isDisabled={!seasonTypes.length || episodeFileCount > 0}
-              includeNoChange={false}
-              includeMixed={false}
-              onChange={handleInputChange}
-            />
-          </FormRow>
+              <FormInputHelpText text={translate('SeasonTypeHelpText')} />
+              <FormInput
+                type={inputTypes.SEASON_TYPE_SELECT}
+                name="seasonType"
+                {...settings.seasonType}
+                seasonTypes={seasonTypes}
+                isDisabled={!seasonTypes.length || episodeFileCount > 0}
+                includeNoChange={false}
+                includeMixed={false}
+                onChange={handleInputChange}
+              />
+            </FormRow>
+          )}
 
           <FormRow size={sizes.MEDIUM}>
             <FormLabel>{translate('SeriesFolderName')}</FormLabel>

@@ -11,6 +11,8 @@ namespace Sonarr.Api.V3.Config
         public List<MetadataSourceType> MetadataSourceOrder { get; set; }
         public List<MetadataSourceType> DisabledMetadataSources { get; set; }
         public bool TmdbApiKeyConfigured { get; set; }
+        public bool OmdbApiKeyConfigured { get; set; }
+        public string OmdbApiKey { get; set; }
 
         /// <summary>
         /// User-supplied TMDB API key. TMDB requires one per user and does not permit a
@@ -28,6 +30,8 @@ namespace Sonarr.Api.V3.Config
                 MetadataSourceOrder = MetadataSourcePolicy.Order(model),
                 DisabledMetadataSources = MetadataSourcePolicy.Disabled(model),
                 TmdbApiKeyConfigured = model.TmdbApiKey.IsNotNullOrWhiteSpace(),
+                OmdbApiKeyConfigured = model.OmdbApiKey.IsNotNullOrWhiteSpace(),
+                OmdbApiKey = model.OmdbApiKey.IsNotNullOrWhiteSpace() ? "********" : string.Empty,
                 TmdbApiKey = model.TmdbApiKey.IsNotNullOrWhiteSpace() ? "********" : string.Empty
             };
         }

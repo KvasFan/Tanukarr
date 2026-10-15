@@ -1,6 +1,31 @@
 # Contributors and feature provenance
 
-The October 15, 2026 **0.1.0 version reset** derives from 1.1.0 source
+The current **0.1.0 movie and hardening contribution** uses **OpenAI Codex based
+on GPT-6** for the TMDB Movie and IMDb-backed OMDb providers, separate media and
+special-member identities, collection range validation, strict movie-pack
+matching, native file compatibility, graphical workflow checks, genuine local
+download/Jellyfin fixtures and dependency/container updates. Specialist roles
+follow the MIT-licensed
+[wshobson/agents definitions at `044b4b21`](https://github.com/wshobson/agents/tree/044b4b21f083948e69ec878a7b07c8d0951a6ffa).
+Those role definitions do not identify a different model.
+
+The movie providers are original implementations of the official TMDB and OMDb
+API contracts. Radarr's GPL-3.0
+[`df2faa64` architecture](https://github.com/Radarr/Radarr/tree/df2faa64c75e6081556d11232dc46523e7264ea1)
+was inspected for provider/parser boundaries; no Radarr source was copied and
+no Radarr metadata service is used. The inherited Sonarr application and the
+original feature authors remain credited below. Third-party runtime and tool
+licenses are distributed with their respective components.
+
+The maintained ESLint configuration retains handler-naming semantics from
+Jake Marsh's MIT-licensed
+[`eslint-plugin-react` v7.37.5 `jsx-handler-names` rule](https://github.com/jsx-eslint/eslint-plugin-react/blob/2c98b83c451a4297edf1787d9a616e50687e27e8/lib/rules/jsx-handler-names.js)
+at source commit `2c98b83c451a4297edf1787d9a616e50687e27e8`.
+The local policy adaptation and its regression cases use OpenAI Codex based on
+GPT-6. The [original MIT notice](distribution/licenses/eslint-plugin-react-LICENSE.txt)
+is retained alongside the dependency notices.
+
+The October 15, 2026 **0.1.0 contribution** builds on source
 `3c997ff8ed5e022a04a54a2f1c90b8682eccdc89`, retaining all original Git authors
 and co-author trailers. **OpenAI Codex based on GPT-6** implemented the local
 first-run account form, collection/quality/artwork/grouping corrections,
@@ -11,7 +36,7 @@ backend-architect and security-auditor definitions; those role documents do not
 establish a different runtime model. TVmaze metadata attribution and licensing
 are documented in the [provider guide](docs/metadata-providers.md). The new
 [verification ledger](docs/releases/0.1.0-verification.md) owns this build's
-evidence. The former 0.1.0 report is retained under its
+evidence. The October 12 report is retained under its
 [legacy filename](docs/releases/legacy-0.1.0-verification.md).
 
 This Tanukarr register credits the upstream application, original fork implementations,

@@ -25,6 +25,7 @@ namespace NzbDrone.Api.Test
             Mocker.GetMock<IConfigService>().SetupProperty(config => config.MetadataSourceOrder, string.Empty);
             Mocker.GetMock<IConfigService>().SetupProperty(config => config.DisabledMetadataSources, string.Empty);
             Mocker.GetMock<IConfigService>().SetupProperty(config => config.TmdbApiKey, "private-test-key");
+            Mocker.GetMock<IConfigService>().SetupProperty(config => config.OmdbApiKey, "private-omdb-test-key");
             Mocker.Resolve<V5Controller>().Url = new Mock<IUrlHelper>().Object;
         }
 
@@ -33,8 +34,8 @@ namespace NzbDrone.Api.Test
         public void should_mask_credentials_on_both_versions(bool v3)
         {
             var resource = v3 ? (object)V3Mapper.ToResource(Mocker.Resolve<IConfigService>()) : V5Mapper.ToResource(Mocker.Resolve<IConfigService>());
-            Json.ToJson(resource).Should().NotContain("private-test-key").And.Contain("********");
-            STJson.ToJson(resource).Should().NotContain("private-test-key").And.Contain("********");
+            Json.ToJson(resource).Should().NotContain("private-test-key").And.NotContain("private-omdb-test-key").And.Contain("********");
+            STJson.ToJson(resource).Should().NotContain("private-test-key").And.NotContain("private-omdb-test-key").And.Contain("********");
         }
 
         [TestCase(true)]
@@ -45,16 +46,17 @@ namespace NzbDrone.Api.Test
             var disabled = new List<MetadataSourceType> { MetadataSourceType.Tmdb };
             if (v3)
             {
-                Mocker.Resolve<V3Controller>().SaveConfig(new V3Resource { Id = 1, TmdbApiKey = "********", MetadataSourceOrder = order, DisabledMetadataSources = disabled });
+                Mocker.Resolve<V3Controller>().SaveConfig(new V3Resource { Id = 1, TmdbApiKey = "********", OmdbApiKey = "********", MetadataSourceOrder = order, DisabledMetadataSources = disabled });
             }
             else
             {
-                Mocker.Resolve<V5Controller>().SaveSettings(new V5Resource { Id = 1, TmdbApiKey = "********", MetadataSourceOrder = order, DisabledMetadataSources = disabled });
+                Mocker.Resolve<V5Controller>().SaveSettings(new V5Resource { Id = 1, TmdbApiKey = "********", OmdbApiKey = "********", MetadataSourceOrder = order, DisabledMetadataSources = disabled });
             }
 
             MetadataSourcePolicy.Order(Mocker.Resolve<IConfigService>()).Should().StartWith(order);
             MetadataSourcePolicy.Disabled(Mocker.Resolve<IConfigService>()).Should().Equal(disabled);
             Mocker.Resolve<IConfigService>().TmdbApiKey.Should().Be("private-test-key");
+            Mocker.Resolve<IConfigService>().OmdbApiKey.Should().Be("private-omdb-test-key");
         }
 
         [TestCase(true)]
@@ -74,6 +76,24 @@ namespace NzbDrone.Api.Test
 
             Mocker.Resolve<IConfigService>().MetadataSourceOrder.Should().Be("2,0,1,3");
             Mocker.Resolve<IConfigService>().DisabledMetadataSources.Should().Be("1");
+            Mocker.Resolve<IConfigService>().TmdbApiKey.Should().Be("private-test-key");
+            Mocker.Resolve<IConfigService>().OmdbApiKey.Should().Be("private-omdb-test-key");
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_save_an_explicit_omdb_key_without_changing_other_provider_settings(bool v3)
+        {
+            if (v3)
+            {
+                Mocker.Resolve<V3Controller>().SaveConfig(new V3Resource { Id = 1, OmdbApiKey = "new-generated-unit-key" });
+            }
+            else
+            {
+                Mocker.Resolve<V5Controller>().SaveSettings(new V5Resource { Id = 1, OmdbApiKey = "new-generated-unit-key" });
+            }
+
+            Mocker.Resolve<IConfigService>().OmdbApiKey.Should().Be("new-generated-unit-key");
             Mocker.Resolve<IConfigService>().TmdbApiKey.Should().Be("private-test-key");
         }
     }

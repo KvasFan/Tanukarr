@@ -35,9 +35,9 @@ namespace NzbDrone.Core.Indexers.Newznab
         {
             RuleFor(c => c).Custom((c, context) =>
             {
-                if (c.Categories.Empty() && c.AnimeCategories.Empty())
+                if (c.Categories.Empty() && c.AnimeCategories.Empty() && (c.MovieCategories == null || !c.MovieCategories.Any()))
                 {
-                    context.AddFailure("Either 'Categories' or 'Anime Categories' must be provided");
+                    context.AddFailure("At least one TV, anime or movie category must be provided");
                 }
             });
 
@@ -58,6 +58,7 @@ namespace NzbDrone.Core.Indexers.Newznab
             ApiPath = "/api";
             Categories = new[] { 5030, 5040 };
             AnimeCategories = Enumerable.Empty<int>();
+            MovieCategories = new[] { 2000 };
             MultiLanguages = Array.Empty<int>();
             FailDownloads = Array.Empty<int>();
         }
@@ -77,6 +78,9 @@ namespace NzbDrone.Core.Indexers.Newznab
 
         [FieldDefinition(4, Label = "IndexerSettingsAnimeCategories", Type = FieldType.Select, SelectOptionsProviderAction = "newznabCategories", HelpText = "IndexerSettingsAnimeCategoriesHelpText")]
         public IEnumerable<int> AnimeCategories { get; set; }
+
+        [FieldDefinition(13, Label = "IndexerSettingsMovieCategories", Type = FieldType.Select, SelectOptionsProviderAction = "newznabCategories", HelpText = "IndexerSettingsMovieCategoriesHelpText")]
+        public IEnumerable<int> MovieCategories { get; set; }
 
         [FieldDefinition(5, Label = "IndexerSettingsAnimeStandardFormatSearch", Type = FieldType.Checkbox, HelpText = "IndexerSettingsAnimeStandardFormatSearchHelpText")]
         public bool AnimeStandardFormatSearch { get; set; }

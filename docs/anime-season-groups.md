@@ -1,12 +1,29 @@
 # Series, anime and movie groups
 
 Groups show related catalogue entries as **one title with separate
-group seasons and movies**. They support TV series, anime and movie sagas.
+group seasons, movies and specials**. They support TV series, anime and movie sagas.
 A movie-only saga can use numbered film folders.
 Each member remains its own series, with its original metadata
 provider, catalogue ID, episodes, monitoring, files and download history. The
 group season is a display and folder position; it does not replace the owning
 catalogue's episode numbering.
+
+Movie and special members have independent position numbers. A collection can
+contain several TV/anime seasons, several films, multiple standalone specials
+and a TV entry's native season-zero episodes. Standalone specials keep their own
+catalogue IDs and occupy separate Special positions; native season-zero
+episodes retain their original numbering.
+
+A native TV entry with several regular seasons reserves consecutive display
+positions starting at its collection season number. The original positive
+native seasons are sorted before assigning those positions, including sparse
+catalogue numbering. Conflicting add/edit/refresh operations are rejected before
+saved membership or episode monitoring changes. Resolve an occupied position
+explicitly; refreshing metadata does not silently move another member.
+
+TMDB Movies uses the provider's explicit collection membership and film order.
+OMDb entries can join a collection manually. Title similarity alone does not
+establish that unrelated movies belong to the same saga.
 
 The grouping model first shipped in 1.0.1. **Tanukarr 1.1.0** adds a full
 collection page for linked catalogue entries and for a native TV entry with
@@ -20,7 +37,7 @@ separate Seasons, Movies and Specials sections. Each entry links to its native
 details page and expands the selected native season. Season pack search,
 episode search, monitoring and season settings remain available on its card.
 
-The 0.1.0 reset opens the complete series editor from Season Settings, with
+Version 0.1.0 opens the complete series editor from Season Settings, with
 monitoring scoped to the selected native season. The native episode table stays
 expanded. Manage Episodes also opens before files exist; Preview Rename requires
 files to preview. Collection searches immediately select their first entry and
@@ -57,13 +74,14 @@ native ID mappings; similar titles are not sufficient. See [Metadata providers](
 
 Use **Grouping** when adding or editing a title. These controls
 are available for all catalogue owners and Series Types. Automatic official
-relation discovery applies to AniList/MyAnimeList owners; other owners can use
-Manual or Disabled. Choose the grouping mode:
+relation discovery applies to AniList/MyAnimeList owners. TMDB Movies uses
+explicit movie-collection membership. Other owners can use Manual or Disabled.
+Choose the grouping mode:
 
 | Mode | Behavior |
 | --- | --- |
-| **Automatic** | For AniList/MyAnimeList owners, use the catalogue's explicit prequel/sequel links when they form a supported, unambiguous chain. |
-| **Manual** | Choose an existing group or create a group, select Season or Movie membership and assign the corresponding number. This overrides automatic discovery for that member. |
+| **Automatic** | For AniList/MyAnimeList owners, use the catalogue's explicit prequel/sequel links when they form a supported, unambiguous chain. TMDB Movies uses its declared movie collection. |
+| **Manual** | Choose an existing group or create a group, select Season, Movie or Special membership and assign the corresponding number. This overrides automatic discovery for that member. |
 | **Disabled** | Keep this title outside the visual group. Disabling grouping does not move its files or restore an earlier path. |
 
 Automatic is the default for newly added entries. An unsupported, unrelated,

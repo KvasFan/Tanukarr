@@ -25,9 +25,9 @@ namespace NzbDrone.Core.Indexers.Torznab
         {
             RuleFor(c => c).Custom((c, context) =>
             {
-                if (c.Categories.Empty() && c.AnimeCategories.Empty())
+                if (c.Categories.Empty() && c.AnimeCategories.Empty() && (c.MovieCategories == null || !c.MovieCategories.Any()))
                 {
-                    context.AddFailure("Either 'Categories' or 'Anime Categories' must be provided");
+                    context.AddFailure("At least one TV, anime or movie category must be provided");
                 }
             });
 

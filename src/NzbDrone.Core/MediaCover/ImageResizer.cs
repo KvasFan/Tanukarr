@@ -2,13 +2,7 @@ using System;
 using System.IO;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Memory;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace NzbDrone.Core.MediaCover
 {
@@ -23,42 +17,14 @@ namespace NzbDrone.Core.MediaCover
         private const long MaxPixels = 16 * 1024 * 1024;
         private const int MaxDimension = 16384;
         private readonly IDiskProvider _diskProvider;
-        private readonly DecoderOptions _decoderOptions;
-        private readonly bool _enabled;
 
         public ImageResizer(IDiskProvider diskProvider, IPlatformInfo platformInfo)
         {
             _diskProvider = diskProvider;
-
-            _enabled = true;
-
-            var configuration = new SixLabors.ImageSharp.Configuration(new JpegConfigurationModule(), new PngConfigurationModule(), new WebpConfigurationModule())
-            {
-                // More conservative memory allocation
-                MemoryAllocator = new SimpleGcMemoryAllocator()
-            };
-
-            // Thumbnails don't need super high quality
-            configuration.ImageFormatsManager.SetEncoder(JpegFormat.Instance, new JpegEncoder
-            {
-                Quality = 92
-            });
-
-            _decoderOptions = new DecoderOptions
-            {
-                Configuration = configuration,
-                SkipMetadata = true,
-                MaxFrames = 1
-            };
         }
 
         public void Resize(string source, string destination, int height)
         {
-            if (!_enabled)
-            {
-                return;
-            }
-
             try
             {
                 if (height <= 0 || height > MaxDimension || new FileInfo(source).Length > MaxEncodedBytes)
@@ -66,7 +32,13 @@ namespace NzbDrone.Core.MediaCover
                     throw new InvalidDataException("Media cover exceeds the thumbnail size limit");
                 }
 
-                var info = Image.Identify(_decoderOptions, source);
+                using var codec = SKCodec.Create(source);
+                if (codec == null || !IsSupportedFormat(codec.EncodedFormat))
+                {
+                    throw new InvalidDataException("Unsupported or invalid media cover format");
+                }
+
+                var info = codec.Info;
                 if (info.Width <= 0 || info.Height <= 0 || info.Width > MaxDimension || info.Height > MaxDimension ||
                     (long)info.Width * info.Height > MaxPixels)
                 {
@@ -79,9 +51,31 @@ namespace NzbDrone.Core.MediaCover
                     throw new InvalidDataException("Media cover exceeds the thumbnail pixel limit");
                 }
 
-                using var image = Image.Load(_decoderOptions, source);
-                image.Mutate(x => x.Resize(0, height));
-                image.Save(destination);
+                // Decode only the first frame into a bounded raster. Re-encoding
+                // that raster does not copy EXIF, ICC or animation metadata.
+                using var image = new SKBitmap(info.Width, info.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+                if (codec.GetPixels(image.Info, image.GetPixels()) != SKCodecResult.Success)
+                {
+                    throw new InvalidDataException("Could not decode media cover");
+                }
+
+                var width = Math.Max(1, (int)Math.Round((double)info.Width * height / info.Height));
+                using var thumbnail = image.Resize(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul),
+                    new SKSamplingOptions(SKCubicResampler.CatmullRom));
+                if (thumbnail == null)
+                {
+                    throw new InvalidDataException("Could not resize media cover");
+                }
+
+                using var output = SKImage.FromBitmap(thumbnail);
+                using var encoded = output.Encode(GetOutputFormat(destination), 92);
+                if (encoded == null)
+                {
+                    throw new InvalidDataException("Could not encode media cover");
+                }
+
+                using var destinationStream = File.Create(destination);
+                encoded.SaveTo(destinationStream);
             }
             catch
             {
@@ -92,6 +86,22 @@ namespace NzbDrone.Core.MediaCover
 
                 throw;
             }
+        }
+
+        private static bool IsSupportedFormat(SKEncodedImageFormat format)
+        {
+            return format is SKEncodedImageFormat.Jpeg or SKEncodedImageFormat.Png or SKEncodedImageFormat.Webp;
+        }
+
+        private static SKEncodedImageFormat GetOutputFormat(string destination)
+        {
+            return Path.GetExtension(destination).ToLowerInvariant() switch
+            {
+                ".jpg" or ".jpeg" => SKEncodedImageFormat.Jpeg,
+                ".png" => SKEncodedImageFormat.Png,
+                ".webp" => SKEncodedImageFormat.Webp,
+                _ => throw new InvalidDataException("Unsupported media cover output format")
+            };
         }
     }
 }

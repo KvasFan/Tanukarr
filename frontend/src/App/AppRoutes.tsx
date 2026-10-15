@@ -1,41 +1,62 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { Navigate, Route } from 'react-router-dom';
-import Blocklist from 'Activity/Blocklist/Blocklist';
-import History from 'Activity/History/History';
-import Queue from 'Activity/Queue/Queue';
-import AddNewSeries from 'AddSeries/AddNewSeries/AddNewSeries';
-import ImportSeries from 'AddSeries/ImportSeries/Import/ImportSeries';
-import ImportSeriesSelectFolder from 'AddSeries/ImportSeries/SelectFolder/ImportSeriesSelectFolder';
-import CalendarPage from 'Calendar/CalendarPage';
 import NotFound from 'Components/NotFound';
-import LibraryTools from 'LibraryTools/LibraryTools';
-import SeriesDetailsPage from 'Series/Details/SeriesDetailsPage';
-import CollectionPage from 'Series/Grouping/CollectionPage';
-import SeriesIndex from 'Series/Index/SeriesIndex';
-import CustomFormatSettingsPage from 'Settings/CustomFormats/CustomFormatSettingsPage';
-import DownloadClientSettings from 'Settings/DownloadClients/DownloadClientSettings';
-import GeneralSettings from 'Settings/General/GeneralSettings';
-import ImportListSettings from 'Settings/ImportLists/ImportListSettings';
-import IndexerSettings from 'Settings/Indexers/IndexerSettings';
-import MediaManagement from 'Settings/MediaManagement/MediaManagement';
-import MetadataSettings from 'Settings/Metadata/MetadataSettings';
-import MetadataSourceSettings from 'Settings/MetadataSource/MetadataSourceSettings';
-import NotificationSettings from 'Settings/Notifications/NotificationSettings';
-import Profiles from 'Settings/Profiles/Profiles';
-import Quality from 'Settings/Quality/Quality';
-import Settings from 'Settings/Settings';
-import TagSettings from 'Settings/Tags/TagSettings';
-import UISettings from 'Settings/UI/UISettings';
-import Statistics from 'Statistics/Statistics';
-import Backups from 'System/Backup/Backups';
-import LogsTable from 'System/Events/LogsTable';
-import AppLogFiles from 'System/Logs/App/AppLogFiles';
-import UpdateLogFiles from 'System/Logs/Update/UpdateLogFiles';
-import Status from 'System/Status/Status';
-import Tasks from 'System/Tasks/Tasks';
-import Updates from 'System/Updates/Updates';
-import CutoffUnmet from 'Wanted/CutoffUnmet/CutoffUnmet';
-import Missing from 'Wanted/Missing/Missing';
+
+const Blocklist = lazy(() => import('Activity/Blocklist/Blocklist'));
+const History = lazy(() => import('Activity/History/History'));
+const Queue = lazy(() => import('Activity/Queue/Queue'));
+const AddNewSeries = lazy(() => import('AddSeries/AddNewSeries/AddNewSeries'));
+const ImportSeries = lazy(
+  () => import('AddSeries/ImportSeries/Import/ImportSeries')
+);
+const ImportSeriesSelectFolder = lazy(
+  () => import('AddSeries/ImportSeries/SelectFolder/ImportSeriesSelectFolder')
+);
+const CalendarPage = lazy(() => import('Calendar/CalendarPage'));
+const LibraryTools = lazy(() => import('LibraryTools/LibraryTools'));
+const SeriesDetailsPage = lazy(
+  () => import('Series/Details/SeriesDetailsPage')
+);
+const CollectionPage = lazy(() => import('Series/Grouping/CollectionPage'));
+const SeriesIndex = lazy(() => import('Series/Index/SeriesIndex'));
+const CustomFormatSettingsPage = lazy(
+  () => import('Settings/CustomFormats/CustomFormatSettingsPage')
+);
+const DownloadClientSettings = lazy(
+  () => import('Settings/DownloadClients/DownloadClientSettings')
+);
+const GeneralSettings = lazy(() => import('Settings/General/GeneralSettings'));
+const ImportListSettings = lazy(
+  () => import('Settings/ImportLists/ImportListSettings')
+);
+const IndexerSettings = lazy(() => import('Settings/Indexers/IndexerSettings'));
+const MediaManagement = lazy(
+  () => import('Settings/MediaManagement/MediaManagement')
+);
+const MetadataSettings = lazy(
+  () => import('Settings/Metadata/MetadataSettings')
+);
+const MetadataSourceSettings = lazy(
+  () => import('Settings/MetadataSource/MetadataSourceSettings')
+);
+const NotificationSettings = lazy(
+  () => import('Settings/Notifications/NotificationSettings')
+);
+const Profiles = lazy(() => import('Settings/Profiles/Profiles'));
+const Quality = lazy(() => import('Settings/Quality/Quality'));
+const Settings = lazy(() => import('Settings/Settings'));
+const TagSettings = lazy(() => import('Settings/Tags/TagSettings'));
+const UISettings = lazy(() => import('Settings/UI/UISettings'));
+const Statistics = lazy(() => import('Statistics/Statistics'));
+const Backups = lazy(() => import('System/Backup/Backups'));
+const LogsTable = lazy(() => import('System/Events/LogsTable'));
+const AppLogFiles = lazy(() => import('System/Logs/App/AppLogFiles'));
+const UpdateLogFiles = lazy(() => import('System/Logs/Update/UpdateLogFiles'));
+const Status = lazy(() => import('System/Status/Status'));
+const Tasks = lazy(() => import('System/Tasks/Tasks'));
+const Updates = lazy(() => import('System/Updates/Updates'));
+const CutoffUnmet = lazy(() => import('Wanted/CutoffUnmet/CutoffUnmet'));
+const Missing = lazy(() => import('Wanted/Missing/Missing'));
 
 export function appRouteElements() {
   return (

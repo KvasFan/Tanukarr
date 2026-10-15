@@ -110,6 +110,7 @@ namespace NzbDrone.Core.Tv
             series.TvRageId = seriesInfo.TvRageId;
             series.TvMazeId = seriesInfo.TvMazeId;
             series.TmdbId = seriesInfo.TmdbId;
+            series.MediaType = seriesInfo.MediaType;
             series.ImdbId = seriesInfo.ImdbId;
             series.MalIds = seriesInfo.MalIds;
             series.AniListIds = seriesInfo.AniListIds;
@@ -162,6 +163,7 @@ namespace NzbDrone.Core.Tv
                     series.AnimeGroupTitle = null;
                     series.AnimeGroupSeasonNumber = null;
                     series.AnimeGroupMovieNumber = null;
+                    series.AnimeGroupSpecialNumber = null;
                     series.AnimeGroupFolder = null;
                     series.AnimeGroupMemberFolder = null;
                 }

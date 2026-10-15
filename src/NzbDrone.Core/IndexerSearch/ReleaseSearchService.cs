@@ -69,6 +69,11 @@ namespace NzbDrone.Core.IndexerSearch
         public async Task<List<DownloadDecision>> CompleteSeriesSearch(int seriesId, bool userInvokedSearch, bool interactiveSearch)
         {
             var series = _seriesService.GetSeries(seriesId);
+            if (series.MediaType == MediaType.Movie)
+            {
+                return await MovieSearch(series, userInvokedSearch, interactiveSearch, includeCollectionPacks: true);
+            }
+
             var episodes = _episodeService.GetEpisodeBySeries(seriesId)
                 .Where(e => e.SeasonNumber > 0).ToList();
 
@@ -88,6 +93,11 @@ namespace NzbDrone.Core.IndexerSearch
         public async Task<List<DownloadDecision>> SeasonPackSearch(int seriesId, int seasonNumber, bool userInvokedSearch, bool interactiveSearch)
         {
             var series = _seriesService.GetSeries(seriesId);
+            if (series.MediaType == MediaType.Movie)
+            {
+                return await MovieSearch(series, userInvokedSearch, interactiveSearch);
+            }
+
             var episodes = _episodeService.GetEpisodesBySeason(seriesId, seasonNumber);
             if (episodes.Empty())
             {
@@ -128,6 +138,10 @@ namespace NzbDrone.Core.IndexerSearch
         public async Task<List<DownloadDecision>> EpisodeSearch(Episode episode, bool userInvokedSearch, bool interactiveSearch)
         {
             var series = _seriesService.GetSeries(episode.SeriesId);
+            if (series.MediaType == MediaType.Movie)
+            {
+                return await MovieSearch(series, userInvokedSearch, interactiveSearch);
+            }
 
             if (series.SeriesType == SeriesTypes.Daily)
             {
@@ -183,6 +197,10 @@ namespace NzbDrone.Core.IndexerSearch
         public async Task<List<DownloadDecision>> SeasonSearch(int seriesId, int seasonNumber, List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool interactiveSearch)
         {
             var series = _seriesService.GetSeries(seriesId);
+            if (series.MediaType == MediaType.Movie)
+            {
+                return await MovieSearch(series, userInvokedSearch, interactiveSearch);
+            }
 
             if (series.SeriesType == SeriesTypes.Anime)
             {
@@ -227,6 +245,41 @@ namespace NzbDrone.Core.IndexerSearch
             }
 
             return DeDupeDecisions(downloadDecisions);
+        }
+
+        private Task<List<DownloadDecision>> MovieSearch(Series movie, bool userInvokedSearch, bool interactiveSearch, bool includeCollectionPacks = false)
+        {
+            var episodes = _episodeService.GetEpisodeBySeries(movie.Id);
+            if (episodes.Count != 1 || episodes[0].SeasonNumber != 1 || episodes[0].EpisodeNumber != 1)
+            {
+                throw new SearchFailedException("A movie must contain exactly one native feature; refresh its owning catalogue first.");
+            }
+
+            var criteria = new MovieSearchCriteria
+            {
+                Series = movie,
+                Episodes = episodes,
+                SceneTitles = new List<string> { movie.Title },
+                EpisodeQueryTitles = new[] { movie.Title }.Concat(movie.AlternateTitles ?? new List<string>())
+                    .Where(title => !string.IsNullOrWhiteSpace(title)).Distinct(StringComparer.OrdinalIgnoreCase).Take(3)
+                    .Select(title => movie.Year > 0 ? $"{title} {movie.Year}" : title).ToArray(),
+                InteractiveSearch = interactiveSearch,
+                UserInvokedSearch = userInvokedSearch,
+                MonitoredEpisodesOnly = !interactiveSearch
+            };
+            if (includeCollectionPacks && AnimeGroupingValidator.HasGroup(movie))
+            {
+                criteria.CollectionMovies = (_seriesService.GetAllSeries() ?? new List<Series>()).Where(member => member.MediaType == MediaType.Movie &&
+                    member.Monitored && AnimeGroupingValidator.HasGroup(member) && member.AnimeGroupId == movie.AnimeGroupId).ToList();
+                if (criteria.CollectionMovies.Count > 1 && criteria.CollectionMovies.All(member => member.Year > 0 && member.Runtime > 0))
+                {
+                    var firstYear = criteria.CollectionMovies.Min(member => member.Year);
+                    var lastYear = criteria.CollectionMovies.Max(member => member.Year);
+                    criteria.EpisodeQueryTitles = criteria.EpisodeQueryTitles.Concat(new[] { $"{movie.AnimeGroupTitle} {firstYear}-{lastYear}" }).ToArray();
+                }
+            }
+
+            return Dispatch(indexer => indexer.Fetch(criteria), criteria);
         }
 
         private List<SceneSeasonMapping> GetSceneSeasonMappings(Series series, List<Episode> episodes)

@@ -49,7 +49,6 @@ export function Overflow({ children, padding = 10 }: OverflowProps) {
   const initialPadding = useRef(padding);
   useEffect(() => {
     if (!window.Sonarr.isProduction && padding !== initialPadding.current) {
-      // eslint-disable-next-line no-console
       console.error(
         `Overflow: \`padding\` changed from ${initialPadding.current} to ${padding} after mount; registered items will be dropped. Keep it stable.`
       );

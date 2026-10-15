@@ -80,9 +80,9 @@ function ImportList({
         dot={enableAutomaticAdd ? 'active' : 'muted'}
         segments={[
           enableAutomaticAdd ? translate('AutomaticAdd') : null,
-          <>
+          <React.Fragment key="refresh">
             {translate('Refresh')}: {formatShortTimeSpan(minRefreshInterval)}
-          </>,
+          </React.Fragment>,
         ]}
       />
 

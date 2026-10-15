@@ -76,8 +76,8 @@ function addFailures(
       return;
     }
 
-    const itemIndex = parseInt(match[1]);
-    const groupIndex = match[2] == null ? null : parseInt(match[2]);
+    const itemIndex = parseInt(match[1], 10);
+    const groupIndex = match[2] == null ? null : parseInt(match[2], 10);
     const key = itemFailuresKey(itemIndex, groupIndex);
 
     let entry = result.get(key);

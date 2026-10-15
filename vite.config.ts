@@ -168,6 +168,8 @@ export default defineConfig({
 
   build: {
     outDir,
+    // The packaged server serves every asset type below its existing Content route.
+    assetsDir: 'Content/assets',
     emptyOutDir: true,
     target: 'esnext',
     sourcemap: true,
@@ -188,10 +190,13 @@ export default defineConfig({
   },
 
   resolve: {
-    alias: {
-      ...srcAliases,
-      jquery: 'jquery/dist/jquery.min.js',
-    },
+    alias: [
+      ...Object.entries(srcAliases).map(([find, replacement]) => ({ find, replacement })),
+      { find: 'jquery', replacement: 'jquery/dist/jquery.min.js' },
+      // Keep the complete historical database as data rather than executable JS.
+      // index.ts loads it before any page can format dates or choose a zone.
+      { find: /^moment-timezone$/, replacement: path.resolve(import.meta.dirname, 'node_modules/moment-timezone/moment-timezone.js') },
+    ],
   },
 
   css: {

@@ -24,21 +24,35 @@ in repository documentation.
 
 ## Tools and build
 
-Use .NET SDK **10.0.402** from [global.json](global.json), Node.js **24**, Yarn
-Classic **1.22**, Python 3, and Docker Engine with Linux containers. FFmpeg and
+Use .NET SDK **10.0.402** from [global.json](global.json), Node.js **24**, project-pinned
+Yarn **4.18.1**, Python 3, and Docker Engine with Linux containers. FFmpeg and
 FFprobe are needed for generated-media worker integration tests.
 
 Build the solution so SolutionDir supplies the shared StyleCop configuration:
 
 ```sh
 dotnet build src/Sonarr.sln -c Debug
-yarn install --frozen-lockfile
+yarn install --immutable
 yarn test:queue-details
 yarn lint
 yarn stylelint
 yarn typecheck
 yarn build
 ```
+
+The checked-in Yarn distribution uses the `node-modules` linker and retains its
+BSD license in `.yarn/LICENSE.md`. Existing Yarn launchers delegate to that local
+version; `node .yarn/releases/yarn-4.18.1.cjs` also runs it directly without changing
+global tooling. Installs enforce the lockfile and package checksums. Use
+`yarn npm audit --all --recursive` for the current dependency advisory report.
+
+Third-party install scripts stay disabled by default. The reviewed resolver
+binding check is explicitly enabled. Core-js's install hook only prints its
+funding banner; Parcel's hook only compiles when `npm_config_build_from_source`
+is requested, so both are explicitly disabled. Parcel uses the platform binding
+packages verified by Yarn instead. Native binding loading is checked by the
+fresh Linux frontend build. The pinned Stylus and glob resolutions retain the
+CSS editor and declaration generator APIs while replacing obsolete dependencies.
 
 `yarn build` creates the Vite production bundle; the obsolete webpack
 `--env production` flag is not supported. Do not build while tests use the same
@@ -247,15 +261,15 @@ A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
-The **0.1.0 product reset** derives from 1.1.0, retaining schema 252 and the
-original source authors. Use its [new notes](docs/releases/0.1.0.md) and
+The **0.1.0** release retains the original source authors.
+Use its [release notes](docs/releases/0.1.0.md) and
 [verification ledger](docs/releases/0.1.0-verification.md) for this build.
 `yarn test:metadata-sources` covers mounted enable/order controls and search
 payloads and is included in `yarn test:queue-details`. The new first-run Docker
 gate exercises actual graphical account creation, antiforgery rejection,
 persistence and password absence from logs. Historical 0.1.0 reports now use
-`legacy-0.1.0` filenames to distinguish them from this reset. Preserve backups
-and historical source refs before reusing a release tag.
+`legacy-0.1.0` filenames to identify their original verification checkpoint.
+Preserve configuration backups and the tested source revision for each release.
 
 The public project is
 [KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The verified **1.0.5** release

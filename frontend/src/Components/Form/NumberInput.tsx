@@ -13,7 +13,7 @@ function parseValue(
     return null;
   }
 
-  let newValue = isFloat ? parseFloat(value) : parseInt(value);
+  let newValue = isFloat ? parseFloat(value) : parseInt(value, 10);
 
   if (min != null && newValue != null && newValue < min) {
     newValue = min;

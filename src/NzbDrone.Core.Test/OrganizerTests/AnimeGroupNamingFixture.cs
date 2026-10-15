@@ -158,6 +158,34 @@ namespace NzbDrone.Core.Test.OrganizerTests
             new FileNameValidationService().ValidateAnimeFilename(movie).Should().BeNull();
         }
 
+        [TestCase("standard", "x264")]
+        [TestCase("multi", "x264")]
+        [TestCase("daily", "x264")]
+        [TestCase("anime", "h264")]
+        [TestCase("animeMulti", "h264")]
+        [TestCase("movie", "x264")]
+        [TestCase("groupMovie", "h264")]
+        public void should_render_known_ffprobe_video_codecs_in_all_naming_samples(string kind, string codec)
+        {
+            var samples = new FileNameSampleService(Subject);
+            _config.StandardEpisodeFormat = "{Series Title} S{season:00}E{episode:00} {MediaInfo VideoCodec}";
+            _config.DailyEpisodeFormat = "{Series Title} {Air-Date} {MediaInfo VideoCodec}";
+            _config.AnimeEpisodeFormat = _config.StandardEpisodeFormat;
+            _config.MovieFormat = "{Series Title} {MediaInfo VideoCodec}";
+            var sample = kind switch
+            {
+                "standard" => samples.GetStandardSample(_config),
+                "multi" => samples.GetMultiEpisodeSample(_config),
+                "daily" => samples.GetDailySample(_config),
+                "anime" => samples.GetAnimeSample(_config),
+                "animeMulti" => samples.GetAnimeMultiEpisodeSample(_config),
+                "movie" => samples.GetMovieSample(_config),
+                _ => samples.GetAnimeGroupMovieSample(_config)
+            };
+
+            sample.FileName.Should().EndWith(" " + codec);
+        }
+
         [TestCase("{Series Title} - S{Group Season:00}E{episode:00} - S{season:00}E{episode:00}")]
         [TestCase("{Series Title} - S{season:00}E{episode:00} - S{Group Season:00}E{episode:00}")]
         public void should_reject_a_group_display_number_that_disguises_the_native_season_in_a_filename(string format)

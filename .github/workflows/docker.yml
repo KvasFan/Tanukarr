@@ -18,7 +18,7 @@ jobs:
   publish:
     name: Verify and publish linux/amd64
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     permissions:
       contents: read
@@ -29,11 +29,11 @@ jobs:
       artifact: ${{ steps.image.outputs.artifact }}
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Resolve image and release version
         id: image
@@ -56,7 +56,7 @@ jobs:
 
       - name: Derive image tags
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ steps.image.outputs.name }}
           # latest always selects a tested release, while edge selects main.
@@ -67,7 +67,7 @@ jobs:
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build image with frontend and backend checks
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: linux/amd64
@@ -101,6 +101,7 @@ jobs:
           docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
           docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
           docker pull lscr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
+          docker pull ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd
 
       - name: Isolated group, naming and AniList checks
         run: |
@@ -187,7 +188,7 @@ jobs:
             --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-jellyfin-refresh.json"
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -198,10 +199,10 @@ jobs:
 
       - name: Packaged collection navigation, settings, searches and artwork
         run: |
-          python3 docker/tests/collections-browser.py --image tanukarr:verified \
+          python3 docker/tests/collections-browser.py --image tanukarr:verified --gui-audit \
             --browser-node "$(command -v node)" \
             --playwright-module "${RUNNER_TEMP}/tanukarr-browser/node_modules/playwright" \
-            --playwright-version 1.64.0 --timeout 300 \
+            --playwright-version 1.64.0 --timeout 900 \
             --report "${RUNNER_TEMP}/tanukarr-collections-browser.json"
 
       - name: Packaged backup button, task timestamps, archive integrity and recovery
@@ -224,9 +225,24 @@ jobs:
           python3 docker/tests/metadata-sources.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-metadata-sources.json"
 
+      - name: Native film catalogues, IMDb lookup, mixed groups and refresh
+        run: |
+          python3 docker/tests/movie-catalogues.py --image tanukarr:verified \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-movie-catalogues.json"
+
+      - name: Generated pack downloads, automatic imports and real Jellyfin refresh
+        run: |
+          python3 docker/tests/download-packs.py --image tanukarr:verified --jellyfin --movies \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-download-packs.json"
+
+      - name: Populated library migration, native anime films and preserved file identities
+        run: |
+          python3 docker/tests/library-upgrade.py --image tanukarr:verified \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-library-upgrade.json"
+
       - name: Upload verification reports
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tanukarr-verification-${{ github.run_id }}
           path: |
@@ -235,6 +251,12 @@ jobs:
             ${{ runner.temp }}/tanukarr-first-run.json
             ${{ runner.temp }}/tanukarr-metadata-sources.json
             ${{ runner.temp }}/tanukarr-metadata-sources.log
+            ${{ runner.temp }}/tanukarr-movie-catalogues.json
+            ${{ runner.temp }}/tanukarr-movie-catalogues.log
+            ${{ runner.temp }}/tanukarr-download-packs.json
+            ${{ runner.temp }}/tanukarr-download-packs.log
+            ${{ runner.temp }}/tanukarr-library-upgrade.json
+            ${{ runner.temp }}/tanukarr-library-upgrade.log
             ${{ runner.temp }}/tanukarr-first-run-browser/first-run-browser.json
             ${{ runner.temp }}/tanukarr-first-run-browser/create-account.png
             ${{ runner.temp }}/tanukarr-first-run-browser/create-account-mobile.png
@@ -263,7 +285,7 @@ jobs:
 
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -323,11 +345,14 @@ jobs:
             --verification-report "${RUNNER_TEMP}/tanukarr-collections-browser.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-first-run.json" \
             --verification-report "${RUNNER_TEMP}/tanukarr-metadata-sources.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-movie-catalogues.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-download-packs.json" \
+            --verification-report "${RUNNER_TEMP}/tanukarr-library-upgrade.json" \
             --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ steps.image.outputs.artifact }}
           path: ${{ runner.temp }}/tanukarr-release/*

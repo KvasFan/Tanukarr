@@ -10,15 +10,21 @@ export interface AnimeSeriesGroup {
 }
 
 export function getAnimeGroupMemberNumber(series: AnimeGroupingFields) {
-  return series.animeGroupMemberKind === 'movie'
-    ? series.animeGroupMovieNumber
-    : series.animeGroupSeasonNumber;
+  switch (series.animeGroupMemberKind) {
+    case 'movie':
+      return series.animeGroupMovieNumber;
+    case 'special':
+      return series.animeGroupSpecialNumber;
+    default:
+      return series.animeGroupSeasonNumber;
+  }
 }
 
 export function getAvailableGroupMemberNumber(
   members: Series[],
   kind: AnimeGroupMemberKind,
-  excludedId?: number
+  excludedId?: number,
+  slotCount = 1
 ) {
   const occupied = new Set(
     members
@@ -27,15 +33,44 @@ export function getAvailableGroupMemberNumber(
           item.id !== excludedId &&
           (item.animeGroupMemberKind ?? 'season') === kind
       )
-      .map(getAnimeGroupMemberNumber)
+      .flatMap((item) => {
+        const first = getAnimeGroupMemberNumber(item) ?? 0;
+        const count =
+          kind === 'season'
+            ? Math.max(
+                1,
+                new Set(
+                  item.seasons
+                    ?.filter((season) => season.seasonNumber > 0)
+                    .map((season) => season.seasonNumber)
+                ).size
+              )
+            : 1;
+        return Array.from({ length: count }, (_, index) => first + index);
+      })
   );
   let number = 1;
 
-  while (occupied.has(number) && number < 999) {
+  const isOccupied = (start: number) =>
+    Array.from({ length: slotCount }, (_, index) => start + index).some(
+      (slot) => occupied.has(slot)
+    );
+
+  while (isOccupied(number) && number < 999) {
     number++;
   }
 
   return number;
+}
+
+export function compareAnimeGroupMembers(a: Series, b: Series) {
+  const order = { season: 0, movie: 1, special: 2 };
+  return (
+    order[a.animeGroupMemberKind ?? 'season'] -
+      order[b.animeGroupMemberKind ?? 'season'] ||
+    (getAnimeGroupMemberNumber(a) ?? 0) - (getAnimeGroupMemberNumber(b) ?? 0) ||
+    a.id - b.id
+  );
 }
 
 export function hasAnimeGroup(series: AnimeGroupingFields): boolean {
@@ -81,14 +116,7 @@ export function groupAnimeSeries(
   });
 
   groups.forEach((group) => {
-    group.members.sort(
-      (a, b) =>
-        Number(a.animeGroupMemberKind === 'movie') -
-          Number(b.animeGroupMemberKind === 'movie') ||
-        (getAnimeGroupMemberNumber(a) ?? 0) -
-          (getAnimeGroupMemberNumber(b) ?? 0) ||
-        a.id - b.id
-    );
+    group.members.sort(compareAnimeGroupMembers);
   });
 
   return { displayItems, groupsByRepresentativeId };

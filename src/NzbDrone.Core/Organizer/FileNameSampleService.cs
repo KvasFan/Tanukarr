@@ -10,6 +10,7 @@ namespace NzbDrone.Core.Organizer
     public interface IFilenameSampleService
     {
         SampleResult GetStandardSample(NamingConfig nameSpec);
+        SampleResult GetMovieSample(NamingConfig nameSpec);
         SampleResult GetMultiEpisodeSample(NamingConfig nameSpec);
         SampleResult GetDailySample(NamingConfig nameSpec);
         SampleResult GetAnimeSample(NamingConfig nameSpec);
@@ -141,7 +142,7 @@ namespace NzbDrone.Core.Organizer
 
             var mediaInfo = new MediaInfoModel
             {
-                VideoFormat = "AVC",
+                VideoFormat = "h264",
                 VideoBitDepth = 10,
                 VideoColourPrimaries = "bt2020",
                 VideoTransferCharacteristics = "HLG",
@@ -164,7 +165,7 @@ namespace NzbDrone.Core.Organizer
 
             var mediaInfoAnime = new MediaInfoModel
             {
-                VideoFormat = "AVC",
+                VideoFormat = "h264",
                 VideoBitDepth = 10,
                 VideoColourPrimaries = "BT.2020",
                 VideoTransferCharacteristics = "HLG",
@@ -243,6 +244,24 @@ namespace NzbDrone.Core.Organizer
                 ReleaseGroup = "RlsGrp",
                 MediaInfo = mediaInfoAnime
             };
+        }
+
+        public SampleResult GetMovieSample(NamingConfig nameSpec)
+        {
+            var movie = MetadataSource.MovieMetadata.Create(MetadataSource.MetadataSourceType.TmdbMovie, "12345", "The Movie Title");
+            movie.Year = 2010;
+            movie.ImdbId = "tt1234567";
+            var feature = MetadataSource.MovieMetadata.WithFeature(movie).Item2;
+            using (NamingContext.ForManualRename())
+            {
+                return new SampleResult
+                {
+                    FileName = BuildSample(feature, movie, _singleEpisodeFile, nameSpec, _customFormats),
+                    Series = movie,
+                    Episodes = feature,
+                    EpisodeFile = _singleEpisodeFile
+                };
+            }
         }
 
         public SampleResult GetStandardSample(NamingConfig nameSpec)

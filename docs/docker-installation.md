@@ -1,7 +1,7 @@
 # Install Tanukarr 0.1.0 with Docker
 
-Tanukarr manages TV series, anime and movie collections. The 0.1.0 reset derives
-from 1.1.0 and keeps its database schema and APIs. It adds graphical account
+Tanukarr manages TV series, anime and movie collections. Version 0.1.0 keeps
+the inherited database schema and APIs. It adds graphical account
 creation, collection/quality fixes and configurable metadata catalogues including
 TVmaze. Read the [release notes](releases/0.1.0.md),
 [publication report](releases/0.1.0-publication.md) and
@@ -130,8 +130,7 @@ Compression uses the optional separate [host worker](../docker/compression/READM
 
 ## Upgrade and pin an image
 
-**0.1.0 is a version reset from 1.1.0, not an older database format.** Stop the
-existing application and back up `/config` consistently before upgrading. Keep
+Stop the existing application and back up `/config` consistently before upgrading. Keep
 the exact configuration/media mounts, Compose project identity, port and
 authentication. Changing a display/service name must not select a new empty
 configuration volume. Preserve the old image and matching backup for rollback.
@@ -147,7 +146,7 @@ docker compose logs --tail=100 tanukarr
 
 `docker compose restart` keeps the old image. Database migrations can prevent
 rollback; restore a compatible backup into a separate location when necessary.
-The reset keeps migrations 251/252 from 1.1.0 and v3/v5 APIs. The inherited
+The release supports v3/v5 APIs. The inherited
 internal Core version differs from Tanukarr's product version.
 
 The release workflow assigns `latest` to the tested release, `edge` to main,
@@ -200,10 +199,8 @@ alone does not establish that a release was published or verified.
 
 The release assets include the image, corresponding source, SBOM, verification
 reports, manifest, Compose configuration and checksums. Preserve the GPL license
-and contributor notices. Superseded GitHub release assets are backed up before
-the requested replacement; dated reports retain their original evidence. The
-former 0.1.0 source is distinguished by its archive tag and
-[legacy report](releases/legacy-0.1.0-verification.md).
+and contributor notices. Dated reports retain their original source-qualified
+evidence, including the [October 12 report](releases/legacy-0.1.0-verification.md).
 
 ## Troubleshooting
 

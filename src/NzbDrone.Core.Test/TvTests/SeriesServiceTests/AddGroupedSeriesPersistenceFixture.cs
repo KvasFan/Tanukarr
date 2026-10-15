@@ -11,6 +11,7 @@ using FluentValidation;
 using Moq;
 using Npgsql;
 using NUnit.Framework;
+using NzbDrone.Core.AutoTagging;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Test.Framework;
@@ -32,6 +33,12 @@ namespace NzbDrone.Core.Test.TvTests.SeriesServiceTests
                 .Returns((Series series) => Storage.Insert(series));
             Mocker.GetMock<ISeriesRepository>().Setup(repository => repository.InsertMany(It.IsAny<IList<Series>>()))
                 .Callback((IList<Series> series) => Storage.InsertMany(series));
+            Mocker.GetMock<ISeriesRepository>().Setup(repository => repository.Update(It.IsAny<Series>()))
+                .Returns((Series series) => Storage.Update(series));
+            Mocker.GetMock<ISeriesRepository>().Setup(repository => repository.UpdateMany(It.IsAny<IList<Series>>()))
+                .Callback((IList<Series> series) => Storage.UpdateMany(series));
+            Mocker.GetMock<IAutoTaggingService>().Setup(service => service.GetTagChanges(It.IsAny<Series>()))
+                .Returns(new AutoTaggingChanges());
         }
 
         [TestCase(AnimeGroupMemberKind.Season)]
@@ -325,6 +332,138 @@ namespace NzbDrone.Core.Test.TvTests.SeriesServiceTests
             VerifyNoImported();
         }
 
+        [Test]
+        public void should_guard_a_sparse_native_range_even_when_a_writer_bypasses_the_service()
+        {
+            var native = Member(100, 1);
+            native.Seasons = new List<Season> { new Season { SeasonNumber = 0 }, new Season { SeasonNumber = 1 }, new Season { SeasonNumber = 3 } };
+            Storage.Insert(native);
+            Action insert = () => Storage.Insert(Member(101, 2));
+            VerifyUniqueConstraint(insert, nameof(Series.AnimeGroupSeasonNumber), "IX_Series_AnimeGroupSeasonRange");
+            Storage.Insert(Member(102, 3));
+            Storage.Get(native.Id).Seasons.Select(season => season.SeasonNumber).Should().Equal(0, 1, 3);
+        }
+
+        [Test]
+        public void should_abort_later_catalogue_expansion_without_changing_stored_native_seasons_or_monitors()
+        {
+            var native = Member(100, 1);
+            native.Seasons = new List<Season> { new Season { SeasonNumber = 0 }, new Season { SeasonNumber = 1 }, new Season { SeasonNumber = 3 } };
+            Storage.Insert(native);
+            Storage.Insert(Member(101, 3));
+            var expanded = Storage.Get(native.Id);
+            expanded.Seasons.Add(new Season { SeasonNumber = 4, Monitored = true });
+            expanded.Seasons[1].Monitored = !expanded.Seasons[1].Monitored;
+
+            Action update = () => Subject.UpdateSeries(expanded, publishUpdatedEvent: false);
+            update.Should().Throw<ValidationException>();
+            Storage.Get(native.Id).Seasons.Select(season => season.SeasonNumber).Should().Equal(0, 1, 3);
+            Mocker.GetMock<IEpisodeService>().Verify(service => service.SetEpisodeMonitoredBySeason(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never());
+            Mocker.GetMock<IEventAggregator>().Verify(events => events.PublishEvent(It.IsAny<SeriesEditedEvent>()), Times.Never());
+
+            // The database must also reject a direct repository update atomically.
+            Action direct = () => Storage.Update(expanded);
+            VerifyUniqueConstraint(direct, nameof(Series.AnimeGroupSeasonNumber), "IX_Series_AnimeGroupSeasonRange");
+            Storage.Get(native.Id).Seasons.Select(season => season.SeasonNumber).Should().Equal(0, 1, 3);
+        }
+
+        [Test]
+        public void should_allow_a_later_native_season_when_its_logical_slot_is_available()
+        {
+            var native = Member(100, 1);
+            native.Seasons.Add(new Season { SeasonNumber = 3 });
+            Storage.Insert(native);
+            Storage.Insert(Member(101, 4));
+            var expanded = Storage.Get(native.Id);
+            expanded.Seasons.Add(new Season { SeasonNumber = 5 });
+            Subject.UpdateSeries(expanded, publishUpdatedEvent: false);
+            Storage.Get(native.Id).Seasons.Select(season => season.SeasonNumber).Should().Equal(1, 3, 5);
+        }
+
+        [Test]
+        public void should_reject_a_conflicting_bulk_range_before_writing_any_member()
+        {
+            var first = Member(100, 1);
+            first.Seasons.Add(new Season { SeasonNumber = 3 });
+            var last = Member(101, 4);
+            Storage.InsertMany(new[] { first, last });
+            var editedFirst = Storage.Get(first.Id);
+            var editedLast = Storage.Get(last.Id);
+            editedFirst.AnimeGroupSeasonNumber = 3;
+            editedLast.AnimeGroupSeasonNumber = 4;
+            Action update = () => Subject.UpdateSeries(new List<Series> { editedFirst, editedLast }, false);
+            update.Should().Throw<ValidationException>();
+            Storage.Get(first.Id).AnimeGroupSeasonNumber.Should().Be(1);
+            Storage.Get(last.Id).AnimeGroupSeasonNumber.Should().Be(4);
+            Mocker.GetMock<ISeriesRepository>().Verify(repository => repository.UpdateMany(It.IsAny<IList<Series>>()), Times.Never());
+        }
+
+        [Test]
+        public void should_serialize_concurrent_anchor_edits_which_claim_overlapping_ranges()
+        {
+            var first = Member(100, 1);
+            first.Seasons.Add(new Season { SeasonNumber = 3 });
+            var second = Member(101, 5);
+            second.Seasons.Add(new Season { SeasonNumber = 3 });
+            Storage.InsertMany(new[] { first, second });
+            var edits = new[] { Storage.Get(first.Id), Storage.Get(second.Id) };
+            edits[0].AnimeGroupSeasonNumber = 3;
+            edits[1].AnimeGroupSeasonNumber = 4;
+            var service = Subject;
+            using var start = new ManualResetEventSlim();
+            var tasks = edits.Select(member => Task.Run(() =>
+            {
+                start.Wait();
+                try
+                {
+                    service.UpdateSeries(member, publishUpdatedEvent: false);
+                    return true;
+                }
+                catch (ValidationException)
+                {
+                    return false;
+                }
+            })).ToArray();
+            start.Set();
+            Task.WaitAll(tasks);
+            tasks.Count(task => task.Result).Should().Be(1);
+            foreach (var member in AllStoredModels)
+            {
+                AnimeGroupingValidator.ValidateSlot(member, AllStoredModels);
+            }
+        }
+
+        [Test]
+        public void should_serialize_concurrent_direct_repository_range_inserts()
+        {
+            var first = Member(100, 1);
+            first.Seasons.Add(new Season { SeasonNumber = 3 });
+            var second = Member(101, 2);
+            var candidates = new[] { first, second };
+            using var start = new ManualResetEventSlim();
+            var tasks = candidates.Select(member => Task.Run(() =>
+            {
+                start.Wait();
+                try
+                {
+                    Storage.Insert(member);
+                    return true;
+                }
+                catch (SQLiteException exception) when (exception.ResultCode == SQLiteErrorCode.Constraint)
+                {
+                    return false;
+                }
+                catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
+                {
+                    return false;
+                }
+            })).ToArray();
+            start.Set();
+            Task.WaitAll(tasks);
+            tasks.Count(task => task.Result).Should().Be(1);
+            AllStoredModels.Should().ContainSingle();
+        }
+
         private Series Member(int tvdbId, int number, AnimeGroupMemberKind kind = AnimeGroupMemberKind.Season)
         {
             return Builder<Series>.CreateNew()
@@ -339,6 +478,7 @@ namespace NzbDrone.Core.Test.TvTests.SeriesServiceTests
                 .With(series => series.AnimeGroupMemberKind = kind)
                 .With(series => series.AnimeGroupSeasonNumber = kind == AnimeGroupMemberKind.Season ? number : null)
                 .With(series => series.AnimeGroupMovieNumber = kind == AnimeGroupMemberKind.Movie ? number : null)
+                .With(series => series.AnimeGroupSpecialNumber = null)
                 .With(series => series.Seasons = new List<Season> { new Season { SeasonNumber = 1 } })
                 .Build();
         }

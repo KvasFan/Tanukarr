@@ -219,6 +219,52 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             WithEpisode(7, 2, null, null);
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public async Task should_dispatch_movie_title_year_queries_without_tv_or_anime_coordinates(bool collectionPacks)
+        {
+            _xemSeries.MediaType = MediaType.Movie;
+            _xemSeries.Title = "Generated Feature One";
+            _xemSeries.Year = 2019;
+            _xemSeries.Runtime = 96;
+            _xemSeries.AnimeGroupingMode = AnimeGroupingMode.Manual;
+            _xemSeries.AnimeGroupId = "manual:movie-search";
+            _xemSeries.AnimeGroupTitle = "Generated Feature Collection";
+            _xemSeries.AnimeGroupMemberKind = AnimeGroupMemberKind.Movie;
+            _xemSeries.AnimeGroupMovieNumber = 1;
+            WithEpisode(1, 1, null, null);
+            Mocker.GetMock<IEpisodeService>().Setup(service => service.GetEpisodeBySeries(_xemSeries.Id)).Returns(_xemEpisodes);
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetAllSeries()).Returns(new List<Series>
+            {
+                _xemSeries,
+                new Series
+                {
+                    Id = 100, Title = "Generated Feature Two", Year = 2021, Runtime = 97, MediaType = MediaType.Movie, Monitored = true,
+                    AnimeGroupingMode = AnimeGroupingMode.Manual, AnimeGroupId = "manual:movie-search", AnimeGroupTitle = "Generated Feature Collection",
+                    AnimeGroupMemberKind = AnimeGroupMemberKind.Movie, AnimeGroupMovieNumber = 2
+                }
+            });
+            var criteria = WatchForSearchCriteria();
+            if (collectionPacks)
+            {
+                await Subject.CompleteSeriesSearch(_xemSeries.Id, true, false);
+            }
+            else
+            {
+                await Subject.SeasonSearch(_xemSeries.Id, 1, false, true, true, false);
+            }
+
+            var movie = criteria.Should().ContainSingle().Which.Should().BeOfType<MovieSearchCriteria>().Subject;
+            movie.EpisodeQueryTitles.Should().Contain("Generated Feature One 2019");
+            movie.CollectionMovies.Count.Should().Be(collectionPacks ? 2 : 0);
+            if (collectionPacks)
+            {
+                movie.EpisodeQueryTitles.Should().Contain("Generated Feature Collection 2019-2021");
+            }
+
+            Mocker.GetMock<ISceneMappingService>().Verify(service => service.FindByTvdbId(It.IsAny<int>()), Times.Never());
+        }
+
         private List<SearchCriteriaBase> WatchForSearchCriteria()
         {
             var result = new List<SearchCriteriaBase>();

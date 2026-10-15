@@ -7,7 +7,6 @@ interface PendingItemsStore<T extends { id: number }> {
 }
 
 export const usePendingItemsStore = <T extends { id: number }>() => {
-  // eslint-disable-next-line react/hook-use-state
   const [store] = useState(() => {
     return create<PendingItemsStore<T>>()((_set) => {
       return {

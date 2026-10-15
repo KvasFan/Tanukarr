@@ -50,6 +50,7 @@ namespace NzbDrone.Core.Tv
 
     public class SeriesService : ISeriesService, IHandle<ApplicationStartedEvent>
     {
+        private static readonly object SeriesMutationLock = new object();
         private readonly ISeriesRepository _seriesRepository;
         private readonly IEventAggregator _eventAggregator;
         private readonly IEpisodeService _episodeService;
@@ -57,7 +58,6 @@ namespace NzbDrone.Core.Tv
         private readonly IAutoTaggingService _autoTaggingService;
         private readonly IManageCommandQueue _commandQueueManager;
         private readonly Logger _logger;
-        private readonly object _addSeriesLock = new object();
 
         public SeriesService(ISeriesRepository seriesRepository,
                              IEventAggregator eventAggregator,
@@ -88,7 +88,7 @@ namespace NzbDrone.Core.Tv
 
         public Series AddSeries(Series newSeries)
         {
-            lock (_addSeriesLock)
+            lock (SeriesMutationLock)
             {
                 InsertSeries(newSeries);
             }
@@ -108,7 +108,7 @@ namespace NzbDrone.Core.Tv
             var added = new List<Series>();
             try
             {
-                lock (_addSeriesLock)
+                lock (SeriesMutationLock)
                 {
                     InsertSeries(newSeries, ignoreErrors, added);
                 }
@@ -214,6 +214,14 @@ namespace NzbDrone.Core.Tv
                 {
                     property = nameof(Series.AnimeGroupMovieNumber);
                 }
+                else if (messages.Contains("UNIQUE constraint failed: Series.AnimeGroupId, Series.AnimeGroupMemberKind, Series.AnimeGroupSpecialNumber"))
+                {
+                    property = nameof(Series.AnimeGroupSpecialNumber);
+                }
+                else if (sqlite.Message.Contains("Collection season range overlaps: Series.AnimeGroupSeasonNumber", StringComparison.Ordinal))
+                {
+                    property = nameof(Series.AnimeGroupSeasonNumber);
+                }
             }
             else if (exception is PostgresException postgres && postgres.SqlState == PostgresErrorCodes.UniqueViolation)
             {
@@ -221,6 +229,8 @@ namespace NzbDrone.Core.Tv
                 {
                     "IX_Series_AnimeGroupSeasonSlot" => nameof(Series.AnimeGroupSeasonNumber),
                     "IX_Series_AnimeGroupMovieSlot" => nameof(Series.AnimeGroupMovieNumber),
+                    "IX_Series_AnimeGroupId_Special" => nameof(Series.AnimeGroupSpecialNumber),
+                    "IX_Series_AnimeGroupSeasonRange" => nameof(Series.AnimeGroupSeasonNumber),
                     _ => null
                 };
             }
@@ -353,7 +363,30 @@ namespace NzbDrone.Core.Tv
         // TODO: Remove when seasons are split from series (or we come up with a better way to address this)
         public Series UpdateSeries(Series series, bool updateEpisodesToMatchSeason = true, bool publishUpdatedEvent = true)
         {
+            lock (SeriesMutationLock)
+            {
+                return UpdateSeriesCore(series, updateEpisodesToMatchSeason, publishUpdatedEvent);
+            }
+        }
+
+        private Series UpdateSeriesCore(Series series, bool updateEpisodesToMatchSeason, bool publishUpdatedEvent)
+        {
             var storedSeries = GetSeries(series.Id);
+            AnimeGroupingValidator.ValidateSlot(series, _seriesRepository.All());
+
+            // Validate and persist before changing episode monitors. A refresh which
+            // discovers a conflicting native season must leave the library intact.
+            series.AddOptions = storedSeries.AddOptions;
+            UpdateAutoTaggingTags(series);
+            Series updatedSeries;
+            try
+            {
+                updatedSeries = _seriesRepository.Update(series);
+            }
+            catch (Exception ex) when (TryGetGroupSlotFailure(ex, out var failure))
+            {
+                throw new ValidationException(new[] { failure });
+            }
 
             var episodeMonitoredChanged = false;
 
@@ -371,11 +404,6 @@ namespace NzbDrone.Core.Tv
                 }
             }
 
-            // Never update AddOptions when updating a series, keep it the same as the existing stored series.
-            series.AddOptions = storedSeries.AddOptions;
-            UpdateAutoTaggingTags(series);
-
-            var updatedSeries = _seriesRepository.Update(series);
             if (publishUpdatedEvent)
             {
                 _eventAggregator.PublishEvent(new SeriesEditedEvent(updatedSeries, storedSeries, episodeMonitoredChanged));
@@ -386,7 +414,23 @@ namespace NzbDrone.Core.Tv
 
         public List<Series> UpdateSeries(List<Series> series, bool moveFiles)
         {
+            lock (SeriesMutationLock)
+            {
+                return UpdateSeriesCore(series, moveFiles);
+            }
+        }
+
+        private List<Series> UpdateSeriesCore(List<Series> series, bool moveFiles)
+        {
             _logger.Debug("Updating {0} series", series.Count);
+
+            var editedIds = series.Select(member => member.Id).ToHashSet();
+            var finalMembers = (_seriesRepository.All() ?? Enumerable.Empty<Series>())
+                .Where(member => !editedIds.Contains(member.Id)).Concat(series).ToList();
+            foreach (var member in series)
+            {
+                AnimeGroupingValidator.ValidateSlot(member, finalMembers);
+            }
 
             var pendingMoveSeriesIds = GetSeriesIdsWithPendingMove();
             var moveQueue = new List<BulkMoveSeries>();
@@ -431,7 +475,20 @@ namespace NzbDrone.Core.Tv
                 UpdateAutoTaggingTags(s);
             }
 
-            _seriesRepository.UpdateMany(series);
+            foreach (var member in series)
+            {
+                AnimeGroupingValidator.ValidateSlot(member, finalMembers);
+            }
+
+            try
+            {
+                _seriesRepository.UpdateMany(series);
+            }
+            catch (Exception ex) when (TryGetGroupSlotFailure(ex, out var failure))
+            {
+                throw new ValidationException(new[] { failure });
+            }
+
             _logger.Debug("{0} series updated", series.Count);
             _eventAggregator.PublishEvent(new SeriesBulkEditedEvent(series));
 

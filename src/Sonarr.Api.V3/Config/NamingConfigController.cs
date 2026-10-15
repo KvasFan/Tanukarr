@@ -31,6 +31,7 @@ namespace Sonarr.Api.V3.Config
 
             SharedValidator.RuleFor(c => c.MultiEpisodeStyle).InclusiveBetween(0, 5);
             SharedValidator.RuleFor(c => c.StandardEpisodeFormat).ValidEpisodeFormat();
+            SharedValidator.RuleFor(c => c.MovieFormat).ValidSeriesFolderFormat().When(c => c.MovieFormat != null);
             SharedValidator.RuleFor(c => c.DailyEpisodeFormat).ValidDailyEpisodeFormat();
             SharedValidator.RuleFor(c => c.AnimeEpisodeFormat).ValidAnimeEpisodeFormat();
             SharedValidator.RuleFor(c => c.SeriesFolderFormat).ValidSeriesFolderFormat();
@@ -123,6 +124,8 @@ namespace Sonarr.Api.V3.Config
             sampleResource.AnimeGroupArcFolderExample = _filenameSampleService.GetAnimeGroupArcFolderSample(nameSpec);
             sampleResource.AnimeGroupMovieFolderExample = _filenameSampleService.GetAnimeGroupMovieFolderSample(nameSpec);
             sampleResource.AnimeGroupMovieSagaFolderExample = _filenameSampleService.GetAnimeGroupMovieSagaFolderSample(nameSpec);
+            var featureSample = _filenameSampleService.GetMovieSample(nameSpec);
+            sampleResource.MovieExample = featureSample != null && _filenameValidationService.ValidateMovieFilename(featureSample) == null ? featureSample.FileName : null;
             var movieSample = _filenameSampleService.GetAnimeGroupMovieSample(nameSpec);
             sampleResource.AnimeGroupMovieEpisodeExample = _filenameValidationService.ValidateAnimeFilename(movieSample) == null ? movieSample.FileName : null;
 
@@ -145,6 +148,12 @@ namespace Sonarr.Api.V3.Config
             var animeMultiEpisodeValidationResult = _filenameValidationService.ValidateAnimeFilename(animeMultiEpisodeSampleResult);
 
             var validationFailures = new List<ValidationFailure>();
+
+            var featureSample = _filenameSampleService.GetMovieSample(nameSpec);
+            if (featureSample != null)
+            {
+                validationFailures.AddIfNotNull(_filenameValidationService.ValidateMovieFilename(featureSample));
+            }
 
             validationFailures.AddIfNotNull(singleEpisodeValidationResult);
             validationFailures.AddIfNotNull(multiEpisodeValidationResult);

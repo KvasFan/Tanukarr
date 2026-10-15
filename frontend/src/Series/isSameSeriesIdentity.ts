@@ -4,20 +4,21 @@ export type SeriesIdentity = Partial<
   Pick<Series, 'metadataSource' | 'foreignId' | 'tvdbId'>
 >;
 
+export function getSeriesIdentityKey(identity: SeriesIdentity) {
+  const source = (identity.metadataSource || 'tvdb').toLowerCase();
+
+  if (source === 'tvdb') {
+    return (identity.tvdbId ?? 0) > 0 ? `tvdb:${identity.tvdbId}` : undefined;
+  }
+
+  const foreignId = identity.foreignId?.trim();
+  return foreignId ? `${source}:${foreignId}` : undefined;
+}
+
 export default function isSameSeriesIdentity(
   first: SeriesIdentity,
   second: SeriesIdentity
 ) {
-  const source = (first.metadataSource || 'tvdb').toLowerCase();
-
-  if (source !== (second.metadataSource || 'tvdb').toLowerCase()) {
-    return false;
-  }
-
-  if (source === 'tvdb') {
-    return (first.tvdbId ?? 0) > 0 && first.tvdbId === second.tvdbId;
-  }
-
-  const foreignId = first.foreignId?.trim();
-  return !!foreignId && foreignId === second.foreignId?.trim();
+  const key = getSeriesIdentityKey(first);
+  return key != null && key === getSeriesIdentityKey(second);
 }

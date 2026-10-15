@@ -91,7 +91,7 @@ function SelectEpisodeModalContentInner(props: SelectEpisodeModalContentProps) {
     unselectAll,
   } = useSelect<Episode>();
 
-  const filterEpisodeNumber = parseInt(filter);
+  const filterEpisodeNumber = parseInt(filter, 10);
   const errorMessage = getErrorMessage(error, translate('EpisodesLoadError'));
   const selectedCount = selectedIds.length;
   const selectionIsValid =

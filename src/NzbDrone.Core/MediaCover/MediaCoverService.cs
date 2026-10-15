@@ -39,8 +39,7 @@ namespace NzbDrone.Core.MediaCover
         private readonly ICached<bool> _coverExistsCache;
         private readonly string _coverRootFolder;
 
-        // ImageSharp is slow on ARM (no hardware acceleration on mono yet)
-        // So limit the number of concurrent resizing tasks
+        // Bound concurrent thumbnail decoding and raster allocations.
         private static readonly SemaphoreSlim Semaphore = new((int)Math.Ceiling(Environment.ProcessorCount / 2.0));
 
         private static readonly TimeSpan CoverExistsCheckWindow = TimeSpan.FromDays(1);

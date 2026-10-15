@@ -16,7 +16,7 @@ function load(relative, mocks = {}) {
   const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.React, esModuleInterop: true } }).outputText;
   const compiled = new Module(filename, module);
   compiled.paths = module.paths;
-  compiled.require = (name) => (Object.hasOwn(mocks, name) ? mocks[name] : projectRequire(name));
+  compiled.require = (name) => (Object.hasOwn(mocks, name) ? mocks[name] : name === 'Series/getMediaType' ? load('Series/getMediaType.ts') : projectRequire(name));
   // eslint-disable-next-line no-underscore-dangle
   compiled._compile(output, filename);
   return compiled.exports;
@@ -395,11 +395,48 @@ test('native TV seasons, distinct anime seasons, movies and Specials retain thei
   const movie = member(7, null, { animeGroupMemberKind: 'movie', animeGroupMovieNumber: 2 });
   const group = { id: 'anilist:900', title: 'Generated collection', members: [anime, tv, movie] };
   const entries = presentation.getCollectionEntries(group);
-  assert.deepEqual(entries.map((entry) => [entry.member.id, entry.season.seasonNumber, entry.displayNumber, entry.section]), [[4, 1, 3, 'seasons'], [9, 0, 0, 'specials'], [9, 1, 1, 'seasons'], [9, 2, 2, 'seasons'], [7, 1, 1, 'movies']]);
+  assert.deepEqual(entries.map((entry) => [entry.member.id, entry.season.seasonNumber, entry.displayNumber, entry.section]), [[4, 1, 3, 'seasons'], [9, 0, 0, 'specials'], [9, 1, 1, 'seasons'], [9, 2, 2, 'seasons'], [7, 1, 2, 'movies']]);
   assert.equal(presentation.getNativeSeasonLink(anime, 1), '/series/native-4?season=1#season-1');
   const nativeTV = { ...tv, animeGroupId: null, collectionTitle: 'My collection name' };
   assert.equal(presentation.getSeriesLibraryLink(nativeTV), '/collections/series%3A9');
   assert.equal(presentation.resolveCollection([nativeTV], 'series:9').title, 'My collection name');
+});
+
+test('a mixed collection keeps multiple specials and native season gaps while displaying reserved logical slots', () => {
+  const tv = member(10, 5, { seasons: [{ seasonNumber: 0, statistics: { totalEpisodeCount: 2 } }, { seasonNumber: 2 }, { seasonNumber: 4 }] });
+  const movie = member(11, null, { metadataSource: 'tmdbMovie', mediaType: 'movie', animeGroupMemberKind: 'movie', animeGroupMovieNumber: 2 });
+  const specials = [1, 2].map((number) => member(11 + number, null, { mediaType: 'special', animeGroupMemberKind: 'special', animeGroupSpecialNumber: number }));
+  const members = [tv, movie, ...specials];
+  const before = JSON.stringify(members);
+  const entries = presentation.getCollectionEntries({ members });
+  assert.deepEqual(entries.map(({ member, season, displayNumber, section }) => [member.id, season.seasonNumber, displayNumber, section]), [
+    [10, 0, 0, 'specials'], [10, 2, 5, 'seasons'], [10, 4, 6, 'seasons'], [11, 1, 2, 'movies'], [12, 1, 1, 'specials'], [13, 1, 2, 'specials']
+  ]);
+  assert.equal(new Set(entries.map(({ key }) => key)).size, 6);
+  assert.equal(presentation.getNativeSeasonLink(tv, 4), '/series/native-10?season=4#season-4');
+  assert.equal(JSON.stringify(members), before);
+});
+
+test('movie collection cards search the native movie once without numbered season-pack actions', () => {
+  const Component = load('Series/Grouping/CollectionMemberCard.tsx', {
+    ...common,
+    './CollectionPoster': () => null,
+    'Series/Search/SeasonReleaseSearchButton': () => React.createElement('output', { 'data-pack': true }),
+    'Series/Search/SeasonInteractiveSearchModal': (props) => props.isOpen ? React.createElement('output', { 'data-movie-search': props.seriesId, 'data-native-season': props.seasonNumber, 'data-media-type': props.mediaType, 'data-filter': props.initialSelectedFilterKey }) : null,
+    './CollectionSeasonSettingsModal': () => null,
+    'Series/Delete/DeleteSeriesModal': () => null
+  }).default;
+  const native = member(42, null, { metadataSource: 'tmdbMovie', foreignId: '42', mediaType: 'movie', animeGroupMemberKind: 'movie', animeGroupMovieNumber: 3 });
+  const renderer = mount(Component, { entry: presentation.getCollectionEntries({ members: [native] })[0] });
+  assert.equal(renderer.root.findAllByType('output').length, 0);
+  press(renderer, 'SearchMovie');
+  const search = renderer.root.findByType('output').props;
+  assert.equal(search['data-movie-search'], 42);
+  assert.equal(search['data-native-season'], 1);
+  assert.equal(search['data-media-type'], 'movie');
+  assert.equal(search['data-filter'], 'all');
+  assert.doesNotMatch(JSON.stringify(renderer.toJSON()), /SearchSeasonPacksWithNumber|SearchEpisodes/);
+  TestRenderer.act(() => renderer.unmount());
 });
 
 test('collection artwork falls back to a real member cover and advances after failure without showing a mascot', () => {
@@ -647,6 +684,23 @@ test('closing collection search aborts pending work and never starts another mem
   await TestRenderer.act(async() => finish([]));
   assert.equal(requests.length, 1);
   assert.equal(cache.size, 0);
+});
+
+test('mixed collection searches retain native TV, movie and special payloads and clear all owned cache keys', async() => {
+  const requests = [];
+  const { renderer, cache, cleared } = searchFixture(async(options) => {
+    requests.push(options.path);
+    return [];
+  }, [member(1, 1), member(2, 2, { mediaType: 'movie', animeGroupMemberKind: 'movie' }), member(3, 3, { mediaType: 'special', animeGroupMemberKind: 'special' }), member(4, 4, { mediaType: 'movie', animeGroupMemberKind: 'movie' })]);
+  await TestRenderer.act(async() => { await new Promise((resolve) => setImmediate(resolve)); });
+  assert.deepEqual(requests, ['/api/v5/release?seriesId=1&completeSeries=true', '/api/v5/release?seriesId=2&completeSeries=true', '/api/v5/release?seriesId=3&seasonNumber=1', '/api/v5/release?seriesId=4&seasonNumber=1']);
+  assert.equal(cache.size, 4);
+  TestRenderer.act(() => renderer.root.findByType('select').props.onChange({ target: { value: '2' } }));
+  assert.equal(renderer.root.findByType('output').props['data-cached'], true);
+  assert.equal(renderer.root.findByType('output').props['data-initial-filter'], 'all');
+  TestRenderer.act(() => renderer.unmount());
+  assert.equal(cache.size, 0);
+  assert.deepEqual(cleared.map((entry) => entry.queryKey), [['/release', { seriesId: 1, completeSeries: true }], ['/release', { seriesId: 2, completeSeries: true }], ['/release', { seriesId: 3, seasonNumber: 1 }], ['/release', { seriesId: 4, seasonNumber: 1 }]]);
 });
 
 test('one failed member does not hide successful collection searches or start infinite retries', async() => {

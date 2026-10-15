@@ -51,6 +51,12 @@ namespace NzbDrone.Core.Parser
 
         public Series GetSeries(string title)
         {
+            var movie = MovieReleaseParser.Parse(title) == null ? null : MovieReleaseParser.MatchUnique(title, _seriesService.GetAllSeries());
+            if (movie != null)
+            {
+                return movie;
+            }
+
             var parsedEpisodeInfo = Parser.ParseTitle(title);
 
             if (parsedEpisodeInfo == null)
@@ -248,6 +254,33 @@ namespace NzbDrone.Core.Parser
 
         private RemoteEpisode Map(ParsedEpisodeInfo parsedEpisodeInfo, int tvdbId, int tvRageId, string imdbId, Series series, SearchCriteriaBase searchCriteria)
         {
+            if (parsedEpisodeInfo.IsMovie || series?.MediaType == MediaType.Movie || searchCriteria?.Series?.MediaType == MediaType.Movie)
+            {
+                IEnumerable<Series> candidates = series != null ? new[] { series } : searchCriteria?.Series != null ? new[] { searchCriteria.Series } : _seriesService.GetAllSeries();
+                var packInfo = searchCriteria is MovieSearchCriteria movieSearch ? MovieCollectionPackParser.Match(parsedEpisodeInfo.ReleaseTitle, movieSearch) : null;
+                var collectionPack = packInfo != null;
+                var movie = collectionPack ? searchCriteria.Series : MovieReleaseParser.MatchUnique(parsedEpisodeInfo.ReleaseTitle, candidates);
+                parsedEpisodeInfo = packInfo ?? (movie == null ? null : MovieReleaseParser.Match(parsedEpisodeInfo.ReleaseTitle, movie)) ?? parsedEpisodeInfo;
+                var movieEpisodes = movie == null ? new List<Episode>() : collectionPack
+                    ? _episodeService.GetEpisodeBySeries(movie.Id).Where(episode => episode.SeasonNumber == 1 && episode.EpisodeNumber == 1).ToList()
+                    : GetMovieEpisodes(parsedEpisodeInfo, movie);
+                if (tvdbId > 0 || tvRageId > 0 || (imdbId != null && !string.Equals(imdbId, movie?.ImdbId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    movieEpisodes.Clear();
+                }
+
+                return new RemoteEpisode
+                {
+                    Series = movie,
+                    SeriesMatchType = movie == null ? SeriesMatchType.Unknown : SeriesMatchType.Title,
+                    ParsedEpisodeInfo = parsedEpisodeInfo,
+                    Episodes = movieEpisodes,
+                    MappedSeasonNumber = 1,
+                    Languages = parsedEpisodeInfo.Languages,
+                    EpisodeRequested = searchCriteria != null && movieEpisodes.Any(episode => searchCriteria.Episodes.Any(requested => requested.Id == episode.Id))
+                };
+            }
+
             // A source-owned series with a placeholder TVDB ID cannot inherit another
             // provider's scene identity or numbering from an otherwise identical alias.
             var nativeSeries = series is { TvdbId: < 0, UseSceneNumbering: false } && series.MetadataSource != MetadataSourceType.Tvdb &&
@@ -310,6 +343,14 @@ namespace NzbDrone.Core.Parser
 
             if (series != null)
             {
+                // RSS initially uses the TV parser, which can read a movie year as
+                // S20E19. Once its owning catalogue identifies a movie, use the film
+                // parser and its identity checks before any TV episode mapping.
+                if (series.MediaType == MediaType.Movie)
+                {
+                    return Map(parsedEpisodeInfo, tvdbId, tvRageId, imdbId, series, searchCriteria);
+                }
+
                 remoteEpisode.Series = series;
 
                 // Non-official order doesn't support remapped season numbers, clearing it out
@@ -401,8 +442,25 @@ namespace NzbDrone.Core.Parser
             return sceneMapping;
         }
 
+        private List<Episode> GetMovieEpisodes(ParsedEpisodeInfo parsed, Series movie)
+        {
+            if (MovieReleaseParser.Match(parsed.ReleaseTitle, movie) == null)
+            {
+                return new List<Episode>();
+            }
+
+            var episodes = _episodeService.GetEpisodeBySeries(movie.Id);
+            return episodes.Count == 1 && episodes[0].SeasonNumber == 1 && episodes[0].EpisodeNumber == 1
+                ? episodes : new List<Episode>();
+        }
+
         public List<Episode> GetEpisodes(ParsedEpisodeInfo parsedEpisodeInfo, Series series, bool sceneSource, SearchCriteriaBase searchCriteria = null)
         {
+            if (series.MediaType == MediaType.Movie)
+            {
+                return GetMovieEpisodes(parsedEpisodeInfo, series);
+            }
+
             if (sceneSource)
             {
                 var remoteEpisode = Map(parsedEpisodeInfo, 0, 0, null, series, searchCriteria);

@@ -27,6 +27,7 @@ namespace NzbDrone.Core.MetadataSource.Grouping
         public AnimeGroupKind AnimeGroupKind { get; set; }
         public AnimeGroupMovieFolderStyle AnimeGroupMovieFolderStyle { get; set; }
         public int? AnimeGroupMovieNumber { get; set; }
+        public int? AnimeGroupSpecialNumber { get; set; }
         public string AnimeGroupMemberFolder { get; set; }
         internal string MemberTitle { get; set; }
         public bool IsResolved => Status == AnimeGroupingStatus.Resolved ||

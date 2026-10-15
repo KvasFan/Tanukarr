@@ -34,6 +34,8 @@ const SOURCE_DESCRIPTIONS: Record<MetadataSource | 'all', string> = {
   aniList: 'MetadataSourceAniListDescription',
   myAnimeList: 'MetadataSourceMyAnimeListDescription',
   tvMaze: 'MetadataSourceTvMazeDescription',
+  tmdbMovie: 'MetadataSourceTmdbMovieDescription',
+  omdb: 'MetadataSourceOmdbDescription',
 };
 
 const SOURCE_SEARCH_EXAMPLES: Record<MetadataSource | 'all', string> = {
@@ -43,6 +45,8 @@ const SOURCE_SEARCH_EXAMPLES: Record<MetadataSource | 'all', string> = {
   aniList: 'eg. One Piece',
   myAnimeList: 'eg. One Piece',
   tvMaze: 'eg. Breaking Bad, tvmaze:####',
+  tmdbMovie: 'eg. Spirited Away, imdb:tt0245429',
+  omdb: 'eg. Spirited Away, tt0245429',
 };
 
 function AddNewSeries() {
@@ -106,10 +110,11 @@ function AddNewSeries() {
   });
 
   const isFetching = !!searchTerm && (query !== searchTerm || isFetchingApi);
-  const needsTmdbKey =
-    metadataSource === 'tmdb' &&
+  const needsProviderKey =
     metadataSettings != null &&
-    !metadataSettings.tmdbApiKeyConfigured;
+    (((metadataSource === 'tmdb' || metadataSource === 'tmdbMovie') &&
+      !metadataSettings.tmdbApiKeyConfigured) ||
+      (metadataSource === 'omdb' && !metadataSettings.omdbApiKeyConfigured));
 
   useEffect(() => {
     setTerm(initialTerm);
@@ -170,7 +175,7 @@ function AddNewSeries() {
               {translate(SOURCE_DESCRIPTIONS[metadataSource])}
             </span>
           </div>
-          {needsTmdbKey ? (
+          {needsProviderKey ? (
             <Link
               className={styles.sourceWarning}
               to="/settings/metadatasource"
@@ -200,7 +205,12 @@ function AddNewSeries() {
             </div>
 
             {data.map((item) => (
-              <AddNewSeriesSearchResult key={item.tvdbId} series={item} />
+              <AddNewSeriesSearchResult
+                key={`${item.metadataSource ?? 'tvdb'}:${
+                  item.foreignId ?? item.tvdbId
+                }`}
+                series={item}
+              />
             ))}
           </div>
         ) : null}

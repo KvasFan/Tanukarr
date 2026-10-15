@@ -16,7 +16,7 @@ async function main(input) {
   const destination = path.join(directory, 'collections-browser.json');
   assert.equal(fs.existsSync(destination), false, 'Keep previous verification evidence');
   const browser = await playwright.chromium.launch({ headless: true });
-  const checks = [], errors = [], consoleErrors = [], outside = [], requests = [], mutations = [], images = [], screenshots = [], screenshotProofs = [];
+  const checks = [], errors = [], consoleErrors = [], consoleWarnings = [], outside = [], requests = [], mutations = [], images = [], screenshots = [], screenshotProofs = [];
   const observations = { playwrightVersion: dependency.version, browserVersion: browser.version(), devicePixelRatios: [] };
   const contexts = [];
   const redact = (value) => {
@@ -41,6 +41,7 @@ async function main(input) {
       page.setDefaultTimeout(30000);
       page.on('pageerror', (error) => errors.push(redact(error.message)));
       page.on('console', (message) => {
+        if (message.type() === 'warning') consoleWarnings.push(redact(message.text()));
         if (message.type() === 'error') {
           const location = message.location();
           consoleErrors.push({ text: redact(message.text()), path: location.url ? new URL(location.url).pathname : null });
@@ -121,7 +122,7 @@ async function main(input) {
     if (resetScroll) await activePage.locator('main').evaluate((main) => [...main.querySelectorAll('*')].forEach((node) => {
       if (node.scrollHeight > node.clientHeight && ['auto', 'scroll'].includes(getComputedStyle(node).overflowY)) node.scrollTop = 0;
     }));
-    await activePage.screenshot({ path: path.join(directory, name), fullPage: activePage.viewportSize().width > 768, style: 'input[type="password"] { visibility: hidden !important; }' });
+    await activePage.screenshot({ path: path.join(directory, name), fullPage: activePage.viewportSize().width > 768, style: 'input[type="password"], input[name*="apikey" i], input[name*="token" i] { visibility: hidden !important; }' });
     screenshots.push(name);
     const bytes = fs.readFileSync(path.join(directory, name));
     assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -425,7 +426,7 @@ async function main(input) {
 
     await page.goto(input.baseUrl + '/settings/metadatasource');
     await page.locator('#metadataSourceSettings input[name="aniList"]').waitFor({ state: 'attached' });
-    const sourceKeys = ['tvdb', 'tmdb', 'aniList', 'myAnimeList', 'tvMaze'];
+    const sourceKeys = ['tvdb', 'tmdb', 'aniList', 'myAnimeList', 'tvMaze', 'tmdbMovie', 'omdb'];
     for (const key of sourceKeys) await checkbox(page.locator(`#metadataSourceSettings input[name="${key}"]`), true);
     for (let attempt = 0; attempt < sourceKeys.length && await page.getByTitle('Move up AniList', { exact: true }).isEnabled(); attempt++) {
       await page.getByTitle('Move up AniList', { exact: true }).click();
@@ -588,16 +589,37 @@ async function main(input) {
     await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
     checks.push('complete season settings, relocated quality controls and persisted metadata reordering remain usable within a narrow mobile viewport');
 
+    if (input.guiAudit) {
+      const { auditGuiWorkflows } = require('./gui-workflows.cjs');
+      const added = await auditGuiWorkflows({ input, context, createContext, api, screenshot, diagnostic: (activePage) => { diagnosticPage = activePage; }, checks, observations });
+      for (const item of added) {
+        const resource = await api('series/' + item.id);
+        assert.equal(resource.metadataSource, item.source);
+        assert.equal(resource.foreignId, item.foreignId);
+        assert.equal(resource.path, item.path);
+        input.series.push(resource);
+        input.episodeIdentities.push(...(await api('episode?seriesId=' + item.id)).map((episode) => [episode.id, item.id, episode.seasonNumber, episode.episodeNumber]));
+        initial.push(...snapshot([resource]));
+      }
+      initial.sort((a, b) => a.id - b.id);
+      diagnosticPage = page;
+    }
+
     const allEpisodes = [];
     for (const item of input.series) allEpisodes.push(...await api('episode?seriesId=' + item.id));
     assert.deepEqual(allEpisodes.map((item) => [item.id, item.seriesId, item.seasonNumber, item.episodeNumber]).sort((a, b) => a[0] - b[0]), input.episodeIdentities.sort((a, b) => a[0] - b[0]));
     assert.deepEqual(snapshot(await api('series')), initial);
     assert.deepEqual(errors, []);
+    assert.deepEqual(consoleWarnings, []);
     assert.deepEqual(consoleErrors.filter((entry) => !(entry.path === '/MediaCover/100/poster-500.jpg' && entry.text.includes('Failed to load resource'))), []);
     assert.deepEqual(outside, []);
     assert.ok(mutations.every((entry) =>
-      (entry.method === 'PUT' && (['/api/v5/series', '/api/v5/series/editor', '/api/v5/episodeFile/bulk'].includes(entry.path) || /\/qualityprofile\/\d+$/.test(entry.path) || /\/settings\/metadata(?:\/\d+)?$/.test(entry.path))) ||
+      // These provider-option actions use POST for read-only schema choices.
+      (entry.method === 'POST' && ['/api/v3/notification/action/libraries', '/api/v3/notification/action/users', '/api/v3/indexer/action/newznabCategories'].includes(entry.path)) ||
+      (entry.method === 'PUT' && (['/api/v5/series', '/api/v5/series/editor', '/api/v5/episodeFile/bulk'].includes(entry.path) || /\/qualityprofile\/\d+$/.test(entry.path) || /\/settings\/(metadata|ui)(?:\/\d+)?$/.test(entry.path))) ||
       (entry.method === 'POST' && entry.path === '/api/v5/command' && ['RefreshSeries', 'RenameFiles'].includes(entry.body.name)) ||
+      (entry.method === 'POST' && entry.path === '/api/v5/series' && input.guiAudit && input.guiCatalogue.some((fixture) => fixture.source === entry.body.metadataSource && fixture.foreignId === entry.body.foreignId)) ||
+      (entry.method === 'POST' && entry.path === '/api/v5/series/import' && input.guiAudit && input.guiImportMovie && Array.isArray(entry.body) && entry.body.length === 1 && entry.body[0].metadataSource === input.guiImportMovie.source && entry.body[0].foreignId === input.guiImportMovie.foreignId && entry.body[0].path === input.guiImportMovie.path) ||
       (entry.method === 'POST' && (['/api/v5/qualitydefinition', '/api/v5/qualityprofile', '/api/v5/manualimport'].includes(entry.path) || /\/qualitydefinition\/\d+\/restore$/.test(entry.path))) ||
       (entry.method === 'DELETE' && /\/qualitydefinition\/\d+$/.test(entry.path))));
     assert.ok(images.every((image) => !/poster-(750|1000|1500)\.jpg/.test(image.path)));
@@ -619,14 +641,14 @@ async function main(input) {
         bounds: node.getBoundingClientRect().toJSON(),
       })),
     })).catch(() => null);
-    await screenshot('collection-browser-failure.png', diagnosticPage).catch(() => {});
+    await screenshot('collection-browser-failure.png', diagnosticPage, false).catch(() => {});
     fs.writeFileSync(path.join(directory, 'collection-browser-failure.txt'), redact(await diagnosticPage.locator('body').innerText().catch(() => '')), 'utf8');
   } finally {
     await Promise.allSettled(contexts.map((item) => item.close()));
     await browser.close();
   }
   const report = { passed: !failure, imageId: input.imageId, sourceRevision: input.sourceRevision, checks, observations,
-    javascriptErrors: errors, consoleErrors, outsideRequests: outside, requests, mutations, imageResponses: images, screenshots, screenshotProofs, failure,
+    javascriptErrors: errors, consoleErrors, consoleWarnings, outsideRequests: outside, requests, mutations, imageResponses: images, screenshots, screenshotProofs, failure,
     scope: { ownedFixture: true, ownerConfigurationAccessed: false, privateAccountUsed: false, publicMetadataRequests: false, acquisitionTested: false,
       generatedFileManagementTested: !!observations.generatedFileActions, generatedFileRenameTested: !!observations.generatedFileActions } };
   fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\n', 'utf8');

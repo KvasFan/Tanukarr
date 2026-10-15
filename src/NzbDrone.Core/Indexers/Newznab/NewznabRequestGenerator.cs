@@ -7,6 +7,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Common.Instrumentation;
 using NzbDrone.Core.DataAugmentation.Scene;
 using NzbDrone.Core.IndexerSearch.Definitions;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.ThingiProvider;
 using NzbDrone.Core.Tv;
 
@@ -206,6 +207,13 @@ namespace NzbDrone.Core.Indexers.Newznab
             else if (capabilities.SupportedSearchParameters != null)
             {
                 pageableRequests.Add(GetPagedRequests(MaxPages, Settings.AnimeCategories, "search", ""));
+            }
+
+            if (capabilities.SupportedSearchParameters != null && Settings.MovieCategories?.Any() == true)
+            {
+                // TV-search APIs may exclude films even when a movie category is
+                // supplied. Generic search keeps movie feeds in their own namespace.
+                pageableRequests.Add(GetPagedRequests(MaxPages, Settings.MovieCategories, "search", ""));
             }
 
             return pageableRequests;
@@ -687,6 +695,14 @@ namespace NzbDrone.Core.Indexers.Newznab
 
         private IList<int> GetSearchCategories(SearchCriteriaBase searchCriteria)
         {
+            if (searchCriteria.Series?.MediaType == MediaType.Movie)
+            {
+                var anime = searchCriteria.Series.SeriesType == SeriesTypes.Anime ||
+                    searchCriteria.Series.MetadataSource is MetadataSourceType.AniList or MetadataSourceType.MyAnimeList;
+                return (Settings.MovieCategories ?? Enumerable.Empty<int>())
+                    .Concat(anime ? Settings.AnimeCategories : Enumerable.Empty<int>()).Distinct().ToList();
+            }
+
             return searchCriteria.Series?.SeriesType is SeriesTypes.Anime
                 ? Settings.AnimeCategories.ToList()
                 : Settings.Categories.ToList();

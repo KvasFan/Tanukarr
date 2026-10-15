@@ -28,7 +28,9 @@ export type MetadataSource =
   | 'tmdb'
   | 'aniList'
   | 'myAnimeList'
-  | 'tvMaze';
+  | 'tvMaze'
+  | 'tmdbMovie'
+  | 'omdb';
 
 interface LookupSeriesOptions {
   language: Language;

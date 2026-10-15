@@ -17,6 +17,7 @@ export interface NamingSettingsModel {
   standardEpisodeFormat: string;
   dailyEpisodeFormat: string;
   animeEpisodeFormat: string;
+  movieFormat: string;
   seriesFolderFormat: string;
   seasonFolderFormat: string;
   specialsFolderFormat: string;
@@ -33,6 +34,7 @@ export interface NamingExamples {
   dailyEpisodeExample: string;
   animeEpisodeExample: string;
   animeMultiEpisodeExample: string;
+  movieExample?: string;
   seriesFolderExample: string;
   seasonFolderExample: string;
   specialsFolderExample: string;

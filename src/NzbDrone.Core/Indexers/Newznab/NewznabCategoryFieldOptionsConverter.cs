@@ -8,11 +8,11 @@ namespace NzbDrone.Core.Indexers.Newznab
     {
         public static List<FieldSelectOption<int>> GetFieldSelectOptions(List<NewznabCategory> categories)
         {
-            // Categories not relevant for Sonarr
+            // Categories unrelated to series, anime and film libraries.
             var ignoreCategories = new[] { 1000, 3000, 4000, 6000, 7000 };
 
             // And maybe relevant for specific users
-            var unimportantCategories = new[] { 0, 2000 };
+            var unimportantCategories = new[] { 0 };
 
             var result = new List<FieldSelectOption<int>>();
 
@@ -20,6 +20,12 @@ namespace NzbDrone.Core.Indexers.Newznab
             {
                 // Fetching categories failed, use default Newznab categories
                 categories = new List<NewznabCategory>();
+                categories.Add(new NewznabCategory
+                {
+                    Id = 2000,
+                    Name = "Movies",
+                    Subcategories = new List<NewznabCategory>()
+                });
                 categories.Add(new NewznabCategory
                 {
                     Id = 5000,

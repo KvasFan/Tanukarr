@@ -75,6 +75,8 @@ namespace NzbDrone.Core.Test.TvTests
             _series.AnimeGroupId = null;
             _series.AnimeGroupTitle = null;
             _series.AnimeGroupSeasonNumber = null;
+            _series.AnimeGroupMovieNumber = null;
+            _series.AnimeGroupSpecialNumber = null;
             _series.AnimeGroupFolder = null;
             var originalPath = _series.Path;
             GivenNewSeriesInfo(_series.JsonClone());

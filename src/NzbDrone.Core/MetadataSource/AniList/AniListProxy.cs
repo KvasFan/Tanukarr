@@ -299,7 +299,8 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 // AniList entries are single-run anime, which is what SeriesTypes.Anime
                 // means to the rest of Sonarr: absolute numbering, anime release parsing.
                 SeriesType = SeriesTypes.Anime,
-                AnimeGroupMemberKind = media.Format == "MOVIE" ? AnimeGroupMemberKind.Movie : AnimeGroupMemberKind.Season,
+                MediaType = media.Format == "MOVIE" ? MediaType.Movie : media.Format is "SPECIAL" or "OVA" ? MediaType.Special : MediaType.Series,
+                AnimeGroupMemberKind = media.Format == "MOVIE" ? AnimeGroupMemberKind.Movie : media.Format is "SPECIAL" or "OVA" ? AnimeGroupMemberKind.Special : AnimeGroupMemberKind.Season,
                 SeasonType = SeasonType.Official,
                 SeasonTypes = new List<SeasonType>
                 {

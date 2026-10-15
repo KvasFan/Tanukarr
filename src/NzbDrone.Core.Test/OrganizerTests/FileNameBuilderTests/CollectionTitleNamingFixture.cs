@@ -5,6 +5,7 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.MediaFiles;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Test.Framework;
@@ -61,6 +62,40 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
             Subject.BuildFileName(new List<Episode> { new Episode { SeasonNumber = 2, EpisodeNumber = 3 } }, _series, new EpisodeFile { Quality = new QualityModel(Quality.HDTV720p) })
                 .Should().Be("Native TV title - S02E03");
             _series.CollectionTitle.Should().Be("Display collection");
+        }
+
+        [TestCase(MetadataSourceType.TmdbMovie)]
+        [TestCase(MetadataSourceType.Omdb)]
+        public void should_name_a_movie_using_its_own_title_year_and_movie_format(MetadataSourceType source)
+        {
+            _series.MediaType = MediaType.Movie;
+            _series.MetadataSource = source;
+            _naming.MovieFormat = "{Series Title} ({Series Year}) {Quality Full}";
+            var episode = new Episode { SeasonNumber = 1, EpisodeNumber = 1, Title = "Feature" };
+            Subject.BuildFileName(new List<Episode> { episode }, _series, new EpisodeFile { Quality = new QualityModel(Quality.WEBDL720p) })
+                .Should().Be("Native TV title (2020) WEBDL-720p");
+            episode.SeasonNumber.Should().Be(1);
+            episode.EpisodeNumber.Should().Be(1);
+            _series.CollectionTitle.Should().Be("Display collection");
+        }
+
+        [TestCase(MetadataSourceType.AniList, "{Series Title} - S{season:00}E{episode:00}", "Native TV title - S01E01")]
+        [TestCase(MetadataSourceType.MyAnimeList, "{Series Title} - S{season:00}E{episode:00}", "Native TV title - S01E01")]
+        [TestCase(MetadataSourceType.AniList, "{Series Title} - {absolute:000}", "Native TV title - 001")]
+        [TestCase(MetadataSourceType.MyAnimeList, "{Series Title} - {absolute:000}", "Native TV title - 001")]
+        public void should_preserve_existing_anime_movie_naming_settings(MetadataSourceType source, string animeFormat, string expected)
+        {
+            _series.MetadataSource = source;
+            _series.SeriesType = SeriesTypes.Anime;
+            _series.MediaType = MediaType.Movie;
+            _naming.AnimeEpisodeFormat = animeFormat;
+            _naming.MovieFormat = "{Series Title} ({Series Year}) {Quality Full}";
+            var episode = new Episode { SeasonNumber = 1, EpisodeNumber = 1, AbsoluteEpisodeNumber = 1, Title = "Feature" };
+
+            Subject.BuildFileName(new List<Episode> { episode }, _series, new EpisodeFile { Quality = new QualityModel(Quality.WEBDL720p) })
+                .Should().Be(expected);
+            episode.SeasonNumber.Should().Be(1);
+            episode.EpisodeNumber.Should().Be(1);
         }
     }
 }

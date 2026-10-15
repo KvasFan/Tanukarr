@@ -43,6 +43,25 @@ export default function getMetadataProvider(series: MetadataIdentity) {
       };
     }
 
+    case 'tmdbmovie': {
+      const id = nativeId ?? positiveId(series.tmdbId);
+      return {
+        name: 'TMDB Movies',
+        externalId: id,
+        url: id ? `https://www.themoviedb.org/movie/${id}` : undefined,
+      };
+    }
+
+    case 'omdb': {
+      const id = foreignId ?? series.imdbId;
+      const validId = id && /^tt\d+$/.test(id) ? id : undefined;
+      return {
+        name: 'OMDb',
+        externalId: validId,
+        url: validId ? `https://www.imdb.com/title/${validId}/` : undefined,
+      };
+    }
+
     case 'imdb': {
       const id = foreignId ?? series.imdbId;
       const validId = id && /^tt\d+$/.test(id) ? id : undefined;

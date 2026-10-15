@@ -19,6 +19,8 @@ namespace NzbDrone.Api.Test.SeriesTests
         [TestCase(MetadataSourceType.AniList, "aniList")]
         [TestCase(MetadataSourceType.MyAnimeList, "myAnimeList")]
         [TestCase(MetadataSourceType.TvMaze, "tvMaze")]
+        [TestCase(MetadataSourceType.TmdbMovie, "tmdbMovie")]
+        [TestCase(MetadataSourceType.Omdb, "omdb")]
         public void should_round_trip_native_v3_provider_identity_in_both_serializers(MetadataSourceType source, string serialized)
         {
             var series = Native(source);
@@ -61,6 +63,59 @@ namespace NzbDrone.Api.Test.SeriesTests
         public void should_default_an_older_v3_add_to_tvdb()
         {
             V3Mapper.ToModel(Json.Deserialize<V3Resource>("{\"tvdbId\":123}")).MetadataSource.Should().Be(MetadataSourceType.Tvdb);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_expose_server_media_type_and_ignore_client_reclassification(bool v3)
+        {
+            var series = Native(MetadataSourceType.Omdb);
+            series.MediaType = MediaType.Movie;
+            series.ForeignId = "tt9700101";
+            if (v3)
+            {
+                var resource = V3Mapper.ToResource(series);
+                JObject.Parse(STJson.ToJson(resource))["mediaType"].Value<string>().Should().Be("movie");
+                resource.MediaType = MediaType.Series;
+                V3Mapper.ToModel(resource, series);
+            }
+            else
+            {
+                var resource = Sonarr.Api.V5.Series.SeriesResourceMapper.ToResource(series);
+                JObject.Parse(STJson.ToJson(resource))["mediaType"].Value<string>().Should().Be("movie");
+                resource.MediaType = MediaType.Series;
+                Sonarr.Api.V5.Series.SeriesResourceMapper.ToModel(resource, series);
+            }
+
+            series.MediaType.Should().Be(MediaType.Movie);
+            series.ForeignId.Should().Be("tt9700101");
+            series.MetadataSource.Should().Be(MetadataSourceType.Omdb);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_preserve_standalone_special_membership_for_older_updates(bool v3)
+        {
+            var series = Native(MetadataSourceType.AniList);
+            series.MediaType = MediaType.Special;
+            series.AnimeGroupingMode = AnimeGroupingMode.Manual;
+            series.AnimeGroupId = "manual:specials";
+            series.AnimeGroupTitle = "Generated specials";
+            series.AnimeGroupMemberKind = AnimeGroupMemberKind.Special;
+            series.AnimeGroupSpecialNumber = 2;
+            if (v3)
+            {
+                V3Mapper.ToModel(Json.Deserialize<V3Resource>("{\"id\":1,\"monitored\":false}"), series);
+            }
+            else
+            {
+                Sonarr.Api.V5.Series.SeriesResourceMapper.ToModel(Json.Deserialize<Sonarr.Api.V5.Series.SeriesResource>("{\"id\":1,\"monitored\":false}"), series);
+            }
+
+            series.MediaType.Should().Be(MediaType.Special);
+            series.AnimeGroupMemberKind.Should().Be(AnimeGroupMemberKind.Special);
+            series.AnimeGroupSpecialNumber.Should().Be(2);
+            series.AnimeGroupId.Should().Be("manual:specials");
         }
 
         private static Series Native(MetadataSourceType source)

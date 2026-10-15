@@ -14,10 +14,7 @@ namespace NzbDrone.Core.Tv
         {
             return series.AnimeGroupingMode != AnimeGroupingMode.Disabled &&
                    series.AnimeGroupId.IsNotNullOrWhiteSpace() &&
-                   series.AnimeGroupTitle.IsNotNullOrWhiteSpace() &&
-                   (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie
-                       ? series.AnimeGroupMovieNumber.HasValue
-                       : series.AnimeGroupSeasonNumber.HasValue);
+                   series.AnimeGroupTitle.IsNotNullOrWhiteSpace() && MemberNumber(series).HasValue;
         }
 
         public static void Validate(Series series, IEnumerable<Series> existingSeries)
@@ -53,27 +50,27 @@ namespace NzbDrone.Core.Tv
                 Fail("AnimeGroupMemberKind", "Choose a valid member type, group type and movie folder style");
             }
 
-            var isMovie = series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie;
-            var number = isMovie ? series.AnimeGroupMovieNumber : series.AnimeGroupSeasonNumber;
-            var property = isMovie ? "AnimeGroupMovieNumber" : "AnimeGroupSeasonNumber";
+            var number = MemberNumber(series);
+            var property = MemberNumberProperty(series);
             if (number is not > 0 or > AnimeGroupingService.MaxSeasonNumber)
             {
                 Fail(property, $"Choose a member number from 1 to {AnimeGroupingService.MaxSeasonNumber}");
             }
 
-            if ((isMovie && series.AnimeGroupSeasonNumber.HasValue) || (!isMovie && series.AnimeGroupMovieNumber.HasValue))
+            var suppliedNumbers = new[] { series.AnimeGroupSeasonNumber, series.AnimeGroupMovieNumber, series.AnimeGroupSpecialNumber };
+            if (suppliedNumbers.Count(value => value.HasValue) != 1)
             {
-                Fail(property, "Movie and season numbers are separate; set only the number for the selected member type");
+                Fail(property, "Season, movie and special numbers are separate; set only the number for the selected member type");
             }
 
-            if (!isMovie && series.AnimeGroupKind == AnimeGroupKind.MovieSaga)
+            if (series.AnimeGroupMemberKind != AnimeGroupMemberKind.Movie && series.AnimeGroupKind == AnimeGroupKind.MovieSaga)
             {
-                Fail("AnimeGroupKind", "A movie saga contains movie members; choose a series group for seasons");
+                Fail("AnimeGroupKind", "A movie saga contains movie members; choose a series group for seasons or specials");
             }
 
-            if (series.Seasons.Where(s => s.SeasonNumber > 0).Select(s => s.SeasonNumber).Distinct().Skip(1).Any())
+            if (Slots(series).Any(slot => slot > AnimeGroupingService.MaxSeasonNumber))
             {
-                Fail(property, "Group a single catalogue entry; this entry already contains multiple native seasons");
+                Fail(property, "The native seasons exceed the available collection member numbers");
             }
 
             ValidateSlot(series, existingSeries);
@@ -86,16 +83,18 @@ namespace NzbDrone.Core.Tv
                 return;
             }
 
+            if (Slots(series).Any(slot => slot is < 1 or > AnimeGroupingService.MaxSeasonNumber))
+            {
+                Fail(MemberNumberProperty(series), "The native seasons exceed the available collection member numbers");
+            }
+
             if ((existingSeries ?? Enumerable.Empty<Series>()).Any(other =>
                     (series.Id == 0 || other.Id != series.Id) &&
                     string.Equals(other.AnimeGroupId, series.AnimeGroupId, StringComparison.Ordinal) &&
                     other.AnimeGroupMemberKind == series.AnimeGroupMemberKind &&
-                    (series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie
-                        ? other.AnimeGroupMovieNumber == series.AnimeGroupMovieNumber
-                        : other.AnimeGroupSeasonNumber == series.AnimeGroupSeasonNumber)))
+                    Slots(other).Intersect(Slots(series)).Any()))
             {
-                Fail(series.AnimeGroupMemberKind == AnimeGroupMemberKind.Movie ? "AnimeGroupMovieNumber" : "AnimeGroupSeasonNumber",
-                     "This group already contains that member number");
+                Fail(MemberNumberProperty(series), "This group already contains that member number");
             }
 
             if (series.Path.IsNotNullOrWhiteSpace() && (existingSeries ?? Enumerable.Empty<Series>()).Any(other =>
@@ -104,6 +103,33 @@ namespace NzbDrone.Core.Tv
             {
                 Fail("Path", "The grouped member path overlaps an existing member; choose a distinct naming format or an explicit path");
             }
+        }
+
+        public static int? MemberNumber(Series series)
+        {
+            return series.AnimeGroupMemberKind switch
+            {
+                AnimeGroupMemberKind.Movie => series.AnimeGroupMovieNumber,
+                AnimeGroupMemberKind.Special => series.AnimeGroupSpecialNumber,
+                _ => series.AnimeGroupSeasonNumber
+            };
+        }
+
+        private static string MemberNumberProperty(Series series)
+        {
+            return series.AnimeGroupMemberKind switch
+            {
+                AnimeGroupMemberKind.Movie => "AnimeGroupMovieNumber",
+                AnimeGroupMemberKind.Special => "AnimeGroupSpecialNumber",
+                _ => "AnimeGroupSeasonNumber"
+            };
+        }
+
+        private static IEnumerable<int> Slots(Series series)
+        {
+            var count = series.AnimeGroupMemberKind == AnimeGroupMemberKind.Season
+                ? Math.Max(series.Seasons?.Where(season => season.SeasonNumber > 0).Select(season => season.SeasonNumber).Distinct().Count() ?? 0, 1) : 1;
+            return Enumerable.Range(MemberNumber(series) ?? 0, count);
         }
 
         private static void Fail(string property, string message)

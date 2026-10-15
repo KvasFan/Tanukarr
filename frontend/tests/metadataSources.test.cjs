@@ -87,25 +87,25 @@ test('mounted source controls move catalogues and retain enabled state', () => {
   const fixtureState = fixture(['tmdb']);
   const button = fixtureState.renderer.root.findAllByType('action-button').find((item) => item.props.title === 'Move down AniList');
   TestRenderer.act(() => button.props.onPress());
-  assert.deepEqual(fixtureState.values().order, ['tvdb', 'aniList', 'tmdb', 'myAnimeList', 'tvMaze']);
+  assert.deepEqual(fixtureState.values().order, ['tvdb', 'aniList', 'tmdb', 'myAnimeList', 'tvMaze', 'tmdbMovie', 'omdb']);
   assert.deepEqual(fixtureState.values().disabled, ['tmdb']);
 });
 
 test('mounted enable controls toggle independently and keep at least one source', () => {
-  const fixtureState = fixture(['tvdb', 'tmdb', 'myAnimeList', 'tvMaze']);
+  const fixtureState = fixture(['tvdb', 'tmdb', 'myAnimeList', 'tvMaze', 'tmdbMovie', 'omdb']);
   const inputs = () => fixtureState.renderer.root.findAllByType('check-input');
   assert.equal(inputs().find((item) => item.props.name === 'aniList').props.isDisabled, true);
   TestRenderer.act(() => inputs().find((item) => item.props.name === 'tvMaze').props.onChange({ name: 'tvMaze', value: true }));
-  assert.deepEqual(fixtureState.values().disabled, ['tvdb', 'tmdb', 'myAnimeList']);
+  assert.deepEqual(fixtureState.values().disabled, ['tvdb', 'tmdb', 'myAnimeList', 'tmdbMovie', 'omdb']);
   assert.equal(inputs().find((item) => item.props.name === 'aniList').props.isDisabled, false);
   TestRenderer.act(() => inputs().find((item) => item.props.name === 'aniList').props.onChange({ name: 'aniList', value: false }));
-  assert.deepEqual(fixtureState.values().disabled, ['tvdb', 'tmdb', 'myAnimeList', 'aniList']);
+  assert.deepEqual(fixtureState.values().disabled, ['tvdb', 'tmdb', 'myAnimeList', 'tmdbMovie', 'omdb', 'aniList']);
 });
 
 test('ordered choices remove disabled and unknown sources without duplicate entries', () => {
   const { load } = fixture();
   const { orderedMetadataSources } = load('Settings/MetadataSource/metadataSources.ts');
-  assert.deepEqual(orderedMetadataSources(['tvMaze', 'tvMaze', 'unknown', 'aniList'], ['tmdb']).map(({ key }) => key), ['tvMaze', 'aniList', 'tvdb', 'myAnimeList']);
+  assert.deepEqual(orderedMetadataSources(['tvMaze', 'tvMaze', 'unknown', 'aniList'], ['tmdb']).map(({ key }) => key), ['tvMaze', 'aniList', 'tvdb', 'myAnimeList', 'tmdbMovie', 'omdb']);
 });
 
 test('lookup sends allSources only for aggregate search and retains explicit native provider', () => {

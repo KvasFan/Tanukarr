@@ -25,7 +25,9 @@ export default function useAnimeGroupingPreview(
     queryOptions: {
       enabled:
         enabled &&
-        (metadataSource === 'aniList' || metadataSource === 'myAnimeList') &&
+        (metadataSource === 'aniList' ||
+          metadataSource === 'myAnimeList' ||
+          metadataSource === 'tmdbMovie') &&
         !!foreignId,
       staleTime: 60000,
       retry: false,

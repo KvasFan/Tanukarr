@@ -37,6 +37,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
         private readonly IManualEpisodeMappingService _manualMapping;
         private readonly IEpisodeNumberingResolver _numberingResolver;
         private readonly IProfileQualityMatcher _qualityMatcher;
+        private readonly IMovieFileIdentityService _movieFileIdentity;
 
         public ImportDecisionMaker(IEnumerable<IImportDecisionEngineSpecification> specifications,
                                    IMediaFileService mediaFileService,
@@ -48,6 +49,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                    IManualEpisodeMappingService manualMapping,
                                    IEpisodeNumberingResolver numberingResolver,
                                    IProfileQualityMatcher qualityMatcher,
+                                   IMovieFileIdentityService movieFileIdentity,
                                    Logger logger)
         {
             _specifications = specifications;
@@ -61,6 +63,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
             _manualMapping = manualMapping;
             _numberingResolver = numberingResolver;
             _qualityMatcher = qualityMatcher;
+            _movieFileIdentity = movieFileIdentity;
         }
 
         public List<ImportDecision> GetImportDecisions(List<string> videoFiles, Series series)
@@ -126,7 +129,9 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
 
             try
             {
-                var fileEpisodeInfo = Parser.Parser.ParsePath(localEpisode.Path);
+                var fileEpisodeInfo = localEpisode.Series.MediaType == MediaType.Movie
+                    ? MovieReleaseParser.Match(localEpisode.Path, localEpisode.Series)
+                    : Parser.Parser.ParsePath(localEpisode.Path);
 
                 localEpisode.FileEpisodeInfo = fileEpisodeInfo;
                 localEpisode.Size = _diskProvider.GetFileSize(localEpisode.Path);
@@ -139,6 +144,13 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                 if (manual != null && manual.Episodes.Count == 0)
                 {
                     return new ImportDecision(localEpisode, new ImportRejection(ImportRejectionReason.InvalidSeasonOrEpisode, "Your saved episode choice could not be mapped unambiguously to this file. Use Manual Import to choose it explicitly."));
+                }
+
+                if (localEpisode.Series.MediaType == MediaType.Movie && fileEpisodeInfo == null &&
+                    manual == null && _movieFileIdentity.GetPersistedEpisodes(localEpisode)?.Count != 1)
+                {
+                    return new ImportDecision(localEpisode, new ImportRejection(ImportRejectionReason.InvalidSeasonOrEpisode,
+                        "The physical movie filename must identify this feature by an unambiguous title and year or matching IMDb ID."));
                 }
 
                 if (manual != null && localEpisode.FileEpisodeInfo == null && localEpisode.DownloadClientEpisodeInfo == null && localEpisode.FolderEpisodeInfo == null)

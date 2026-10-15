@@ -81,11 +81,15 @@ namespace NzbDrone.Core.DecisionEngine
 
                 try
                 {
-                    var parsedEpisodeInfo = searchCriteria is CompleteSeriesSearchCriteria completeSeries
+                    var parsedEpisodeInfo = searchCriteria?.Series?.MediaType == Tv.MediaType.Movie
+                        ? MovieReleaseParser.Match(report.Title, searchCriteria.Series) ?? (searchCriteria is MovieSearchCriteria movieSearch ? MovieCollectionPackParser.Match(report.Title, movieSearch) : null)
+                        : searchCriteria is CompleteSeriesSearchCriteria completeSeries
                         ? CompleteSeriesReleaseParser.Parse(report.Title, completeSeries)
                         : Parser.Parser.ParseTitle(report.Title);
 
-                    if (searchCriteria is CompleteSeriesSearchCriteria && parsedEpisodeInfo == null)
+                    parsedEpisodeInfo ??= searchCriteria == null ? MovieReleaseParser.Parse(report.Title) : null;
+
+                    if ((searchCriteria is CompleteSeriesSearchCriteria || searchCriteria?.Series?.MediaType == Tv.MediaType.Movie) && parsedEpisodeInfo == null)
                     {
                         reportNumber++;
                         continue;

@@ -40,6 +40,7 @@ import useCountryName from 'Internationalization/useCountryName';
 import OrganizePreviewModal from 'Organize/OrganizePreviewModal';
 import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
 import EditSeriesModal from 'Series/Edit/EditSeriesModal';
+import getMediaType from 'Series/getMediaType';
 import { getSeriesLibraryLink } from 'Series/Grouping/collectionPresentation';
 import SeriesHistoryModal from 'Series/History/SeriesHistoryModal';
 import MonitoringOptionsModal from 'Series/MonitoringOptions/MonitoringOptionsModal';
@@ -106,6 +107,7 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
   const pageBodyRef = useRef<HTMLDivElement>(null);
 
   const series = useSingleSeries(seriesId);
+  const mediaType = getMediaType(series ?? {});
   const { toggleSeriesMonitored, isTogglingSeriesMonitored } =
     useToggleSeriesMonitored(seriesId);
   const { data: allSeries } = useSeries();
@@ -486,9 +488,19 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
             id="search-complete-series"
             priority={2}
             groupId="left-a"
-            label={translate('SearchCompleteSeries')}
+            label={translate(
+              {
+                series: 'SearchCompleteSeries',
+                movie: 'SearchMovie',
+                special: 'SearchSpecial',
+              }[mediaType]
+            )}
             iconName={icons.INTERACTIVE}
-            title={translate('SearchCompleteSeriesTooltip')}
+            title={
+              mediaType === 'series'
+                ? translate('SearchCompleteSeriesTooltip')
+                : undefined
+            }
             isDisabled={!hasEpisodes}
             onPress={handleCompleteSeriesSearchPress}
           />
@@ -936,6 +948,7 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
           <CompleteSeriesSearchModal
             isOpen={isCompleteSeriesSearchOpen}
             seriesId={seriesId}
+            mediaType={mediaType}
             onModalClose={handleCompleteSeriesSearchClose}
           />
 

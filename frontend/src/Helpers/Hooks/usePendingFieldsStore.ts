@@ -7,7 +7,6 @@ interface PendingFieldsStore {
 }
 
 export const usePendingFieldsStore = () => {
-  // eslint-disable-next-line react/hook-use-state
   const [store] = useState(() => {
     return create<PendingFieldsStore>()((_set) => {
       return {

@@ -713,6 +713,56 @@ It does not use existing Compose configuration, real media, a download
 client or a private AniList account. Cleanup removes only the instance and temporary
 directories created by the invocation.
 
+## Native movies, mixed collections and populated-library upgrades
+
+Run the added catalogue, transfer and compatibility checks against one explicitly
+selected image:
+
+```sh
+python3 docker/tests/movie-catalogues.py --image tanukarr:verified \
+  --timeout 300 --report movie-catalogues.json
+python3 docker/tests/download-packs.py --image tanukarr:verified --jellyfin --movies \
+  --timeout 300 --report download-packs.json
+python3 docker/tests/library-upgrade.py --image tanukarr:verified \
+  --timeout 300 --report library-upgrade.json
+```
+
+The movie catalogue fixture exercises actual HTTPS/Newtonsoft deserialization,
+IMDb lookup through TMDB Movies/OMDb, native one-feature identity, mixed TV/anime/
+movie/standalone-special membership, generated imports, malformed refresh recovery
+and raw disk/console Trace privacy before report redaction. Catalogue responses
+and API credentials are generated locally; this does not verify a live account.
+
+The download fixture uses genuine pinned qBittorrent and Jellyfin containers.
+Owned full-runtime videos travel through private torrents and an internal web
+seed, then the application's normal completed-download handler imports them.
+It checks single/multiple-season packs, explicit retained-season reuse, native
+movie features and same-collection movie packs, SHA-256 bytes, naming and native
+identities. Jellyfin probes cover immediate, scheduled, restarted and retried
+selected-library refreshes; a bounded request recorder distinguishes the selected
+film library from untouched TV libraries. No public torrent is acquired.
+
+The upgrade fixture first populates the pinned earlier image's schema252, then
+starts the candidate with the same disposable configuration and media. It checks
+the schema253 migration, existing anime-film filenames, provider/episode/file IDs,
+monitoring, paths and bytes through rescan, owning-provider refresh and restart.
+It never opens the owner's configuration or media.
+
+Use `collections-browser.py --gui-audit` with the documented Playwright arguments
+for desktop/touch routes, Settings submenus, movie category editors, mixed-group
+actions and native Library Import. Review the saved PNGs individually or compare
+their hashes with a recorded visual review; successful screenshots alone are
+not a visual inspection.
+
+`postgres-collections.py --report postgres-collections.json` starts its own
+loopback-bound PostgreSQL17 container and runs persisted migration, slot-range
+and concurrent-update regressions against the already-built test assemblies.
+It generates private credentials, does not inherit an existing database
+connection, and removes only its owned container and volumes.
+
+Reports retain exact image/source identities, actual checks, errors and cleanup
+evidence. A failed or older-image report does not verify a later candidate.
+
 ## Coverage and evidence
 
 ### First-run account creation

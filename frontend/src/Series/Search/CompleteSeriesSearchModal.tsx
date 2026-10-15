@@ -14,6 +14,7 @@ interface CompleteSeriesSearchModalProps
 function CompleteSeriesSearchModal({
   isOpen,
   seriesId,
+  mediaType,
   onModalClose,
 }: CompleteSeriesSearchModalProps) {
   return (
@@ -26,6 +27,7 @@ function CompleteSeriesSearchModal({
     >
       <CompleteSeriesSearchModalContent
         seriesId={seriesId}
+        mediaType={mediaType}
         onModalClose={onModalClose}
       />
     </Modal>

@@ -8,6 +8,7 @@ import Link from 'Components/Link/Link';
 import MetadataAttribution from 'Components/MetadataAttribution';
 import { icons } from 'Helpers/Props';
 import { useLanguageById } from 'Language/useLanguages';
+import getMediaType from 'Series/getMediaType';
 import getMetadataProvider from 'Series/getMetadataProvider';
 import { Statistics } from 'Series/Series';
 import SeriesGenres from 'Series/SeriesGenres';
@@ -61,6 +62,7 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
   const language = useLanguageById(preferredMetadataLanguage);
   const isExistingSeries = useExistingSeries(series);
   const provider = getMetadataProvider(series);
+  const mediaType = getMediaType(series);
   const isSmallScreen = useAppDimension('isSmallScreen');
   const [isNewAddSeriesModalOpen, setIsNewAddSeriesModalOpen] = useState(false);
 
@@ -91,6 +93,9 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
   }
 
   const statusChip = getStatusChip(status);
+  let summary = seasonCount ? seasons : null;
+  if (mediaType !== 'series')
+    summary = translate(mediaType === 'movie' ? 'Movie' : 'Special');
 
   return (
     <div
@@ -197,9 +202,7 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
               </span>
             ) : null}
 
-            {seasonCount ? (
-              <span className={styles.chip}>{seasons}</span>
-            ) : null}
+            {summary ? <span className={styles.chip}>{summary}</span> : null}
           </div>
 
           <div className={styles.overview}>{overview}</div>

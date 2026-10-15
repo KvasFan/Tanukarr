@@ -216,6 +216,11 @@ namespace NzbDrone.Core.MediaFiles
                 }
             }
 
+            if (series.MediaType == MediaType.Movie)
+            {
+                return ProcessMovieFiles(videoFiles.ToList(), series, downloadClientItem, importMode);
+            }
+
             HashSet<int> requestedEpisodeIds = null;
             if (downloadClientItemInfo is { IsMultiSeason: true } or { IsCompleteSeries: true })
             {
@@ -285,6 +290,46 @@ namespace NzbDrone.Core.MediaFiles
             }
 
             return importResults;
+        }
+
+        private List<ImportResult> ProcessMovieFiles(List<string> files, Series anchor, DownloadClientItem item, ImportMode importMode)
+        {
+            var candidates = new List<Series> { anchor };
+            if (AnimeGroupingValidator.HasGroup(anchor))
+            {
+                candidates = _seriesService.GetAllSeries().Where(movie => movie.MediaType == MediaType.Movie &&
+                    AnimeGroupingValidator.HasGroup(movie) && movie.AnimeGroupId == anchor.AnimeGroupId &&
+                    (movie.Id == anchor.Id || movie.Monitored)).ToList();
+            }
+
+            // Every physical file must establish its own identity. The directory,
+            // torrent title and anchor episode must never route another film's bytes.
+            var matches = files.Select(file => new { File = file, Movie = MovieReleaseParser.MatchUnique(file, candidates) }).ToList();
+            var duplicateMovies = matches.Where(match => match.Movie != null).GroupBy(match => match.Movie.Id)
+                .Where(group => group.Count() > 1).Select(group => group.Key).ToHashSet();
+            var decisions = new List<ImportDecision>();
+            foreach (var match in matches)
+            {
+                if (match.Movie == null || duplicateMovies.Contains(match.Movie.Id))
+                {
+                    decisions.Add(new ImportDecision(new LocalEpisode { Path = match.File, Series = anchor },
+                        new ImportRejection(ImportRejectionReason.InvalidSeasonOrEpisode,
+                            "Movie pack file is ambiguous, duplicated, or does not identify a stored monitored member of this collection.")));
+                    continue;
+                }
+
+                var parsed = MovieReleaseParser.Match(match.File, match.Movie);
+                decisions.AddRange(_importDecisionMaker.GetImportDecisions(new List<string> { match.File }, match.Movie, item, parsed, null, true));
+            }
+
+            if (candidates.Count > 1 && item != null)
+            {
+                item.CanMoveFiles = false;
+                item.CanBeRemoved = false;
+                importMode = ImportMode.Copy;
+            }
+
+            return _importApprovedEpisodes.Import(decisions, true, item, importMode);
         }
 
         private List<ImportResult> ProcessFile(FileInfo fileInfo, ImportMode importMode, DownloadClientItem downloadClientItem)

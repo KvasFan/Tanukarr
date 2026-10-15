@@ -28,6 +28,8 @@ public class MetadataSourceSettingsResource : RestResource
     /// cannot tell the difference from a blank one.
     /// </summary>
     public bool TmdbApiKeyConfigured { get; set; }
+    public string? OmdbApiKey { get; set; }
+    public bool OmdbApiKeyConfigured { get; set; }
 }
 
 public static class MetadataSourceSettingsResourceMapper
@@ -42,7 +44,9 @@ public static class MetadataSourceSettingsResourceMapper
             MetadataSourceOrder = MetadataSourcePolicy.Order(model),
             DisabledMetadataSources = MetadataSourcePolicy.Disabled(model),
             TmdbApiKey = configured ? MetadataSourceSettingsResource.Mask : string.Empty,
-            TmdbApiKeyConfigured = configured
+            TmdbApiKeyConfigured = configured,
+            OmdbApiKey = model.OmdbApiKey.IsNotNullOrWhiteSpace() ? MetadataSourceSettingsResource.Mask : string.Empty,
+            OmdbApiKeyConfigured = model.OmdbApiKey.IsNotNullOrWhiteSpace()
         };
     }
 }

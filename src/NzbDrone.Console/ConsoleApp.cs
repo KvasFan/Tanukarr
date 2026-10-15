@@ -26,6 +26,12 @@ namespace NzbDrone.Console
 
         public static void Main(string[] args)
         {
+            if (Array.Exists(args, argument => argument.TrimStart('-', '/').Equals("healthcheck", StringComparison.OrdinalIgnoreCase)))
+            {
+                Environment.ExitCode = ContainerHealthCheck.Run(args);
+                return;
+            }
+
             RuntimePatcher.Initialize();
             StartupContext startupArgs = null;
 

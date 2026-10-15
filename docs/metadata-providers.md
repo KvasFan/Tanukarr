@@ -1,6 +1,6 @@
-# Metadata providers for TV series and anime
+# Metadata providers for TV series, anime and movies
 
-Tanukarr manages episodic **TV series and anime** with shared library,
+Tanukarr manages **TV series, anime and movies** with shared library,
 monitoring, search, download-client and import workflows. Choose a metadata
 catalogue for each title, then select an appropriate episode ordering where
 alternatives are available. Provider choice, catalogue coverage and numbering
@@ -9,7 +9,8 @@ are related decisions with distinct responsibilities.
 ## Choose the source when adding a series
 
 Open **Add New Series** and use the source dropdown above the search box.
-Its sources are **TheTVDB**, **TMDB**, **AniList**, **MyAnimeList** and **TVmaze**.
+Its sources are **TheTVDB**, **TMDB TV**, **AniList**, **MyAnimeList**, **TVmaze**,
+**TMDB Movies** and **OMDb**.
 Settings → Metadata Source enables catalogues and arranges their priority. Choose
 **All enabled sources** to search in that order, or select a single catalogue.
 Results retain their native source and identity. Search and confirm the
@@ -20,18 +21,54 @@ Daily uses date-based conventions and Anime enables the corresponding anime
 search/numbering behavior. A catalogue's genre and this parsing/search setting
 are different concepts.
 
+## Add a movie using an IMDb identifier
+
+Enable **TMDB Movies** or **OMDb** in **Settings → Metadata Source** and configure
+the corresponding credential. TMDB Movies shares the TMDB v3 API key; OMDb uses
+its own [API key](https://www.omdbapi.com/apikey.aspx). Search by a title or by
+`imdb:tt...`, select the movie, then choose its library root, quality and monitoring.
+The saved media type comes from the owning catalogue. Changing a collection
+member's display position does not turn a TV series into a movie.
+
+TMDB Movies resolves IMDb identifiers through TMDB's official
+[find endpoint](https://developer.themoviedb.org/reference/find-by-id), then
+retrieves [movie details](https://developer.themoviedb.org/reference/movie-details).
+Its numeric movie ID is distinct from a numeric TMDB TV ID. OMDb uses the
+returned IMDb `tt...` identifier as its native identity. Both credentials are
+masked in v3/v5 settings responses; omitting a credential or submitting its
+masked value retains the saved key.
+
+These providers do not scrape IMDb. Direct access to the
+[IMDb API](https://data.imdb.com/documentation/api-documentation/getting-access/)
+requires its own AWS entitlement, credentials and dataset identifiers and is
+not implemented here. Follow the selected provider's terms, including
+[OMDb's usage terms](https://www.omdbapi.com/legal.htm).
+
+Movie release searches use title/year conventions. A physical movie file must
+identify a single saved title/year or IMDb ID before automatic import. A
+collection pack may contain multiple stored, monitored movie members of the
+same collection; each file is matched separately. Ambiguous or unrelated files
+remain in the download instead of being assigned to the selected movie.
+Native AniList/MyAnimeList film conventions and explicit saved file mappings
+remain supported separately from ordinary film matching. Those native anime
+films retain the configured Anime Episode Format; Movie Format applies to
+TMDB Movies and OMDb films.
+
+The existing v3/v5 library APIs represent a movie as one native feature in the
+compatible episode/file resources. Movie screens and naming use the catalogue's
+media type. Existing TV/anime season and episode identities are retained.
+
 AniList and Jikan results default to Anime; TMDB results default to Standard,
 including anime catalogue entries. TheTVDB normally defaults to Standard in
 this fork. Choose Daily manually for date-based releases; automatic daily-series
 classification is not a reliable setup step here. Existing user-selected Series
 Type is retained during refresh.
 
-The separate **Library Import** workflow currently searches TheTVDB and does
-not offer this multi-provider selector. For a folder whose intended metadata
-owner is TMDB, AniList, MyAnimeList or TVmaze, use Add New Series, select the correct
-catalogue entry and use the appropriate existing root/folder. Review the
-generated path and episode matches before importing files. This is a per-series
-workflow, not a claim of bulk import through every provider.
+**Library Import** offers the enabled-source selector when matching folders.
+Matches retain their native source and ID, including TMDB Movies and OMDb;
+equal numeric IDs from different catalogues are distinct. Disabled sources do
+not receive discovery requests. Review the chosen entry, generated path and
+episode or movie matches before importing existing files.
 
 Disabling a catalogue removes it from discovery and optional presentation
 enrichment. Existing series continue to refresh from their owning provider;
@@ -68,11 +105,12 @@ A title missing from one catalogue may be available in another configured
 source; no provider is guaranteed to cover every title or genre.
 
 API clients can use `/api/v5/series/lookup` or `/api/v3/series/lookup` and the
-`metadataSource` parameter (`tvdb`, `tmdb`, `aniList`, `myAnimeList`, `tvMaze`).
+`metadataSource` parameter (`tvdb`, `tmdb`, `aniList`, `myAnimeList`, `tvMaze`,
+`tmdbMovie`, `omdb`).
 `allSources=true` searches the enabled sources in saved order. Omitting both
 parameters preserves the existing TheTVDB default. Explicit disabled sources
 are rejected. Source settings are available at `/api/v5/settings/metadata` and
-`/api/v3/config/metadatasource`; both mask the stored TMDB key. Other v3 routes retain their own contracts;
+`/api/v3/config/metadatasource`; both mask stored TMDB and OMDb keys. Other v3 routes retain their own contracts;
 see [API compatibility](compatibility-and-backups.md#api-and-internal-names).
 
 ## Catalogue coverage and current access requirements
@@ -84,10 +122,13 @@ see [API compatibility](compatibility-and-backups.md#api-and-internal-names).
 | AniList | Anime catalogue, alternative titles, release status and list membership | Public catalogue lookup uses AniList GraphQL without OAuth. Authenticated account-list import is a separate connection and requires its configured OAuth fields. |
 | MyAnimeList | Anime catalogue, accessed through Jikan | Public metadata lookup uses Jikan's MyAnimeList API; the client does not require a MyAnimeList account or API key. Available episode detail depends on Jikan/MyAnimeList responses. |
 | TVmaze | TV series, native seasons, episode titles/dates and cover artwork | Public [TVmaze API](https://www.tvmaze.com/api), without an API key. Requests share pacing and a bounded retry/cooldown. Native `tvmaze:ID` lookup is supported. Data is licensed [CC BY-SA](https://www.tvmaze.com/api#licensing), with TVmaze attribution in the source controls. |
+| TMDB Movies | Native films, IMDb cross-references and explicit movie collections | The same configured TMDB v3 key, using official movie/find/collection endpoints. Movie IDs are separate from TV IDs. |
+| OMDb | Native films indexed by IMDb identity | Configure an OMDb API key. Only movie results are accepted; series and episode responses do not become movie entries. |
 
 The current metadata clients use `https://skyhook.sonarr.tv/v2/tvdb`,
 `https://api.themoviedb.org/3`, `https://graphql.anilist.co` and
-`https://api.jikan.moe/v4`. These describe the implemented access paths, not a
+`https://api.jikan.moe/v4`, `https://api.tvmaze.com` and `https://www.omdbapi.com`.
+These describe the implemented access paths, not a
 promise of uptime, exhaustive coverage or authorization for every account-list
 feature. Metadata credentials do not configure indexers, download clients,
 Jellyfin or other integrations.
@@ -202,9 +243,10 @@ from the member's native episode numbers and configured filenames. Automatic
 grouping does not merge owners or replace a TheTVDB/TMDB entry that already
 contains multiple native seasons.
 
-AniList/MyAnimeList anime movie entries can retain their own native episode
-records inside a mixed anime group or numbered Movie Saga. This does not add
-TMDB's movie API or a general movie catalogue to the TV integrations. Group
+AniList/MyAnimeList anime movie entries retain their own native episode records
+inside a mixed anime group or numbered Movie Saga. TMDB Movies and OMDb provide
+separate native film catalogues; choosing a group role does not convert a TV
+catalogue entry into a film. Group
 folder expressions and native filename tokens are documented in the linked
 guide; an arc subtitle is a naming choice, rather than a metadata-owner change.
 
@@ -221,8 +263,9 @@ Choose **Default** for TheTVDB, AniList and MyAnimeList owners. A TMDB group can
 appear in a selector because an entry has a cross-reference ID, but choosing
 that group for another metadata owner does not apply it.
 
-**IMDb is not a fifth metadata provider and its ordering options are not
-currently functional.** The inherited **Refresh Imdb Dataset** task can build
+**IMDb episode ordering is not currently functional.** Film lookup by IMDb ID
+through TMDB Movies or OMDb is a separate supported feature. The inherited
+**Refresh Imdb Dataset** task can build
 a local index and expose choices, but the production refresh path does not
 apply its ordering, and the selector's episode request is not a working IMDb
 ordering pipeline. Successful projector/index fixture tests do not establish
@@ -237,8 +280,8 @@ ordering. Review existing files and backups before doing so.
 
 ## Current limitations and source checkpoints
 
-- The four-provider selector belongs to Add New Series; Library Import remains
-  TheTVDB-only.
+- Library Import and Add New Series use the configured enabled sources. Existing
+  titles retain their owning provider independently of discovery enablement.
 - TMDB groups apply only to TMDB-owned titles. Non-TMDB group choices are
   ignored, and IMDb ordering choices are not applied by the current backend.
 - Daily parsing should be selected manually for date-based releases.

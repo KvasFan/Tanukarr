@@ -3,30 +3,28 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import Icon from 'Components/Icon';
 import Link from 'Components/Link/Link';
 import { icons } from 'Helpers/Props';
+import getMetadataProvider from 'Series/getMetadataProvider';
+import Series from 'Series/Series';
 import useExistingSeries from 'Series/useExistingSeries';
 import ImportSeriesTitle from './ImportSeriesTitle';
 import styles from './ImportSeriesSearchResult.module.css';
 
 interface ImportSeriesSearchResultProps {
   id: string;
-  tvdbId: number;
-  title: string;
-  year: number;
-  network?: string;
+  series: Series;
   isHighlighted: boolean;
-  onPress: (tvdbId: number) => void;
+  onPress: (series: Series) => void;
 }
 
 function ImportSeriesSearchResult({
   id,
-  tvdbId,
-  title,
-  year,
-  network,
+  series,
   isHighlighted,
   onPress,
 }: ImportSeriesSearchResultProps) {
-  const isExistingSeries = useExistingSeries(tvdbId);
+  const { title, year, network } = series;
+  const provider = getMetadataProvider(series);
+  const isExistingSeries = useExistingSeries(series);
 
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -37,8 +35,8 @@ function ImportSeriesSearchResult({
   }, [isHighlighted]);
 
   const handlePress = useCallback(() => {
-    onPress(tvdbId);
-  }, [tvdbId, onPress]);
+    onPress(series);
+  }, [series, onPress]);
 
   return (
     <div
@@ -62,17 +60,23 @@ function ImportSeriesSearchResult({
         </Link>
       </div>
 
-      <div className={styles.tvdbLinkCell} role="gridcell">
-        <Link
-          className={styles.tvdbLink}
-          to={`https://www.thetvdb.com/?tab=series&id=${tvdbId}`}
-        >
-          <Icon
-            className={styles.tvdbLinkIcon}
-            name={icons.EXTERNAL_LINK}
-            size={16}
-          />
-        </Link>
+      <div className={styles.providerLinkCell} role="gridcell">
+        {provider.url ? (
+          <Link
+            className={styles.providerLink}
+            to={provider.url}
+            aria-label={`${provider.name} ${provider.externalId}`}
+          >
+            {provider.name}
+            <Icon
+              className={styles.providerLinkIcon}
+              name={icons.EXTERNAL_LINK}
+              size={16}
+            />
+          </Link>
+        ) : (
+          provider.name
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 # What this fork changes
 
-The October 15 product version reset derives **0.1.0** from the exact 1.1.0
-source and retains its migrations and APIs. It adds graphical first-run account
+Tanukarr **0.1.0** retains the inherited migrations and APIs.
+It adds graphical first-run account
 creation, collection/quality fixes, enabled and ordered metadata catalogues,
-TVmaze and container hardening. This is not a database downgrade. See the
-[reset notes](docs/releases/0.1.0.md), [publication report](docs/releases/0.1.0-publication.md)
+TVmaze and container hardening. See the
+[release notes](docs/releases/0.1.0.md), [publication report](docs/releases/0.1.0-publication.md)
 and [preparation ledger](docs/releases/0.1.0-verification.md).
 
 The reasoning behind Tanukarr's integrated changes, and the trade-offs they carry.
@@ -177,8 +177,9 @@ backend applies those groups to **TMDB-owned series only**. Use **Default** in
 the Episode Ordering selector for TheTVDB, AniList and MyAnimeList owners;
 choosing a TMDB group for those owners is ignored. The inherited IMDb dataset
 and UI options remain present, but their ordering application is not wired into
-the current refresh/import path. IMDb is not a fifth metadata provider and its
-ordering choices are not currently functional.
+the current refresh/import path. These ordering choices are not currently
+functional. Native film lookup by IMDb ID uses the separate TMDB Movies and
+OMDb providers; it does not enable IMDb episode ordering or scrape IMDb.
 
 **TMDB group type 2 is "Absolute"** — one continuous run with no seasons, useful
 when a TV or anime release set uses continuous episode numbers. Selecting it

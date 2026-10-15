@@ -304,7 +304,8 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 Title = anime.TitleEnglish.IsNotNullOrWhiteSpace() ? anime.TitleEnglish : anime.Title,
                 Overview = anime.Synopsis,
                 SeriesType = SeriesTypes.Anime,
-                AnimeGroupMemberKind = anime.Type == "Movie" ? AnimeGroupMemberKind.Movie : AnimeGroupMemberKind.Season,
+                MediaType = anime.Type == "Movie" ? MediaType.Movie : anime.Type is "Special" or "OVA" ? MediaType.Special : MediaType.Series,
+                AnimeGroupMemberKind = anime.Type == "Movie" ? AnimeGroupMemberKind.Movie : anime.Type is "Special" or "OVA" ? AnimeGroupMemberKind.Special : AnimeGroupMemberKind.Season,
                 SeasonType = SeasonType.Official,
                 SeasonTypes = new List<SeasonType>
                 {

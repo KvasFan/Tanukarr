@@ -47,6 +47,8 @@ public class SeriesResource : RestResource
     public int TvRageId { get; set; }
     public int TvMazeId { get; set; }
     public int TmdbId { get; set; }
+    [SwaggerSchema(ReadOnly = true)]
+    public MediaType MediaType { get; set; }
     public HashSet<int>? MalIds { get; set; }
     public HashSet<int>? AniListIds { get; set; }
 
@@ -80,6 +82,7 @@ public class SeriesResource : RestResource
     public AnimeGroupKind? AnimeGroupKind { get; set; }
     public AnimeGroupMovieFolderStyle? AnimeGroupMovieFolderStyle { get; set; }
     public int? AnimeGroupMovieNumber { get; set; }
+    public int? AnimeGroupSpecialNumber { get; set; }
 
     /// <summary>
     /// Server-derived member folder leaf. Request values are ignored.
@@ -147,6 +150,7 @@ public static class SeriesResourceMapper
             TvRageId = model.TvRageId,
             TvMazeId = model.TvMazeId,
             TmdbId = model.TmdbId,
+            MediaType = model.MediaType,
             MalIds = model.MalIds,
             AniListIds = model.AniListIds,
             MetadataSource = model.MetadataSource,
@@ -161,6 +165,7 @@ public static class SeriesResourceMapper
             AnimeGroupKind = model.AnimeGroupKind,
             AnimeGroupMovieFolderStyle = model.AnimeGroupMovieFolderStyle,
             AnimeGroupMovieNumber = model.AnimeGroupMovieNumber,
+            AnimeGroupSpecialNumber = model.AnimeGroupSpecialNumber,
             AnimeGroupMemberFolder = model.AnimeGroupMemberFolder,
             FirstAired = model.FirstAired,
             LastAired = model.LastAired,
@@ -220,6 +225,7 @@ public static class SeriesResourceMapper
             AnimeGroupKind = resource.AnimeGroupKind ?? AnimeGroupKind.Series,
             AnimeGroupMovieFolderStyle = resource.AnimeGroupMovieFolderStyle ?? AnimeGroupMovieFolderStyle.Automatic,
             AnimeGroupMovieNumber = resource.AnimeGroupMovieNumber,
+            AnimeGroupSpecialNumber = resource.AnimeGroupSpecialNumber,
             FirstAired = resource.FirstAired,
             SeriesType = resource.SeriesType,
             OriginalTitle = resource.OriginalTitle,
@@ -251,12 +257,18 @@ public static class SeriesResourceMapper
             updatedSeries.AnimeGroupKind = series.AnimeGroupKind;
             updatedSeries.AnimeGroupMovieFolderStyle = series.AnimeGroupMovieFolderStyle;
             updatedSeries.AnimeGroupMovieNumber = series.AnimeGroupMovieNumber;
+            updatedSeries.AnimeGroupSpecialNumber = series.AnimeGroupSpecialNumber;
         }
         else
         {
             updatedSeries.AnimeGroupMemberKind = resource.AnimeGroupMemberKind ?? series.AnimeGroupMemberKind;
             updatedSeries.AnimeGroupKind = resource.AnimeGroupKind ?? series.AnimeGroupKind;
             updatedSeries.AnimeGroupMovieFolderStyle = resource.AnimeGroupMovieFolderStyle ?? series.AnimeGroupMovieFolderStyle;
+            if (resource.AnimeGroupMemberKind == null && resource.AnimeGroupSpecialNumber == null)
+            {
+                updatedSeries.AnimeGroupSpecialNumber = series.AnimeGroupSpecialNumber;
+            }
+
             if (resource.AnimeGroupMemberKind == null && resource.AnimeGroupMovieNumber == null)
             {
                 updatedSeries.AnimeGroupMovieNumber = series.AnimeGroupMovieNumber;

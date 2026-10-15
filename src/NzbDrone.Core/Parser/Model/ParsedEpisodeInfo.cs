@@ -11,6 +11,12 @@ namespace NzbDrone.Core.Parser.Model
     public class ParsedEpisodeInfo
     {
         public string ReleaseTitle { get; set; }
+        public bool IsMovie { get; set; }
+        public int MovieYear { get; set; }
+        public string MovieImdbId { get; set; }
+        public bool IsMovieCollectionPack { get; set; }
+        public string MovieCollectionId { get; set; }
+        public int MovieCollectionRuntime { get; set; }
         public string SeriesTitle { get; set; }
         public SeriesTitleInfo SeriesTitleInfo { get; set; }
         public QualityModel Quality { get; set; }

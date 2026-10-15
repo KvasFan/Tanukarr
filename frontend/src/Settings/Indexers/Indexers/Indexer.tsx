@@ -101,9 +101,9 @@ function Indexer({
         segments={[
           translate(enabled ? 'Enabled' : 'Disabled'),
           showPriority ? (
-            <>
+            <React.Fragment key="priority">
               {translate('Priority')} {priority}
-            </>
+            </React.Fragment>
           ) : null,
           testStatusLabel,
         ]}

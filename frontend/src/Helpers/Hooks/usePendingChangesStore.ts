@@ -14,7 +14,6 @@ interface PendingChangesStore<T extends object> {
 export const usePendingChangesStore = <T extends object>(
   initialPendingChanges: Partial<T>
 ) => {
-  // eslint-disable-next-line react/hook-use-state
   const [store] = useState(() => {
     return create<PendingChangesStore<T>>()((_set) => {
       return {

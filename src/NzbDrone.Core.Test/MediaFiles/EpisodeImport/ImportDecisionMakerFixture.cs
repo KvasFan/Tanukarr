@@ -100,6 +100,35 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
                   });
         }
 
+        [Test]
+        public void should_keep_an_explicit_manual_movie_mapping_for_a_nonstandard_filename()
+        {
+            GivenSpecifications(_pass1);
+            _series.MediaType = MediaType.Movie;
+            _series.Title = "Generated Feature";
+            _series.Year = 2019;
+            GivenAugmentationSuccess();
+            var feature = new Episode { Id = 20, SeriesId = _series.Id, SeasonNumber = 1, EpisodeNumber = 1 };
+            Mocker.GetMock<IManualEpisodeMappingService>()
+                .Setup(service => service.Find(It.IsAny<LocalEpisode>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Returns(new ManualEpisodeMapping { History = new EpisodeHistory { Quality = _quality, Languages = new List<Language> { Language.English } }, Episodes = new List<Episode> { feature } });
+            var decisions = Subject.GetImportDecisions(_videoFiles, _series);
+            decisions.Should().ContainSingle().Which.Approved.Should().BeTrue();
+            decisions[0].LocalEpisode.Episodes.Should().Equal(feature);
+            decisions[0].LocalEpisode.ManualEpisodeMapping.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_reject_an_unmapped_ordinary_movie_with_episodic_coordinates_before_aggregation()
+        {
+            _series.MediaType = MediaType.Movie;
+            _series.Title = "Generated Feature";
+            _series.Year = 2019;
+            var decisions = Subject.GetImportDecisions(_videoFiles, _series);
+            decisions.Should().ContainSingle().Which.Approved.Should().BeFalse();
+            Mocker.GetMock<IAggregationService>().Verify(service => service.Augment(It.IsAny<LocalEpisode>(), It.IsAny<DownloadClientItem>()), Times.Never());
+        }
+
         private List<Episode> GetMappedMultiSeasonEpisodes(int? seriesId = null)
         {
             return Enumerable.Range(1, 7)

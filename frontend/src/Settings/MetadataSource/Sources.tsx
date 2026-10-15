@@ -15,6 +15,7 @@ interface SourcesProps {
   order?: MetadataSource[];
   disabled?: MetadataSource[];
   hasTmdbKey: boolean;
+  hasOmdbKey?: boolean;
   onOrderChange: (order: MetadataSource[]) => void;
   onDisabledChange: (disabled: MetadataSource[]) => void;
 }
@@ -26,6 +27,7 @@ interface SourceRowProps {
   enabled: boolean;
   lastEnabled: boolean;
   hasTmdbKey: boolean;
+  hasOmdbKey: boolean;
   onToggle: (change: CheckInputChanged) => void;
   onMove: (index: number, direction: number) => void;
 }
@@ -37,6 +39,7 @@ function SourceRow({
   enabled,
   lastEnabled,
   hasTmdbKey,
+  hasOmdbKey,
   onToggle,
   onMove,
 }: SourceRowProps) {
@@ -46,7 +49,8 @@ function SourceRow({
 
   if (enabled) {
     status =
-      source.key === 'tmdb' && !hasTmdbKey
+      ((source.key === 'tmdb' || source.key === 'tmdbMovie') && !hasTmdbKey) ||
+      (source.key === 'omdb' && !hasOmdbKey)
         ? translate('MetadataSourceNeedsApiKey')
         : translate('MetadataSourceReady');
   }
@@ -97,6 +101,7 @@ function Sources({
   order,
   disabled = [],
   hasTmdbKey,
+  hasOmdbKey = false,
   onOrderChange,
   onDisabledChange,
 }: SourcesProps) {
@@ -136,6 +141,7 @@ function Sources({
           enabled={!disabled.includes(source.key)}
           lastEnabled={lastEnabled}
           hasTmdbKey={hasTmdbKey}
+          hasOmdbKey={hasOmdbKey}
           onToggle={handleToggle}
           onMove={handleMove}
         />

@@ -659,6 +659,80 @@ namespace NzbDrone.Core.Test.MediaFiles
             Mocker.GetMock<IDiskProvider>().Verify(s => s.DeleteFolder(It.IsAny<string>(), true), Times.Never());
         }
 
+        private Series MovieMember(int id, string title, int year, string group = "manual:movie-download")
+        {
+            return new Series
+            {
+                Id = id, Title = title, Year = year, MediaType = MediaType.Movie, Monitored = true,
+                AnimeGroupingMode = AnimeGroupingMode.Manual, AnimeGroupId = group, AnimeGroupTitle = "Generated Feature Collection",
+                AnimeGroupMemberKind = AnimeGroupMemberKind.Movie, AnimeGroupMovieNumber = id
+            };
+        }
+
+        [Test]
+        public void should_route_each_movie_pack_file_only_to_its_unique_monitored_stored_collection_member()
+        {
+            var first = MovieMember(1, "Generated Feature One", 2019);
+            var second = MovieMember(2, "Generated Feature Two", 2021);
+            var unrelated = MovieMember(3, "Unrelated Feature", 2020, "manual:other-collection");
+            var unmonitored = MovieMember(4, "Unmonitored Feature", 2020);
+            unmonitored.Monitored = false;
+            var folder = @"C:\downloads\Generated Feature Collection 2019-2021".AsOsAgnostic();
+            var files = new[]
+            {
+                Path.Combine(folder, "Generated Feature One (2019) WEB-DL.mkv"),
+                Path.Combine(folder, "Generated Feature Two (2021) WEB-DL.mkv"),
+                Path.Combine(folder, "Generated Feature Two (2020) WEB-DL.mkv"),
+                Path.Combine(folder, "Unrelated Feature (2020) WEB-DL.mkv"),
+                Path.Combine(folder, "Unmonitored Feature (2020) WEB-DL.mkv")
+            };
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetAllSeries()).Returns(new List<Series> { first, second, unrelated, unmonitored });
+            Mocker.GetMock<IDiskScanService>().Setup(service => service.GetVideoFiles(folder, true)).Returns(files);
+            Mocker.GetMock<IMakeImportDecision>()
+                .Setup(service => service.GetImportDecisions(It.IsAny<List<string>>(), It.IsAny<Series>(), _trackedDownload.DownloadItem, It.IsAny<ParsedEpisodeInfo>(), null, true))
+                .Returns((List<string> paths, Series movie, DownloadClientItem item, ParsedEpisodeInfo parsed, ParsedEpisodeInfo parent, bool scene) =>
+                    paths.Select(path => new ImportDecision(new LocalEpisode { Path = path, Series = movie, Episodes = [new Episode { SeriesId = movie.Id, SeasonNumber = 1, EpisodeNumber = 1 }] })).ToList());
+            List<ImportDecision> captured = null;
+            Mocker.GetMock<IImportApprovedEpisodes>()
+                .Setup(service => service.Import(It.IsAny<List<ImportDecision>>(), true, _trackedDownload.DownloadItem, ImportMode.Copy))
+                .Callback((List<ImportDecision> decisions, bool folderImport, DownloadClientItem item, ImportMode mode) => captured = decisions)
+                .Returns(new List<ImportResult>());
+
+            Subject.ProcessPath(folder, ImportMode.Auto, first, _trackedDownload.DownloadItem);
+
+            captured.Should().HaveCount(5);
+            captured.Where(decision => decision.Approved).Select(decision => decision.LocalEpisode.Series.Id).Should().Equal(1, 2);
+            captured.Where(decision => !decision.Approved).Select(decision => decision.LocalEpisode.Path).Should().Equal(files.Skip(2));
+            _trackedDownload.DownloadItem.CanMoveFiles.Should().BeFalse();
+            _trackedDownload.DownloadItem.CanBeRemoved.Should().BeFalse();
+            Mocker.GetMock<IDiskProvider>().Verify(service => service.DeleteFolder(It.IsAny<string>(), It.IsAny<bool>()), Times.Never());
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void should_reject_duplicate_movie_files_or_ambiguous_stored_movie_identity(bool duplicateProvider)
+        {
+            var first = MovieMember(1, "Generated Feature", 2019);
+            var candidates = new List<Series> { first };
+            if (duplicateProvider)
+            {
+                candidates.Add(MovieMember(2, "Generated Feature", 2019));
+            }
+
+            var folder = @"C:\downloads\Generated Features".AsOsAgnostic();
+            var files = new[] { Path.Combine(folder, "Generated Feature (2019) WEB-DL.mkv"), Path.Combine(folder, "Generated Feature (2019) Bluray.mkv") };
+            Mocker.GetMock<ISeriesService>().Setup(service => service.GetAllSeries()).Returns(candidates);
+            Mocker.GetMock<IDiskScanService>().Setup(service => service.GetVideoFiles(folder, true)).Returns(files);
+            Mocker.GetMock<IImportApprovedEpisodes>()
+                .Setup(service => service.Import(It.Is<List<ImportDecision>>(decisions => decisions.Count == 2 && decisions.All(decision => !decision.Approved)), true, _trackedDownload.DownloadItem, It.IsAny<ImportMode>()))
+                .Returns(new List<ImportResult>());
+
+            Subject.ProcessPath(folder, ImportMode.Auto, first, _trackedDownload.DownloadItem);
+
+            Mocker.GetMock<IMakeImportDecision>().Verify(service => service.GetImportDecisions(It.IsAny<List<string>>(), It.IsAny<Series>(), It.IsAny<DownloadClientItem>(), It.IsAny<ParsedEpisodeInfo>(), It.IsAny<ParsedEpisodeInfo>(), It.IsAny<bool>()), Times.Never());
+            Mocker.GetMock<IImportApprovedEpisodes>().Verify(service => service.Import(It.Is<List<ImportDecision>>(decisions => decisions.Count == 2 && decisions.All(decision => !decision.Approved)), true, _trackedDownload.DownloadItem, It.IsAny<ImportMode>()), Times.Once());
+        }
+
         private void VerifyNoImport()
         {
             Mocker.GetMock<IImportApprovedEpisodes>().Verify(c => c.Import(It.IsAny<List<ImportDecision>>(), true, null, ImportMode.Auto),

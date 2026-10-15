@@ -446,6 +446,7 @@ export interface NamingModalOptions {
     | 'standardEpisodeFormat'
     | 'dailyEpisodeFormat'
     | 'animeEpisodeFormat'
+    | 'movieFormat'
     | 'seriesFolderFormat'
     | 'seasonFolderFormat'
     | 'specialsFolderFormat'
@@ -577,6 +578,24 @@ function NamingModal(props: NamingModalProps) {
       .filter((tokenGroup) => tokenGroup.tokens.length > 0);
   }
 
+  if (name === 'movieFormat') {
+    tokenGroups = tokenGroups.filter(
+      (item) => item.legend !== translate('EpisodeTitle')
+    );
+    tokenGroups.unshift({
+      legend: translate('Presets'),
+      caption: translate('NamingPresetsHelpText'),
+      tokens: [
+        {
+          token: '{Series Title} ({Series Year}) {Quality Full}',
+          example: 'Generated Movie (2026) WEBDL-1080p',
+        },
+      ],
+      size: sizes.LARGE,
+      isFullFilename: true,
+    });
+  }
+
   if (name === 'seriesFolderFormat') {
     tokenGroups.unshift({
       legend: translate('Presets'),
@@ -596,7 +615,7 @@ function NamingModal(props: NamingModalProps) {
     <Modal isOpen={isOpen} onModalClose={onModalClose}>
       <ModalContent onModalClose={onModalClose}>
         <ModalHeader>
-          {episode
+          {episode || name === 'movieFormat'
             ? translate('FileNameTokens')
             : translate('FolderNameTokens')}
         </ModalHeader>

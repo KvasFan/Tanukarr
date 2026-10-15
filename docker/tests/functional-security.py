@@ -34,6 +34,7 @@ class FunctionalSecurity(ContainerSmoke):
         self.companion_tokens = []
         self.add_token = None
         self.browser_tested = False
+        self.authorization_results = []
 
     def raw(self, path, method="GET", data=None, api_key=True, cookie=False, headers=None):
         parsed = urllib.parse.urlsplit(self.base_url)
@@ -115,14 +116,71 @@ class FunctionalSecurity(ContainerSmoke):
         self.wait_ready()
         self.check("isolated container startup with authentication always required")
 
+    def container_health(self):
+        details = json.loads(self.docker("inspect", self.container))[0]
+        require(details["Config"].get("Healthcheck", {}).get("Test") == ["CMD", "/healthcheck.sh"],
+                "Image does not declare the production health probe")
+        require(self.docker("exec", self.container, "/healthcheck.sh") == "",
+                "Successful health probe produced diagnostic output")
+        require(self.docker("exec", "--env", "HTTP_PROXY=http://127.0.0.1:1", self.container, "/healthcheck.sh") == "",
+                "Health probe used a configured external HTTP proxy")
+        failed = subprocess.run(
+            [self.args.docker, "exec", "--env", "SONARR__SERVER__PORT=1", self.container, "/healthcheck.sh"],
+            capture_output=True, text=True, timeout=15)
+        require(failed.returncode == 1 and not failed.stdout and not failed.stderr,
+                "Failed health probe did not return a silent nonzero status")
+
+        config = self.root / "health-config"
+        config.mkdir()
+        (config / "config.xml").write_text(
+            "<Config><BindAddress>*</BindAddress><Port>8989</Port><UrlBase>/old-base</UrlBase>"
+            "<LaunchBrowser>False</LaunchBrowser><AuthenticationMethod>Forms</AuthenticationMethod>"
+            "<AuthenticationRequired>Enabled</AuthenticationRequired><AnalyticsEnabled>False</AnalyticsEnabled></Config>",
+            encoding="utf-8")
+        fixture = None
+        try:
+            fixture = self.docker(
+                "create", "--name", "sonarr-health-" + secrets.token_hex(6), "--network", "none",
+                "--label", "sonarr.health-test=true", "--security-opt", "no-new-privileges=true",
+                "--health-interval", "1s", "--health-start-period", "45s", "--health-retries", "2",
+                "--env", "PUID=1000", "--env", f"PGID={self.fixture_gid}",
+                "--env", "SONARR__SERVER__PORT=8990", "--env", "SONARR__SERVER__URLBASE=/health-fixture",
+                "--mount", f"type=bind,source={config},target=/config", self.args.image)
+            self.docker("start", fixture)
+            deadline = time.monotonic() + min(self.args.timeout, 90)
+            while time.monotonic() < deadline:
+                state = json.loads(self.docker("inspect", fixture))[0]["State"]
+                require(state["Running"], "Custom-port health fixture exited during startup")
+                if state.get("Health", {}).get("Status") == "healthy":
+                    break
+                time.sleep(1)
+            else:
+                raise SmokeFailure("Custom-port and URL-base container never became healthy")
+            require(self.docker("exec", fixture, "/healthcheck.sh") == "", "Custom health probe failed")
+            self.observations.append("Docker health probes passed with environment-overridden HTTP port and URL base, no external network, no credentials and silent success/failure output.")
+        finally:
+            if fixture:
+                self.docker("rm", "--force", fixture)
+                self.docker("run", "--rm", "--network", "none", "--user", "0:0",
+                            "--label", "sonarr.health-cleanup=true", "--entrypoint", "/bin/chmod",
+                            "--mount", f"type=bind,source={config},target=/config", self.args.image,
+                            "-R", "a+rwX", "/config")
+
     def authentication(self):
         for path in ("/api/v3/system/status", "/api/v5/system/status", "/api/v5/settings/general",
-                     "/api/v5/series", "/api/v5/queue", "/api/v5/settings/metadata"):
-            for key in (False, "invalid-audit-key"):
+                     "/api/v5/series", "/api/v5/queue", "/api/v5/settings/metadata",
+                     "/api/v3/series/grouping?metadataSource=0&foreignId=1",
+                     "/api/v5/series/grouping?metadataSource=0&foreignId=1"):
+            result = {"path": path, "scenarios": []}
+            self.authorization_results.append(result)
+            for scenario, key in (("missing-key", False), ("wrong-key", "invalid-audit-key")):
                 status, _, body = self.raw(path, api_key=key)
+                result["scenarios"].append({"credentialScenario": scenario, "status": status})
                 require(status in (401, 403), f"Unauthenticated {path} returned HTTP {status}")
                 require(self.api_key.encode() not in body, "Denied response exposed API key")
-            require(self.raw(path)[0] == 200, f"Valid API key failed for {path}")
+            status = self.raw(path)[0]
+            result["scenarios"].append({"credentialScenario": "valid-key", "status": status})
+            require(status == 200, f"Valid API key failed for {path}")
         require(self.raw("/", api_key=False)[0] in (302, 401), "Anonymous UI access was not challenged")
         require(self.raw("/login", api_key=False)[0] == 200, "Public login page unavailable")
         for api_key in (False, True):
@@ -228,6 +286,9 @@ class FunctionalSecurity(ContainerSmoke):
         require(re.search(r"^CapEff:\s+0+$", status, re.M), "Application has effective Linux capabilities")
         require(re.search(r"^Seccomp:\s+2$", status, re.M), "Docker seccomp filter is not active")
         require(re.search(r"^NoNewPrivs:\s+1$", status, re.M), "No-new-privileges is not active")
+        require(self.docker("exec", self.container, "find", "/usr", "/app", "-xdev", "-type", "f",
+                            "-perm", "/6000", "-print") == "",
+                "Runtime includes an unnecessary setuid or setgid executable")
         self.docker("exec", self.container, "sh", "-c", "test \"$(stat -c %a /config)\" = 750")
         self.docker("exec", "--user", "1000:1000", self.container, "sh", "-c",
                     "test -f /entrypoint.sh && test ! -w /app && test ! -w /app/Sonarr && test ! -w /entrypoint.sh")
@@ -513,6 +574,7 @@ class FunctionalSecurity(ContainerSmoke):
             ("allowed-host enforcement, DNS-rebinding Host variants and non-credentialed CORS", self.hosts_and_cors),
             ("static traversal variants and malformed/conflicting API scopes rejected", self.traversal_and_validation),
             ("non-root app, zero effective capabilities, no privileged/socket/host-network deployment", self.container_security),
+            ("non-root Docker health probe, silent failure and custom port/URL base without network or credentials", self.container_health),
             ("TMDB key masking, API aliases and legacy save compatibility", self.metadata_masking),
             ("companion read/add permission allowlists, path normalization, secret-safe listing and revocation", self.companion_permissions),
             ("AniList v3/v5 import/release/custom-list schema separation with removed status exclusions absent", self.anilist_schema),
@@ -561,6 +623,7 @@ def main():
             args.report.write_text(json.dumps({
                 "image": args.image, "imageId": audit.image_id, "passed": not audit.failures,
                 "checks": audit.results, "failures": audit.failures, "observations": audit.observations,
+                "authorizationMatrix": audit.authorization_results,
                 "liveAniListRequested": args.anilist, "realLibraryTested": False, "downloadsTested": False,
                 "browserUITested": audit.browser_tested, "privateAniListAccountTested": False,
                 "keptContainer": audit.container if args.keep else None,

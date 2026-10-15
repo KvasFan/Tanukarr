@@ -22,7 +22,7 @@ _spec = importlib.util.spec_from_file_location("metadata_sources_parent", Path(_
 _parent = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_parent)
 IDS = (980701, 980702)
-SOURCES = ["tvdb", "tmdb", "aniList", "myAnimeList", "tvMaze"]
+SOURCES = ["tvdb", "tmdb", "aniList", "myAnimeList", "tvMaze", "tmdbMovie", "omdb"]
 TITLE = "Generated native metadata"
 
 
@@ -171,7 +171,7 @@ class MetadataSources(_parent.AniListReliability):
             settings = self.api_json(path)
             require(set(settings["metadataSourceOrder"]) == set(SOURCES), "Fresh policy omitted a native source")
             settings.update(tmdbApiKey=self.metadata_key, metadataSourceOrder=["tvMaze", "aniList", "tvdb", "tmdb", "myAnimeList"],
-                            disabledMetadataSources=["tvdb", "tmdb", "myAnimeList"])
+                            disabledMetadataSources=["tvdb", "tmdb", "myAnimeList", "tmdbMovie", "omdb"])
             self.api_json(path + "/1", "PUT", settings)
             saved = self.api_json(path)
             require(saved["tmdbApiKey"] == "********" and self.metadata_key not in json.dumps(saved), "Metadata credentials leaked through settings")
@@ -202,7 +202,7 @@ class MetadataSources(_parent.AniListReliability):
 
     def ordered_search(self):
         for version, order in (("v3", ["tvMaze", "aniList"]), ("v5", ["aniList", "tvMaze"])):
-            self.save_policy(order, ["tvdb", "tmdb", "myAnimeList"], version)
+            self.save_policy(order, ["tvdb", "tmdb", "myAnimeList", "tmdbMovie", "omdb"], version)
             before = len(self.records())
             query = urllib.parse.urlencode({"term": TITLE, "allSources": "true"})
             rows = self.api_json(f"/api/{version}/series/lookup?" + query)
@@ -230,7 +230,7 @@ class MetadataSources(_parent.AniListReliability):
                     for row in self.records()[before:]), "Refresh did not read the actual native TVmaze episode endpoint")
 
     def native_series(self):
-        self.save_policy(["tvMaze", "aniList"], ["tvdb", "tmdb", "myAnimeList"])
+        self.save_policy(["tvMaze", "aniList"], ["tvdb", "tmdb", "myAnimeList", "tmdbMovie", "omdb"])
         for version, identity in zip(("v3", "v5"), IDS):
             query = urllib.parse.urlencode({"term": "tvmaze:" + str(identity), "metadataSource": "tvMaze"})
             row = self.api_json(f"/api/{version}/series/lookup?" + query)[0]
@@ -257,7 +257,7 @@ class MetadataSources(_parent.AniListReliability):
             self.check(version + " adds TVmaze titles, native episode IDs, air dates, native seasons and deterministic specials without TVDB ID substitution")
 
         self.control(revision=2)
-        self.save_policy(["aniList"], ["tvMaze", "tvdb", "tmdb", "myAnimeList"])
+        self.save_policy(["aniList"], ["tvMaze", "tvdb", "tmdb", "myAnimeList", "tmdbMovie", "omdb"])
         snapshots = {}
         for identity, series in self.series.items():
             before = self.episode_identity(series)

@@ -32,6 +32,7 @@ namespace NzbDrone.Core.Test.IndexerTests.NewznabTests
                 BaseUrl = "http://127.0.0.1:1234/",
                 Categories = new[] { 1, 2 },
                 AnimeCategories = new[] { 3, 4 },
+                MovieCategories = new int[0],
                 ApiKey = "abcd",
             };
 
@@ -177,6 +178,47 @@ namespace NzbDrone.Core.Test.IndexerTests.NewznabTests
             var page = results.GetAllTiers().First().First();
 
             page.Url.FullUri.Should().Contain("&cat=1,2,3,4&");
+        }
+
+        [Test]
+        public void should_keep_movie_search_in_its_own_categories_without_tv_coordinates_or_ids()
+        {
+            Subject.Settings.MovieCategories = new[] { 2000, 2040 };
+            var movie = new MovieSearchCriteria
+            {
+                Series = new Series { MediaType = MediaType.Movie, TvdbId = -10, TmdbId = 970001, ImdbId = "tt9700001" },
+                EpisodeQueryTitles = new[] { "Generated Feature 2019" }
+            };
+            var urls = Subject.GetSearchRequests(movie).GetAllTiers().Select(request => request.First().Url.FullUri).ToList();
+            urls.Should().ContainSingle().Which.Should().Contain("?t=search&cat=2000,2040&").And.Contain("q=Generated+Feature+2019")
+                .And.NotContain("season=").And.NotContain("ep=").And.NotContain("tvdbid=").And.NotContain("tmdbid=");
+            Subject.GetSearchRequests(_singleEpisodeSearchCriteria).GetAllTiers().First().First().Url.Query.Should().Contain("&cat=1,2&");
+        }
+
+        [Test]
+        public void should_fetch_movie_feeds_separately_and_preserve_tv_anime_category_filters()
+        {
+            Subject.Settings.MovieCategories = new[] { 2000 };
+            var urls = Subject.GetRecentRequests().GetAllTiers().Select(request => request.First().Url.FullUri).ToList();
+            urls.Should().HaveCount(2);
+            urls.Should().Contain(url => url.Contains("?t=tvsearch&cat=1,2,3,4&"));
+            urls.Should().Contain(url => url.Contains("?t=search&cat=2000&"));
+        }
+
+        [Test]
+        public void should_include_anime_categories_for_native_anime_films_without_tv_categories()
+        {
+            Subject.Settings.MovieCategories = new[] { 2000 };
+            var criteria = new MovieSearchCriteria
+            {
+                Series = new Series { MediaType = MediaType.Movie, MetadataSource = NzbDrone.Core.MetadataSource.MetadataSourceType.AniList },
+                EpisodeQueryTitles = new[] { "Generated Anime Film 2019" }
+            };
+            var url = Subject.GetSearchRequests(criteria).GetAllTiers().Single().First().Url.FullUri;
+            url.Should().Contain("?t=search&cat=2000,3,4&");
+            Subject.Settings.MovieCategories = new int[0];
+            criteria.Series.MetadataSource = NzbDrone.Core.MetadataSource.MetadataSourceType.TmdbMovie;
+            Subject.GetSearchRequests(criteria).GetAllTiers().SelectMany(request => request).Should().BeEmpty();
         }
 
         [Test]

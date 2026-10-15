@@ -13,6 +13,12 @@ async function main(input) {
   if (input.playwrightVersion) assert.equal(dependency.version, input.playwrightVersion);
   const browser = await chromium.launch({ headless: true });
   const checks = [], errors = [], outside = [];
+  const redact = (message) => {
+    for (const secret of [input.username, input.password, input.apiKey]) {
+      if (secret) message = message.replaceAll(secret, '[REDACTED]');
+    }
+    return message;
+  };
   let passed = false;
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -71,7 +77,8 @@ async function main(input) {
   } finally {
     await browser.close();
     fs.writeFileSync(path.join(input.artifactDirectory, 'first-run-browser.json'), JSON.stringify({
-      imageId: input.imageId, passed, checks, javascriptErrorCount: errors.length, playwrightVersion: dependency.version,
+      imageId: input.imageId, passed, checks, javascriptErrorCount: errors.length, javascriptErrors: errors.map(redact),
+      playwrightVersion: dependency.version,
       screenshots: ['create-account.png', 'create-account-mobile.png'],
       externalRequestCount: outside.length,
     }, null, 2) + '\n');

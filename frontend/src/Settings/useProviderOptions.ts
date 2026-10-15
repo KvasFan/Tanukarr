@@ -28,13 +28,38 @@ const libraryFieldNames = [
   'urlBase',
 ];
 
+function isConnectionReady(providerData: ProviderOptions, action: string) {
+  if (
+    providerData.implementation?.value !== 'Jellyfin' ||
+    !['libraries', 'users'].includes(action)
+  ) {
+    return true;
+  }
+
+  const field = (name: string) =>
+    providerData.fields?.find((item) => item.name === name)?.value;
+  const host = field('host');
+  const apiKey = field('apiKey');
+  const port = Number(field('port'));
+
+  return (
+    typeof host === 'string' &&
+    host.trim().length > 0 &&
+    typeof apiKey === 'string' &&
+    apiKey.trim().length > 0 &&
+    Number.isInteger(port) &&
+    port > 0 &&
+    port <= 65535
+  );
+}
+
 // Generates a query key from provider fields that affect the available options.
 function getProviderDataKey(providerData: ProviderOptions, action: string) {
   if (!providerData || !providerData.fields) {
     return null;
   }
 
-  if (action === 'libraries') {
+  if (action === 'libraries' || action === 'users') {
     return {
       id: providerData.id?.value ?? null,
       implementation: providerData.implementation?.value ?? null,
@@ -88,7 +113,12 @@ export default function useProviderOptions({
         `/${provider}/action/${action}`,
         getProviderDataKey(providerData, action),
       ],
-      enabled: !!(provider && action && providerData),
+      enabled: !!(
+        provider &&
+        action &&
+        providerData &&
+        isConnectionReady(providerData, action)
+      ),
       queryFn: async ({ signal }) => {
         return fetchJson<
           { options?: FieldSelectOption<unknown>[] },
@@ -105,7 +135,9 @@ export default function useProviderOptions({
           signal,
         });
       },
-      placeholderData: action === 'libraries' ? undefined : keepPreviousData,
+      placeholderData: ['libraries', 'users'].includes(action)
+        ? undefined
+        : keepPreviousData,
     }
   );
 

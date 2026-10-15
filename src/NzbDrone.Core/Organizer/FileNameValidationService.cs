@@ -10,6 +10,7 @@ namespace NzbDrone.Core.Organizer
     public interface IFilenameValidationService
     {
         ValidationFailure ValidateStandardFilename(SampleResult sampleResult);
+        ValidationFailure ValidateMovieFilename(SampleResult sampleResult);
         ValidationFailure ValidateDailyFilename(SampleResult sampleResult);
         ValidationFailure ValidateAnimeFilename(SampleResult sampleResult);
     }
@@ -17,6 +18,12 @@ namespace NzbDrone.Core.Organizer
     public class FileNameValidationService : IFilenameValidationService
     {
         private const string ERROR_MESSAGE = "Produces invalid file names";
+
+        public ValidationFailure ValidateMovieFilename(SampleResult sampleResult)
+        {
+            return sampleResult != null && Parser.MovieReleaseParser.Match(sampleResult.FileName, sampleResult.Series) != null
+                ? null : new ValidationFailure("MovieFormat", "Movie filenames must preserve their title and year or explicit IMDb identity.");
+        }
 
         public ValidationFailure ValidateStandardFilename(SampleResult sampleResult)
         {

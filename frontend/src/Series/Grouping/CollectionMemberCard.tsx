@@ -4,6 +4,7 @@ import Button from 'Components/Link/Button';
 import Link from 'Components/Link/Link';
 import { icons } from 'Helpers/Props';
 import DeleteSeriesModal from 'Series/Delete/DeleteSeriesModal';
+import getMediaType from 'Series/getMediaType';
 import SeasonInteractiveSearchModal from 'Series/Search/SeasonInteractiveSearchModal';
 import SeasonReleaseSearchButton from 'Series/Search/SeasonReleaseSearchButton';
 import translate from 'Utilities/String/translate';
@@ -18,6 +19,14 @@ interface CollectionMemberCardProps {
 
 function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
   const { member, season, displayNumber, section } = entry;
+  const mediaType = getMediaType(member);
+  const searchLabel = translate(
+    {
+      series: 'SearchEpisodes',
+      movie: 'SearchMovie',
+      special: 'SearchSpecial',
+    }[mediaType]
+  );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -28,7 +37,12 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
       number: member.animeGroupMovieNumber ?? 1,
     });
   } else if (section === 'specials') {
-    label = translate('Specials');
+    label =
+      member.animeGroupMemberKind === 'special'
+        ? translate('AnimeGroupSpecialLabel', {
+            number: member.animeGroupSpecialNumber ?? displayNumber,
+          })
+        : translate('Specials');
   }
 
   const openSearch = useCallback(() => setIsSearchOpen(true), []);
@@ -72,7 +86,8 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
         </h3>
         <div className={styles.cardMetadata}>
           <span>
-            {episodeFileCount}/{episodeCount} {translate('Episodes')}
+            {episodeFileCount}/{episodeCount}{' '}
+            {translate(mediaType === 'movie' ? 'Movie' : 'Episodes')}
           </span>
           <span>
             {translate(season.monitored ? 'Monitored' : 'Unmonitored')}
@@ -83,7 +98,7 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
           <p className={styles.cardOverview}>{member.overview}</p>
         ) : null}
         <div className={styles.cardActions}>
-          {season.seasonNumber > 0 ? (
+          {season.seasonNumber > 0 && mediaType === 'series' ? (
             <SeasonReleaseSearchButton
               size="medium"
               seriesId={member.id}
@@ -93,11 +108,11 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
             />
           ) : null}
           <Button isDisabled={!episodeCount} onPress={openSearch}>
-            <Icon name={icons.INTERACTIVE} /> {translate('SearchEpisodes')}
+            <Icon name={icons.INTERACTIVE} /> {searchLabel}
           </Button>
           <Button onPress={openSettings}>
             <Icon name={icons.EDIT} />{' '}
-            {translate(section === 'movies' ? 'Settings' : 'SeasonSettings')}
+            {translate(mediaType === 'series' ? 'SeasonSettings' : 'Settings')}
           </Button>
         </div>
       </div>
@@ -108,6 +123,7 @@ function CollectionMemberCard({ entry }: CollectionMemberCardProps) {
         displaySeasonNumber={displayNumber}
         episodeCount={episodeCount}
         initialSelectedFilterKey="all"
+        mediaType={mediaType}
         onModalClose={closeSearch}
       />
       <CollectionSeasonSettingsModal

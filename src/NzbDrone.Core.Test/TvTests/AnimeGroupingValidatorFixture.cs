@@ -127,14 +127,14 @@ namespace NzbDrone.Core.Test.TvTests
         }
 
         [Test]
-        public void should_reject_a_catalogue_entry_that_already_contains_multiple_native_seasons()
+        public void should_allow_native_multi_season_entries_without_renumbering_them()
         {
             _series.Seasons.Add(new Season { SeasonNumber = 2 });
 
             Action validate = () => AnimeGroupingValidator.Validate(_series, Array.Empty<Series>());
 
-            validate.Should().Throw<ValidationException>()
-                .Which.Errors.Should().Contain(e => e.PropertyName == "AnimeGroupSeasonNumber");
+            validate.Should().NotThrow();
+            _series.Seasons.Should().Contain(s => s.SeasonNumber == 1).And.Contain(s => s.SeasonNumber == 2);
         }
 
         [Test]

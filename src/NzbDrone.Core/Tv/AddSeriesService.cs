@@ -202,6 +202,11 @@ namespace NzbDrone.Core.Tv
 
         private Series SetPropertiesAndValidate(Series newSeries)
         {
+            if (newSeries.MediaType == MediaType.Movie)
+            {
+                newSeries.SeasonFolder = false;
+            }
+
             AnimeGroupingValidator.Validate(newSeries, _seriesService.GetAllSeries());
 
             if (string.IsNullOrWhiteSpace(newSeries.Path))
@@ -263,6 +268,7 @@ namespace NzbDrone.Core.Tv
             series.AnimeGroupTitle = null;
             series.AnimeGroupSeasonNumber = null;
             series.AnimeGroupMovieNumber = null;
+            series.AnimeGroupSpecialNumber = null;
             series.AnimeGroupFolder = null;
             series.AnimeGroupMemberFolder = null;
             if (!preserveProviderMemberKind)

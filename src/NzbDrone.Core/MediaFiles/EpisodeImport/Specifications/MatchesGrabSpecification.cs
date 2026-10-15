@@ -11,9 +11,11 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Specifications
     public class MatchesGrabSpecification : IImportDecisionEngineSpecification
     {
         private readonly Logger _logger;
+        private readonly IMovieGrabContextService _movieGrabContext;
 
-        public MatchesGrabSpecification(Logger logger)
+        public MatchesGrabSpecification(IMovieGrabContextService movieGrabContext, Logger logger)
         {
+            _movieGrabContext = movieGrabContext;
             _logger = logger;
         }
 
@@ -35,6 +37,11 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Specifications
 
             if (unexpected.Any())
             {
+                if (_movieGrabContext.AllowsMember(localEpisode, downloadClientItem))
+                {
+                    return ImportSpecDecision.Accept();
+                }
+
                 _logger.Debug("Unexpected episode(s) in file: {0}", FormatEpisode(unexpected));
 
                 if (unexpected.Count == 1)

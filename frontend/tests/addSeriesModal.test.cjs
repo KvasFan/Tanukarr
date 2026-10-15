@@ -28,6 +28,7 @@ function loadSource(relative, mocks = {}) {
     if (Object.hasOwn(mocks, name)) {
       return mocks[name];
     }
+    if (name === 'Series/getMediaType') return loadSource('Series/getMediaType.ts');
 
     return projectRequire(name);
   };
@@ -530,4 +531,41 @@ test('manual Daily selection is retained and submitted after other setting chang
   assert.equal(fixture.type(), 'daily');
   assert.equal(fixture.savedType(), 'daily');
   assert.equal(fixture.submit().seriesType, 'daily');
+});
+
+for (const metadataSource of ['tmdbMovie', 'omdb']) {
+  test(`${metadataSource} movie add keeps its owning identity and hides episodic-only controls despite saved anime defaults`, (context) => {
+    const foreignId = metadataSource === 'omdb' ? 'tt0245429' : '42';
+    const fixture = createFixture('standard', 'anime', { series: { metadataSource, foreignId, mediaType: 'movie' } });
+    context.after(() => fixture.cleanup());
+    for (const field of ['seriesType', 'seasonFolder', 'seasonType', 'orderingId']) assert.equal(fixture.renderer.root.findAllByProps({ 'data-field': field }).length, 0);
+    const payload = fixture.submit();
+    assert.equal(payload.seriesType, 'standard');
+    assert.equal(payload.metadataSource, metadataSource);
+    assert.equal(payload.foreignId, foreignId);
+    assert.equal(payload.seasonFolder, false);
+    assert.equal(payload.addOptions.monitor, 'all');
+    assert.equal(payload.orderingId, null);
+  });
+}
+
+test('manual special membership chooses an independent unique number and clears season/movie ordinals', (context) => {
+  const fixture = createFixture('anime', 'standard', {
+    series: { mediaType: 'special', animeGroupMemberKind: 'special' },
+    existingSeries: [
+      { id: 10, animeGroupId: 'manual:mixed', animeGroupTitle: 'Mixed group', animeGroupSeasonNumber: 1 },
+      { id: 11, animeGroupId: 'manual:mixed', animeGroupTitle: 'Mixed group', animeGroupMemberKind: 'movie', animeGroupMovieNumber: 1 },
+      { id: 12, animeGroupId: 'manual:mixed', animeGroupTitle: 'Mixed group', animeGroupMemberKind: 'special', animeGroupSpecialNumber: 1 }
+    ]
+  });
+  context.after(() => fixture.cleanup());
+  fixture.changeField('animeGroupingMode', 'manual');
+  fixture.changeField('animeGroupId', 'manual:mixed');
+  const payload = fixture.submit();
+  assert.equal(payload.animeGroupMemberKind, 'special');
+  assert.equal(payload.animeGroupSpecialNumber, 2);
+  assert.equal(payload.animeGroupSeasonNumber, null);
+  assert.equal(payload.animeGroupMovieNumber, null);
+  assert.equal(payload.metadataSource, 'aniList');
+  assert.equal(payload.foreignId, '42');
 });

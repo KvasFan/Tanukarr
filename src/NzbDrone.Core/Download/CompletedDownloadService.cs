@@ -38,6 +38,7 @@ namespace NzbDrone.Core.Download
         private readonly IMediaFileService _mediaFileService;
         private readonly IRejectedImportService _rejectedImportService;
         private readonly IImportProgressService _importProgressService;
+        private readonly IMovieGrabContextService _movieGrabContext;
         private readonly IDiskProvider _diskProvider;
         private readonly Logger _logger;
 
@@ -52,6 +53,7 @@ namespace NzbDrone.Core.Download
                                         IMediaFileService mediaFileService,
                                         IRejectedImportService rejectedImportService,
                                         IImportProgressService importProgressService,
+                                        IMovieGrabContextService movieGrabContext,
                                         IDiskProvider diskProvider,
                                         Logger logger)
         {
@@ -66,6 +68,7 @@ namespace NzbDrone.Core.Download
             _mediaFileService = mediaFileService;
             _rejectedImportService = rejectedImportService;
             _importProgressService = importProgressService;
+            _movieGrabContext = movieGrabContext;
             _diskProvider = diskProvider;
             _logger = logger;
         }
@@ -232,6 +235,12 @@ namespace NzbDrone.Core.Download
 
         public bool VerifyImport(TrackedDownload trackedDownload, List<ImportResult> importResults)
         {
+            if (trackedDownload.RemoteEpisode.Series.MediaType == MediaType.Movie && !VerifyMovieCoverage(trackedDownload, importResults))
+            {
+                _logger.Debug("Not all physical movie files and native collection features are accounted for in {0}", trackedDownload.DownloadItem.Title);
+                return false;
+            }
+
             var importedEpisodes = importResults.Where(c => c.Result == ImportResultType.Imported)
                                                 .SelectMany(c => c.ImportDecision.LocalEpisode.Episodes)
                                                 .ToList();
@@ -310,6 +319,75 @@ namespace NzbDrone.Core.Download
 
             _logger.Debug("Not all episodes have been imported for the release '{0}'", trackedDownload.DownloadItem.Title);
             return false;
+        }
+
+        private bool VerifyMovieCoverage(TrackedDownload download, List<ImportResult> results)
+        {
+            var context = _movieGrabContext.GetContext(download.DownloadItem.DownloadId);
+            if (download.RemoteEpisode.ParsedEpisodeInfo is { IsMovieCollectionPack: true } &&
+                context?.ParsedEpisodeInfo.IsMovieCollectionPack != true)
+            {
+                return false;
+            }
+
+            var members = context?.ParsedEpisodeInfo.IsMovieCollectionPack == true
+                ? context.CollectionMovies
+                : new List<Series> { download.RemoteEpisode.Series };
+            foreach (var result in results.Where(result => result.Result != ImportResultType.Imported))
+            {
+                var local = result.ImportDecision.LocalEpisode;
+                var rejections = result.ImportDecision.Rejections.ToList();
+                var member = members.SingleOrDefault(movie => movie.Id == local?.Series?.Id);
+                if (result.Result != ImportResultType.Rejected || member == null || local.Episodes?.Count != 1 ||
+                    local.Episodes[0] is not { Id: > 0, SeasonNumber: 1, EpisodeNumber: 1 } native || native.SeriesId != member.Id ||
+                    rejections.Count == 0 || !rejections.All(rejection => rejection.Reason is ImportRejectionReason.EpisodeAlreadyImported or
+                        ImportRejectionReason.NotQualityUpgrade or ImportRejectionReason.NotRevisionUpgrade or ImportRejectionReason.NotCustomFormatUpgrade) ||
+                    !HasReadableMovieFeature(member, native.Id))
+                {
+                    return false;
+                }
+            }
+
+            return context?.ParsedEpisodeInfo.IsMovieCollectionPack != true || members.All(HasReadableMovieFeature);
+        }
+
+        private bool HasReadableMovieFeature(Series movie)
+        {
+            return HasReadableMovieFeature(movie, null);
+        }
+
+        private bool HasReadableMovieFeature(Series movie, int? episodeId)
+        {
+            var episodes = _episodeService.GetEpisodeBySeries(movie.Id);
+            if (episodes?.Count != 1 || episodes[0].Id <= 0 || episodes[0].SeriesId != movie.Id ||
+                episodes[0].SeasonNumber != 1 || episodes[0].EpisodeNumber != 1 || episodes[0].EpisodeFileId <= 0 ||
+                movie.Path.IsNullOrWhiteSpace() || (episodeId.HasValue && episodes[0].Id != episodeId.Value))
+            {
+                return false;
+            }
+
+            var files = _mediaFileService.GetFiles(new[] { episodes[0].EpisodeFileId });
+            if (files?.Count != 1 || files[0].Id != episodes[0].EpisodeFileId || files[0].SeriesId != movie.Id || files[0].RelativePath.IsNullOrWhiteSpace())
+            {
+                return false;
+            }
+
+            try
+            {
+                var path = Path.GetFullPath(Path.Combine(movie.Path, files[0].RelativePath));
+                if (!movie.Path.IsParentPath(path))
+                {
+                    return false;
+                }
+
+                using var stream = _diskProvider.OpenReadStream(path);
+                return stream.ReadByte() >= 0;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+            {
+                _logger.Debug(exception, "Unable to verify native movie feature for {0}", movie.Title);
+                return false;
+            }
         }
 
         private bool VerifyRetainedEpisodes(TrackedDownload trackedDownload,

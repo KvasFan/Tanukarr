@@ -1,0 +1,548 @@
+{
+    "checkpoint":  "public-release-90d18969",
+    "scanCreatedAt":  "2026-10-15T18:16:23.021357806+02:00",
+    "image":  "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+    "imageId":  "sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+    "scannerArtifactId":  "sha256:24d5d19f5a4357b2c3f1cb84c3c8b347659d8417e0942d81f903f1bb6ec960f5",
+    "imageVersionLabel":  "0.1.0",
+    "sourceRevisionLabel":  "90d18969182bb4dfbe486591220a69d6750ecc05",
+    "sourceUrl":  "https://github.com/KvasExpert/Tanukarr",
+    "scanner":  "Trivy",
+    "scannerVersion":  "0.75.0",
+    "inputReportSha256":  "b64fe36e8e93422c530ca59a9b0f7d1d921a8f963da22dc3e51848c06cbf471c",
+    "occurrenceCount":  54,
+    "distinctCveCount":  20,
+    "packageCvePairCount":  24,
+    "occurrenceCountsBySeverity":  {
+                                       "CRITICAL":  0,
+                                       "HIGH":  21,
+                                       "MEDIUM":  28,
+                                       "LOW":  5,
+                                       "UNKNOWN":  0
+                                   },
+    "distinctCveCountsBySeverity":  {
+                                        "CRITICAL":  0,
+                                        "HIGH":  3,
+                                        "MEDIUM":  14,
+                                        "LOW":  3,
+                                        "UNKNOWN":  0
+                                    },
+    "detectedSecretCount":  0,
+    "notes":  [
+                  "This checkpoint describes only the named scanned image and does not verify a later public release image.",
+                  "The source revision is the image label, not an inferred commit. Candidate worktree labels do not establish an exact committed source identity.",
+                  "scannerArtifactId is Trivy ArtifactID, a scanner cache key, not a registry config digest. Registry config identity requires separate manifest verification.",
+                  "Repeated .deps.json references contribute repeated occurrences; they do not establish independent executable copies.",
+                  "FixedVersion is scanner remediation metadata and does not mean that the installed version has been patched.",
+                  "An empty fixedVersion means the selected scanner feed lists no fixed package version; upstream may have a fix outside this distribution feed.",
+                  "No runtime configuration volumes, private accounts, real libraries or Git history were scanned."
+              ],
+    "inventory":  [
+                      {
+                          "package":  "libc6",
+                          "cve":  "CVE-2026-18374",
+                          "installedVersion":  "2.39-0ubuntu8.9",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-18374",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libc6",
+                          "cve":  "CVE-2026-89092",
+                          "installedVersion":  "2.39-0ubuntu8.9",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89092",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libc-bin",
+                          "cve":  "CVE-2026-18374",
+                          "installedVersion":  "2.39-0ubuntu8.9",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-18374",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libc-bin",
+                          "cve":  "CVE-2026-89092",
+                          "installedVersion":  "2.39-0ubuntu8.9",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89092",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libicu74",
+                          "cve":  "CVE-2025-5222",
+                          "installedVersion":  "74.2-1ubuntu3.1",
+                          "fixedVersion":  "",
+                          "severity":  "LOW",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2025-5222",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-103111",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-103111",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-86145",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-86145",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-89156",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89156",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-89157",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89157",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-89158",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89158",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-89160",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89160",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libpcre2-8-0",
+                          "cve":  "CVE-2026-89161",
+                          "installedVersion":  "10.42-4ubuntu2.1",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-89161",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libsystemd0",
+                          "cve":  "CVE-2026-40228",
+                          "installedVersion":  "255.4-1ubuntu8.17",
+                          "fixedVersion":  "",
+                          "severity":  "LOW",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-40228",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "libudev1",
+                          "cve":  "CVE-2026-40228",
+                          "installedVersion":  "255.4-1ubuntu8.17",
+                          "fixedVersion":  "",
+                          "severity":  "LOW",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-40228",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "login",
+                          "cve":  "CVE-2024-56433",
+                          "installedVersion":  "1:4.13+dfsg1-4ubuntu3.2",
+                          "fixedVersion":  "",
+                          "severity":  "LOW",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2024-56433",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "passwd",
+                          "cve":  "CVE-2024-56433",
+                          "installedVersion":  "1:4.13+dfsg1-4ubuntu3.2",
+                          "fixedVersion":  "",
+                          "severity":  "LOW",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2024-56433",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "SixLabors.ImageSharp",
+                          "cve":  "CVE-2026-106110",
+                          "installedVersion":  "3.1.12",
+                          "fixedVersion":  "4.1.2",
+                          "severity":  "HIGH",
+                          "severitySource":  "ghsa",
+                          "occurrences":  7,
+                          "advisoryStatus":  "fixed",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-106110",
+                          "ecosystem":  "dotnet-core",
+                          "targets":  [
+                                          "app/Sonarr.Api.V3.deps.json",
+                                          "app/Sonarr.Api.V5.deps.json",
+                                          "app/Sonarr.Core.deps.json",
+                                          "app/Sonarr.deps.json",
+                                          "app/Sonarr.Host.deps.json",
+                                          "app/Sonarr.Http.deps.json",
+                                          "app/Sonarr.SignalR.deps.json"
+                                      ]
+                      },
+                      {
+                          "package":  "SixLabors.ImageSharp",
+                          "cve":  "CVE-2026-106113",
+                          "installedVersion":  "3.1.12",
+                          "fixedVersion":  "4.1.2",
+                          "severity":  "HIGH",
+                          "severitySource":  "ghsa",
+                          "occurrences":  7,
+                          "advisoryStatus":  "fixed",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-106113",
+                          "ecosystem":  "dotnet-core",
+                          "targets":  [
+                                          "app/Sonarr.Api.V3.deps.json",
+                                          "app/Sonarr.Api.V5.deps.json",
+                                          "app/Sonarr.Core.deps.json",
+                                          "app/Sonarr.deps.json",
+                                          "app/Sonarr.Host.deps.json",
+                                          "app/Sonarr.Http.deps.json",
+                                          "app/Sonarr.SignalR.deps.json"
+                                      ]
+                      },
+                      {
+                          "package":  "SixLabors.ImageSharp",
+                          "cve":  "CVE-2026-106114",
+                          "installedVersion":  "3.1.12",
+                          "fixedVersion":  "4.1.2",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ghsa",
+                          "occurrences":  7,
+                          "advisoryStatus":  "fixed",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-106114",
+                          "ecosystem":  "dotnet-core",
+                          "targets":  [
+                                          "app/Sonarr.Api.V3.deps.json",
+                                          "app/Sonarr.Api.V5.deps.json",
+                                          "app/Sonarr.Core.deps.json",
+                                          "app/Sonarr.deps.json",
+                                          "app/Sonarr.Host.deps.json",
+                                          "app/Sonarr.Http.deps.json",
+                                          "app/Sonarr.SignalR.deps.json"
+                                      ]
+                      },
+                      {
+                          "package":  "SixLabors.ImageSharp",
+                          "cve":  "CVE-2026-106115",
+                          "installedVersion":  "3.1.12",
+                          "fixedVersion":  "4.1.2",
+                          "severity":  "HIGH",
+                          "severitySource":  "ghsa",
+                          "occurrences":  7,
+                          "advisoryStatus":  "fixed",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-106115",
+                          "ecosystem":  "dotnet-core",
+                          "targets":  [
+                                          "app/Sonarr.Api.V3.deps.json",
+                                          "app/Sonarr.Api.V5.deps.json",
+                                          "app/Sonarr.Core.deps.json",
+                                          "app/Sonarr.deps.json",
+                                          "app/Sonarr.Host.deps.json",
+                                          "app/Sonarr.Http.deps.json",
+                                          "app/Sonarr.SignalR.deps.json"
+                                      ]
+                      },
+                      {
+                          "package":  "SixLabors.ImageSharp",
+                          "cve":  "CVE-2026-106116",
+                          "installedVersion":  "3.1.12",
+                          "fixedVersion":  "4.1.2",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ghsa",
+                          "occurrences":  7,
+                          "advisoryStatus":  "fixed",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-106116",
+                          "ecosystem":  "dotnet-core",
+                          "targets":  [
+                                          "app/Sonarr.Api.V3.deps.json",
+                                          "app/Sonarr.Api.V5.deps.json",
+                                          "app/Sonarr.Core.deps.json",
+                                          "app/Sonarr.deps.json",
+                                          "app/Sonarr.Host.deps.json",
+                                          "app/Sonarr.Http.deps.json",
+                                          "app/Sonarr.SignalR.deps.json"
+                                      ]
+                      },
+                      {
+                          "package":  "tar",
+                          "cve":  "CVE-2026-18477",
+                          "installedVersion":  "1.35+dfsg-3ubuntu0.4",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-18477",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "tar",
+                          "cve":  "CVE-2026-18508",
+                          "installedVersion":  "1.35+dfsg-3ubuntu0.4",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-18508",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      },
+                      {
+                          "package":  "zlib1g",
+                          "cve":  "CVE-2026-85091",
+                          "installedVersion":  "1:1.3.dfsg-3.1ubuntu2.2",
+                          "fixedVersion":  "",
+                          "severity":  "MEDIUM",
+                          "severitySource":  "ubuntu",
+                          "occurrences":  1,
+                          "advisoryStatus":  "affected",
+                          "advisoryUrl":  "https://avd.aquasec.com/nvd/cve-2026-85091",
+                          "ecosystem":  "ubuntu",
+                          "targets":  [
+                                          "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd (ubuntu 24.04)"
+                                      ]
+                      }
+                  ],
+    "configDigest":  "sha256:2d6ae21967b77e620cc6eda3dc54593137abe689dc155ffdf86b2969498a099a",
+    "publicIdentity":  {
+                           "immutableReference":  "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+                           "registryDigest":  "sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+                           "platformManifestDigest":  "sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+                           "configDigest":  "sha256:2d6ae21967b77e620cc6eda3dc54593137abe689dc155ffdf86b2969498a099a",
+                           "engineImageId":  "sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+                           "scannerImageId":  "sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+                           "scannerArtifactId":  "sha256:24d5d19f5a4357b2c3f1cb84c3c8b347659d8417e0942d81f903f1bb6ec960f5",
+                           "scannerArtifactIdDefinition":  "https://github.com/aquasecurity/trivy/blob/v0.75.0/pkg/fanal/artifact/image/image.go#L117-L155",
+                           "scannerRootFsMatchesRegistry":  true,
+                           "latestRegistryDigest":  "sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd",
+                           "latestEqualsVersion":  true,
+                           "anonymousPullPassed":  true,
+                           "rootFsMatchesRegistry":  true,
+                           "rootFsDiffIds":  [
+                                                 "sha256:32ab39660fd51c6dc3aae486b42d42bbe8fe4c1db78eaf57bb9c21198de48a16",
+                                                 "sha256:42c74cbc219f6ecbfdc40832e0f974b993deacf71cb80c81e5920edbdfa64ca2",
+                                                 "sha256:4014493bfd8c51555f149f8475fbbc26a94efa36b2b4266746ccdf23a7be819d",
+                                                 "sha256:67c315916d1513e2223594ac4bb1e799878d95c03058b6d37ec1c278179483e0",
+                                                 "sha256:9d03edcd23bbba6497a5ae471e726fe283f00dcbcf85127af2d6d6c0d5ade0e2",
+                                                 "sha256:b8e983ad48ed0b757235cdd8fc46f6c06773a15c2ba1af09c1e4e0966f81e1a9",
+                                                 "sha256:3daea6e96351b40e0482d30e4cbcdd0977b8a6ec63af8854f23e6e089cf7c56b",
+                                                 "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+                                             ],
+                           "registryProofSha256":  "f7c723925e82e4cb3b067fe75c4d0a7ce9fa42c21e2e6ae6d92e45ac14a6c2e7",
+                           "hostedSmokePassed":  true,
+                           "hostedSmokeImageId":  "sha256:2d6ae21967b77e620cc6eda3dc54593137abe689dc155ffdf86b2969498a099a",
+                           "hostedSmokeReportSha256":  "ca510b807ac58d87a35cdcf7441bc63a549a1486fa073ecf3045051e866065c4"
+                       },
+    "scannerDatabaseCheckpoint":  {
+                                      "Version":  2,
+                                      "NextUpdate":  "2026-10-16T13:13:18.204005123Z",
+                                      "UpdatedAt":  "2026-10-15T13:13:18.204005334Z",
+                                      "DownloadedAt":  "2026-10-15T14:13:33.772272654Z"
+                                  },
+    "vendorRemedies":  {
+                           "checkedAtUtc":  "2026-10-15T15:31:31.4534317Z",
+                           "evidenceSha256":  "46ab0d48f77db422459b8d330553310360191e653b7f97fd6708f39776a7dd38",
+                           "scannerMetadataPreserved":  true,
+                           "imageSharp":  {
+                                              "installedVersion":  "3.1.12",
+                                              "vendorPatchedVersions":  [
+                                                                            "3.2.0",
+                                                                            "4.1.2"
+                                                                        ],
+                                              "latestV4ReleaseObserved":  "4.1.3",
+                                              "v3Release":  "https://github.com/SixLabors/ImageSharp/releases/tag/v3.2.0",
+                                              "v4Release":  "https://github.com/SixLabors/ImageSharp/releases/tag/v4.1.3",
+                                              "advisories":  [
+                                                                 {
+                                                                     "id":  "CVE-2026-106110",
+                                                                     "severity":  "HIGH",
+                                                                     "patchedVersions":  [
+                                                                                             "3.2.0",
+                                                                                             "4.1.2"
+                                                                                         ],
+                                                                     "url":  "https://github.com/SixLabors/ImageSharp/security/advisories/GHSA-j9gm-c75j-xc9q"
+                                                                 },
+                                                                 {
+                                                                     "id":  "CVE-2026-106113",
+                                                                     "severity":  "HIGH",
+                                                                     "patchedVersions":  [
+                                                                                             "3.2.0",
+                                                                                             "4.1.2"
+                                                                                         ],
+                                                                     "url":  "https://github.com/SixLabors/ImageSharp/security/advisories/GHSA-j3p4-wp97-rph4"
+                                                                 },
+                                                                 {
+                                                                     "id":  "CVE-2026-106114",
+                                                                     "severity":  "MEDIUM",
+                                                                     "patchedVersions":  [
+                                                                                             "3.2.0",
+                                                                                             "4.1.2"
+                                                                                         ],
+                                                                     "url":  "https://github.com/SixLabors/ImageSharp/security/advisories/GHSA-gwg2-r3hj-4w44"
+                                                                 },
+                                                                 {
+                                                                     "id":  "CVE-2026-106115",
+                                                                     "severity":  "HIGH",
+                                                                     "patchedVersions":  [
+                                                                                             "3.2.0",
+                                                                                             "4.1.2"
+                                                                                         ],
+                                                                     "url":  "https://github.com/SixLabors/ImageSharp/security/advisories/GHSA-jjfr-hcj7-qf5w"
+                                                                 },
+                                                                 {
+                                                                     "id":  "CVE-2026-106116",
+                                                                     "severity":  "MEDIUM",
+                                                                     "patchedVersions":  [
+                                                                                             "3.2.0",
+                                                                                             "4.1.2"
+                                                                                         ],
+                                                                     "url":  "https://github.com/SixLabors/ImageSharp/security/advisories/GHSA-wmxv-xphr-5c9g"
+                                                                 }
+                                                             ],
+                                              "releaseBuildRequiresValidKey":  true,
+                                              "inspectedV3PackageSha256":  "31e4f2c76128326cad1395d497e08e97624159016fc95064b46f6283d85bb44d",
+                                              "licensingDocs":  "https://docs.sixlabors.com/articles/imagesharp/",
+                                              "freeOssCommunityKeyApplication":  "https://licensing.sixlabors.com/",
+                                              "assemblyScopedCommunityKeyMayBeCommitted":  true,
+                                              "licenseApplicationSubmitted":  false,
+                                              "conclusion":  "A patched v3 backport exists. Both v3.2.0 and v4 release builds require an issued key for direct references. Eligible OSS projects can obtain free assembly-scoped community keys. This release retains 3.1.12; no license application or dependency change was performed."
+                                          },
+                           "bracesBuildTooling":  {
+                                                      "cve":  "CVE-2026-93687",
+                                                      "installedVersion":  "3.0.3",
+                                                      "latestPublishedVersion":  "3.0.3",
+                                                      "publishedPatchAvailable":  false,
+                                                      "advisoryPatchedVersions":  "None",
+                                                      "advisory":  "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+                                                      "registry":  "https://registry.npmjs.org/braces/latest",
+                                                      "scope":  "Build and lint tooling dependency paths; runtime image has no Node service."
+                                                  },
+                           "note":  "Vendor remedies are a separate primary-source recheck. Inventory fixedVersion values below remain exactly as reported by this scanner database."
+                       }
+}

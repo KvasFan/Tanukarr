@@ -25,11 +25,13 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
         private List<Episode> _episodes;
         private List<EpisodeFile> _files;
         private string _directory;
+        private List<Series> _movieMembers;
 
         [SetUp]
         public void Setup()
         {
             _directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            _movieMembers = null;
             Directory.CreateDirectory(_directory);
             _episodes = Enumerable.Range(1, 3).Select(id => new Episode
             {
@@ -70,7 +72,7 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
         {
             var local = new LocalEpisode
             {
-                Series = _download.RemoteEpisode.Series,
+                Series = _movieMembers?.Single(movie => movie.Id == _episodes.Single(episode => episode.Id == id).SeriesId) ?? _download.RemoteEpisode.Series,
                 Episodes = new List<Episode> { _episodes.Single(e => e.Id == id) }
             };
             var decision = new ImportDecision(local, reasons.Select(r => new ImportRejection(r, "reason")).ToArray());
@@ -92,6 +94,112 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
             {
                 _download.State.Should().Be(TrackedDownloadState.Imported);
             }
+        }
+
+        private void GivenMovieCollection()
+        {
+            _movieMembers = _episodes.Select(episode => new Series
+            {
+                Id = episode.Id, Title = "Generated Movie " + episode.Id, MediaType = MediaType.Movie, Path = _directory
+            }).ToList();
+            foreach (var episode in _episodes)
+            {
+                episode.SeriesId = episode.Id;
+                episode.SeasonNumber = 1;
+                _files.Single(file => file.Id == episode.EpisodeFileId).SeriesId = episode.SeriesId;
+            }
+
+            _download.RemoteEpisode.Series = _movieMembers[0];
+            _download.RemoteEpisode.Episodes = new List<Episode> { _episodes[0] };
+            _download.RemoteEpisode.ParsedEpisodeInfo = new ParsedEpisodeInfo { IsMovie = true, IsMovieCollectionPack = true };
+            Mocker.GetMock<IMovieGrabContextService>().Setup(service => service.GetContext("torrent"))
+                .Returns(new MovieGrabContext
+                {
+                    Series = _movieMembers[0], ParsedEpisodeInfo = _download.RemoteEpisode.ParsedEpisodeInfo, CollectionMovies = _movieMembers
+                });
+            Mocker.GetMock<IEpisodeService>().Setup(service => service.GetEpisodeBySeries(It.IsAny<int>()))
+                .Returns<int>(id => _episodes.Where(episode => episode.SeriesId == id).ToList());
+            Mocker.GetMock<IMediaFileService>().Setup(service => service.GetFiles(It.IsAny<IEnumerable<int>>()))
+                .Returns<IEnumerable<int>>(ids => _files.Where(file => ids.Contains(file.Id)).ToList());
+        }
+
+        [Test]
+        public void movie_pack_must_not_complete_after_importing_only_its_anchor_while_another_native_feature_is_missing()
+        {
+            GivenMovieCollection();
+            _episodes[1].EpisodeFileId = 0;
+            Mocker.GetMock<ITrackedDownloadAlreadyImported>().Setup(service => service.IsImported(_download, It.IsAny<List<EpisodeHistory>>())).Returns(true);
+            AssertCompletion(new List<ImportResult> { Result(1) }, false);
+        }
+
+        [Test]
+        public void movie_pack_must_not_hide_a_cross_member_grab_rejection_after_its_anchor_imports()
+        {
+            GivenMovieCollection();
+            AssertCompletion(new List<ImportResult> { Result(1), Result(2, ImportRejectionReason.EpisodeNotFoundInRelease) }, false);
+        }
+
+        [Test]
+        public void movie_pack_can_complete_with_readable_prior_and_newly_imported_native_features()
+        {
+            GivenMovieCollection();
+            AssertCompletion(new List<ImportResult> { Result(1), Result(2) }, true);
+        }
+
+        [TestCase(ImportRejectionReason.EpisodeAlreadyImported)]
+        [TestCase(ImportRejectionReason.NotQualityUpgrade)]
+        [TestCase(ImportRejectionReason.NotRevisionUpgrade)]
+        [TestCase(ImportRejectionReason.NotCustomFormatUpgrade)]
+        public void movie_pack_can_retain_verified_readable_preferred_versions_of_other_members(ImportRejectionReason reason)
+        {
+            GivenMovieCollection();
+            AssertCompletion(new List<ImportResult> { Result(1), Result(2, reason), Result(3, reason) }, true);
+        }
+
+        [TestCase("wrongOwner")]
+        [TestCase("unreadable")]
+        [TestCase("outsideRoot")]
+        [TestCase("staleContext")]
+        public void movie_pack_must_not_count_stale_foreign_or_unreadable_feature_associations(string defect)
+        {
+            GivenMovieCollection();
+            switch (defect)
+            {
+                case "wrongOwner": _files[1].SeriesId = 1; break;
+                case "unreadable": Mocker.GetMock<IDiskProvider>().Setup(service => service.OpenReadStream(_files[1].Path)).Throws(new IOException("owned test")); break;
+                case "outsideRoot": _files[1].RelativePath = "../outside.mkv"; break;
+                case "staleContext": Mocker.GetMock<IMovieGrabContextService>().Setup(service => service.GetContext("torrent")).Returns((MovieGrabContext)null); break;
+            }
+
+            AssertCompletion(new List<ImportResult> { Result(1) }, false);
+        }
+
+        [Test]
+        public void movie_pack_must_not_retain_a_different_native_feature_id_even_when_the_movie_file_is_readable()
+        {
+            GivenMovieCollection();
+            var retained = Result(2, ImportRejectionReason.NotQualityUpgrade);
+            retained.ImportDecision.LocalEpisode.Episodes = new List<Episode>
+            {
+                new Episode { Id = 999, SeriesId = 2, SeasonNumber = 1, EpisodeNumber = 1 }
+            };
+            AssertCompletion(new List<ImportResult> { Result(1), retained }, false);
+        }
+
+        [TestCase("null")]
+        [TestCase("empty")]
+        [TestCase("nullEntry")]
+        public void movie_pack_must_fail_closed_for_malformed_retained_episode_associations(string defect)
+        {
+            GivenMovieCollection();
+            var retained = Result(2, ImportRejectionReason.NotQualityUpgrade);
+            retained.ImportDecision.LocalEpisode.Episodes = defect switch
+            {
+                "null" => null,
+                "empty" => new List<Episode>(),
+                _ => new List<Episode> { null }
+            };
+            AssertCompletion(new List<ImportResult> { Result(1), retained }, false);
         }
 
         [TestCase(ImportRejectionReason.NotQualityUpgrade)]

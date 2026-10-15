@@ -143,6 +143,17 @@ export const clearImportSeries = () => {
   importSeriesStore.setState(defaultState);
 };
 
+export const resetUnmatchedSearches = () => {
+  importSeriesStore.setState((state) => ({
+    items: Object.fromEntries(
+      Object.entries(state.items).map(([id, item]) => [
+        id,
+        item.selectedSeries ? item : { ...item, hasSearched: false },
+      ])
+    ),
+  }));
+};
+
 export const startProcessing = () => {
   importSeriesStore.setState((state) => {
     const items = Object.values(state.items).reduce<string[]>((acc, item) => {

@@ -4,6 +4,7 @@ namespace Sonarr.Api.V5.Settings;
 
 public class NamingExampleResource
 {
+    public string? MovieExample { get; set; }
     public string? SingleEpisodeExample { get; set; }
     public string? MultiEpisodeExample { get; set; }
     public string? DailyEpisodeExample { get; set; }
@@ -34,6 +35,7 @@ public static class NamingConfigResourceMapper
             CustomColonReplacementFormat = model.CustomColonReplacementFormat,
             MultiEpisodeStyle = (int)model.MultiEpisodeStyle,
             StandardEpisodeFormat = model.StandardEpisodeFormat,
+            MovieFormat = model.MovieFormat,
             DailyEpisodeFormat = model.DailyEpisodeFormat,
             AnimeEpisodeFormat = model.AnimeEpisodeFormat,
             SeriesFolderFormat = model.SeriesFolderFormat,
@@ -59,6 +61,7 @@ public static class NamingConfigResourceMapper
             ColonReplacementFormat = (ColonReplacementFormat)resource.ColonReplacementFormat,
             CustomColonReplacementFormat = resource.CustomColonReplacementFormat ?? "",
             StandardEpisodeFormat = resource.StandardEpisodeFormat,
+            MovieFormat = resource.MovieFormat ?? existing?.MovieFormat ?? NamingConfig.Default.MovieFormat,
             DailyEpisodeFormat = resource.DailyEpisodeFormat,
             AnimeEpisodeFormat = resource.AnimeEpisodeFormat,
             SeriesFolderFormat = resource.SeriesFolderFormat,

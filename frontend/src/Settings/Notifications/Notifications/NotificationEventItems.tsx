@@ -49,7 +49,7 @@ function NotificationEventItems({
   } = item;
 
   return (
-    <FormRow>
+    <FormRow role="group" aria-label={translate('NotificationTriggers')}>
       <FormLabel>{translate('NotificationTriggers')}</FormLabel>
       <div>
         <FormInputHelpText

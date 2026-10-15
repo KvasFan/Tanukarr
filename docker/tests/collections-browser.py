@@ -27,8 +27,12 @@ groups = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(groups)
 PINNED_MOCK = "python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a"
 NATIVE_TITLE = "Fixture Native Collection Show"
-MEDIA_IDS = (900401, 900402, 900403, 900501, 900502, 900503, 900601, 900602)
-ADDED_IDS = tuple(item for item in MEDIA_IDS if item != 900501)
+SPECIAL_IDS = (900701, 900702)
+MEDIA_IDS = (900401, 900402, 900403, 900501, 900502, 900503, 900601, 900602) + SPECIAL_IDS
+ADDED_IDS = tuple(item for item in MEDIA_IDS if item not in (900501,) + SPECIAL_IDS)
+GUI_MOVIES = ((980901, "Generated Feature One", 2024), (980902, "Generated Feature Two", 2025))
+GUI_IMPORT_MOVIE = (980904, "Generated Imported Feature", 2026)
+GUI_OMDB = {"source": "omdb", "foreignId": "tt0980903", "title": "Generated Feature Three", "year": 2026}
 
 
 def png(width, height, color):
@@ -40,11 +44,25 @@ def png(width, height, color):
 
 
 def media(media_id):
-    resource = groups.media_resource(media_id)
+    resource = groups.media_resource(900501 if media_id in SPECIAL_IDS else media_id)
+    if media_id in SPECIAL_IDS:
+        title = "Generated Special " + ("One" if media_id == SPECIAL_IDS[0] else "Two")
+        resource.update(id=media_id, idMal=None, format="SPECIAL", episodes=2,
+                        title={"english": title, "romaji": title, "userPreferred": title}, relations={"edges": []})
     resource["description"] = f"Canonical generated synopsis for {resource['title']['english']}."
     resource["coverImage"] = {"large": f"https://s4.anilist.co/file/anilistcdn/media/{media_id}/poster.png"}
     resource["bannerImage"] = f"https://s4.anilist.co/file/anilistcdn/media/{media_id}/banner.png"
     return resource
+
+
+def movie_resource(identity):
+    movie_id, title, year = next(item for item in GUI_MOVIES + (GUI_IMPORT_MOVIE,) if item[0] == identity)
+    return {"id": movie_id, "title": title, "original_title": title, "original_language": "en",
+            "release_date": f"{year}-01-15", "status": "Released", "runtime": 100,
+            "imdb_id": "tt0" + str(movie_id), "overview": "Owned generated feature metadata.",
+            "poster_path": f"/gui-{movie_id}.png", "backdrop_path": f"/gui-{movie_id}-backdrop.png",
+            "genres": [{"id": 18, "name": "Drama"}], "vote_count": 100, "vote_average": 8,
+            "belongs_to_collection": {"id": 980990, "name": "Generated Feature Saga"} if movie_id != GUI_IMPORT_MOVIE[0] else None}
 
 
 def serve_fixture(root):
@@ -83,7 +101,7 @@ def serve_fixture(root):
                     response = {"data": {"Media": media(media_id)}}
                     record["mediaId"] = media_id
                 elif "media(search:" in query:
-                    matching = [media(item) for item in MEDIA_IDS if groups.CATALOGUE[item][0] == variables.get("search")]
+                    matching = [media(item) for item in MEDIA_IDS if media(item)["title"]["english"] == variables.get("search")]
                     require(len(matching) == 1, "Unknown generated catalogue title")
                     response = {"data": {"Page": {"media": matching}}}
                 else:
@@ -97,14 +115,51 @@ def serve_fixture(root):
 
         def do_GET(self):
             parsed = urllib.parse.urlsplit(self.path)
+            host = self.headers.get("Host", "").split(":")[0]
+            query = urllib.parse.parse_qs(parsed.query)
+            if host == "api.themoviedb.org":
+                record = {"kind": "tmdb-movie", "host": host, "path": parsed.path}
+                try:
+                    require(query.get("api_key") == ["generated-gui-tmdb"], "Only the owned TMDB credential is supported")
+                    if parsed.path == "/3/search/movie":
+                        value = {"results": [movie_resource(item[0]) for item in GUI_MOVIES + (GUI_IMPORT_MOVIE,) if item[1] == query.get("query", [""])[0]]}
+                    elif parsed.path.startswith("/3/find/tt0"):
+                        value = {"movie_results": [movie_resource(int(parsed.path.rsplit("tt0", 1)[1]))]}
+                    elif parsed.path.startswith("/3/movie/"):
+                        value = movie_resource(int(parsed.path.rsplit("/", 1)[1]))
+                    elif parsed.path == "/3/collection/980990":
+                        value = {"id": 980990, "name": "Generated Feature Saga", "parts": [movie_resource(item[0]) for item in GUI_MOVIES]}
+                    else:
+                        raise SmokeFailure("Unexpected movie endpoint")
+                    self.answer(200, value)
+                    self.record(dict(record, status=200))
+                except (SmokeFailure, ValueError, StopIteration):
+                    self.answer(400, {"message": "Only owned movie fixture IDs are supported"})
+                    self.record(dict(record, status=400))
+                return
+            if host == "www.omdbapi.com":
+                record = {"kind": "omdb-movie", "host": host, "path": parsed.path}
+                if query.get("apikey") != ["generated-gui-omdb"] or query.get("i", query.get("s")) not in ([GUI_OMDB["foreignId"]], [GUI_OMDB["title"]]):
+                    self.answer(400, {"Response": "False"})
+                    self.record(dict(record, status=400))
+                    return
+                value = {"Response": "True", "Type": "movie", "Title": GUI_OMDB["title"], "Year": str(GUI_OMDB["year"]),
+                         "Released": "15 Jan 2026", "Runtime": "100 min", "imdbID": GUI_OMDB["foreignId"], "imdbRating": "8.0", "imdbVotes": "100",
+                         "Genre": "Drama", "Plot": "Owned generated OMDb feature metadata.", "Poster": "https://m.media-amazon.com/images/generated-gui.png"}
+                self.answer(200, {"Response": "True", "Search": [value]} if "s" in query else value)
+                self.record(dict(record, status=200))
+                return
+            if host in ("image.tmdb.org", "m.media-amazon.com"):
+                self.answer(200, backdrop if "backdrop" in parsed.path else poster, "image/png")
+                self.record({"kind": "movie-image", "host": host, "path": parsed.path, "status": 200})
+                return
             if parsed.path.startswith("/file/anilistcdn/media/") and parsed.path.endswith(("/poster.png", "/banner.png")):
                 self.answer(200, backdrop if parsed.path.endswith("banner.png") else poster, "image/png")
                 self.record({"kind": "image", "path": parsed.path, "status": 200})
                 return
-            query = urllib.parse.parse_qs(parsed.query)
             if parsed.path == "/" and query.get("page") == ["rss"]:
                 items = []
-                titles = [groups.CATALOGUE[item][0] for item in MEDIA_IDS] + [NATIVE_TITLE]
+                titles = [media(item)["title"]["english"] for item in MEDIA_IDS] + [NATIVE_TITLE]
                 for index, title in enumerate(titles):
                     for suffix in ("S01", "S01E01"):
                         release = f"{title}.{suffix}.1080p.WEB-DL.H264-Fixture"
@@ -114,6 +169,14 @@ def serve_fixture(root):
                                      "<pubDate>Tue, 13 Oct 2026 09:00:00 +0000</pubDate>"
                                      f"<nyaa:size>4 GiB</nyaa:size><nyaa:infoHash>{identity}</nyaa:infoHash>"
                                      "<nyaa:seeders>20</nyaa:seeders><nyaa:leechers>1</nyaa:leechers></item>")
+                for movie_id, title, year in GUI_MOVIES + ((980903, GUI_OMDB["title"], GUI_OMDB["year"]),):
+                    release = f"{title}.{year}.1080p.WEB-DL.H264-Fixture"
+                    identity = hashlib.sha256(release.encode()).hexdigest()[:40]
+                    items.append(f"<item><title>{escape(release)}</title><guid>http://fixture-rss:8989/view/movie-{movie_id}</guid>"
+                                 f"<link>http://fixture-rss:8989/download/movie-{movie_id}.torrent</link>"
+                                 "<pubDate>Tue, 13 Oct 2026 09:00:00 +0000</pubDate><nyaa:size>4 GiB</nyaa:size>"
+                                 f"<nyaa:infoHash>{identity}</nyaa:infoHash>"
+                                 "<nyaa:seeders>20</nyaa:seeders><nyaa:leechers>1</nyaa:leechers></item>")
                 rss = ('<?xml version="1.0"?><rss version="2.0" xmlns:nyaa="https://nyaa.si/xmlns/nyaa"><channel>'
                        '<title>Generated collection fixture</title><description>Local RSS only</description>'
                        '<link>http://fixture-rss:8989/</link>' + "".join(items) + '</channel></rss>').encode()
@@ -125,7 +188,7 @@ def serve_fixture(root):
 
         def do_HEAD(self):
             path = urllib.parse.urlsplit(self.path).path
-            if path.startswith("/file/anilistcdn/media/") and path.endswith(("/poster.png", "/banner.png")):
+            if self.headers.get("Host", "").split(":")[0] in ("image.tmdb.org", "m.media-amazon.com") or (path.startswith("/file/anilistcdn/media/") and path.endswith(("/poster.png", "/banner.png"))):
                 body = backdrop if path.endswith("banner.png") else poster
                 self.send_response(200)
                 self.send_header("Content-Type", "image/png")
@@ -152,7 +215,7 @@ def serve_fixture(root):
 
 
 class CollectionsBrowser(groups.AnimeGroups):
-    fixture_hosts = ("graphql.anilist.co", "s4.anilist.co")
+    fixture_hosts = ("graphql.anilist.co", "s4.anilist.co", "api.themoviedb.org", "image.tmdb.org", "www.omdbapi.com", "m.media-amazon.com")
 
     def __init__(self, args):
         super().__init__(args)
@@ -169,7 +232,7 @@ class CollectionsBrowser(groups.AnimeGroups):
             values[values.index("/runner/anime-groups.py")] = "/runner/collections-browser.py"
             values.extend(("--fixture-only",))
             at = values.index(self.args.mock_image)
-            values[at:at] = ["--network-alias", "s4.anilist.co", "--network-alias", "fixture-rss"]
+            values[at:at] = [part for host in self.fixture_hosts[1:] + ("fixture-rss",) for part in ("--network-alias", host)]
         return super().docker(*values)
 
     @staticmethod
@@ -185,6 +248,10 @@ class CollectionsBrowser(groups.AnimeGroups):
         settings = self.api_json("/api/v5/settings/general")
         settings.update(username=self.username, password=self.password, passwordConfirmation=self.password)
         self.api_json("/api/v5/settings/general/1", "PUT", settings)
+        if self.args.gui_audit:
+            metadata = self.api_json("/api/v5/settings/metadata")
+            metadata.update(tmdbApiKey="generated-gui-tmdb", omdbApiKey="generated-gui-omdb")
+            self.api_json("/api/v5/settings/metadata/1", "PUT", metadata)
         for item in ADDED_IDS:
             self.add(item)
         self.until(lambda: len(list((self.root / "config" / "MediaCover").rglob("poster.jpg"))) >= len(ADDED_IDS),
@@ -244,6 +311,17 @@ class CollectionsBrowser(groups.AnimeGroups):
         imported = self.api_json(f"/api/v5/episode/{episode['id']}")
         self.browser_file = self.api_json(f"/api/v5/episodefile/{imported['episodeFileId']}")
         self.imported_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+        if self.args.gui_audit:
+            self.gui_import_directory = "/media/explicit/" + GUI_IMPORT_MOVIE[1]
+            self.docker("exec", "--user", f"1000:{self.fixture_gid}", self.container, "mkdir", self.gui_import_directory)
+            target = self.root / "media" / "explicit" / GUI_IMPORT_MOVIE[1] / f"{GUI_IMPORT_MOVIE[1]} ({GUI_IMPORT_MOVIE[2]}) 720p WEB-DL.mkv"
+            movie_video = subprocess.run(
+                [self.args.ffmpeg, "-nostdin", "-v", "error", "-i", str(source), "-f", "lavfi", "-i",
+                 "sine=frequency=1000:sample_rate=48000", "-t", "2", "-c:v", "copy", "-c:a", "aac", "-y", str(target)],
+                capture_output=True, text=True, timeout=60)
+            require(movie_video.returncode == 0 and target.is_file(), "Could not generate the owned audio/video movie for Library Import")
+            target.chmod(0o644)
+            self.gui_import_hash = hashlib.sha256(target.read_bytes()).hexdigest()
         self.command({"name": "RescanSeries", "seriesId": member["id"]})
         naming = self.api_json("/api/v5/settings/naming")
         naming["animeEpisodeFormat"] = "{Series Title} - S{season:00}E{episode:00} - Browser Renamed"
@@ -264,6 +342,7 @@ def main():
     parser.add_argument("--playwright-module", default="playwright")
     parser.add_argument("--playwright-version", required=False)
     parser.add_argument("--windows-browser", action="store_true")
+    parser.add_argument("--gui-audit", action="store_true", help="Exercise all main pages, Settings submenus and provider editors on desktop and touch mobile")
     parser.add_argument("--report", type=Path)
     parser.add_argument("--serve-fixture", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--fixture-only", action="store_true", help=argparse.SUPPRESS)
@@ -298,6 +377,10 @@ def main():
                    "series": series, "nativeId": native["id"], "playwrightModule": args.playwright_module,
                    "playwrightVersion": args.playwright_version, "artifactDirectory": browser_path(directory),
                    "generatedFile": audit.browser_file,
+                   "guiAudit": args.gui_audit,
+                   "guiImportMovie": {"source": "tmdbMovie", "foreignId": str(GUI_IMPORT_MOVIE[0]), "title": GUI_IMPORT_MOVIE[1], "year": GUI_IMPORT_MOVIE[2], "path": audit.gui_import_directory} if args.gui_audit else None,
+                   "guiCatalogue": ([{"source": "tmdbMovie", "foreignId": str(identity), "title": title, "year": year} for identity, title, year in GUI_MOVIES] + [GUI_OMDB] +
+                                    [{"source": "aniList", "foreignId": str(identity), "title": media(identity)["title"]["english"], "year": 2024, "special": True} for identity in SPECIAL_IDS]) if args.gui_audit else [],
                    "canonicalPresentation": presentation}
         payload["episodeIdentities"] = sorted((episode["id"], item["id"], episode["seasonNumber"], episode["episodeNumber"])
                                              for item in series for episode in audit.episodes(item))
@@ -320,6 +403,13 @@ def main():
                 "Browser management or rename changed the owned generated media bytes")
         require("Browser Renamed" in saved_file["path"], "Browser did not complete the owned rename")
         audit.check("actual browser Manage Episodes and Preview Rename preserve the generated video's bytes and native file identity")
+        if args.gui_audit:
+            imported_movie = browser["observations"]["guiWorkflows"]["libraryImportedMovie"]
+            movie_file = audit.api_json(f"/api/v5/episodefile/{imported_movie['episodeFileId']}")
+            movie_path = audit.root / "media" / Path(movie_file["path"]).relative_to("/media")
+            require(movie_path.is_file() and hashlib.sha256(movie_path.read_bytes()).hexdigest() == audit.gui_import_hash,
+                    "Browser library import changed the generated movie bytes")
+            audit.check("actual Library Import matches a generated movie through its enabled native catalogue and imports the existing file without changing bytes")
         require(not any(item["name"] in ("SeriesSearch", "SeasonSearch", "EpisodeSearch", "CompleteSeriesSearch")
                         for item in audit.api_json("/api/v5/command")), "Browser scheduled acquisition")
         audit.check("actual packaged browser never configures a download client, acquires media or schedules acquisition")
@@ -328,6 +418,31 @@ def main():
         for secret in (audit.api_key, audit.username, audit.password):
             error = error.replace(secret, "[REDACTED]")
         print("FAIL " + error, flush=True)
+        if audit.root and getattr(audit, "gui_import_directory", None):
+            diagnostics = {}
+            try:
+                movies = [item for item in audit.api_json("/api/v5/series") if item.get("metadataSource") == "tmdbMovie" and item.get("foreignId") == str(GUI_IMPORT_MOVIE[0])]
+                diagnostics["importedMovies"] = movies
+                if movies:
+                    movie_id = movies[0]["id"]
+                    diagnostics["episodes"] = audit.api_json(f"/api/v5/episode?seriesId={movie_id}")
+                    diagnostics["files"] = audit.api_json(f"/api/v5/episodefile?seriesId={movie_id}")
+                    query = urllib.parse.urlencode({"folder": audit.gui_import_directory, "seriesId": movie_id, "filterExistingFiles": "false"})
+                    diagnostics["scanDecisions"] = audit.api_json("/api/v5/manualimport?" + query)
+                diagnostics["commands"] = audit.api_json("/api/v5/command")
+            except (Exception, KeyboardInterrupt) as diagnostic_error:
+                diagnostics["diagnosticFailure"] = type(diagnostic_error).__name__
+            diagnostic_text = json.dumps(diagnostics, indent=2)
+            for secret in (audit.api_key, audit.username, audit.password):
+                diagnostic_text = diagnostic_text.replace(secret, "[REDACTED]")
+            directory.joinpath("collection-browser-import-diagnostics.json").write_text(diagnostic_text + "\n", encoding="utf-8")
+            try:
+                app_log = audit.docker("logs", audit.container)
+                for secret in (audit.api_key, audit.username, audit.password, "generated-gui-tmdb", "generated-gui-omdb"):
+                    app_log = app_log.replace(secret, "[REDACTED]")
+                directory.joinpath("collection-browser-app.log").write_text(app_log, encoding="utf-8")
+            except (Exception, KeyboardInterrupt):
+                pass
     finally:
         if audit.root:
             log = audit.root / "fixture" / "requests.jsonl"
@@ -347,6 +462,7 @@ def main():
                             "publicMetadataRequests": False, "acquisitionTested": False, "internalNetwork": True,
                             "externalRoutingAllowed": False, "trustedCatalogueTls": True, "realLibraryTested": False,
                             "generatedVideoImportTested": hasattr(audit, "browser_file"),
+                            "generatedMovieLibraryImportTested": bool(args.gui_audit and error is None and (browser or {}).get("observations", {}).get("guiWorkflows", {}).get("libraryImportedMovie")),
                             "generatedVideoManagementAndRenameTested": error is None and hasattr(audit, "browser_file"),
                             "apiBindAddress": "127.0.0.1:random", "keptData": False},
                   "keptApp": None, "keptMock": None, "keptNetwork": None, "keptData": None}

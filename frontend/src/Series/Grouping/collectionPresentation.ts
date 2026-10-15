@@ -1,5 +1,11 @@
+import getMediaType from 'Series/getMediaType';
 import Series, { Image, Season } from 'Series/Series';
-import { AnimeSeriesGroup, hasAnimeGroup } from './animeGrouping';
+import {
+  AnimeSeriesGroup,
+  compareAnimeGroupMembers,
+  getAnimeGroupMemberNumber,
+  hasAnimeGroup,
+} from './animeGrouping';
 
 export interface CollectionEntry {
   key: string;
@@ -50,14 +56,7 @@ export function resolveCollection(
   const groupId = collectionId.slice(6);
   const members = items
     .filter((item) => hasAnimeGroup(item) && item.animeGroupId === groupId)
-    .sort(
-      (a, b) =>
-        Number(a.animeGroupMemberKind === 'movie') -
-          Number(b.animeGroupMemberKind === 'movie') ||
-        (a.animeGroupSeasonNumber ?? a.animeGroupMovieNumber ?? 0) -
-          (b.animeGroupSeasonNumber ?? b.animeGroupMovieNumber ?? 0) ||
-        a.id - b.id
-    );
+    .sort(compareAnimeGroupMembers);
 
   return members.length
     ? { id: groupId, title: members[0].animeGroupTitle!, members }
@@ -77,9 +76,9 @@ export function getCollectionEntries(
   group: AnimeSeriesGroup
 ): CollectionEntry[] {
   return group.members.flatMap((member) => {
-    const regularSeasons = member.seasons.filter(
-      (season) => season.seasonNumber > 0
-    );
+    const regularSeasons = member.seasons
+      .filter((season) => season.seasonNumber > 0)
+      .sort((a, b) => a.seasonNumber - b.seasonNumber);
     return member.seasons
       .filter(
         (season) =>
@@ -91,20 +90,34 @@ export function getCollectionEntries(
       .map((season) => {
         let section: CollectionEntry['section'] = 'seasons';
 
-        if (season.seasonNumber === 0) {
+        if (
+          season.seasonNumber === 0 ||
+          member.animeGroupMemberKind === 'special' ||
+          getMediaType(member) === 'special'
+        ) {
           section = 'specials';
-        } else if (member.animeGroupMemberKind === 'movie') {
+        } else if (
+          member.animeGroupMemberKind === 'movie' ||
+          getMediaType(member) === 'movie'
+        ) {
           section = 'movies';
         }
+
+        let displayNumber =
+          getAnimeGroupMemberNumber(member) ?? season.seasonNumber;
+        if (season.seasonNumber === 0) displayNumber = 0;
+        else if (section === 'seasons' && member.animeGroupSeasonNumber != null)
+          displayNumber =
+            member.animeGroupSeasonNumber +
+            regularSeasons.findIndex(
+              (item) => item.seasonNumber === season.seasonNumber
+            );
 
         return {
           key: `${member.id}:${season.seasonNumber}`,
           member,
           season,
-          displayNumber:
-            regularSeasons.length === 1
-              ? member.animeGroupSeasonNumber ?? season.seasonNumber
-              : season.seasonNumber,
+          displayNumber,
           section,
         };
       });
