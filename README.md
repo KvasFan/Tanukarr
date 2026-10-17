@@ -4,17 +4,20 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 0.1.0** manages TV series, anime
+**Tanukarr 0.1.1** manages TV series, anime
 and movie collections in one Sonarr-derived application. It includes
 graphical account creation, collection and quality
 fixes, seven configurable metadata catalogues, native films and IMDb lookup.
 Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
+0.1.1 fixes pending-release removal through the v3 and v5 queue APIs.
 
-See the [0.1.0 release notes](docs/releases/0.1.0.md),
+See the [0.1.1 release notes](docs/releases/0.1.1.md) and
+[verification ledger](docs/releases/0.1.1-verification.md) for executed checks
+and exact source/image identities. The [0.1.0 release notes](docs/releases/0.1.0.md),
 [publication report](docs/releases/0.1.0-publication.md) and
-[preparation ledger](docs/releases/0.1.0-verification.md) for executed checks,
-exact source/image identities and remaining
+[preparation ledger](docs/releases/0.1.0-verification.md) retain that release's
+evidence and remaining
 findings. The [1.1.0 publication](docs/releases/1.1.0-publication.md)
 retains the base release's original evidence. The [upstream review](docs/upstream-audit-2026-10-14.md)
 records the latest fetched Sonarr, Kakarotto, gaboy and ikatun heads and the
@@ -262,12 +265,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexpert/tanukarr:0.1.0
+docker pull ghcr.io/kvasexpert/tanukarr:0.1.1
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:0.1.0
+  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:0.1.1
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -327,6 +330,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `0.1.1` | Maintenance release of 0.1.0: v3 pending-queue removal, immediate pending-list refresh after removals, integration-client serialization and cross-published Dockerfile stages. Executed checks are recorded in the 0.1.1 verification ledger. |
 | `0.1.0` | Graphical first-run setup, collection/quality fixes, ordered metadata sources and TVmaze. Publication and exact checks are recorded in the verification ledger. |
 | `1.1.0` | Published and locally deployed: full collection pages, alternate artwork, custom qualities and editable profile codec factors. Nineteen runtime gates passed (342 checks); public assets/image and the protected upgrade verified. See the publication report for remaining findings. |
 | `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |

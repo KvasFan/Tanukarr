@@ -688,9 +688,11 @@ containing commas, all eleven Import status controls and the submitted settings
 payload. The six removed account-status exclusion controls must be absent from
 the form and request; custom-list exclusions remain available. The duplicate
 legacy single-list textbox is absent even with advanced settings shown, and any
-legacy scalar in the submitted settings must be empty. The visible help states
-that custom-list exclusions always win, including overlap with included lists;
-account/media Import status filters remain separate. The connection test
+legacy scalar in the submitted settings must be empty. The visible help is the
+current `en.json` text: included custom lists select entries and Excluded
+Custom Lists remove them, while account/media Import status filters remain
+separate. The Add Series source selector must offer the combined entry plus all
+seven catalogues of a fresh configuration in their default order. The connection test
 intentionally fails local validation
 without OAuth credentials; cancelling the editor leaves saved lists unchanged.
 For an owned settings-only invocation, the Node helper accepts `menuOnly: true`

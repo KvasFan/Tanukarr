@@ -96,12 +96,14 @@ async function main(input) {
       });
     }
     if (!input.menuOnly) {
-      await check('Add Series separates TheTVDB, TMDB, AniList and MyAnimeList providers and performs native AniList lookup', async () => {
+      await check('Add Series separates all enabled catalogues, TheTVDB, TMDB, AniList, MyAnimeList, TVmaze, TMDB Movie and OMDb, and performs native AniList lookup', async () => {
         await page.goto(input.baseUrl + '/add/new');
         const provider = page.locator('select[name="metadataSource"]');
         await provider.waitFor({ state: 'visible' });
+        // A fresh configuration enables every catalogue in the default order behind the
+        // combined "all" entry; a single source stays selectable on its own.
         assert.deepEqual(await provider.locator('option').evaluateAll((options) => options.map((option) => option.value)),
-          ['tvdb', 'tmdb', 'aniList', 'myAnimeList']);
+          ['all', 'tvdb', 'tmdb', 'aniList', 'myAnimeList', 'tvMaze', 'tmdbMovie', 'omdb']);
         await provider.selectOption('aniList');
         const responsePromise = page.waitForResponse((response) => {
           const url = new URL(response.url());
@@ -140,11 +142,14 @@ async function main(input) {
       if (input.artifactDirectory) await page.screenshot({ path: path.join(input.artifactDirectory, 'anilist-list-status-fields.png'), fullPage: true });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
     });
-    await check('AniList custom-list help states exclusions always veto overlapping inclusions', async () => {
+    await check('AniList custom-list help states excluded lists remove entries from included lists', async () => {
       await page.getByRole('button', { name: 'Add Import List', exact: true }).click();
       await page.getByRole('button', { name: 'Add Import List - AniList List', exact: true }).click();
       await page.locator('input[name="includedCustomLists"]').waitFor({ state: 'visible' });
-      await page.getByText('An excluded custom list always wins, even when the anime also belongs to an included custom list. Import list and release statuses still apply.', { exact: true }).waitFor({ state: 'visible' });
+      // The visible help comes from ImportListsAniListSettingsIncludedCustomListsHelpText
+      // and ImportListsAniListSettingsExcludedCustomListsHelpText in en.json.
+      await page.getByText('Enter each AniList custom list name and press Enter. Select entries in any named list within the selected list and media statuses, then remove entries in Excluded Custom Lists. Leave empty to use the status filters and exclusions', { exact: true }).waitFor({ state: 'visible' });
+      await page.getByText('Enter each custom list name and press Enter', { exact: true }).waitFor({ state: 'visible' });
       await page.getByRole('button', { name: 'Cancel', exact: true }).last().click();
     });
     await check('AniList custom-list exclusions preserve literal names while obsolete status exclusions are absent', async () => {

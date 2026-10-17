@@ -261,9 +261,12 @@ A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
-The **0.1.0** release retains the original source authors.
-Use its [release notes](docs/releases/0.1.0.md) and
-[verification ledger](docs/releases/0.1.0-verification.md) for this build.
+The **0.1.1** release retains the original source authors.
+Use its [release notes](docs/releases/0.1.1.md) and
+[verification ledger](docs/releases/0.1.1-verification.md) for this build; the
+0.1.0 [release notes](docs/releases/0.1.0.md) and
+[verification ledger](docs/releases/0.1.0-verification.md) keep that release's
+evidence.
 `yarn test:metadata-sources` covers mounted enable/order controls and search
 payloads and is included in `yarn test:queue-details`. The new first-run Docker
 gate exercises actual graphical account creation, antiforgery rejection,

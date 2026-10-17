@@ -62,8 +62,12 @@ in-memory pending list in the inherited `PendingReleaseService`, gave the
 RestSharp 106 integration client the application's Newtonsoft request
 serializer, and recorded the executed checks in the
 [October 17 ledger](docs/local-deployment-verification-2026-10-17.md). The
-pending-release and queue code itself remains upstream Sonarr work credited
-below; the model identity is the session's explicit environment identity.
+same session prepared the Tanukarr 0.1.1 maintenance release
+([release notes](docs/releases/0.1.1.md),
+[verification ledger](docs/releases/0.1.1-verification.md)), including the
+cross-published Dockerfile stages. The pending-release and queue code itself
+remains upstream Sonarr work credited below; the model identity is the
+session's explicit environment identity.
 
 This Tanukarr register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have

@@ -5,11 +5,16 @@
 # Three stages: the React UI, the .NET backend, then a runtime image holding only
 # the published output. Building the UI separately means a backend-only change does
 # not reinstall node_modules, and vice versa.
+#
+# The UI and backend stages always run on the build host's own architecture: the
+# Vite bundle is platform-independent and the .NET SDK cross-publishes the target
+# runtime identifier, so an arm64 image does not need to compile under emulation.
+# Only the runtime stage is pulled for the requested target platform.
 
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm AS ui
+FROM --platform=$BUILDPLATFORM node:24-bookworm AS ui
 
 WORKDIR /src
 
@@ -32,8 +37,10 @@ RUN yarn test:queue-details && yarn lint && yarn stylelint && yarn typecheck && 
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS backend
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS backend
 
+# TARGETARCH names the requested image architecture even though this stage runs on
+# the build host; it selects the runtime identifier to publish.
 ARG TARGETARCH
 WORKDIR /src
 
@@ -64,14 +71,14 @@ RUN set -eux; \
     mkdir -p /app; \
     cp -r "_output/net10.0/${RID}/publish/." /app/
 
-# The native amd64 build verifies the same published backend. The initial
-# Tanukarr release publishes amd64 only; other targets require their own runtime
-# verification before they can be advertised as supported release images.
-# Integration tests require configured external services and run separately.
-# NuGet distributes ffprobe with mode 644. Disk-access tests execute the binary
-# from their own output directory before /app is made executable.
+# The amd64 build verifies the same published backend on the build host. Tanukarr
+# publishes amd64 only; other targets are cross-published here but require their
+# own runtime verification before they can be advertised as supported release
+# images. Integration tests require configured external services and run
+# separately. NuGet distributes ffprobe with mode 644. Disk-access tests execute
+# the binary from their own output directory before /app is made executable.
 RUN set -eux; \
-    if [ "${TARGETARCH}" = "amd64" ]; then \
+    if [ "${TARGETARCH}" = "amd64" ] && [ "$(uname -m)" = "x86_64" ]; then \
       chmod +x _tests/net10.0/linux-x64/ffprobe; \
       for suite in Core Api Http Host; do \
         dotnet test "_tests/net10.0/linux-x64/Sonarr.${suite}.Test.dll" \
@@ -100,7 +107,7 @@ RUN set -eux; \
 # ---------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.13-noble AS runtime
 
-ARG SONARRWEEB_VERSION=0.1.0
+ARG SONARRWEEB_VERSION=0.1.1
 ARG SONARRWEEB_SOURCE=https://github.com/KvasExpert/Tanukarr
 ARG SONARRWEEB_REVISION
 ARG SONARRWEEB_CREATED

@@ -1,10 +1,12 @@
 # What this fork changes
 
-Tanukarr **0.1.0** retains the inherited migrations and APIs.
-It adds graphical first-run account
+Tanukarr **0.1.1** retains the inherited migrations and APIs.
+It keeps 0.1.0's graphical first-run account
 creation, collection/quality fixes, enabled and ordered metadata catalogues,
-TVmaze and container hardening. See the
-[release notes](docs/releases/0.1.0.md), [publication report](docs/releases/0.1.0-publication.md)
+TVmaze and container hardening, and fixes pending-release removal through the
+v3/v5 queue APIs. See the
+[0.1.1 release notes](docs/releases/0.1.1.md), [verification ledger](docs/releases/0.1.1-verification.md),
+and the 0.1.0 [publication report](docs/releases/0.1.0-publication.md)
 and [preparation ledger](docs/releases/0.1.0-verification.md).
 
 The reasoning behind Tanukarr's integrated changes, and the trade-offs they carry.
