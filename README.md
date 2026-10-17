@@ -12,7 +12,8 @@ Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
 0.1.1 fixes pending-release removal through the v3 and v5 queue APIs.
 
-See the [0.1.1 release notes](docs/releases/0.1.1.md) and
+See the [0.1.1 release notes](docs/releases/0.1.1.md),
+[publication report](docs/releases/0.1.1-publication.md) and
 [verification ledger](docs/releases/0.1.1-verification.md) for executed checks
 and exact source/image identities. The [0.1.0 release notes](docs/releases/0.1.0.md),
 [publication report](docs/releases/0.1.0-publication.md) and

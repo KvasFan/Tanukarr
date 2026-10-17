@@ -17,6 +17,7 @@ repeat past verification.
 | --- | --- |
 | [Tanukarr 0.1.1](releases/0.1.1.md) | Maintenance release: v3/v5 pending-queue removal fixes, integration-client serialization and cross-published Dockerfile stages |
 | [0.1.1 verification](releases/0.1.1-verification.md) | Executed source, suite, browser, download, PostgreSQL, arm64 and container checks for the 0.1.1 source |
+| [0.1.1 publication](releases/0.1.1-publication.md) | Exact source/public digest, hosted gates, verified assets, anonymous pull and local deployment of the published image |
 | [Tanukarr 0.1.0](releases/0.1.0.md) | Account setup, collection/UI fixes, metadata source controls and container hardening |
 | [0.1.0 publication](releases/0.1.0-publication.md) | Exact source/public digest, hosted gates, verified assets and interface evidence |
 | [0.1.0 public-image security](releases/0.1.0-image-security.json) | Actual public-image CVEs, scanner/registry identities and remaining findings |

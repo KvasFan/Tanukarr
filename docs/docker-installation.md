@@ -153,17 +153,18 @@ The release supports v3/v5 APIs. The inherited
 internal Core version differs from Tanukarr's product version.
 
 The release workflow assigns `latest` to the tested release, `edge` to main,
-and `sha-<full-commit>` to a build. A digest pins exact image bytes. The 0.1.1
-digest is recorded in its publication report once the hosted workflow has
-published the image. The verified 0.1.0 Linux amd64 reference is:
+and `sha-<full-commit>` to a build. A digest pins exact image bytes. The
+verified 0.1.1 Linux amd64 reference is:
 
 ```text
-ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd
+ghcr.io/kvasexpert/tanukarr@sha256:2d47ba87f5830b7c268cd0b6d9d2f5d58953170ade8312e6d3a85f2f3f305c9a
 ```
 
-The 0.1.0 publication report binds that manifest to its tested source and
-assets. Anonymous pulls of this reference were verified. The historical 1.1.0
-digest continues to identify the historical image.
+The [0.1.1 publication report](releases/0.1.1-publication.md) binds this
+manifest to the tested source and assets; anonymous pulls of this reference
+were verified. The previous 0.1.0 reference
+`ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd`
+and the historical 1.1.0 digest continue to identify their own images.
 
 Anonymous pulls should work for public packages. If registry policy requires
 authentication, use `docker login ghcr.io -u <github-user>` and enter an
