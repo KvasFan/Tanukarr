@@ -15,6 +15,8 @@ repeat past verification.
 
 | Document | Purpose |
 | --- | --- |
+| [Tanukarr 0.1.2](releases/0.1.2.md) | First release from `KvasFan/Tanukarr`: 0.1.1 application with new-namespace links/logos and a main-build-tolerant upgrade gate |
+| [0.1.2 verification](releases/0.1.2-verification.md) | Executed checks for the 0.1.2 source and the hosted publication under the new namespace |
 | [Tanukarr 0.1.1](releases/0.1.1.md) | Maintenance release: v3/v5 pending-queue removal fixes, integration-client serialization and cross-published Dockerfile stages |
 | [0.1.1 verification](releases/0.1.1-verification.md) | Executed source, suite, browser, download, PostgreSQL, arm64 and container checks for the 0.1.1 source |
 | [0.1.1 publication](releases/0.1.1-publication.md) | Exact source/public digest, hosted gates, verified assets, anonymous pull and local deployment of the published image |

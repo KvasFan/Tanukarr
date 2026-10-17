@@ -93,6 +93,10 @@ jobs:
             --report "${RUNNER_TEMP}/tanukarr-functional-security.json"
 
       - name: Prepare disposable catalogue and RSS fixtures
+        id: fixtures
+        env:
+          # Earlier published release (schema 252) populated by the library-upgrade gate.
+          EARLIER_IMAGE: ghcr.io/kvasfan/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd
         run: |
           if ! command -v openssl >/dev/null || ! command -v ffmpeg >/dev/null; then
             sudo apt-get update
@@ -101,7 +105,21 @@ jobs:
           docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
           docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
           docker pull lscr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
-          docker pull ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd
+          # The earlier image lives in this repository's own package. A brand-new
+          # namespace has no package until this workflow publishes one, so a main build
+          # may skip the upgrade gate once; a release tag never may.
+          if docker pull "$EARLIER_IMAGE"; then
+            echo "earlier=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Earlier release image $EARLIER_IMAGE is not available; the populated-library upgrade gate is skipped on this build"
+            echo "earlier=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require the earlier release image for a release tag
+        if: startsWith(github.ref, 'refs/tags/v') && steps.fixtures.outputs.earlier != 'true'
+        run: |
+          echo "::error::A release build requires the earlier release image for the populated-library upgrade gate"
+          exit 1
 
       - name: Isolated group, naming and AniList checks
         run: |
@@ -236,6 +254,7 @@ jobs:
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-download-packs.json"
 
       - name: Populated library migration, native anime films and preserved file identities
+        if: steps.fixtures.outputs.earlier == 'true'
         run: |
           python3 docker/tests/library-upgrade.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-library-upgrade.json"

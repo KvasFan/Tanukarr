@@ -13,7 +13,7 @@ namespace NzbDrone.Core.Notifications.Gotify
 {
     public class Gotify : NotificationBase<GotifySettings>
     {
-        private const string SonarrImageUrl = "https://raw.githubusercontent.com/KvasExpert/Tanukarr/main/Logo/128.png";
+        private const string SonarrImageUrl = "https://raw.githubusercontent.com/KvasFan/Tanukarr/main/Logo/128.png";
 
         private readonly IGotifyProxy _proxy;
         private readonly ILocalizationService _localizationService;
@@ -110,8 +110,8 @@ namespace NzbDrone.Core.Notifications.Gotify
                     isMarkdown = true;
 
                     sb.AppendLine("");
-                    sb.AppendLine("[Tanukarr](https://github.com/KvasExpert/Tanukarr)");
-                    payload.SetClickUrl("https://github.com/KvasExpert/Tanukarr");
+                    sb.AppendLine("[Tanukarr](https://github.com/KvasFan/Tanukarr)");
+                    payload.SetClickUrl("https://github.com/KvasFan/Tanukarr");
                 }
 
                 payload.Message = sb.ToString();

@@ -50,6 +50,6 @@ body:
   attributes:
     label: Version
     description: Found under System → Status, or the image tag you pulled.
-    placeholder: e.g. Tanukarr 1.0.0, or ghcr.io/kvasexpert/tanukarr:1.0.0
+    placeholder: e.g. Tanukarr 1.0.0, or ghcr.io/kvasfan/tanukarr:1.0.0
   validations:
     required: true

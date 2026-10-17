@@ -17,7 +17,7 @@ SCRIPTS = Path(__file__).resolve().parent
 _spec = importlib.util.spec_from_file_location("upgrade_client_fixture", SCRIPTS / "download-client-folders.py")
 _client = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_client)
-BASE_IMAGE = "ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd"
+BASE_IMAGE = "ghcr.io/kvasfan/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd"
 
 
 class LibraryUpgrade(_client.ClientFolders):

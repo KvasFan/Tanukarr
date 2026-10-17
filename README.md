@@ -4,15 +4,23 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 0.1.1** manages TV series, anime
+**Tanukarr 0.1.2** manages TV series, anime
 and movie collections in one Sonarr-derived application. It includes
 graphical account creation, collection and quality
 fixes, seven configurable metadata catalogues, native films and IMDb lookup.
 Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
-0.1.1 fixes pending-release removal through the v3 and v5 queue APIs.
+0.1.1 fixed pending-release removal through the v3 and v5 queue APIs; 0.1.2 is
+the first release published from the `KvasFan/Tanukarr` repository and
+`ghcr.io/kvasfan/tanukarr` after the previous namespace became unavailable.
+Links into the previous namespace, including those in historical reports,
+no longer resolve. The repository is also published at
+[gitlab.com/tirael8308/Tanukarr](https://gitlab.com/tirael8308/Tanukarr),
+which receives the same commits, tags and release assets.
 
-See the [0.1.1 release notes](docs/releases/0.1.1.md),
+See the [0.1.2 release notes](docs/releases/0.1.2.md) and
+[verification ledger](docs/releases/0.1.2-verification.md), then the
+[0.1.1 release notes](docs/releases/0.1.1.md),
 [publication report](docs/releases/0.1.1-publication.md) and
 [verification ledger](docs/releases/0.1.1-verification.md) for executed checks
 and exact source/image identities. The [0.1.0 release notes](docs/releases/0.1.0.md),
@@ -28,7 +36,7 @@ Use the [Docker installation guide](docs/docker-installation.md),
 [collection guide](docs/anime-season-groups.md), [quality guide](docs/quality-and-codec-size.md)
 and [metadata guide](docs/metadata-providers.md) to configure the application.
 The [documentation index](docs/README.md) links all maintained guides and dated
-reports. Published assets are listed on the [GitHub releases page](https://github.com/KvasExpert/Tanukarr/releases).
+reports. Published assets are listed on the [GitHub releases page](https://github.com/KvasFan/Tanukarr/releases).
 The [1.0.5 publication report](docs/releases/1.0.5-publication.md) preserves the
 earlier release's exact source, image, hosted tests and protected deployment
 evidence. Historical reports retain their original tested scope.
@@ -37,7 +45,7 @@ A fork of [Sonarr](https://github.com/Sonarr/Sonarr) for TV series, anime and fi
 with a metadata provider selected per title, flexible episode orderings and
 shared library, search, download and import tools in a single Docker image.
 
-> **Unofficial.** Tanukarr is not affiliated with, endorsed by, or supported by the Sonarr project. Report Tanukarr problems in [this repository](https://github.com/KvasExpert/Tanukarr/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
+> **Unofficial.** Tanukarr is not affiliated with, endorsed by, or supported by the Sonarr project. Report Tanukarr problems in [this repository](https://github.com/KvasFan/Tanukarr/issues), rather than upstream Sonarr's issue tracker, forums or Discord.
 
 ## Contributors and AI attribution
 
@@ -266,12 +274,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasexpert/tanukarr:0.1.1
+docker pull ghcr.io/kvasfan/tanukarr:0.1.2
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasexpert/tanukarr:0.1.1
+  --restart unless-stopped ghcr.io/kvasfan/tanukarr:0.1.2
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -325,13 +333,14 @@ also avoids unnecessary Remote Path Mappings.
 
 ### Publishing workflow tags
 
-The release image path is `ghcr.io/kvasexpert/tanukarr`. Check the
-[package page](https://github.com/users/KvasExpert/packages/container/package/tanukarr)
+The release image path is `ghcr.io/kvasfan/tanukarr`. Check the
+[package page](https://github.com/users/KvasFan/packages/container/package/tanukarr)
 and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
-| `0.1.1` | Maintenance release of 0.1.0: v3 pending-queue removal, immediate pending-list refresh after removals, integration-client serialization and cross-published Dockerfile stages. Executed checks are recorded in the 0.1.1 verification ledger. |
+| `0.1.2` | First release from `KvasFan/Tanukarr`: the 0.1.1 application with repository, package and logo links pointing at the new namespace, and a release workflow that tolerates a missing earlier image on main builds only. Executed checks are recorded in the 0.1.2 verification ledger. |
+| `0.1.1` | Maintenance release of 0.1.0: v3 pending-queue removal, immediate pending-list refresh after removals, integration-client serialization and cross-published Dockerfile stages. Published under the previous namespace, which is no longer reachable; its executed checks are recorded in the 0.1.1 verification ledger. |
 | `0.1.0` | Graphical first-run setup, collection/quality fixes, ordered metadata sources and TVmaze. Publication and exact checks are recorded in the verification ledger. |
 | `1.1.0` | Published and locally deployed: full collection pages, alternate artwork, custom qualities and editable profile codec factors. Nineteen runtime gates passed (342 checks); public assets/image and the protected upgrade verified. See the publication report for remaining findings. |
 | `1.0.5` | Published and deployed: complete scoped list snapshots, local filtering and native metadata-provider preference. All fourteen hosted gates passed (251 checks); public assets/image and the protected upgrade verified. |
@@ -349,8 +358,8 @@ another architecture does not establish a published or tested image; additional
 architectures require their own verified artifacts. Release notes identify the
 actual image architecture, digest and executed checks.
 
-Historical [0.0.1](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.0.1)
-and [0.1.0](https://github.com/KvasExpert/Tanukarr/releases/tag/v0.1.0) assets
+Historical [0.0.1](https://github.com/KvasFan/Tanukarr/releases/tag/v0.0.1)
+and [0.1.0](https://github.com/KvasFan/Tanukarr/releases/tag/v0.1.0) assets
 retain their original namespaces, filenames and immutable tags. Obtain their
 exact image references from those releases' manifests. The 0.1.0 image predates
 the AniList request-limit and Nyaa encoding fixes.
@@ -424,7 +433,7 @@ What's asked instead:
 - Run the solution build, relevant backend tests and all frontend checks listed
   in [CONTRIBUTING.md](CONTRIBUTING.md). Document skipped or unavailable checks.
 
-Suggestions and bug reports are welcome — [open a Tanukarr issue](https://github.com/KvasExpert/Tanukarr/issues).
+Suggestions and bug reports are welcome — [open a Tanukarr issue](https://github.com/KvasFan/Tanukarr/issues).
 
 ### Building locally
 

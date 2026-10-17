@@ -79,7 +79,7 @@ namespace NzbDrone.Core.Notifications.Telegram
 
                 var links = new List<NotificationMetadataLink>
                     {
-                        new NotificationMetadataLink(null, "Tanukarr", "https://github.com/KvasExpert/Tanukarr")
+                        new NotificationMetadataLink(null, "Tanukarr", "https://github.com/KvasFan/Tanukarr")
                     };
 
                 var testMessageTitle = settings.IncludeAppNameInTitle ? brandedTitle : title;

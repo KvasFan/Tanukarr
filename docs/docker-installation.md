@@ -1,17 +1,17 @@
-# Install Tanukarr 0.1.1 with Docker
+# Install Tanukarr 0.1.2 with Docker
 
-Tanukarr manages TV series, anime and movie collections. Version 0.1.1 keeps
+Tanukarr manages TV series, anime and movie collections. Version 0.1.2 keeps
 the inherited database schema and APIs. It retains 0.1.0's graphical account
 creation, collection/quality fixes and configurable metadata catalogues including
-TVmaze, and fixes pending-release removal through the v3/v5 queue APIs. Read the
-[release notes](releases/0.1.1.md) and
-[verification ledger](releases/0.1.1-verification.md) for executed checks and
-exact source/image identities; the 0.1.0
-[publication report](releases/0.1.0-publication.md) and
-[preparation ledger](releases/0.1.0-verification.md) retain that release's
-publication status and security findings.
+TVmaze, and 0.1.1's pending-release removal fixes for the v3/v5 queue APIs; it
+is the first release published from `KvasFan/Tanukarr`. Read the
+[release notes](releases/0.1.2.md) and
+[verification ledger](releases/0.1.2-verification.md) for executed checks and
+exact source/image identities; the 0.1.1 and 0.1.0 reports retain their own
+publication status and security findings under a namespace that is no longer
+reachable.
 
-The published release image is `ghcr.io/kvasexpert/tanukarr:0.1.1`. The GitHub
+The published release image is `ghcr.io/kvasfan/tanukarr:0.1.2`. The GitHub
 repository contains source, while GHCR stores Docker images. Published support
 is Linux amd64; a configured build target is not a tested or published platform.
 Previous [1.1.0 publication evidence](releases/1.1.0-publication.md) describes
@@ -38,7 +38,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasexpert/tanukarr:0.1.1
+    image: ghcr.io/kvasfan/tanukarr:0.1.2
     container_name: tanukarr
     restart: unless-stopped
     security_opt:
@@ -154,17 +154,14 @@ internal Core version differs from Tanukarr's product version.
 
 The release workflow assigns `latest` to the tested release, `edge` to main,
 and `sha-<full-commit>` to a build. A digest pins exact image bytes. The
-verified 0.1.1 Linux amd64 reference is:
-
-```text
-ghcr.io/kvasexpert/tanukarr@sha256:2d47ba87f5830b7c268cd0b6d9d2f5d58953170ade8312e6d3a85f2f3f305c9a
-```
-
-The [0.1.1 publication report](releases/0.1.1-publication.md) binds this
-manifest to the tested source and assets; anonymous pulls of this reference
-were verified. The previous 0.1.0 reference
-`ghcr.io/kvasexpert/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd`
-and the historical 1.1.0 digest continue to identify their own images.
+verified 0.1.2 Linux amd64 reference is recorded in the
+[0.1.2 publication report](releases/0.1.2-publication.md) once the hosted
+workflow has published it. The 0.1.1 reference
+`sha256:2d47ba87f5830b7c268cd0b6d9d2f5d58953170ade8312e6d3a85f2f3f305c9a` and the
+0.1.0 reference
+`sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd` were
+published under the previous namespace; the 0.1.0 image is re-published in
+this namespace as `ghcr.io/kvasfan/tanukarr:0.1.0` for the upgrade gate.
 
 Anonymous pulls should work for public packages. If registry policy requires
 authentication, use `docker login ghcr.io -u <github-user>` and enter an
@@ -178,7 +175,7 @@ Verify its filename and checksum before loading:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-0.1.1-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-0.1.2-linux-amd64-docker.tar.gz
 docker compose up -d --pull never
 ```
 
@@ -190,7 +187,7 @@ be loaded as Docker images.
 To build the released source:
 
 ```sh
-git clone --branch v0.1.0 --depth 1 https://github.com/KvasExpert/Tanukarr.git
+git clone --branch v0.1.0 --depth 1 https://github.com/KvasFan/Tanukarr.git
 cd Tanukarr
 docker build --progress=plain --build-arg TANUKARR_VERSION=0.1.0 \
   --build-arg TANUKARR_REVISION="$(git rev-parse HEAD)" -t tanukarr:0.1.0 .
@@ -213,5 +210,5 @@ Check `docker compose ps`, `/ping`, login and sanitized logs. Permission errors
 usually require matching UID/GID and mount ownership. For search problems, verify
 provider credentials, enabled sources, native numbering and indexer/client tests.
 Share the Tanukarr version, source/image digest, reproduction and sanitized logs
-in [this project's tracker](https://github.com/KvasExpert/Tanukarr/issues).
+in [this project's tracker](https://github.com/KvasFan/Tanukarr/issues).
 Remove API keys, cookies, passwords and private paths before sharing diagnostics.

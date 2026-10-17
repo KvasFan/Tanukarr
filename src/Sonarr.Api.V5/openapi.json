@@ -5,7 +5,7 @@
     "description": "Tanukarr v5 API documentation. Product release versions are reported separately from the inherited Sonarr core and API versions.",
     "license": {
       "name": "GPL-3.0",
-      "url": "https://github.com/KvasExpert/Tanukarr/blob/main/LICENSE.md"
+      "url": "https://github.com/KvasFan/Tanukarr/blob/main/LICENSE.md"
     },
     "version": "5.0.0"
   },

@@ -65,8 +65,10 @@ serializer, and recorded the executed checks in the
 same session prepared the Tanukarr 0.1.1 maintenance release
 ([release notes](docs/releases/0.1.1.md),
 [verification ledger](docs/releases/0.1.1-verification.md)), including the
-cross-published Dockerfile stages. The pending-release and queue code itself
-remains upstream Sonarr work credited below; the model identity is the
+cross-published Dockerfile stages, and, after the previous GitHub namespace
+was suspended, the 0.1.2 namespace move to `KvasFan/Tanukarr`
+([release notes](docs/releases/0.1.2.md)). The pending-release and queue code
+itself remains upstream Sonarr work credited below; the model identity is the
 session's explicit environment identity.
 
 This Tanukarr register credits the upstream application, original fork implementations,

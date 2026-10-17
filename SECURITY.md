@@ -4,14 +4,14 @@
 
 Tanukarr is independent of upstream Sonarr and the credited Sonarr Pro forks.
 Report Tanukarr vulnerabilities to the maintainer of
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr).
+[KvasFan/Tanukarr](https://github.com/KvasFan/Tanukarr).
 Private vulnerability reporting is enabled for this repository. Use
 **Security -> Report a vulnerability**, or the
-[private reporting form](https://github.com/KvasExpert/Tanukarr/security/advisories/new),
+[private reporting form](https://github.com/KvasFan/Tanukarr/security/advisories/new),
 before publishing exploit details or credentials.
 
 The published 1.0.4 release uses Git tag `v1.0.4` and GHCR image
-`ghcr.io/kvasexpert/tanukarr:1.0.4`. The
+`ghcr.io/kvasfan/tanukarr:1.0.4`. The
 [publication follow-up](docs/releases/1.0.4-publication.md) records the verified
 image, executed scans and remaining findings. Identify the exact Git commit and image digest
 in reports. The [release notes](docs/releases/1.0.4.md)

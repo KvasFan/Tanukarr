@@ -261,12 +261,12 @@ A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
-The **0.1.1** release retains the original source authors.
-Use its [release notes](docs/releases/0.1.1.md) and
-[verification ledger](docs/releases/0.1.1-verification.md) for this build; the
-0.1.0 [release notes](docs/releases/0.1.0.md) and
-[verification ledger](docs/releases/0.1.0-verification.md) keep that release's
-evidence.
+The **0.1.2** release retains the original source authors.
+Use its [release notes](docs/releases/0.1.2.md) and
+[verification ledger](docs/releases/0.1.2-verification.md) for this build; the
+0.1.1 and 0.1.0 [release notes](docs/releases/0.1.1.md) and
+[verification ledgers](docs/releases/0.1.1-verification.md) keep those
+releases' evidence.
 `yarn test:metadata-sources` covers mounted enable/order controls and search
 payloads and is included in `yarn test:queue-details`. The new first-run Docker
 gate exercises actual graphical account creation, antiforgery rejection,
@@ -275,8 +275,8 @@ persistence and password absence from logs. Historical 0.1.0 reports now use
 Preserve configuration backups and the tested source revision for each release.
 
 The public project is
-[KvasExpert/Tanukarr](https://github.com/KvasExpert/Tanukarr). The verified **1.0.5** release
-uses Git tag `v1.0.5` and container tag `ghcr.io/kvasexpert/tanukarr:1.0.5`.
+[KvasFan/Tanukarr](https://github.com/KvasFan/Tanukarr). The verified **1.0.5** release
+uses Git tag `v1.0.5` and container tag `ghcr.io/kvasfan/tanukarr:1.0.5`.
 Its [publication follow-up](docs/releases/1.0.5-publication.md) records exact-source
 hosted checks, verified distribution and the protected owner upgrade. Its
 [preparation ledger](docs/releases/1.0.5-verification.md) preserves earlier
@@ -329,7 +329,7 @@ is excluded, or apply an old report's results to an untested new build.
 ## Reports and suggestions
 
 Report Tanukarr issues to
-[this project's tracker](https://github.com/KvasExpert/Tanukarr/issues). Include the
+[this project's tracker](https://github.com/KvasFan/Tanukarr/issues). Include the
 Tanukarr release version, commit/image digest, internal runtime version,
 provider, series/release involved, expected behavior and sanitized logs. The
 original [Sonarr Pro repository](https://github.com/KakarottoCake/Sonarr-Pro) is a

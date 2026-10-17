@@ -25,7 +25,7 @@ backgrounds differ between platforms.
 
 For a repository administrator, GitHub's documented setup is:
 
-1. Open [KvasExpert/Tanukarr settings](https://github.com/KvasExpert/Tanukarr/settings).
+1. Open [KvasFan/Tanukarr settings](https://github.com/KvasFan/Tanukarr/settings).
 2. Under **Social preview**, choose **Edit**, then **Upload an image**.
 3. Select `resources/branding/github-social-preview.png` from the checkout.
 

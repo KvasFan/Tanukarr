@@ -43,7 +43,7 @@ public class CalendarFeedController : Controller
         var allSeries = _seriesService.GetAllSeries();
         var calendar = new Ical.Net.Calendar
         {
-            ProductId = "-//github.com/KvasExpert/Tanukarr//Tanukarr//EN"
+            ProductId = "-//github.com/KvasFan/Tanukarr//Tanukarr//EN"
         };
 
         var calendarName = BuildInfo.ProductName + " TV Schedule";

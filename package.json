@@ -18,7 +18,7 @@
     "lint-fix": "yarn lint --fix",
     "stylelint": "stylelint \"frontend/**/*.css\" --config frontend/.stylelintrc"
   },
-  "repository": "https://github.com/KvasExpert/Tanukarr.git",
+  "repository": "https://github.com/KvasFan/Tanukarr.git",
   "author": "Team Sonarr",
   "license": "GPL-3.0",
   "readmeFilename": "readme.md",
