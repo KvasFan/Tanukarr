@@ -53,6 +53,18 @@ are documented in the [provider guide](docs/metadata-providers.md). The new
 evidence. The October 12 report is retained under its
 [legacy filename](docs/releases/legacy-0.1.0-verification.md).
 
+The October 17, 2026 **local deployment and queue-removal contribution** builds
+on source `72841c02b7695195592596ac5574199f19de0b0b`. **Claude Fable 5.1
+(`claude-fable-5-1`) through Claude Code**, selected explicitly by the
+maintainer for that session, rebuilt the local WSL Docker Engine, built and
+redeployed the local image, corrected v3 pending-queue removal and the stale
+in-memory pending list in the inherited `PendingReleaseService`, gave the
+RestSharp 106 integration client the application's Newtonsoft request
+serializer, and recorded the executed checks in the
+[October 17 ledger](docs/local-deployment-verification-2026-10-17.md). The
+pending-release and queue code itself remains upstream Sonarr work credited
+below; the model identity is the session's explicit environment identity.
+
 This Tanukarr register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have
 authored every feature in their repository. AI credit records tool/model provenance
@@ -164,6 +176,7 @@ hosted checks, public assets and image, with the original author credits intact.
 | Tanukarr 1.0.3 hourly quality-size editors, mixed-profile summaries, guarded global size updates, heuristic codec-size decisions, inherited save-error adaptation, upstream audit and English documentation | OpenAI Codex, based on GPT-6 | Same local coding session; original Sonarr quality UI/backend and parsing authors remain credited below; new execution/publication evidence belongs to the 1.0.3 report |
 | Tanukarr 1.0.4 inherited manual-backup timing correction, selected-user Jellyfin watched state, monitoring ownership, native-account progress writers, persistent retries, disposable runtime fixtures and English release documentation | OpenAI Codex, based on GPT-6 | Actual local session identity; original Sonarr/provider implementations and Baretsky's Unmonitarr concept remain separately credited; execution/publication evidence belongs to the new 1.0.4 ledger |
 | Tanukarr 1.0.5 complete scoped list snapshots, provider-specific local filtering, private-account/grant isolation, public AniList relation reuse, optional future-addition metadata preference, native-ID log clarity and English guides | OpenAI Codex, based on GPT-6 | Actual local session identity; original Xabis, Private Contributor, KakarottoCake and other provider authors remain credited; new execution and publication evidence belongs only to the 1.0.5 ledger |
+| October 17, 2026 local deployment verification, v3 pending-queue lookup and stale pending-list fixes, integration-test Newtonsoft request serializer and English ledger | Claude Fable 5.1 (`claude-fable-5-1`) through Claude Code | Explicit model selected in the session; the inherited pending-release/queue code stays credited to upstream Sonarr; executed evidence belongs to the October 17 ledger |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -716,6 +729,19 @@ Local Codex assistant (OpenAI Codex based on GPT-6, explicit current environment
 
 
 Local adaptation: `130831c3b`, `3f428c449`, `86bea3541`, `ca9143216`.
+
+### Pending-queue removal through v3 and v5, immediate queue refresh and integration-client serialization
+
+Local Claude assistant (Claude Fable 5.1 through Claude Code, explicit current
+environment identity). `PendingReleaseService` and the v3/v5 queue controllers
+are upstream Sonarr code credited under the upstream application section; the
+fork adds the corrected v3 per-episode lookup, the in-memory pending-list update
+with `PendingReleasesUpdatedEvent`, the `FindPendingQueueItemObsoleteFixture`
+regression cases and the Newtonsoft request serializer for the RestSharp 106
+integration client.
+
+Local adaptation: the October 17, 2026 commit referenced by the
+[deployment ledger](docs/local-deployment-verification-2026-10-17.md).
 
 ## Reviewed source work not delivered
 

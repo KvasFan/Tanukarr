@@ -274,7 +274,10 @@ namespace NzbDrone.Core.Download.Pending
 
         public Queue.Queue FindPendingQueueItemObsolete(int queueId)
         {
-            return GetPendingQueue().SingleOrDefault(p => p.Id == queueId);
+            // v3 queue items carry one id per release/episode pair, so the lookup has to
+            // use the same per-episode list the v3 endpoints return. Searching the grouped
+            // v5 queue with a v3 id never matches and v3 removals end in a 404.
+            return GetPendingQueueObsolete().SingleOrDefault(p => p.Id == queueId);
         }
 
         public void RemovePendingQueueItems(int queueId)
@@ -286,7 +289,10 @@ namespace NzbDrone.Core.Download.Pending
                 c => c.ParsedEpisodeInfo.SeasonNumbers.SequenceEqual(targetItem.ParsedEpisodeInfo.SeasonNumbers) &&
                      c.ParsedEpisodeInfo.EpisodeNumbers.SequenceEqual(targetItem.ParsedEpisodeInfo.EpisodeNumbers));
 
-            _repository.DeleteMany(releasesToRemove.Select(c => c.Id));
+            var removedIds = releasesToRemove.Select(c => c.Id).ToList();
+
+            _repository.DeleteMany(removedIds);
+            ForgetRemovedReleases(removedIds);
         }
 
         public void RemovePendingQueueItemsObsolete(int queueId)
@@ -298,7 +304,25 @@ namespace NzbDrone.Core.Download.Pending
                 c => c.ParsedEpisodeInfo.SeasonNumbers.SequenceEqual(targetItem.ParsedEpisodeInfo.SeasonNumbers) &&
                      c.ParsedEpisodeInfo.EpisodeNumbers.SequenceEqual(targetItem.ParsedEpisodeInfo.EpisodeNumbers));
 
-            _repository.DeleteMany(releasesToRemove.Select(c => c.Id));
+            var removedIds = releasesToRemove.Select(c => c.Id).ToList();
+
+            _repository.DeleteMany(removedIds);
+            ForgetRemovedReleases(removedIds);
+        }
+
+        private void ForgetRemovedReleases(List<int> removedIds)
+        {
+            if (removedIds.Empty())
+            {
+                return;
+            }
+
+            // The queue is served from the in-memory list, which is otherwise only reloaded by
+            // RSS sync, series/profile edits or a restart. Drop the deleted rows here so a
+            // release removed from the queue disappears immediately, and let the queue
+            // controllers broadcast the change to the UI.
+            _pendingReleases = _pendingReleases.Where(p => !removedIds.Contains(p.Id)).ToList();
+            _eventAggregator.PublishEvent(new PendingReleasesUpdatedEvent());
         }
 
         public RemoteEpisode OldestPendingRelease(int seriesId, int[] episodeIds)

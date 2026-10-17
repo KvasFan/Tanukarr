@@ -31,6 +31,7 @@ namespace NzbDrone.Integration.Test.Client
             var request = new RestRequest(_resource + "/" + command.Trim('/'))
             {
                 RequestFormat = DataFormat.Json,
+                JsonSerializer = new JsonNetSerializer()
             };
 
             request.AddHeader("Authorization", _apiKey);

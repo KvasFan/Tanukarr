@@ -87,6 +87,7 @@ repeat past verification.
 | [Nyaa verification](nyaa-verification-2026-10-13.md) | Native RSS searches, reserved-title encoding and search-only container verification |
 | [Metadata validation](metadata-validation-2026-10-13.md) | Current TV/anime source selection, credentials, series-type behavior and ordering integration limits |
 | [Anime grouping verification](anime-season-groups-verification-2026-10-13.md) | Post-1.0.0 grouping source/image checkpoint and executed checks; separate from the immutable release |
+| [October 17 local deployment and queue-removal verification](local-deployment-verification-2026-10-17.md) | Rebuilt WSL Docker Engine, local image build and redeploy of the existing instance, Windows/Linux suites, 23 passing container fixture reports, v3/v5 pending-queue removal fixes and the integration-client serializer |
 
 Tanukarr 1.0.1 includes the grouping, search, list-import and browser reliability
 work that followed the initial Tanukarr 1.0.0 rename. It retains selected-library
