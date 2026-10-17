@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Alert from 'Components/Alert';
 import SelectInput from 'Components/Form/SelectInput';
 import Button from 'Components/Link/Button';
+import LoadingIndicator from 'Components/Loading/LoadingIndicator';
 import Modal from 'Components/Modal/Modal';
 import ModalBody from 'Components/Modal/ModalBody';
 import ModalContent from 'Components/Modal/ModalContent';
@@ -31,6 +32,19 @@ interface SearchStatus {
   title: string;
   state: 'pending' | 'searching' | 'complete' | 'failed';
   count: number;
+}
+
+function getEntryLabel({ title, state, count }: SearchStatus) {
+  switch (state) {
+    case 'complete':
+      return `${title} (${count})`;
+    case 'searching':
+      return `${title} (${translate('CollectionSearchEntrySearching')})`;
+    case 'failed':
+      return `${title} (${translate('CollectionSearchEntryFailed')})`;
+    default:
+      return `${title} (${translate('CollectionSearchEntryPending')})`;
+  }
 }
 
 function CollectionSearchContent({
@@ -135,6 +149,7 @@ function CollectionSearchContent({
     (status) => status.state === 'complete' || status.state === 'failed'
   ).length;
   const isSearching = completed < jobs.length;
+  const inProgress = statuses.some((status) => status.state === 'searching');
   const failed = statuses.filter((status) => status.state === 'failed');
   const selectedStatus = statuses.find(
     (status) => status.seriesId === selectedId
@@ -158,11 +173,15 @@ function CollectionSearchContent({
       </ModalHeader>
       <ModalBody ref={bodyRef}>
         <div className={styles.searchProgress} role="status">
+          {isSearching ? (
+            <LoadingIndicator className={styles.searchSpinner} size={20} />
+          ) : null}
           {translate(
             isSearching
               ? 'CollectionSearchProgress'
               : 'CollectionSearchFinished',
-            { count: completed, total: jobs.length }
+            // Count the entry being searched so the first one reads "1 of N".
+            { count: completed + (inProgress ? 1 : 0), total: jobs.length }
           )}
         </div>
         <SelectInput
@@ -172,9 +191,7 @@ function CollectionSearchContent({
             { key: '', value: translate('SelectSeries'), disabled: true },
             ...statuses.map((status) => ({
               key: status.seriesId,
-              value: `${status.title}${
-                status.state === 'complete' ? ` (${status.count})` : ''
-              }`,
+              value: getEntryLabel(status),
               disabled: status.state !== 'complete',
             })),
           ]}

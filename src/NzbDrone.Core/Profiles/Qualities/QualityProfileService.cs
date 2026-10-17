@@ -390,10 +390,9 @@ namespace NzbDrone.Core.Profiles.Qualities
 
             _qualityProfileRepository.UpdateMany(all);
 
-            foreach (var profile in all)
-            {
-                _eventAggregator.PublishEvent(new QualityProfileUpdatedEvent(profile.Id));
-            }
+            // One event for the batch: pending releases are re-mapped per event, which
+            // costs seconds on a large library and would otherwise repeat per profile.
+            _eventAggregator.PublishEvent(new QualityProfilesUpdatedEvent(all.Select(profile => profile.Id).ToList()));
         }
 
         private static void ValidateSize(double? size, string field, string prefix, List<ValidationFailure> errors)

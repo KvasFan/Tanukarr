@@ -46,6 +46,7 @@ namespace NzbDrone.Core.Download.Pending
                                          IHandle<EpisodeGrabbedEvent>,
                                          IHandle<RssSyncCompleteEvent>,
                                          IHandle<QualityProfileUpdatedEvent>,
+                                         IHandle<QualityProfilesUpdatedEvent>,
                                          IHandle<ConfigSavedEvent>,
                                          IHandle<ApplicationStartedEvent>
     {
@@ -699,6 +700,11 @@ namespace NzbDrone.Core.Download.Pending
         }
 
         public void Handle(QualityProfileUpdatedEvent message)
+        {
+            UpdatePendingReleases();
+        }
+
+        public void Handle(QualityProfilesUpdatedEvent message)
         {
             UpdatePendingReleases();
         }

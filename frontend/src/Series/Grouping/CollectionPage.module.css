@@ -250,8 +250,17 @@
 }
 
 .searchProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
   margin-bottom: 14px;
   color: var(--inkSoft);
+}
+
+.searchSpinner {
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
 @media only screen and (max-width: 768px) {

@@ -69,12 +69,14 @@ function inputNode(renderer, name) {
   return renderer.root.findAllByType('input').find((input) => input.props.name === name);
 }
 
-function fixture({ mixed = false, failedSave = false, codecError = false, codecs = { 'MPEG-2': 0.5, 'H.264': 1, HEVC: 1.67, AV1: 2.22, Other: 1 }, extraMocks = {} } = {}) {
+function fixture({ mixed = false, failedSave = false, deferredSave = false, codecError = false, codecs = { 'MPEG-2': 0.5, 'H.264': 1, HEVC: 1.67, AV1: 2.22, Other: 1 }, extraMocks = {} } = {}) {
   const requests = [];
   const invalidations = [];
+  let saved = null;
+  let finishSave = null;
   const queryClient = { invalidateQueries: (options) => invalidations.push(options), setQueryData() {
     return undefined;
-  } };
+  }, getQueryData: () => saved ?? originals };
   const originals = [{ id: 2, quality: { id: 2, name: 'HDTV-720p' }, title: 'HDTV-720p', weight: 20,
     minSize: 1, preferredSize: mixed ? null : 95, maxSize: 199.9,
     minSizeIsMixed: false, preferredSizeIsMixed: mixed, maxSizeIsMixed: false },
@@ -93,23 +95,31 @@ function fixture({ mixed = false, failedSave = false, codecError = false, codecs
     'Components/Form/FormInputHelpText': ({ text: help }) => React.createElement('p', null, help),
     'Components/Tooltip/Popover': ({ anchor, body }) => React.createElement('div', null, anchor, body),
     'react-slider': (props) => React.createElement('div', { 'data-slider': true, 'data-values': props.value, 'data-max': props.max, onChange: props.onChange }),
-    'Helpers/Hooks/useApiQuery': ({ path: queryPath }) => ({ data: queryPath.endsWith('/codecs') ? codecs : originals,
+    'Helpers/Hooks/useApiQuery': ({ path: queryPath }) => ({ data: queryPath.endsWith('/codecs') ? codecs : (saved ?? originals),
       isFetched: true, isFetching: false, error: queryPath.endsWith('/codecs') && codecError ? new Error('Private codec response') : null }),
     'Helpers/Hooks/useApiMutation': () => ({ mutate() {
       return undefined;
     }, isPending: false, error: null }),
     'Settings/useSettings': { useSaveSettings: function useSaveSettings(requestPath, onSuccess) {
       const [saveError, setSaveError] = React.useState(null);
+      const [isSaving, setIsSaving] = React.useState(false);
       const onSave = React.useCallback((body) => {
         requests.push({ path: requestPath, body: structuredClone(body) });
 
         if (failedSave) {
           setSaveError(new Error('Private server response with credentials'));
+        } else if (deferredSave) {
+          setIsSaving(true);
+          finishSave = (response) => {
+            saved = response ?? saved;
+            setIsSaving(false);
+            onSuccess();
+          };
         } else {
           onSuccess();
         }
       }, [requestPath, onSuccess]);
-      return { save: onSave, isSaving: false, saveError };
+      return { save: onSave, isSaving, saveError };
     } },
     ...extraMocks
   };
@@ -132,6 +142,9 @@ function fixture({ mixed = false, failedSave = false, codecError = false, codecs
     },
     save() {
       TestRenderer.act(() => save());
+    },
+    completeSave(response) {
+      TestRenderer.act(() => finishSave(response));
     },
     close() {
       TestRenderer.act(() => renderer.unmount());
@@ -445,6 +458,63 @@ test('reverting a common limit removes the pending edit instead of saving an emp
   item.edit('2.minSize', '60');
   item.save();
   assert.deepEqual(item.requests[0].body, []);
+  item.close();
+});
+
+test('a limit edited while an earlier Save is still in flight survives that save and is sent by the next one', () => {
+  const item = fixture({ deferredSave: true });
+  item.edit('2.preferredSize', '4000');
+  item.save();
+  assert.deepEqual(item.requests[0].body.map((row) => [row.id, row.preferredSize]), [[2, 4000 / 60]]);
+  item.edit('3.minSize', '180');
+  item.completeSave(item.originals.map((row) => (row.id === 2 ? { ...row, preferredSize: 4000 / 60 } : row)));
+  assert.equal(item.input('3.minSize').props.value, '180', 'the edit made during the save is still displayed');
+  item.save();
+  assert.deepEqual(item.requests[1].body.map((row) => [row.id, row.minSize, row.preferredSize]), [[3, 3, undefined]], 'only the newer edit is sent; the completed one is not resent');
+  item.completeSave(item.originals.map((row) => (row.id === 2 ? { ...row, preferredSize: 4000 / 60 } : row.id === 3 ? { ...row, minSize: 3 } : row)));
+  item.edit('3.minSize', '240');
+  item.edit('3.minSize', '180');
+  item.save();
+  assert.deepEqual(item.requests[2].body, [], 'an edit reverted to the saved value leaves nothing pending');
+  item.close();
+});
+
+test('reverting a submitted limit to its pre-save value while the save is in flight is kept and sent by the next save', () => {
+  const item = fixture({ deferredSave: true });
+  item.edit('2.minSize', '120');
+  item.save();
+  assert.deepEqual(item.requests[0].body.map((row) => [row.id, row.minSize]), [[2, 2]]);
+  item.edit('2.minSize', '60');
+  item.completeSave(item.originals.map((row) => (row.id === 2 ? { ...row, minSize: 2 } : row)));
+  assert.equal(item.input('2.minSize').props.value, '60', 'the revert made during the save is still displayed');
+  item.save();
+  assert.deepEqual(item.requests[1].body.map((row) => [row.id, row.minSize]), [[2, 1]], 'the revert is sent because the server now holds the submitted value');
+  item.close();
+});
+
+test('a second Save while one is in flight is ignored and the newer edit waits for the next save', () => {
+  const item = fixture({ deferredSave: true });
+  item.edit('2.preferredSize', '4000');
+  item.save();
+  item.edit('3.minSize', '180');
+  item.save();
+  assert.equal(item.requests.length, 1, 'no overlapping request is sent');
+  item.completeSave(item.originals.map((row) => (row.id === 2 ? { ...row, preferredSize: 4000 / 60 } : row)));
+  assert.equal(item.input('3.minSize').props.value, '180');
+  item.save();
+  assert.deepEqual(item.requests[1].body.map((row) => [row.id, row.minSize]), [[3, 3]]);
+  item.close();
+});
+
+test('explicitly clearing a mixed limit while another save is in flight is still sent as null afterwards', () => {
+  const item = fixture({ mixed: true, deferredSave: true });
+  item.edit('3.minSize', '180');
+  item.save();
+  TestRenderer.act(() => item.renderer.root.findAllByType('button').find((button) => button.props.children === 'Unlimited').props.onClick());
+  item.completeSave(item.originals.map((row) => (row.id === 3 ? { ...row, minSize: 3 } : row)));
+  assert.equal(item.input('2.preferredSize').props.placeholder, 'Unlimited', 'the cleared mixed limit stays cleared');
+  item.save();
+  assert.deepEqual(item.requests[1].body.map((row) => [row.id, Object.hasOwn(row, 'preferredSize') ? row.preferredSize : 'omitted']), [[2, null]]);
   item.close();
 });
 

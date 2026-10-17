@@ -10,6 +10,7 @@ interface CollectionPosterProps {
   className?: string;
   style?: object;
   lazy?: boolean;
+  size?: 250 | 500;
   preferredImages?: Image[];
 }
 
@@ -19,6 +20,7 @@ function CollectionPoster({
   className,
   style,
   lazy = true,
+  size = lazy ? 250 : 500,
   preferredImages,
 }: CollectionPosterProps) {
   const isSmallScreen = useAppDimension('isSmallScreen');
@@ -51,7 +53,7 @@ function CollectionPoster({
       style={style}
       images={candidate}
       title={title}
-      size={lazy ? 250 : 500}
+      size={size}
       lazy={lazy}
       overflow={!isSmallScreen}
       onError={onError}

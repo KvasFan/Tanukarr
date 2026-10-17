@@ -39,6 +39,7 @@ const common = {
   'Components/Link/Button': button,
   'Components/Link/Link': link,
   'Components/Link/SpinnerErrorButton': button,
+  'Components/Loading/LoadingIndicator': (props) => React.createElement('progress', { 'data-size': props.size }),
   'Components/Modal/Modal': modal,
   'Components/Modal/ModalBody': body,
   'Components/Modal/ModalContent': wrap,
@@ -448,6 +449,7 @@ test('collection artwork falls back to a real member cover and advances after fa
   const members = [member(1, 1), member(2, 2, { images: [{ coverType: 'poster', url: '/MediaCover/2/poster.jpg' }] }), member(3, 3, { images: [{ coverType: 'poster', url: '/MediaCover/3/poster.jpg' }] })];
   const renderer = mount(Poster, { members, title: 'Generated collection' });
   assert.equal(covers.at(-1).overflow, true, 'lazy collection covers observe their nested page or library scroller');
+  assert.equal(covers.at(-1).size, 250, 'lazy card covers keep the small artwork size');
   assert.equal(renderer.root.findByType('img').props.src, '/MediaCover/2/poster.jpg');
   TestRenderer.act(() => renderer.root.findByType('img').props.onError());
   assert.equal(renderer.root.findByType('img').props.src, '/MediaCover/3/poster.jpg');
@@ -1029,5 +1031,72 @@ test('Manage Episodes retains its fetched episode mapping while edits and reproc
   active = [{ id: 22, series: { id: 42 }, seasonNumber: 2, episodes: [{ id: 62 }] }];
   TestRenderer.act(() => renderer.update(React.createElement(Frame, { season: 2 })));
   assert.deepEqual(observations.at(-1).original[0].episodes, [{ id: 62 }], 'opening a different native season establishes its own baseline');
+  TestRenderer.act(() => renderer.unmount());
+});
+
+test('collection hero keeps the large eager cover while an explicit size overrides the lazy default', () => {
+  const covers = [];
+  const Poster = load('Series/Grouping/CollectionPoster.tsx', { ...common, 'Series/SeriesPoster': (props) => {
+    covers.push(props);
+    return React.createElement('img', { src: props.images[0].url });
+  } }).default;
+  const members = [member(1, 1, { images: [{ coverType: 'poster', url: '/MediaCover/1/poster.jpg' }] })];
+  let renderer = mount(Poster, { members, title: 'Generated collection', lazy: false });
+  assert.equal(covers.at(-1).size, 500);
+  assert.equal(covers.at(-1).lazy, false);
+  TestRenderer.act(() => renderer.unmount());
+  renderer = mount(Poster, { members, title: 'Generated collection', lazy: false, size: 250 });
+  assert.equal(covers.at(-1).size, 250);
+  assert.equal(covers.at(-1).lazy, false);
+  TestRenderer.act(() => renderer.unmount());
+});
+
+test('library index collection cards load their covers eagerly because the virtualized grid mounts them after lazy-load scroll checks', () => {
+  const covers = [];
+  const Summary = load('Series/Grouping/AnimeGroupSummary.tsx', {
+    ...common,
+    'App/Select/SelectContext': { useSelect: () => ({ useSelectedIds: () => [], toggleSelected: () => undefined }) },
+    './CollectionPoster': (props) => {
+      covers.push(props);
+      return React.createElement('img', { alt: props.title });
+    },
+    './AnimeGroupSummary.module.css': {}
+  }).default;
+  const group = { id: 'anilist:900', title: 'Generated collection', members: [member(1, 1, { images: [{ coverType: 'poster', url: '/MediaCover/1/poster.jpg' }] }), member(2, 2)] };
+
+  for (const view of ['posters', 'overview']) {
+    const renderer = mount(Summary, { group, view, isSelectMode: false, posterWidth: 170, posterHeight: 250 });
+    assert.equal(covers.at(-1).lazy, false, `${view} cards load their cover as soon as they mount`);
+    assert.equal(covers.at(-1).size, 250, `${view} cards request the library artwork size`);
+    assert.deepEqual(covers.at(-1).style, { width: 170, height: 250 });
+    assert.equal(covers.at(-1).members, group.members);
+    TestRenderer.act(() => renderer.unmount());
+  }
+
+  const table = mount(Summary, { group, view: 'table', isSelectMode: false });
+  assert.equal(table.root.findAllByType('img').length, 0, 'table rows keep their own banner column');
+  TestRenderer.act(() => table.unmount());
+});
+
+test('Search Collection shows a spinner, counts the entry in progress and labels waiting entries until results arrive', async() => {
+  const pending = [];
+  const { renderer } = searchFixture(() => new Promise((resolve) => pending.push(resolve)));
+  const statusText = () => renderer.root.findByProps({ role: 'status' }).children.filter((child) => typeof child === 'string').join('');
+  const labels = () => renderer.root.findAllByType('option').map((option) => option.children.join(''));
+  assert.equal(renderer.root.findAllByType('progress').length, 1, 'a spinner is visible while the first entry is searched');
+  assert.equal(statusText(), 'CollectionSearchProgress{"count":1,"total":2}');
+  assert.deepEqual(labels(), ['SelectSeries', 'Native entry 1 (CollectionSearchEntrySearching)', 'Native entry 2 (CollectionSearchEntryPending)']);
+  await TestRenderer.act(async() => {
+    pending[0]([{ id: 1 }, { id: 2 }, { id: 3 }]);
+  });
+  assert.equal(renderer.root.findAllByType('progress').length, 1);
+  assert.equal(statusText(), 'CollectionSearchProgress{"count":2,"total":2}');
+  assert.deepEqual(labels(), ['SelectSeries', 'Native entry 1 (3)', 'Native entry 2 (CollectionSearchEntrySearching)']);
+  await TestRenderer.act(async() => {
+    pending[1]([]);
+  });
+  assert.equal(renderer.root.findAllByType('progress').length, 0, 'the spinner disappears once every entry is searched');
+  assert.equal(statusText(), 'CollectionSearchFinished{"count":2,"total":2}');
+  assert.deepEqual(labels(), ['SelectSeries', 'Native entry 1 (3)', 'Native entry 2 (0)']);
   TestRenderer.act(() => renderer.unmount());
 });

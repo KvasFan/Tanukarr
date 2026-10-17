@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import useApiMutation from 'Helpers/Hooks/useApiMutation';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import { usePendingItemsStore } from 'Helpers/Hooks/usePendingItemsStore';
@@ -75,15 +75,67 @@ export const useManageQualityDefinitions = () => {
   const {
     store,
     setPendingItem,
-    clearPendingItems,
+    unsetPendingItem,
     getItemsWithPendingChanges,
     hasPendingChanges,
   } = usePendingItemsStore<QualityDefinitionModel>();
+  const submittedChanges = useRef<Map<
+    number,
+    Partial<QualityDefinitionModel>
+  > | null>(null);
+
+  const applyChange = useCallback(
+    (
+      id: number,
+      key: keyof QualityDefinitionModel,
+      value: QualityDefinitionModel[keyof QualityDefinitionModel],
+      baseline?: QualityDefinitionModel
+    ) => {
+      if (SIZE_FIELDS.some((field) => field === key)) {
+        const mixedField = `${key}IsMixed` as
+          | 'minSizeIsMixed'
+          | 'preferredSizeIsMixed'
+          | 'maxSizeIsMixed';
+        // A value entered over a mixed limit is always an explicit change.
+        const wasMixed = baseline?.[mixedField] === true;
+        setPendingItem(id, key, value, wasMixed ? undefined : baseline);
+        if (wasMixed) setPendingItem(id, mixedField, false, baseline);
+      } else {
+        setPendingItem(id, key, value, baseline);
+      }
+    },
+    [setPendingItem]
+  );
 
   const handleSaved = useCallback(() => {
-    clearPendingItems();
+    // Forget only the values that were sent; a field edited again while the
+    // request was in flight keeps its newer pending value instead of being lost.
+    const saved =
+      queryClient.getQueryData<QualityDefinitionModel[]>([PATH]) ?? [];
+    const submitted = submittedChanges.current;
+    submittedChanges.current = null;
+
+    store.getState().pendingItems.forEach((changes, id) => {
+      const sent = submitted?.get(id);
+      const savedItem = saved.find((definition) => definition.id === id);
+      unsetPendingItem(id);
+
+      (Object.keys(changes) as (keyof QualityDefinitionModel)[]).forEach(
+        (key) => {
+          if (!sent || !Object.is(changes[key], sent[key])) {
+            applyChange(
+              id,
+              key,
+              changes[key] as QualityDefinitionModel[typeof key],
+              savedItem
+            );
+          }
+        }
+      );
+    });
+
     queryClient.invalidateQueries({ queryKey: ['/qualityprofile'] });
-  }, [clearPendingItems, queryClient]);
+  }, [applyChange, queryClient, store, unsetPendingItem]);
 
   const { save, isSaving, saveError } = useSaveSettings<
     QualityDefinitionUpdate[]
@@ -97,7 +149,15 @@ export const useManageQualityDefinitions = () => {
   }, [data, getItemsWithPendingChanges, hasPendingChanges]);
 
   const saveQualityDefinitions = useCallback(() => {
+    // The toolbar button is disabled while saving but the Ctrl+S shortcut is
+    // not; a second request in flight would make the sent snapshot ambiguous.
+    if (isSaving) {
+      return;
+    }
+
     const pending = store.getState().pendingItems;
+    // Entries are replaced, never mutated, so a shallow copy records what was sent.
+    submittedChanges.current = new Map(pending);
     const updatedSettings = data.flatMap((original) => {
       const changes = pending.get(original.id);
       if (!changes) return [];
@@ -125,7 +185,7 @@ export const useManageQualityDefinitions = () => {
       return [request];
     });
     save(updatedSettings);
-  }, [data, store, save]);
+  }, [data, isSaving, store, save]);
 
   const updateDefinition = useCallback(
     <K extends keyof QualityDefinitionModel>(
@@ -134,20 +194,18 @@ export const useManageQualityDefinitions = () => {
       value: QualityDefinitionModel[K]
     ) => {
       const originalItem = data.find((def) => def.id === id);
+      // While a save is in flight the catalogue still shows the pre-save values,
+      // so compare against what was sent: reverting a submitted value is a change.
+      const sent = isSaving ? submittedChanges.current?.get(id) : undefined;
 
-      if (SIZE_FIELDS.some((field) => field === key)) {
-        const mixedField = `${key}IsMixed` as
-          | 'minSizeIsMixed'
-          | 'preferredSizeIsMixed'
-          | 'maxSizeIsMixed';
-        const wasMixed = originalItem?.[mixedField] === true;
-        setPendingItem(id, key, value, wasMixed ? undefined : originalItem);
-        if (wasMixed) setPendingItem(id, mixedField, false, originalItem);
-      } else {
-        setPendingItem(id, key, value, originalItem);
-      }
+      applyChange(
+        id,
+        key,
+        value,
+        originalItem && sent ? { ...originalItem, ...sent } : originalItem
+      );
     },
-    [data, setPendingItem]
+    [applyChange, data, isSaving]
   );
 
   return {

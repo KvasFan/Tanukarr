@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using FluentValidation;
 using Moq;
 using NUnit.Framework;
+using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Profiles.Qualities;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Test.Framework;
@@ -177,6 +179,23 @@ namespace NzbDrone.Core.Test.Profiles
             _first.MaxSize.Should().Be(0);
             _second.MaxSize.Should().BeNull();
             NoWrite();
+        }
+
+        [Test]
+        public void should_publish_a_single_batch_event_instead_of_one_update_event_per_profile()
+        {
+            Subject.UpdateAllSizeLimits(new QualityProfileSizeLimit
+            {
+                Quality = Quality.WEBDL1080p,
+                MinSize = 4,
+                UpdateMaxSize = false,
+                UpdatePreferredSize = false
+            });
+
+            Mocker.GetMock<IEventAggregator>()
+                .Verify(aggregator => aggregator.PublishEvent(It.Is<QualityProfilesUpdatedEvent>(e => e.Ids.SequenceEqual(new[] { 1, 2 }))), Times.Once());
+            Mocker.GetMock<IEventAggregator>()
+                .Verify(aggregator => aggregator.PublishEvent(It.IsAny<QualityProfileUpdatedEvent>()), Times.Never());
         }
 
         [Test]

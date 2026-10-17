@@ -95,9 +95,14 @@ function AnimeGroupSummary({
           to={link}
           aria-label={group.title}
         >
+          {/* The library views are virtualized: cards mount while scrolling, after
+              react-lazyload's scroll check, so a lazy cover would stay on its
+              placeholder. Load eagerly like SeriesIndexPoster does. */}
           <CollectionPoster
             members={group.members}
             title={group.title}
+            lazy={false}
+            size={250}
             style={{ width: posterWidth, height: posterHeight }}
           />
         </Link>
