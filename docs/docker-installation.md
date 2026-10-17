@@ -154,9 +154,16 @@ internal Core version differs from Tanukarr's product version.
 
 The release workflow assigns `latest` to the tested release, `edge` to main,
 and `sha-<full-commit>` to a build. A digest pins exact image bytes. The
-verified 0.1.2 Linux amd64 reference is recorded in the
-[0.1.2 publication report](releases/0.1.2-publication.md) once the hosted
-workflow has published it. The 0.1.1 reference
+verified 0.1.2 Linux amd64 reference is:
+
+```text
+ghcr.io/kvasfan/tanukarr@sha256:c0a76e30f8d983517d3f11266fe07a5de1b59dd2f70f800ff52974f02a4d8abd
+```
+
+The same image is mirrored as
+`registry.gitlab.com/tirael8308/tanukarr@sha256:c0a76e30f8d983517d3f11266fe07a5de1b59dd2f70f800ff52974f02a4d8abd`;
+the [0.1.2 publication report](releases/0.1.2-publication.md) binds both to the
+tested source and assets. The 0.1.1 reference
 `sha256:2d47ba87f5830b7c268cd0b6d9d2f5d58953170ade8312e6d3a85f2f3f305c9a` and the
 0.1.0 reference
 `sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd` were
