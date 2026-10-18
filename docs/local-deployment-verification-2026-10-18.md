@@ -193,12 +193,47 @@ arm64: the image was cross-built from the same working tree
 `aarch64` ELF under QEMU emulation, and it passed `arm64-smoke.json` (12
 checks) and `arm64-functional-security.json` (19 checks).
 
+## Hosted runs
+
+The two commits were pushed together, and because the documentation commit
+carries `[skip ci]` GitHub created no run for the push. Both workflows were
+therefore dispatched on `main` at the pushed source:
+
+- [CI 39081401461](https://github.com/KvasFan/Tanukarr/actions/runs/39081401461)
+  succeeded (frontend lint and build 54 s; backend build and suites 5 m 56 s).
+- [Docker and Release 39081402989](https://github.com/KvasFan/Tanukarr/actions/runs/39081402989):
+  attempt 1 built the image, passed its in-image checks and twenty fixture
+  gates (smoke, security, first-run, groups, Nyaa, packs, AniList, collisions,
+  snapshots, MyAnimeList, list operations, Simkl, quality codecs, custom
+  qualities, artwork, qBittorrent, both Jellyfin fixtures, the packaged
+  collections/backup/first-run/metadata-source browser gates) and then failed
+  in the native film catalogue fixture at its first configuration write with
+  the application error `PUT /api/v3/config/metadatasource/1: attempt to write
+  a readonly database`. The rerun of the failed job (attempt 2) passed nine
+  gates and failed in the Simkl fixture, after its container restart and
+  nineteen checks, with `POST /api/v5/importlist/action/getOAuthToken: attempt
+  to write a readonly database`. Neither fixture opens SQLite itself, so the
+  error is the application's; the same fixtures passed locally on the same
+  source (14 and 23 checks), the 0.1.1 `edge` run had failed once the same way
+  in the Simkl fixture and passed on retry, and the published 0.1.2 run had
+  passed all gates. The cause was not established here: the artifact held no
+  application log for either fixture (the film catalogue fixture wrote none
+  and the upload step listed only four fixture logs), which is the missing
+  evidence. A follow-up commit makes that fixture save its redacted container
+  log like the others and uploads every `tanukarr-*.log`; the fixture was
+  re-run locally against the fixed image (passed, 9,085 log lines saved). The
+  third attempt passed every gate in 53 m 4 s and published the verified
+  image to the registry as `edge` and `sha-faf4003fb…`
+  (`sha256:4bdc6702e3a9c8d23cf5b704325db4aafcf9eb75db10b3409c59abc39226218a`);
+  the run was not a tag, so no release was created.
+
 ## Scope
 
 Compiles, tests and the listed fixtures were run; the disposable copy of the
 owner's library was exercised through a real Chromium browser and its API and
-then discarded; the deployed instance was not modified, no release was
-published and no image was pushed to a registry. Screenshots 1–4 show screens
+then discarded; the deployed instance was not modified and no release was
+published (the hosted `main` workflow pushed only its usual `edge` image after
+its gates passed). Screenshots 1–4 show screens
 that worked functionally on the copy; what changed for them is the measured
 save latency and the handling of edits made during a save. Not re-run here:
 the Windows Selenium automation suite and the WSL compression-worker
