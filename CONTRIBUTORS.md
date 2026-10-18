@@ -71,6 +71,18 @@ was suspended, the 0.1.2 namespace move to `KvasFan/Tanukarr`
 itself remains upstream Sonarr work credited below; the model identity is the
 session's explicit environment identity.
 
+The October 18, 2026 **library-screen defect contribution** (same Claude Fable
+5.1 session, source `7dc2e6057` plus the changes committed with its ledger)
+investigated six screenshots from the maintainer's 0.1.2 instance on a
+disposable copy of that library: collection cards in the virtualized library
+grid now load their covers eagerly like native series cards, the collection
+search modal shows a spinner, counts the entry being searched and labels waiting
+entries, a quality-definition size save publishes one profile-batch event
+instead of one event per profile (which re-mapped every pending release six
+times), and edits made on the Quality page while a save is still in flight are
+no longer discarded. The executed checks are in the
+[October 18 ledger](docs/local-deployment-verification-2026-10-18.md).
+
 This Tanukarr register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have
 authored every feature in their repository. AI credit records tool/model provenance
@@ -183,6 +195,7 @@ hosted checks, public assets and image, with the original author credits intact.
 | Tanukarr 1.0.4 inherited manual-backup timing correction, selected-user Jellyfin watched state, monitoring ownership, native-account progress writers, persistent retries, disposable runtime fixtures and English release documentation | OpenAI Codex, based on GPT-6 | Actual local session identity; original Sonarr/provider implementations and Baretsky's Unmonitarr concept remain separately credited; execution/publication evidence belongs to the new 1.0.4 ledger |
 | Tanukarr 1.0.5 complete scoped list snapshots, provider-specific local filtering, private-account/grant isolation, public AniList relation reuse, optional future-addition metadata preference, native-ID log clarity and English guides | OpenAI Codex, based on GPT-6 | Actual local session identity; original Xabis, Private Contributor, KakarottoCake and other provider authors remain credited; new execution and publication evidence belongs only to the 1.0.5 ledger |
 | October 17, 2026 local deployment verification, v3 pending-queue lookup and stale pending-list fixes, integration-test Newtonsoft request serializer and English ledger | Claude Fable 5.1 (`claude-fable-5-1`) through Claude Code | Explicit model selected in the session; the inherited pending-release/queue code stays credited to upstream Sonarr; executed evidence belongs to the October 17 ledger |
+| October 18, 2026 eager library collection covers, collection-search progress feedback, single profile-batch event for quality-definition saves, in-flight Quality page edits kept, regression tests and English ledger | Claude Fable 5.1 (`claude-fable-5-1`) through Claude Code | Same explicit session identity; the inherited profile, pending-release and lazy-image code stays credited to upstream Sonarr and its original authors; executed evidence belongs to the October 18 ledger |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -748,6 +761,20 @@ integration client.
 
 Local adaptation: the October 17, 2026 commit referenced by the
 [deployment ledger](docs/local-deployment-verification-2026-10-17.md).
+
+### Eager library collection covers, collection-search progress and batched quality-definition profile updates
+
+Local Claude assistant (Claude Fable 5.1 through Claude Code, explicit current
+environment identity). The virtualized library views, `react-lazyload` usage,
+`QualityProfileService` and the pending-release re-mapping on profile updates
+are upstream Sonarr code credited under the upstream application section; the
+fork's collection cards now pass the same eager cover settings as native series
+cards, the collection search modal gained its spinner and per-entry labels,
+`UpdateAllSizeLimits` publishes one `QualityProfilesUpdatedEvent` for the batch,
+and the Quality page keeps edits made while a save is in flight.
+
+Local adaptation: the October 18, 2026 commit referenced by the
+[October 18 ledger](docs/local-deployment-verification-2026-10-18.md).
 
 ## Reviewed source work not delivered
 

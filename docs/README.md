@@ -94,6 +94,7 @@ repeat past verification.
 | [Metadata validation](metadata-validation-2026-10-13.md) | Current TV/anime source selection, credentials, series-type behavior and ordering integration limits |
 | [Anime grouping verification](anime-season-groups-verification-2026-10-13.md) | Post-1.0.0 grouping source/image checkpoint and executed checks; separate from the immutable release |
 | [October 17 local deployment and queue-removal verification](local-deployment-verification-2026-10-17.md) | Rebuilt WSL Docker Engine, local image build and redeploy of the existing instance, Windows/Linux suites, 23 passing container fixture reports, v3/v5 pending-queue removal fixes and the integration-client serializer |
+| [October 18 library-screen defect verification](local-deployment-verification-2026-10-18.md) | Screenshot-driven investigation on a disposable copy of the owner's library: eager collection covers in the library grid, collection-search progress feedback, one profile-batch event per quality-definition save, in-flight Quality page edits kept, and the re-run suites and fixtures |
 
 Tanukarr 1.0.1 includes the grouping, search, list-import and browser reliability
 work that followed the initial Tanukarr 1.0.0 rename. It retains selected-library
