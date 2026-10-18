@@ -254,16 +254,20 @@ CI runs the solution build, offline Core/API/HTTP tests, cloud/log-sanitizer tes
 generated-video worker tests and frontend checks. The Docker workflow builds amd64
 and runs the required disposable runtime fixtures, including quality/codec,
 backup/task integrity and actual local Jellyfin watched checks. Thirteen reports
-identify one tested image before publication. Published architectures and actually executed
+identify one tested image before publication. Release tags run a lighter gate
+profile on code that already passed the full profile on `main`; see the
+[container test guide](docker/tests/README.md#docker-workflow-fixture-prerequisites).
+Published architectures and actually executed
 runtime checks are recorded in the release verification report; configured
 support for another architecture is not an executed test or a published artifact.
 A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
-The **0.1.2** release retains the original source authors.
-Use its [release notes](docs/releases/0.1.2.md) and
-[verification ledger](docs/releases/0.1.2-verification.md) for this build; the
+The **0.1.3** release retains the original source authors.
+Use its [release notes](docs/releases/0.1.3.md) and
+[verification ledger](docs/releases/0.1.3-verification.md) for this build; the
+0.1.2 [release notes](docs/releases/0.1.2.md), and the
 0.1.1 and 0.1.0 [release notes](docs/releases/0.1.1.md) and
 [verification ledgers](docs/releases/0.1.1-verification.md) keep those
 releases' evidence.

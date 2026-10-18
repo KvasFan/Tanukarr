@@ -4,7 +4,7 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 0.1.2** manages TV series, anime
+**Tanukarr 0.1.3** manages TV series, anime
 and movie collections in one Sonarr-derived application. It includes
 graphical account creation, collection and quality
 fixes, seven configurable metadata catalogues, native films and IMDb lookup.
@@ -12,13 +12,17 @@ Existing list filtering,
 download-client, import, backup and Jellyfin refresh/watched features are retained.
 0.1.1 fixed pending-release removal through the v3 and v5 queue APIs; 0.1.2 is
 the first release published from the `KvasFan/Tanukarr` repository and
-`ghcr.io/kvasfan/tanukarr` after the previous namespace became unavailable.
+`ghcr.io/kvasfan/tanukarr` after the previous namespace became unavailable;
+0.1.3 loads collection covers in the library grid, shows collection-search
+progress and makes Quality page saves fast on large libraries.
 Links into the previous namespace, including those in historical reports,
 no longer resolve. The repository is also published at
 [gitlab.com/tirael8308/Tanukarr](https://gitlab.com/tirael8308/Tanukarr),
 which receives the same commits, tags and release assets.
 
-See the [0.1.2 release notes](docs/releases/0.1.2.md),
+See the [0.1.3 release notes](docs/releases/0.1.3.md) and
+[verification ledger](docs/releases/0.1.3-verification.md), the
+[0.1.2 release notes](docs/releases/0.1.2.md),
 [publication report](docs/releases/0.1.2-publication.md) and
 [verification ledger](docs/releases/0.1.2-verification.md), then the
 [0.1.1 release notes](docs/releases/0.1.1.md),
@@ -275,12 +279,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasfan/tanukarr:0.1.2
+docker pull ghcr.io/kvasfan/tanukarr:0.1.3
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasfan/tanukarr:0.1.2
+  --restart unless-stopped ghcr.io/kvasfan/tanukarr:0.1.3
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -340,6 +344,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `0.1.3` | Library-screen fixes: collection covers load in the virtualized library grid, collection search shows progress, Quality page saves publish one profile-batch event (about 3 s instead of 17 s on a large library) and keep edits made during a save. The release tag runs the light gate profile on code that passed the full profile on `main`; see the 0.1.3 release notes. |
 | `0.1.2` | First release from `KvasFan/Tanukarr`: the 0.1.1 application with repository, package and logo links pointing at the new namespace, and a release workflow that tolerates a missing earlier image on main builds only. Executed checks are recorded in the 0.1.2 verification ledger. |
 | `0.1.1` | Maintenance release of 0.1.0: v3 pending-queue removal, immediate pending-list refresh after removals, integration-client serialization and cross-published Dockerfile stages. Published under the previous namespace, which is no longer reachable; its executed checks are recorded in the 0.1.1 verification ledger. |
 | `0.1.0` | Graphical first-run setup, collection/quality fixes, ordered metadata sources and TVmaze. Publication and exact checks are recorded in the verification ledger. |

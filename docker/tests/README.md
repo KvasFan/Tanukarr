@@ -490,6 +490,17 @@ Release packaging aggregates those twelve additional reports in
 `provider-verification.json` and
 records their actual check counts in `release-manifest.json`, using the same
 tested image throughout.
+
+Since 0.1.3 the workflow has two gate profiles. Pushes to `main`, pull requests
+and manual runs use the **full** profile: every fixture above. A release tag
+uses the **light** profile, because releases are tagged on a `main` commit whose
+code already passed the full profile there: the tag rebuilds the image with all
+in-image suites and repeats smoke, functional/security, first run (API and
+form, no browser), quality/codec decisions, custom qualities and the
+populated-library upgrade from the earlier release. Release packaging requires
+a passing report for every gate of the selected profile and records the profile
+as `gateProfile` in `release-manifest.json`; the release notes name the `main`
+run that executed the full profile for the same code.
 The additional
 runtime checks use locally generated catalogue/RSS data;
 live AniList/Jikan/Nyaa responses and private account credentials are not

@@ -195,6 +195,7 @@ def package(args):
             "project": "Tanukarr", "version": args.version,
             "repository": f"https://github.com/{args.repository}", "sourceCommit": revision,
             "image": args.image, "imageId": image["Id"],
+            "gateProfile": args.gate_profile,
             "runtime": smoke["runtime"],
             "registryDigests": image.get("RepoDigests", []), "platform": "linux/amd64",
             "created": datetime.now(timezone.utc).isoformat(),
@@ -230,6 +231,8 @@ def main():
     parser.add_argument("--functional-report", required=True, type=Path)
     parser.add_argument("--verification-report", action="append", default=[], type=Path,
                         help="additional passed verification report for the exact packaged image; repeat for every required gate")
+    parser.add_argument("--gate-profile", choices=("full", "light"), default="full",
+                        help="hosted gate set that produced the verification reports")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--git", default="git")

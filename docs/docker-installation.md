@@ -1,17 +1,18 @@
-# Install Tanukarr 0.1.2 with Docker
+# Install Tanukarr 0.1.3 with Docker
 
-Tanukarr manages TV series, anime and movie collections. Version 0.1.2 keeps
+Tanukarr manages TV series, anime and movie collections. Version 0.1.3 keeps
 the inherited database schema and APIs. It retains 0.1.0's graphical account
 creation, collection/quality fixes and configurable metadata catalogues including
-TVmaze, and 0.1.1's pending-release removal fixes for the v3/v5 queue APIs; it
-is the first release published from `KvasFan/Tanukarr`. Read the
-[release notes](releases/0.1.2.md) and
-[verification ledger](releases/0.1.2-verification.md) for executed checks and
+TVmaze, 0.1.1's pending-release removal fixes for the v3/v5 queue APIs and
+0.1.2's move to `KvasFan/Tanukarr`, and fixes library collection covers,
+collection-search progress and slow Quality page saves. Read the
+[release notes](releases/0.1.3.md) and
+[verification ledger](releases/0.1.3-verification.md) for executed checks and
 exact source/image identities; the 0.1.1 and 0.1.0 reports retain their own
 publication status and security findings under a namespace that is no longer
 reachable.
 
-The published release image is `ghcr.io/kvasfan/tanukarr:0.1.2`. The GitHub
+The published release image is `ghcr.io/kvasfan/tanukarr:0.1.3`. The GitHub
 repository contains source, while GHCR stores Docker images. Published support
 is Linux amd64; a configured build target is not a tested or published platform.
 Previous [1.1.0 publication evidence](releases/1.1.0-publication.md) describes
@@ -38,7 +39,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasfan/tanukarr:0.1.2
+    image: ghcr.io/kvasfan/tanukarr:0.1.3
     container_name: tanukarr
     restart: unless-stopped
     security_opt:
@@ -154,7 +155,8 @@ internal Core version differs from Tanukarr's product version.
 
 The release workflow assigns `latest` to the tested release, `edge` to main,
 and `sha-<full-commit>` to a build. A digest pins exact image bytes. The
-verified 0.1.2 Linux amd64 reference is:
+0.1.3 digest is recorded in its publication report once the release workflow
+has completed. The verified 0.1.2 Linux amd64 reference is:
 
 ```text
 ghcr.io/kvasfan/tanukarr@sha256:c0a76e30f8d983517d3f11266fe07a5de1b59dd2f70f800ff52974f02a4d8abd
@@ -182,7 +184,7 @@ Verify its filename and checksum before loading:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-0.1.2-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-0.1.3-linux-amd64-docker.tar.gz
 docker compose up -d --pull never
 ```
 

@@ -44,13 +44,20 @@ jobs:
         run: |
           image="ghcr.io/${REPOSITORY,,}"
           version="$(tr -d '\r\n' < VERSION)"
+          gates=full
           if [[ "$REF_TYPE" == tag ]]; then
             version="${REF_NAME#v}"
             [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
             [[ "$version" == "$(tr -d '\r\n' < VERSION)" ]] || exit 1
+            # A release is tagged on a main commit whose code already passed the full
+            # gate set on main. The tag repeats the build with every in-image suite and
+            # the release-critical gates (version metadata, security, first run,
+            # quality decisions, upgrade from the earlier release) instead of all of them.
+            gates=light
           fi
           echo "name=$image" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "gates=$gates" >> "$GITHUB_OUTPUT"
           echo "artifact=Tanukarr-$version-release" >> "$GITHUB_OUTPUT"
           echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
@@ -97,14 +104,17 @@ jobs:
         env:
           # Earlier published release (schema 252) populated by the library-upgrade gate.
           EARLIER_IMAGE: ghcr.io/kvasfan/tanukarr@sha256:74b13c7a6fd59222a498cb8bbb14be149a2d505846d684a8aa2e78de280dd9bd
+          GATES: ${{ steps.image.outputs.gates }}
         run: |
           if ! command -v openssl >/dev/null || ! command -v ffmpeg >/dev/null; then
             sudo apt-get update
             sudo apt-get install --yes --no-install-recommends openssl ffmpeg
           fi
           docker pull python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
-          docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
-          docker pull lscr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
+          if [[ "$GATES" == full ]]; then
+            docker pull jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
+            docker pull lscr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
+          fi
           # The earlier image lives in this repository's own package. A brand-new
           # namespace has no package until this workflow publishes one, so a main build
           # may skip the upgrade gate once; a release tag never may.
@@ -122,12 +132,14 @@ jobs:
           exit 1
 
       - name: Isolated group, naming and AniList checks
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/anime-groups.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-groups.json"
 
       - name: Isolated Nyaa and multiple-season pack searches
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/nyaa-search.py --image tanukarr:verified --fixture \
             --report "${RUNNER_TEMP}/tanukarr-nyaa-fixture.json"
@@ -136,36 +148,42 @@ jobs:
             --report "${RUNNER_TEMP}/tanukarr-series-packs.json"
 
       - name: Isolated AniList quota recovery and safe membership resume
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/anilist-reliability.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-anilist-reliability.json"
 
       - name: Isolated import-list group collision recovery
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/group-import-collisions.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-group-import-collisions.json"
 
       - name: Isolated complete account snapshots, request sharing and provider identity
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/import-snapshots.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-import-snapshots.json"
 
       - name: Isolated MyAnimeList OAuth, lists and Jikan catalogue checks
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/myanimelist-reliability.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-myanimelist-reliability.json"
 
       - name: Isolated TMDB, Trakt, MDBList and complete Plex Watchlist checks
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/list-set-operations.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-list-set-operations.json"
 
       - name: Isolated Simkl AUTH V2 and incremental custom-list filtering
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/simkl-reliability.py --image tanukarr:verified \
             --mock-image python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a \
@@ -184,16 +202,19 @@ jobs:
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-custom-qualities.json"
 
       - name: Isolated alternate artwork, canonical collection metadata and cover recovery
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/artwork-reliability.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-artwork-reliability.json"
 
       - name: Real disposable qBittorrent configuration and collection folder imports
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/download-client-folders.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-download-client-folders.json"
 
       - name: Real disposable Jellyfin watched state and monitoring synchronization
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/jellyfin-watched.py --image tanukarr:verified \
             --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
@@ -201,21 +222,25 @@ jobs:
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-jellyfin-watched.json"
 
       - name: Real disposable Jellyfin selected-library import and interval refresh
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/jellyfin-refresh.py --image tanukarr:verified \
             --jellyfin-image jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037 \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-jellyfin-refresh.json"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.image.outputs.gates == 'full'
         with:
           node-version: 24
 
       - name: Prepare isolated packaged browser tooling
+        if: steps.image.outputs.gates == 'full'
         run: |
           npm install --prefix "${RUNNER_TEMP}/tanukarr-browser" --no-audit --no-fund --ignore-scripts playwright@1.64.0
           "${RUNNER_TEMP}/tanukarr-browser/node_modules/.bin/playwright" install --with-deps chromium
 
       - name: Packaged collection navigation, settings, searches and artwork
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/collections-browser.py --image tanukarr:verified --gui-audit \
             --browser-node "$(command -v node)" \
@@ -224,6 +249,7 @@ jobs:
             --report "${RUNNER_TEMP}/tanukarr-collections-browser.json"
 
       - name: Packaged backup button, task timestamps, archive integrity and recovery
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/backup-tasks.py --image tanukarr:verified \
             --browser-node "$(command -v node)" \
@@ -231,24 +257,33 @@ jobs:
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-backup-tasks.json"
 
       - name: Packaged first-run account creation and authentication security
+        env:
+          GATES: ${{ steps.image.outputs.gates }}
         run: |
-          python3 docker/tests/first-run.py --image tanukarr:verified \
-            --browser-node "$(command -v node)" \
-            --playwright-module "${RUNNER_TEMP}/tanukarr-browser/node_modules/playwright" \
-            --playwright-version 1.64.0 --timeout 300 \
-            --report "${RUNNER_TEMP}/tanukarr-first-run.json"
+          # The light profile installs no browser; it keeps the protected API/form checks.
+          browser=()
+          if [[ "$GATES" == full ]]; then
+            browser=(--browser-node "$(command -v node)"
+                     --playwright-module "${RUNNER_TEMP}/tanukarr-browser/node_modules/playwright"
+                     --playwright-version 1.64.0)
+          fi
+          python3 docker/tests/first-run.py --image tanukarr:verified "${browser[@]}" \
+            --timeout 300 --report "${RUNNER_TEMP}/tanukarr-first-run.json"
 
       - name: Packaged metadata-source order, enablement and native TVmaze refresh
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/metadata-sources.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-metadata-sources.json"
 
       - name: Native film catalogues, IMDb lookup, mixed groups and refresh
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/movie-catalogues.py --image tanukarr:verified \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-movie-catalogues.json"
 
       - name: Generated pack downloads, automatic imports and real Jellyfin refresh
+        if: steps.image.outputs.gates == 'full'
         run: |
           python3 docker/tests/download-packs.py --image tanukarr:verified --jellyfin --movies \
             --timeout 300 --report "${RUNNER_TEMP}/tanukarr-download-packs.json"
@@ -340,34 +375,28 @@ jobs:
           VERSION: ${{ steps.image.outputs.version }}
           IMAGE: ${{ steps.image.outputs.name }}
           REPOSITORY: ${{ github.repository }}
+          GATES: ${{ steps.image.outputs.gates }}
         run: |
+          # Every gate of the selected profile must have produced a passing report.
+          reports=(quality-codecs custom-qualities first-run library-upgrade)
+          if [[ "$GATES" == full ]]; then
+            reports=(groups nyaa-fixture series-packs anilist-reliability group-import-collisions
+                     import-snapshots myanimelist-reliability list-set-operations simkl-reliability
+                     quality-codecs backup-tasks jellyfin-watched custom-qualities artwork-reliability
+                     download-client-folders jellyfin-refresh collections-browser first-run
+                     metadata-sources movie-catalogues download-packs library-upgrade)
+          fi
+          arguments=()
+          for report in "${reports[@]}"; do
+            arguments+=(--verification-report "${RUNNER_TEMP}/tanukarr-${report}.json")
+          done
           python3 docker/release/package.py \
             --version "$VERSION" --repository "$REPOSITORY" --image "$IMAGE:$VERSION" \
+            --gate-profile "$GATES" \
             --sbom "${RUNNER_TEMP}/tanukarr-sbom.cdx.json" \
             --smoke-report "${RUNNER_TEMP}/tanukarr-smoke.json" \
             --functional-report "${RUNNER_TEMP}/tanukarr-functional-security.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-groups.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-nyaa-fixture.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-series-packs.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-anilist-reliability.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-group-import-collisions.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-import-snapshots.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-myanimelist-reliability.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-list-set-operations.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-simkl-reliability.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-quality-codecs.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-backup-tasks.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-jellyfin-watched.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-custom-qualities.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-artwork-reliability.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-download-client-folders.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-jellyfin-refresh.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-collections-browser.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-first-run.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-metadata-sources.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-movie-catalogues.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-download-packs.json" \
-            --verification-report "${RUNNER_TEMP}/tanukarr-library-upgrade.json" \
+            "${arguments[@]}" \
             --output "${RUNNER_TEMP}/tanukarr-release"
 
       - name: Upload release assets
