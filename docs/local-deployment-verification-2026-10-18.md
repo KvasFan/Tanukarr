@@ -212,20 +212,66 @@ therefore dispatched on `main` at the pushed source:
   a readonly database`. The rerun of the failed job (attempt 2) passed nine
   gates and failed in the Simkl fixture, after its container restart and
   nineteen checks, with `POST /api/v5/importlist/action/getOAuthToken: attempt
-  to write a readonly database`. Neither fixture opens SQLite itself, so the
-  error is the application's; the same fixtures passed locally on the same
+  to write a readonly database`. The same fixtures passed locally on the same
   source (14 and 23 checks), the 0.1.1 `edge` run had failed once the same way
   in the Simkl fixture and passed on retry, and the published 0.1.2 run had
-  passed all gates. The cause was not established here: the artifact held no
-  application log for either fixture (the film catalogue fixture wrote none
-  and the upload step listed only four fixture logs), which is the missing
-  evidence. A follow-up commit makes that fixture save its redacted container
-  log like the others and uploads every `tanukarr-*.log`; the fixture was
-  re-run locally against the fixed image (passed, 9,085 log lines saved). The
-  third attempt passed every gate in 53 m 4 s and published the verified
-  image to the registry as `edge` and `sha-faf4003fb…`
+  passed all gates. The artifact held no application log for either fixture
+  (the film catalogue fixture wrote none and the upload step listed only four
+  fixture logs), so the follow-up commit `a39511f3c` made that fixture save
+  its redacted container log like the others and the upload step collect every
+  `tanukarr-*.log` (the fixture was re-run locally against the fixed image:
+  passed, 9,085 log lines saved). The third attempt of 39081402989 passed
+  every gate in 53 m 4 s and published the verified image to the registry as
+  `edge` and `sha-faf4003fb…`
   (`sha256:4bdc6702e3a9c8d23cf5b704325db4aafcf9eb75db10b3409c59abc39226218a`);
   the run was not a tag, so no release was created.
+- The push of `a39511f3c` created
+  [CI 39090515646](https://github.com/KvasFan/Tanukarr/actions/runs/39090515646)
+  and
+  [Docker and Release 39090515703](https://github.com/KvasFan/Tanukarr/actions/runs/39090515703),
+  and both failed. The Docker run failed the same way in the list-operations
+  fixture (`GET /api/v5/command: attempt to write a readonly database`) after
+  nine passing gates, and this time the uploaded container log (6,250 lines)
+  held no `[Error]` line and no SQLite exception: the app's last action was a
+  successfully completed list sync. The label is only the fixture's last HTTP
+  request. In all three hosted failures the next statement is a host-side
+  read-only SQLite inspection of the owned `sonarr.db`: `stored()` after
+  `idle()` (list operations), `read_database()` after the last
+  `PUT …/metadatasource/1` (film catalogues) and `stored_settings_json()` after
+  the last `getOAuthToken` (Simkl).
+
+  The fixtures start the app as PUID 1000 with the host user's group, so on a
+  hosted runner (uid 1001) `sonarr.db`, `-wal` and `-shm` are `0644` in a
+  `0750` directory: the host can read the WAL shared-memory index but never
+  write it. That condition was reproduced in WSL with a dedicated uid-1001 user
+  in the `docker` group starting the fixture: the previous inspection code
+  (`mode=ro` URI with `query_only`) failed with `OperationalError: attempt to
+  write a readonly database` in 5 of 13,840 reads while the app was hammered
+  with writes and restarted twice, the first failure at the first restart.
+  (Run as root, the fixtures never meet that condition, which is why they had
+  always passed locally; three complete fixture runs under uid 1001 with the
+  old code also passed, consistent with an intermittent failure.) The readers
+  now copy the database and its write-ahead log into a host-owned temporary
+  directory, re-checked for changes made during the copy, and inspect the copy;
+  under the same load and restarts that helper had 0 failures in 6,529 reads,
+  and the fixture files are never written by the host. Seven affected fixtures
+  passed with it as root, and metadata-sources, group-import-collisions and
+  Simkl also as uid 1001.
+
+  The CI run failed in its PostgreSQL step because `psql` could not reach the
+  server socket although `pg_isready` had answered (most likely the official
+  image's temporary initialization server, which is restarted after setup);
+  the fixture now requires an actual `SELECT version()` to succeed before the
+  server is used, and passed 28/28 locally with that change. Both changes were
+  committed as `7e669cbbb` and pushed on their own; its hosted runs are
+  [CI 39110439670](https://github.com/KvasFan/Tanukarr/actions/runs/39110439670)
+  and
+  [Docker and Release 39110439743](https://github.com/KvasFan/Tanukarr/actions/runs/39110439743).
+  Both succeeded on their first attempt (Docker 54 m 1 s, every gate) and the
+  verified image was published as `edge` and `sha-7e669cbbb…`
+  (`sha256:9efee1ac15ef7cd5f088709eb045705b021b5be9000e2c82b624824d0e998160`).
+  One clean run does not prove an intermittent failure gone; the local
+  reproduction above is the stronger evidence.
 
 ## Scope
 

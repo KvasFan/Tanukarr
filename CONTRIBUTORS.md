@@ -81,7 +81,12 @@ entries, a quality-definition size save publishes one profile-batch event
 instead of one event per profile (which re-mapped every pending release six
 times), and edits made on the Quality page while a save is still in flight are
 no longer discarded. The executed checks are in the
-[October 18 ledger](docs/local-deployment-verification-2026-10-18.md).
+[October 18 ledger](docs/local-deployment-verification-2026-10-18.md). Later
+in the same session the maintainer switched the model to **Claude Opus 5.5
+(`claude-opus-5-5`)**, which reproduced the hosted fixtures' intermittent
+"readonly database" failure under hosted-runner file ownership and finalized
+the host-owned database snapshot used by the fixtures; that commit carries both
+model trailers.
 
 This Tanukarr register credits the upstream application, original fork implementations,
 source co-authors and local adaptations. A maintainer is not assumed to have
@@ -196,6 +201,7 @@ hosted checks, public assets and image, with the original author credits intact.
 | Tanukarr 1.0.5 complete scoped list snapshots, provider-specific local filtering, private-account/grant isolation, public AniList relation reuse, optional future-addition metadata preference, native-ID log clarity and English guides | OpenAI Codex, based on GPT-6 | Actual local session identity; original Xabis, Private Contributor, KakarottoCake and other provider authors remain credited; new execution and publication evidence belongs only to the 1.0.5 ledger |
 | October 17, 2026 local deployment verification, v3 pending-queue lookup and stale pending-list fixes, integration-test Newtonsoft request serializer and English ledger | Claude Fable 5.1 (`claude-fable-5-1`) through Claude Code | Explicit model selected in the session; the inherited pending-release/queue code stays credited to upstream Sonarr; executed evidence belongs to the October 17 ledger |
 | October 18, 2026 eager library collection covers, collection-search progress feedback, single profile-batch event for quality-definition saves, in-flight Quality page edits kept, regression tests and English ledger | Claude Fable 5.1 (`claude-fable-5-1`) through Claude Code | Same explicit session identity; the inherited profile, pending-release and lazy-image code stays credited to upstream Sonarr and its original authors; executed evidence belongs to the October 18 ledger |
+| October 18, 2026 hosted-fixture diagnosis: container-log capture, host-owned SQLite snapshot for fixture database inspection, PostgreSQL readiness query | Claude Fable 5.1 (`claude-fable-5-1`), then Claude Opus 5.5 (`claude-opus-5-5`) after an explicit model switch, through Claude Code | Both identities were selected explicitly in the session; the snapshot commit carries both trailers; executed evidence belongs to the October 18 ledger |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
