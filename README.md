@@ -20,7 +20,8 @@ no longer resolve. The repository is also published at
 [gitlab.com/tirael8308/Tanukarr](https://gitlab.com/tirael8308/Tanukarr),
 which receives the same commits, tags and release assets.
 
-See the [0.1.3 release notes](docs/releases/0.1.3.md) and
+See the [0.1.3 release notes](docs/releases/0.1.3.md),
+[publication report](docs/releases/0.1.3-publication.md) and
 [verification ledger](docs/releases/0.1.3-verification.md), the
 [0.1.2 release notes](docs/releases/0.1.2.md),
 [publication report](docs/releases/0.1.2-publication.md) and

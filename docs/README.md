@@ -17,6 +17,7 @@ repeat past verification.
 | --- | --- |
 | [Tanukarr 0.1.3](releases/0.1.3.md) | Library collection covers, collection-search progress, fast Quality page saves with in-flight edits kept, and a light gate profile for release tags |
 | [0.1.3 verification](releases/0.1.3-verification.md) | Executed checks for the 0.1.3 application code and the release-preparation workflow change |
+| [0.1.3 publication](releases/0.1.3-publication.md) | Exact source/public digest on GitHub and GitLab, light-profile tag run, verified assets and checks of the published image |
 | [Tanukarr 0.1.2](releases/0.1.2.md) | First release from `KvasFan/Tanukarr`: 0.1.1 application with new-namespace links/logos and a main-build-tolerant upgrade gate |
 | [0.1.2 verification](releases/0.1.2-verification.md) | Executed checks for the 0.1.2 source and the hosted publication under the new namespace |
 | [0.1.2 publication](releases/0.1.2-publication.md) | Exact source/public digest on GitHub and GitLab, hosted gates, verified assets, mirror and local deployment |
