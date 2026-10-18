@@ -288,6 +288,7 @@ jobs:
             ${{ runner.temp }}/tanukarr-myanimelist-reliability.json
             ${{ runner.temp }}/tanukarr-list-set-operations.json
             ${{ runner.temp }}/tanukarr-simkl-reliability.json
+            ${{ runner.temp }}/tanukarr-*.log
             ${{ runner.temp }}/tanukarr-quality-codecs.json
             ${{ runner.temp }}/tanukarr-backup-tasks.json
             ${{ runner.temp }}/backup-ui.json

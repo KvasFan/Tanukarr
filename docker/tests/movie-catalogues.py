@@ -369,7 +369,13 @@ def main():
         serve_fixture(args.serve_fixture)
         return 0
     audit = MovieCatalogues(args)
-    error, records, cleanup = None, [], False
+    error, records, logs, cleanup = None, [], "", False
+
+    def redact(value):
+        for secret in (audit.api_key, audit.metadata_key, audit.omdb_key, *audit.private_config_values):
+            value = value.replace(secret, "[REDACTED]")
+        return value
+
     try:
         audit.start()
         audit.exercise_encryption_defaults()
@@ -382,14 +388,16 @@ def main():
         audit.no_acquisition()
         audit.verify_raw_logs()
     except (Exception, KeyboardInterrupt) as caught:
-        error = f"{audit.last_request}: {caught or type(caught).__name__}"
-        for secret in (audit.api_key, audit.metadata_key, audit.omdb_key, *audit.private_config_values):
-            error = error.replace(secret, "[REDACTED]")
+        error = redact(f"{audit.last_request}: {caught or type(caught).__name__}")
         print("FAIL " + error, file=sys.stderr)
     finally:
         try:
             if audit.root:
                 records = audit.records()
+            if audit.container:
+                # Keep the application's own log next to the report: a hosted failure such as
+                # a SQLite error is otherwise unexplained once the container is removed.
+                logs = redact(audit.docker("logs", audit.container))
         except Exception as caught:
             error = error or "Fixture request evidence failed: " + type(caught).__name__
         finally:
@@ -407,6 +415,7 @@ def main():
                 "keptData": str(audit.root) if args.keep else None,
                 "scope": {"ownedGeneratedMedia": True, "publicProviderRequests": False, "realLibraryTested": False,
                           "privateAccountUsed": False, "acquisitionTested": False, "ownerConfigurationAccessed": False}}, indent=2) + "\n")
+            args.report.with_suffix(".log").write_text(logs, encoding="utf-8")
     return 1 if error else 0
 
 
