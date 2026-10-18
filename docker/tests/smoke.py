@@ -2,6 +2,7 @@
 """Verify a built Sonarr image using isolated, disposable runtime data."""
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -9,6 +10,7 @@ from pathlib import Path
 import re
 import secrets
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -25,6 +27,55 @@ class SmokeFailure(Exception):
 def require(condition, message):
     if not condition:
         raise SmokeFailure(message)
+
+
+def _sqlite_stamps(*paths):
+    stamps = []
+    for item in paths:
+        try:
+            status = item.stat()
+            stamps.append((status.st_size, status.st_mtime_ns))
+        except FileNotFoundError:
+            stamps.append(None)
+    return tuple(stamps)
+
+
+@contextlib.contextmanager
+def sqlite_snapshot(path, timeout=10):
+    """Open a read-only connection to a private copy of an owned fixture database.
+
+    The app runs as PUID 1000 with the host user's group, so a hosted runner (uid
+    1001) can only read sonarr.db and its -wal/-shm files. Reading the live WAL
+    database in place then depends on a shared-memory index the host cannot write,
+    and SQLite intermittently reports "attempt to write a readonly database"
+    (reproduced around app restarts). The database and its write-ahead log are
+    copied into a temporary directory owned by this process, re-checked for
+    changes made during the copy, and opened there, so the owned fixture files are
+    never written by the host.
+    """
+    source = Path(path).resolve(strict=True)
+    journal = source.with_name(source.name + "-wal")
+    with tempfile.TemporaryDirectory(prefix="tanukarr-sqlite-snapshot-") as temporary:
+        copy = Path(temporary) / source.name
+        journal_copy = copy.with_name(copy.name + "-wal")
+        for _ in range(40):
+            before = _sqlite_stamps(source, journal)
+            shutil.copyfile(source, copy)
+            if journal.exists():
+                shutil.copyfile(journal, journal_copy)
+            elif journal_copy.exists():
+                journal_copy.unlink()
+            if before == _sqlite_stamps(source, journal):
+                break
+            time.sleep(0.1)
+        else:
+            raise SmokeFailure("The owned database kept changing while it was copied for inspection")
+        connection = sqlite3.connect(copy, timeout=timeout)
+        try:
+            connection.execute("PRAGMA query_only = ON")
+            yield connection
+        finally:
+            connection.close()
 
 
 class ContainerSmoke:

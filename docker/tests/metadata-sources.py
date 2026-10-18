@@ -2,20 +2,18 @@
 """Verify packaged metadata-source policy and native TVmaze updates on isolated TLS catalogues."""
 
 import argparse
-from contextlib import closing
 import copy
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 from pathlib import Path
-import sqlite3
 import ssl
 import sys
 import threading
 import urllib.parse
 
-from smoke import ContainerSmoke, require
+from smoke import ContainerSmoke, require, sqlite_snapshot
 
 
 _spec = importlib.util.spec_from_file_location("metadata_sources_parent", Path(__file__).with_name("anilist-reliability.py"))
@@ -145,9 +143,7 @@ class MetadataSources(_parent.AniListReliability):
         database = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(database.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"),
                 "Read-only configuration inspection escaped the disposable fixture")
-        uri = "file:" + urllib.parse.quote(str(database), safe="/") + "?mode=ro"
-        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
-            connection.execute("PRAGMA query_only = ON")
+        with sqlite_snapshot(database) as connection:
             return connection.execute(query, parameters).fetchall()
 
     def stored_key(self):

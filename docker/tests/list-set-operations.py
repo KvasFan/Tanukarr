@@ -2,17 +2,15 @@
 """Exercise packaged TMDB, Trakt and MDBList providers against isolated TLS fixtures."""
 
 import argparse
-from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 from pathlib import Path
-import sqlite3
 import ssl
 import sys
 import urllib.parse
 
-from smoke import require
+from smoke import require, sqlite_snapshot
 
 _spec = importlib.util.spec_from_file_location("list_reliability", Path(__file__).with_name("anilist-reliability.py"))
 _reliability = importlib.util.module_from_spec(_spec)
@@ -147,9 +145,7 @@ class ListSets(_reliability.AniListReliability):
     def stored(self, definition):
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config", "Read-only inspection escaped the owned fixture")
-        uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
-        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
-            connection.execute("PRAGMA query_only = ON")
+        with sqlite_snapshot(path) as connection:
             return sorted(tuple(row) for row in connection.execute(
                 "SELECT TvdbId,TmdbId,ImdbId FROM ImportListItems WHERE ImportListId = ?", (definition["id"],)))
 

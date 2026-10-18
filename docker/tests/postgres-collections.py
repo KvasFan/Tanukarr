@@ -64,16 +64,22 @@ def main():
             if len(binding) != 1 or binding[0]["HostIp"] != "127.0.0.1":
                 raise ValueError("PostgreSQL is not restricted to loopback")
             port = binding[0]["HostPort"]
-            deadline = time.monotonic() + 60
+            # The official image first runs a temporary server for initialization and
+            # restarts it; pg_isready can answer during that window, so require an
+            # actual query to succeed before trusting the server.
+            deadline = time.monotonic() + 90
             while True:
                 ready = subprocess.run([args.docker, "exec", container, "pg_isready", "-U", "tanukarr_fixture"],
                                        capture_output=True, text=True, timeout=10)
                 if ready.returncode == 0:
-                    break
+                    probe = subprocess.run([args.docker, "exec", container, "psql", "-U", "tanukarr_fixture", "-d", "postgres",
+                                            "-Atc", "SELECT version();"], capture_output=True, text=True, timeout=10)
+                    if probe.returncode == 0 and probe.stdout.strip():
+                        version = probe.stdout.strip()
+                        break
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Owned PostgreSQL did not initialize")
                 time.sleep(0.5)
-            version = docker("exec", container, "psql", "-U", "tanukarr_fixture", "-d", "postgres", "-Atc", "SELECT version();")
             metadata.update(imageId=detail["Image"], serverVersion=version, loopbackOnly=True, tmpfsOnly=True)
             environment = {key: value for key, value in os.environ.items() if not key.lower().startswith("sonarr__postgres__")}
             environment.update(Sonarr__Postgres__Host="127.0.0.1", Sonarr__Postgres__Port=port,

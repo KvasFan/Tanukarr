@@ -14,7 +14,7 @@ import ssl
 import sys
 import threading
 
-from smoke import SmokeFailure, require
+from smoke import SmokeFailure, require, sqlite_snapshot
 
 
 def load_fixture(name, filename):
@@ -140,8 +140,7 @@ class SnapshotChecks:
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"),
                 "Database read escaped the owned fixture")
-        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=10)) as database:
-            database.execute("PRAGMA query_only=ON")
+        with sqlite_snapshot(path) as database:
             return sorted(row[0] for row in database.execute(
                 f"SELECT {self.id_column} FROM ImportListItems WHERE ImportListId=?", (definition["id"],)))
     def force_due(self):
@@ -191,8 +190,7 @@ class SnapshotChecks:
         require(self.api_json("/api/v5/series") == [], "Global native exclusions failed to isolate membership reads")
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config", "Schema inspection escaped the owned configuration")
-        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=10)) as database:
-            database.execute("PRAGMA query_only=ON")
+        with sqlite_snapshot(path) as database:
             columns = [list(row) for row in database.execute('PRAGMA table_info("ImportLists")')]
             require(columns[-1][1:] == ["PreferredMetadataSource", "INTEGER", 1, "0", 0], "Native preference migration types/defaults changed")
             self.observations["nativeMigration"] = {"version": database.execute('SELECT MAX(Version) FROM VersionInfo').fetchone()[0],

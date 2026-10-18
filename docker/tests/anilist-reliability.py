@@ -14,10 +14,9 @@ import struct
 import sys
 import tempfile
 import threading
-import urllib.parse
 import zlib
 
-from smoke import SmokeFailure, require
+from smoke import SmokeFailure, require, sqlite_snapshot
 
 
 _spec = importlib.util.spec_from_file_location("anime_groups_fixture", Path(__file__).with_name("anime-groups.py"))
@@ -308,9 +307,7 @@ class AniListReliability(_groups.AnimeGroups):
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"),
                 "Read-only database inspection escaped the owned fixture")
-        uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
-        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
-            connection.execute("PRAGMA query_only = ON")
+        with sqlite_snapshot(path) as connection:
             return sorted(row[0] for row in connection.execute("SELECT AniListId FROM ImportListItems WHERE ImportListId = ?", (self.definition["id"],)))
 
     def library_ids(self):
@@ -466,9 +463,7 @@ class AniListReliability(_groups.AnimeGroups):
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"),
                 "Legacy-settings inspection escaped the owned fixture")
-        uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
-        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
-            connection.execute("PRAGMA query_only = ON")
+        with sqlite_snapshot(path) as connection:
             row = connection.execute("SELECT Settings FROM ImportLists WHERE Id = ?", (self.definition["id"],)).fetchone()
         require(row is not None, "Owned fixture import-list row is missing")
         return row[0]

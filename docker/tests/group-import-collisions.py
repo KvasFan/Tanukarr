@@ -7,14 +7,12 @@ import importlib.util
 import json
 from pathlib import Path
 import re
-import sqlite3
 import ssl
 import sys
 import threading
 import time
-import urllib.parse
 
-from smoke import SmokeFailure, require
+from smoke import SmokeFailure, require, sqlite_snapshot
 
 
 _spec = importlib.util.spec_from_file_location("anilist_reliability_fixture", Path(__file__).with_name("anilist-reliability.py"))
@@ -301,9 +299,7 @@ class GroupImportCollisions(_reliability.AniListReliability):
         self.check("manual same-kind occupied season and movie slots return HTTP 400 without persistence")
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config", "Database inspection escaped the owned fixture")
-        uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
-        with sqlite3.connect(uri, uri=True, timeout=10) as connection:
-            connection.execute("PRAGMA query_only = ON")
+        with sqlite_snapshot(path) as connection:
             statements = [row[0] for row in connection.execute("SELECT sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'Series'") if row[0]]
             integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
         for ordinal in ("AnimeGroupSeasonNumber", "AnimeGroupMovieNumber"):

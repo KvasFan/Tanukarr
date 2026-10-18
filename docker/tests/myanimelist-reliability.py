@@ -2,19 +2,17 @@
 """Verify official MAL account imports and distinct Jikan metadata with owned TLS/SQLite Docker fixtures."""
 
 import argparse
-from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 from pathlib import Path
 import secrets
-import sqlite3
 import ssl
 import sys
 import threading
 import urllib.parse
 
-from smoke import require
+from smoke import require, sqlite_snapshot
 
 
 _spec = importlib.util.spec_from_file_location("mal_fixture_parent", Path(__file__).with_name("anilist-reliability.py"))
@@ -191,9 +189,7 @@ class MyAnimeListReliability(_parent.AniListReliability):
     def stored_ids(self):
         path = (self.root / "config" / "sonarr.db").resolve(strict=True)
         require(path.parent == self.root / "config" and self.root.name.startswith("sonarr-container-smoke-anilist-reliability-"), "Database inspection escaped the owned fixture")
-        uri = "file:" + urllib.parse.quote(str(path), safe="/") + "?mode=ro"
-        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as connection:
-            connection.execute("PRAGMA query_only=ON")
+        with sqlite_snapshot(path) as connection:
             return sorted(row[0] for row in connection.execute("SELECT MalId FROM ImportListItems WHERE ImportListId=?", (self.definition["id"],)))
 
     def create_list(self):
