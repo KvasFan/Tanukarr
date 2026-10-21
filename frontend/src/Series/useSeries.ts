@@ -115,10 +115,10 @@ const SORT_PREDICATES = {
   },
 
   averageSizePerEpisode: (item: Series, _: SortDirection) => {
-    const totalEpisodeCount = item.statistics?.totalEpisodeCount ?? 0;
+    const episodeFileCount = item.statistics?.episodeFileCount ?? 0;
 
-    return totalEpisodeCount > 0
-      ? (item.statistics?.sizeOnDisk ?? 0) / totalEpisodeCount
+    return episodeFileCount > 0
+      ? (item.statistics?.sizeOnDisk ?? 0) / episodeFileCount
       : 0;
   },
 
@@ -305,10 +305,10 @@ const FILTER_PREDICATES = {
     type: FilterType
   ) => {
     const predicate = getFilterTypePredicate(type);
-    const totalEpisodeCount = item.statistics?.totalEpisodeCount ?? 0;
+    const episodeFileCount = item.statistics?.episodeFileCount ?? 0;
     const averageSize =
-      totalEpisodeCount > 0
-        ? (item.statistics?.sizeOnDisk ?? 0) / totalEpisodeCount
+      episodeFileCount > 0
+        ? (item.statistics?.sizeOnDisk ?? 0) / episodeFileCount
         : 0;
     return predicate(averageSize, filterValue);
   },
