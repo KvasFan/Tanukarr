@@ -265,7 +265,7 @@ function SeriesDetailsSeason({
         <div className={styles.left}>
           <MonitorToggleButton
             monitored={monitored}
-            isDisabled={!seriesMonitored}
+            isDisabled={!seriesMonitored && !monitored}
             isSaving={isTogglingSeasonMonitored}
             size={24}
             onPress={handleMonitorSeasonPress}
