@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -203,6 +204,30 @@ namespace NzbDrone.Common.Test.InstrumentationTests
             using var target = new ColoredConsoleTarget();
             NzbDroneLogger.ConfigureConsoleLayout(target, format);
             return target.Layout.Render(new LogEventInfo(LogLevel.Trace, "ConsolePrivacyProbe", message) { Exception = exception });
+        }
+
+        [Test]
+        public void should_cleanse_rendered_log_event()
+        {
+            var logEvent = new LogEventInfo(LogLevel.Info, "Test", "http://127.0.0.1:1234/api/call?vv=1&apikey=mySecret");
+
+            var cleansedMessage = CleanseLogMessage.Cleanse(logEvent, e => $"{e.Level}|{e.LoggerName}|{e.FormattedMessage}");
+
+            cleansedMessage.Should().Be("Info|Test|http://127.0.0.1:1234/api/call?vv=1&apikey=(removed)");
+        }
+
+        [TestCase("a", 256000)]
+        [TestCase("a.", 128000)]
+        [TestCase("/rss", 16000)]
+        [TestCase("&", 64000)]
+        [TestCase("?", 64000)]
+        public void should_cleanse_pathological_message_without_timing_out(string repeated, int count)
+        {
+            var message = "Unable to parse '" + string.Concat(Enumerable.Repeat(repeated, count)) + "'";
+
+            var cleansedMessage = CleanseLogMessage.Cleanse(message);
+
+            cleansedMessage.Should().NotContain("timed out");
         }
     }
 }
