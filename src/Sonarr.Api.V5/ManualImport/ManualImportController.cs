@@ -81,7 +81,7 @@ public class ManualImportController : Controller
                 processedItem.Quality = item.Quality;
             }
 
-            if (item.ReleaseGroup.IsNotNullOrWhiteSpace())
+            if (item.ReleaseGroup != null)
             {
                 processedItem.ReleaseGroup = item.ReleaseGroup;
             }
