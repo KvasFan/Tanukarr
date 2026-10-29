@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useContext, useEffect } from 'react';
 import Icon from 'Components/Icon';
 import Label from 'Components/Label';
 import Column from 'Components/Table/Column';
@@ -8,7 +8,10 @@ import TableBody from 'Components/Table/TableBody';
 import Episode from 'Episode/Episode';
 import EpisodeWatchedStatus from 'Episode/EpisodeWatchedStatus';
 import useEpisode, { EpisodeEntity } from 'Episode/useEpisode';
-import { useEpisodeFile } from 'EpisodeFile/EpisodeFileProvider';
+import {
+  EpisodeFileContext,
+  useEpisodeFile,
+} from 'EpisodeFile/EpisodeFileProvider';
 import { useDeleteEpisodeFile } from 'EpisodeFile/useEpisodeFiles';
 import { icons, sizes } from 'Helpers/Props';
 import Series from 'Series/Series';
@@ -88,6 +91,7 @@ function EpisodeSummary({
     episodeEntity
   ) as Episode;
 
+  const hasEpisodeFileContext = !!useContext(EpisodeFileContext);
   const {
     path,
     mediaInfo,
@@ -109,10 +113,10 @@ function EpisodeSummary({
   }, [deleteEpisodeFile]);
 
   useEffect(() => {
-    if (episodeFileId && !path) {
+    if (hasEpisodeFileContext && episodeFileId && !path) {
       queryClient.invalidateQueries({ queryKey: ['/episodeFile'] });
     }
-  }, [episodeFileId, path, queryClient]);
+  }, [hasEpisodeFileContext, episodeFileId, path, queryClient]);
 
   const hasOverview = !!overview;
 
