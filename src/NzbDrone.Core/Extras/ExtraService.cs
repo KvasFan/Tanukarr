@@ -175,7 +175,10 @@ namespace NzbDrone.Core.Extras
         public void Handle(SeriesRenamedEvent message)
         {
             var series = message.Series;
-            var episodeFiles = GetEpisodeFiles(series.Id);
+            var renamedFileIds = message.RenamedFiles.Select(f => f.EpisodeFile.Id).ToHashSet();
+            var episodeFiles = GetEpisodeFiles(series.Id)
+                .Where(f => renamedFileIds.Contains(f.Id))
+                .ToList();
 
             foreach (var extraFileManager in _extraFileManagers)
             {
