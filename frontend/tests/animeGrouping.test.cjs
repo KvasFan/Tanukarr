@@ -38,7 +38,8 @@ function loadSource(relative, mocks = {}) {
 }
 
 const grouping = loadSource('Series/Grouping/animeGrouping.ts');
-const presentation = loadSource('Series/Grouping/collectionPresentation.ts', { './animeGrouping': grouping });
+const presentation = loadSource('Series/Grouping/collectionPresentation.ts', { './animeGrouping': grouping,
+  'Utilities/Series/getSeriesPath': loadSource('Utilities/Series/getSeriesPath.ts') });
 const { groupAnimeSeries, hasAnimeGroup } = grouping;
 
 test('multi-season members reserve consecutive logical slots independently of movies and specials', () => {

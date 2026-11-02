@@ -1,5 +1,6 @@
 import getMediaType from 'Series/getMediaType';
 import Series, { Image, Season } from 'Series/Series';
+import getSeriesPath from 'Utilities/Series/getSeriesPath';
 import {
   AnimeSeriesGroup,
   compareAnimeGroupMembers,
@@ -26,7 +27,7 @@ export function getSeriesLibraryLink(series: Series) {
 
   return series.seasons.filter((season) => season.seasonNumber > 0).length > 1
     ? `/collections/${encodeURIComponent(`series:${series.id}`)}`
-    : `/series/${series.titleSlug}`;
+    : getSeriesPath(series);
 }
 
 export function resolveCollection(
@@ -125,5 +126,7 @@ export function getCollectionEntries(
 }
 
 export function getNativeSeasonLink(member: Series, seasonNumber: number) {
-  return `/series/${member.titleSlug}?season=${seasonNumber}#season-${seasonNumber}`;
+  return `${getSeriesPath(
+    member
+  )}?season=${seasonNumber}#season-${seasonNumber}`;
 }

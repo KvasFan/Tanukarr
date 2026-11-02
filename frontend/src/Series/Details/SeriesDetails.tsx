@@ -63,6 +63,7 @@ import {
   unregisterPagePopulator,
 } from 'Utilities/pagePopulator';
 import filterAlternateTitles from 'Utilities/Series/filterAlternateTitles';
+import getSeriesPath from 'Utilities/Series/getSeriesPath';
 import translate from 'Utilities/String/translate';
 import SeriesAlternateTitles from './SeriesAlternateTitles';
 import SeriesCompression from './SeriesCompression';
@@ -224,10 +225,12 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
 
     return {
       nextSeries: {
+        id: nextSeries.id,
         title: nextSeries.title,
         titleSlug: nextSeries.titleSlug,
       },
       previousSeries: {
+        id: previousSeries.id,
         title: previousSeries.title,
         titleSlug: previousSeries.titleSlug,
       },
@@ -628,7 +631,7 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
                         aria-label={translate('SeriesDetailsGoTo', {
                           title: previousSeries.title,
                         })}
-                        to={`/series/${previousSeries.titleSlug}`}
+                        to={getSeriesPath(previousSeries)}
                       />
                     ) : null}
 
@@ -643,7 +646,7 @@ function SeriesDetails({ seriesId, requestedSeason }: SeriesDetailsProps) {
                         aria-label={translate('SeriesDetailsGoTo', {
                           title: nextSeries.title,
                         })}
-                        to={`/series/${nextSeries.titleSlug}`}
+                        to={getSeriesPath(nextSeries)}
                       />
                     ) : null}
                   </div>

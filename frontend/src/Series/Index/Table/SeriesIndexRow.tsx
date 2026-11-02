@@ -222,6 +222,7 @@ function SeriesIndexRow(props: SeriesIndexRowProps) {
                 </Link>
               ) : (
                 <SeriesTitleLink
+                  seriesId={seriesId}
                   titleSlug={titleSlug}
                   title={title}
                   to={getSeriesLibraryLink(series)}

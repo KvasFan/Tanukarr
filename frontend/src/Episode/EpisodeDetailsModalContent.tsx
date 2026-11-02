@@ -17,6 +17,7 @@ import useEpisode, {
 import { useClearReleasesOnUnmount } from 'InteractiveSearch/useReleases';
 import Series from 'Series/Series';
 import { useSingleSeries } from 'Series/useSeries';
+import getSeriesPath from 'Utilities/Series/getSeriesPath';
 import translate from 'Utilities/String/translate';
 import EpisodeHistory from './History/EpisodeHistory';
 import EpisodeSearch from './Search/EpisodeSearch';
@@ -93,7 +94,7 @@ function EpisodeDetailsModalContent({
     [episodeId, toggleEpisodesMonitored]
   );
 
-  const seriesLink = `/series/${titleSlug}`;
+  const seriesLink = getSeriesPath({ id: seriesId, titleSlug });
 
   return (
     <ModalContent onModalClose={onModalClose}>

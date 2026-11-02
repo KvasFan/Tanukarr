@@ -160,9 +160,9 @@ async function main(input) {
     const secondMember = input.series.find((item) => item.foreignId === '900402');
     const secondCard = page.locator(`article[data-anime-group-series-id="${secondMember.id}"][data-native-season="1"]`);
     const href = await secondCard.locator('a').first().getAttribute('href');
-    assert.equal(href, `/series/${secondMember.titleSlug}?season=1#season-1`);
+    assert.equal(href, `/series/${secondMember.titleSlug}/${secondMember.id}?season=1#season-1`);
     await secondCard.locator('a').first().click();
-    await page.waitForURL((url) => url.pathname === '/series/' + secondMember.titleSlug && url.searchParams.get('season') === '1');
+    await page.waitForURL((url) => url.pathname === `/series/${secondMember.titleSlug}/${secondMember.id}` && url.searchParams.get('season') === '1');
     await page.locator('#season-1 table').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#season-1 table tbody tr').count(), 3);
     assert.equal(await page.getByRole('button', { name: /^(Show Episodes|Hide Episodes|Expand All|Collapse All)$/ }).count(), 0);
@@ -310,7 +310,7 @@ async function main(input) {
     assert.equal(input.series.some((item) => item.foreignId === '900501'), false);
     await visibleCovers(page);
     const movie = input.series.find((item) => item.foreignId === '900502');
-    assert.equal(await page.locator(`[data-anime-group-series-id="${movie.id}"] a`).first().getAttribute('href'), `/series/${movie.titleSlug}?season=1#season-1`);
+    assert.equal(await page.locator(`[data-anime-group-series-id="${movie.id}"] a`).first().getAttribute('href'), `/series/${movie.titleSlug}/${movie.id}?season=1#season-1`);
     await screenshot('collection-mixed-desktop.png');
     await page.locator(`[data-anime-group-series-id="${movie.id}"] a`).first().click();
     await page.locator('#season-1 table').waitFor({ state: 'visible' });
@@ -569,7 +569,10 @@ async function main(input) {
     assert.equal((await api('settings/metadata')).metadataSourceOrder[1], 'aniList');
     observations.metadataSourceSpacing.mobile = await sourceLabelsStayTogether();
     await screenshot('metadata-source-controls-mobile.png');
+    // A legacy slug-only link still opens the season and is redirected to the ID URL.
     await page.goto(input.baseUrl + `/series/${secondMember.titleSlug}?season=1#season-1`);
+    await page.waitForURL((url) => url.pathname === `/series/${secondMember.titleSlug}/${secondMember.id}`
+      && url.searchParams.get('season') === '1' && url.hash === '#season-1');
     await page.locator('#season-1 table tbody tr').first().waitFor({ state: 'visible' });
     assert.equal(await page.getByRole('button', { name: /^(Show Episodes|Hide Episodes|Expand All|Collapse All)$/ }).count(), 0);
     observations.mobileSeasonHeader = await page.locator('#season-1').getByText('Season 1', { exact: true }).first().evaluate((label) => {

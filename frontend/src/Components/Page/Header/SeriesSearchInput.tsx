@@ -21,6 +21,7 @@ import { icons } from 'Helpers/Props';
 import Series from 'Series/Series';
 import useSeries from 'Series/useSeries';
 import { Tag, useTagList } from 'Tags/useTags';
+import getSeriesPath from 'Utilities/Series/getSeriesPath';
 import translate from 'Utilities/String/translate';
 import SeriesSearchResult from './SeriesSearchResult';
 import styles from './SeriesSearchInput.module.css';
@@ -40,6 +41,7 @@ interface AddNewSeriesSuggestion {
 export interface SuggestedSeries
   extends Pick<
     Series,
+    | 'id'
     | 'title'
     | 'titleSlug'
     | 'sortTitle'
@@ -75,6 +77,7 @@ function useSeriesSuggestions(tagList: ReadonlyArray<Tag>) {
   return useMemo(() => {
     return allSeries.map((series): SuggestedSeries => {
       const {
+        id,
         title,
         titleSlug,
         sortTitle,
@@ -89,6 +92,7 @@ function useSeriesSuggestions(tagList: ReadonlyArray<Tag>) {
       } = series;
 
       return {
+        id,
         title,
         titleSlug,
         sortTitle,
@@ -320,7 +324,7 @@ function SeriesSearchInput() {
           ? suggestions[0]
           : suggestions[highlightedSuggestionIndex];
 
-      navigate(`/series/${selectedSuggestion.item.titleSlug}`);
+      navigate(getSeriesPath(selectedSuggestion.item));
 
       inputRef.current?.blur();
       reset();
@@ -355,7 +359,7 @@ function SeriesSearchInput() {
         navigate(`/add/new?term=${encodeURIComponent(value)}`);
       } else {
         setValue('');
-        navigate(`/series/${suggestion.item.titleSlug}`);
+        navigate(getSeriesPath(suggestion.item));
       }
     },
     [value, navigate]

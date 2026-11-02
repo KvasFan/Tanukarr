@@ -13,8 +13,9 @@ import getMetadataProvider from 'Series/getMetadataProvider';
 import { Statistics } from 'Series/Series';
 import SeriesGenres from 'Series/SeriesGenres';
 import SeriesPoster from 'Series/SeriesPoster';
-import useExistingSeries from 'Series/useExistingSeries';
+import { useExistingSeriesEntry } from 'Series/useExistingSeries';
 import { useMetadataSourceSettingsValues } from 'Settings/MetadataSource/useMetadataSourceSettings';
+import getSeriesPath from 'Utilities/Series/getSeriesPath';
 import translate from 'Utilities/String/translate';
 import AddNewSeriesModal from './AddNewSeriesModal';
 import styles from './AddNewSeriesSearchResult.module.css';
@@ -41,7 +42,6 @@ interface AddNewSeriesSearchResultProps {
 function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
   const {
     metadataSource,
-    titleSlug,
     title: lookupTitle,
     originalTitle,
     year,
@@ -60,7 +60,8 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
 
   const { preferredMetadataLanguage } = useMetadataSourceSettingsValues();
   const language = useLanguageById(preferredMetadataLanguage);
-  const isExistingSeries = useExistingSeries(series);
+  const existingSeries = useExistingSeriesEntry(series);
+  const isExistingSeries = !!existingSeries;
   const provider = getMetadataProvider(series);
   const mediaType = getMediaType(series);
   const isSmallScreen = useAppDimension('isSmallScreen');
@@ -83,8 +84,8 @@ function AddNewSeriesSearchResult({ series }: AddNewSeriesSearchResultProps) {
     event.stopPropagation();
   }, []);
 
-  const linkProps = isExistingSeries
-    ? { to: `/series/${titleSlug}` }
+  const linkProps = existingSeries
+    ? { to: getSeriesPath(existingSeries) }
     : { onPress: handlePress };
   let seasons = translate('OneSeason');
 

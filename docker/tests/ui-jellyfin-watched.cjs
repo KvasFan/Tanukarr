@@ -87,6 +87,8 @@ async function main(input) {
       page.locator('#sign-in-panel button[type="submit"]').click(),
     ]);
     await page.goto(input.baseUrl + '/series/' + encodeURIComponent(input.titleSlug));
+    // Slug-only URLs are replaced by the canonical /series/<slug>/<id> URL.
+    await page.waitForURL((url) => /^\/series\/[^/]+\/\d+$/.test(url.pathname));
     await observe(input.expectedWatched);
     checks.push('actual packaged series page renders the persisted Jellyfin watched count after Forms login');
     const navigation = page.url();

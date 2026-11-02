@@ -190,6 +190,7 @@ function ParseResult(props: ParseResultProps) {
           data={
             series ? (
               <SeriesTitleLink
+                seriesId={series.id}
                 titleSlug={series.titleSlug}
                 title={series.title}
               />

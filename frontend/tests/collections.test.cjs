@@ -23,7 +23,8 @@ function load(relative, mocks = {}) {
 }
 
 const grouping = load('Series/Grouping/animeGrouping.ts');
-const presentation = load('Series/Grouping/collectionPresentation.ts', { './animeGrouping': grouping });
+const presentation = load('Series/Grouping/collectionPresentation.ts', { './animeGrouping': grouping,
+  'Utilities/Series/getSeriesPath': load('Utilities/Series/getSeriesPath.ts') });
 const mergeSeriesUpdate = load('Series/mergeSeriesUpdate.ts').default;
 const translate = (key, args) => `${key}${args ? JSON.stringify(args) : ''}`;
 const wrap = ({ children }) => React.createElement('section', {}, children);
@@ -397,7 +398,7 @@ test('native TV seasons, distinct anime seasons, movies and Specials retain thei
   const group = { id: 'anilist:900', title: 'Generated collection', members: [anime, tv, movie] };
   const entries = presentation.getCollectionEntries(group);
   assert.deepEqual(entries.map((entry) => [entry.member.id, entry.season.seasonNumber, entry.displayNumber, entry.section]), [[4, 1, 3, 'seasons'], [9, 0, 0, 'specials'], [9, 1, 1, 'seasons'], [9, 2, 2, 'seasons'], [7, 1, 2, 'movies']]);
-  assert.equal(presentation.getNativeSeasonLink(anime, 1), '/series/native-4?season=1#season-1');
+  assert.equal(presentation.getNativeSeasonLink(anime, 1), '/series/native-4/4?season=1#season-1');
   const nativeTV = { ...tv, animeGroupId: null, collectionTitle: 'My collection name' };
   assert.equal(presentation.getSeriesLibraryLink(nativeTV), '/collections/series%3A9');
   assert.equal(presentation.resolveCollection([nativeTV], 'series:9').title, 'My collection name');
@@ -414,7 +415,7 @@ test('a mixed collection keeps multiple specials and native season gaps while di
     [10, 0, 0, 'specials'], [10, 2, 5, 'seasons'], [10, 4, 6, 'seasons'], [11, 1, 2, 'movies'], [12, 1, 1, 'specials'], [13, 1, 2, 'specials']
   ]);
   assert.equal(new Set(entries.map(({ key }) => key)).size, 6);
-  assert.equal(presentation.getNativeSeasonLink(tv, 4), '/series/native-10?season=4#season-4');
+  assert.equal(presentation.getNativeSeasonLink(tv, 4), '/series/native-10/10?season=4#season-4');
   assert.equal(JSON.stringify(members), before);
 });
 
@@ -582,7 +583,7 @@ test('every season card links to its native season and opens real pack, episode 
   const native = member(42, 3);
   const entry = presentation.getCollectionEntries({ members: [native] })[0];
   const renderer = mount(Component, { entry });
-  assert.ok(renderer.root.findAllByType('a').every((item) => item.props.href === '/series/native-42?season=1#season-1'));
+  assert.ok(renderer.root.findAllByType('a').every((item) => item.props.href === '/series/native-42/42?season=1#season-1'));
   press(renderer, 'SearchSeasonPacksWithNumber{"season":3}');
   assert.equal(renderer.root.findByType('output').props['data-pack'], '42:1:3');
   press(renderer, 'SearchEpisodes');
