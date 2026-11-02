@@ -141,6 +141,7 @@ namespace NzbDrone.Core.Datastore
                   .Ignore(e => e.Series)
                   .Ignore(e => e.HasFile)
                   .Ignore(e => e.AbsoluteEpisodeNumberAdded)
+                  .Ignore(e => e.AirDateMovedToPast)
                   .HasOne(s => s.EpisodeFile, s => s.EpisodeFileId);
 
             Mapper.Entity<QualityDefinition>("QualityDefinitions").RegisterModel()

@@ -79,6 +79,18 @@ namespace NzbDrone.Core.Tv
                         {
                             episodeToUpdate.AbsoluteEpisodeNumberAdded = true;
                         }
+
+                        // Air date moved from the future (or unknown) to now or the past, e.g. a season
+                        // that was listed weekly but released all at once. Its episodes are not new,
+                        // so without this they would never be searched after the refresh.
+                        var airsSoon = DateTime.UtcNow.AddDays(1);
+
+                        if ((!episodeToUpdate.AirDateUtc.HasValue || episodeToUpdate.AirDateUtc.Value > airsSoon) &&
+                            episode.AirDateUtc.HasValue &&
+                            episode.AirDateUtc.Value <= airsSoon)
+                        {
+                            episodeToUpdate.AirDateMovedToPast = true;
+                        }
                     }
                     else
                     {

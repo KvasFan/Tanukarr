@@ -44,7 +44,7 @@ namespace NzbDrone.Core.Tv
 
                 if (missing.Any())
                 {
-                    _logger.Info("Searching for {MissingCount} episodes from '{SeriesTitle}' that were recently added or had absolute episode number added", missing.Count, series.Title);
+                    _logger.Info("Searching for {MissingCount} episodes from '{SeriesTitle}' that were recently added, had absolute episode number added or had their air date moved to the recent past", missing.Count, series.Title);
                     _commandQueueManager.Push(new EpisodeSearchCommand(missing.Select(e => e.Id).ToList()));
                 }
             }
@@ -92,6 +92,21 @@ namespace NzbDrone.Core.Tv
                 }
 
                 toSearch.AddRange(absoluteEpisodeNumberAdded);
+
+                var airDateMovedToPast = message.Updated.Where(a =>
+                        a.AirDateMovedToPast &&
+                        a.AirDateUtc.HasValue &&
+                        a.AirDateUtc.Value.Between(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(1)) &&
+                        a.Monitored)
+                    .Select(e => e.Id)
+                    .ToList();
+
+                if (airDateMovedToPast.Empty())
+                {
+                    _logger.Debug("No updated episodes had their air date moved to the recent past");
+                }
+
+                toSearch.AddRange(airDateMovedToPast);
 
                 if (toSearch.Any())
                 {

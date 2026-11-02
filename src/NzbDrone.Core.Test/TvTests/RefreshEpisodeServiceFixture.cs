@@ -458,5 +458,55 @@ namespace NzbDrone.Core.Test.TvTests
             _insertedEpisodes.Should().HaveCount(1);
             _insertedEpisodes.Should().OnlyContain(e => e.Monitored == false);
         }
+
+        private void GivenExistingEpisodeAiring(DateTime? existingAirDateUtc, DateTime? remoteAirDateUtc)
+        {
+            var existing = Builder<Episode>.CreateNew()
+                                           .With(e => e.SeasonNumber = 1)
+                                           .With(e => e.EpisodeNumber = 1)
+                                           .With(e => e.AirDateUtc = existingAirDateUtc)
+                                           .Build();
+
+            var remote = existing.JsonClone();
+            remote.AirDateUtc = remoteAirDateUtc;
+            remote.AirDate = remoteAirDateUtc?.ToString("yyyy-MM-dd");
+
+            Mocker.GetMock<IEpisodeService>().Setup(c => c.GetEpisodeBySeries(It.IsAny<int>()))
+                .Returns(new List<Episode> { existing });
+
+            Subject.RefreshEpisodeInfo(Builder<Series>.CreateNew().Build(), new List<Episode> { remote });
+        }
+
+        [Test]
+        public void should_flag_air_date_moved_to_past_when_future_air_date_moves_to_past()
+        {
+            GivenExistingEpisodeAiring(DateTime.UtcNow.AddDays(7), DateTime.UtcNow.AddDays(-2));
+
+            _updatedEpisodes.Single().AirDateMovedToPast.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_flag_air_date_moved_to_past_when_unknown_air_date_becomes_past()
+        {
+            GivenExistingEpisodeAiring(null, DateTime.UtcNow.AddDays(-2));
+
+            _updatedEpisodes.Single().AirDateMovedToPast.Should().BeTrue();
+        }
+
+        [Test]
+        public void should_not_flag_air_date_moved_to_past_when_air_date_was_already_past()
+        {
+            GivenExistingEpisodeAiring(DateTime.UtcNow.AddDays(-3), DateTime.UtcNow.AddDays(-2));
+
+            _updatedEpisodes.Single().AirDateMovedToPast.Should().BeFalse();
+        }
+
+        [Test]
+        public void should_not_flag_air_date_moved_to_past_when_air_date_is_still_in_future()
+        {
+            GivenExistingEpisodeAiring(DateTime.UtcNow.AddDays(14), DateTime.UtcNow.AddDays(7));
+
+            _updatedEpisodes.Single().AirDateMovedToPast.Should().BeFalse();
+        }
     }
 }

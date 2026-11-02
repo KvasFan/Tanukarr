@@ -59,6 +59,7 @@ namespace NzbDrone.Core.Tv
 
         public bool HasFile => EpisodeFileId > 0;
         public bool AbsoluteEpisodeNumberAdded { get; set; }
+        public bool AirDateMovedToPast { get; set; }
 
         public override string ToString()
         {
