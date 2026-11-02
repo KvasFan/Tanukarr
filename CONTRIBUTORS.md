@@ -830,6 +830,20 @@ episode-file fix to the fork's episode summary and the pending-removal guard ont
 upstream's removal methods. It also declared the logged error in the
 restore-failure test.
 
+### Series ID in series URLs and duplicate title slugs
+
+- [3b21b27d2](https://github.com/Sonarr/Sonarr/commit/3b21b27d235b2b8c88c430bba59347e81f58de14): Mark McDowall. Use series ID in series URLs and allow duplicate title slugs.
+
+Local Claude assistant (Claude Opus 5.5 through Claude Code, explicit current
+environment identity) adapted it as migration 254 and extended the ID URLs to the
+fork's collection, season and library links. Slug-only URLs redirect to the ID URL
+and keep the requested season. The fork's grouped-series persistence test was
+moved to the remaining unique TVDB ID index. Upstream's 234326c2a (path updated
+after the move) and 967240dff (TMDb Import Lists) were reviewed and not imported:
+this fork already carries KakarottoCake's implementations of both. The fork's TMDb
+lists use the user's own TMDB read-access token instead of upstream's
+services.sonarr.tv token exchange.
+
 ## Reviewed source work not delivered
 
 Matt Flowers also authored the magnet metadata retrieval/redirect inspection
