@@ -264,9 +264,10 @@ A CI pass does not imply that every online or platform suite ran.
 
 ## Release and installation documentation
 
-The **0.1.3** release retains the original source authors.
-Use its [release notes](docs/releases/0.1.3.md) and
-[verification ledger](docs/releases/0.1.3-verification.md) for this build; the
+The **0.1.4** release retains the original source authors.
+Use its [release notes](docs/releases/0.1.4.md) and
+[verification ledger](docs/releases/0.1.4-verification.md) for this build; the
+0.1.3 [release notes](docs/releases/0.1.3.md), the
 0.1.2 [release notes](docs/releases/0.1.2.md), and the
 0.1.1 and 0.1.0 [release notes](docs/releases/0.1.1.md) and
 [verification ledgers](docs/releases/0.1.1-verification.md) keep those
