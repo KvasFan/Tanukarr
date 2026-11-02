@@ -124,7 +124,7 @@ namespace Sonarr.Api.V5.Queue
 
             foreach (var pendingRelease in pendingToRemove.DistinctBy(p => p.Id))
             {
-                Remove(pendingRelease, message, blocklistMethod.Value);
+                Remove(pendingRelease, message, blocklistMethod.Value, skipAlreadyRemoved: true);
             }
 
             foreach (var trackedDownload in trackedToRemove.DistinctBy(t => t.DownloadItem.DownloadId))
@@ -338,11 +338,18 @@ namespace Sonarr.Api.V5.Queue
             }
         }
 
-        private void Remove(NzbDrone.Core.Queue.Queue pendingRelease, string? message, QueueBlocklistMethod blocklistMethod)
+        private void Remove(NzbDrone.Core.Queue.Queue pendingRelease, string? message, QueueBlocklistMethod blocklistMethod, bool skipAlreadyRemoved = false)
         {
             if (blocklistMethod != QueueBlocklistMethod.DoNotBlocklist)
             {
                 _blocklistService.Block(pendingRelease.RemoteEpisode, message ?? "Pending release manually blocklisted", Request.GetSource());
+            }
+
+            // Bulk IDs were validated before any removals. An earlier group removal
+            // can delete this sibling; preserve its blocklisting without deleting twice.
+            if (skipAlreadyRemoved && _pendingReleaseService.FindPendingQueueItem(pendingRelease.Id) == null)
+            {
+                return;
             }
 
             _pendingReleaseService.RemovePendingQueueItems(pendingRelease.Id);
