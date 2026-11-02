@@ -1,19 +1,19 @@
-# Install Tanukarr 0.1.4 with Docker
+# Install Tanukarr 0.1.5 with Docker
 
-Tanukarr manages TV series, anime and movie collections. Version 0.1.4 keeps
-the inherited database schema and APIs. It retains 0.1.0's graphical account
+Tanukarr manages TV series, anime and movie collections. Version 0.1.5 keeps
+the inherited APIs and adds upstream migration 254. It retains 0.1.0's graphical account
 creation, collection/quality fixes and configurable metadata catalogues including
-TVmaze, 0.1.1's pending-release removal fixes for the v3/v5 queue APIs and
-0.1.2's move to `KvasFan/Tanukarr` and 0.1.3's library and Quality page fixes,
-and adds collection-season search, editable codec factors and quality-limit
-sliders. Read the
-[release notes](releases/0.1.4.md) and
-[verification ledger](releases/0.1.4-verification.md) for executed checks and
+TVmaze, 0.1.1's pending-release removal fixes for the v3/v5 queue APIs,
+0.1.2's move to `KvasFan/Tanukarr`, 0.1.3's library and Quality page fixes, and
+0.1.4's collection-season search, editable codec factors and quality-limit
+sliders. Version 0.1.5 addresses series pages by series ID and allows duplicate title slugs.
+Read the [release notes](releases/0.1.5.md) and
+[verification ledger](releases/0.1.5-verification.md) for executed checks and
 exact source/image identities; the 0.1.1 and 0.1.0 reports retain their own
 publication status and security findings under a namespace that is no longer
 reachable.
 
-The published release image is `ghcr.io/kvasfan/tanukarr:0.1.4`. The GitHub
+The published release image is `ghcr.io/kvasfan/tanukarr:0.1.5`. The GitHub
 repository contains source, while GHCR stores Docker images. Published support
 is Linux amd64; a configured build target is not a tested or published platform.
 Previous [1.1.0 publication evidence](releases/1.1.0-publication.md) describes
@@ -40,7 +40,7 @@ name: tanukarr
 
 services:
   tanukarr:
-    image: ghcr.io/kvasfan/tanukarr:0.1.4
+    image: ghcr.io/kvasfan/tanukarr:0.1.5
     container_name: tanukarr
     restart: unless-stopped
     security_opt:
@@ -187,7 +187,7 @@ Verify its filename and checksum before loading:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-docker load --input Tanukarr-0.1.4-linux-amd64-docker.tar.gz
+docker load --input Tanukarr-0.1.5-linux-amd64-docker.tar.gz
 docker compose up -d --pull never
 ```
 

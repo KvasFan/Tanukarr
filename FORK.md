@@ -1,6 +1,7 @@
 # What this fork changes
 
-Tanukarr **0.1.4** retains the inherited migrations and APIs.
+Tanukarr **0.1.5** retains the inherited migrations and APIs and adds upstream
+migration 254.
 It keeps 0.1.0's graphical first-run account
 creation, collection/quality fixes, enabled and ordered metadata catalogues,
 TVmaze and container hardening, 0.1.1's pending-release removal fixes for
@@ -8,8 +9,10 @@ the v3/v5 queue APIs and 0.1.2's move to `KvasFan/Tanukarr`, and fixes the
 library collection covers, collection-search progress and slow Quality page
 saves (0.1.3). 0.1.4 searches collection members by collection season, makes codec
 factors editable for all profiles, restores the quality-limit sliders and imports
-upstream and fork fixes. See the
-[0.1.4 release notes](docs/releases/0.1.4.md), [verification ledger](docs/releases/0.1.4-verification.md),
+upstream and fork fixes. 0.1.5 addresses series pages by series ID and allows
+duplicate title slugs, as upstream Sonarr does. See the
+[0.1.5 release notes](docs/releases/0.1.5.md), [verification ledger](docs/releases/0.1.5-verification.md),
+the [0.1.4 release notes](docs/releases/0.1.4.md), [verification ledger](docs/releases/0.1.4-verification.md),
 the [0.1.3 release notes](docs/releases/0.1.3.md), [verification ledger](docs/releases/0.1.3-verification.md),
 the [0.1.2 release notes](docs/releases/0.1.2.md),
 the [0.1.1 release notes](docs/releases/0.1.1.md) and the 0.1.0

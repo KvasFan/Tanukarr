@@ -4,7 +4,7 @@
   <img src="Logo/800.png" alt="Tanukarr Tanuki logo from the supplied Tanuki_Logo.zip" width="200" />
 </p>
 
-**Tanukarr 0.1.4** manages TV series, anime
+**Tanukarr 0.1.5** manages TV series, anime
 and movie collections in one Sonarr-derived application. It includes
 graphical account creation, collection and quality
 fixes, seven configurable metadata catalogues, native films and IMDb lookup.
@@ -16,13 +16,16 @@ the first release published from the `KvasFan/Tanukarr` repository and
 0.1.3 loads collection covers in the library grid, shows collection-search
 progress and makes Quality page saves fast on large libraries; 0.1.4 finds
 collection-numbered anime releases, makes codec factors editable, restores the
-quality-limit sliders and imports upstream and fork fixes.
+quality-limit sliders and imports upstream and fork fixes; 0.1.5 addresses
+series pages by series ID and allows duplicate title slugs.
 Links into the previous namespace, including those in historical reports,
 no longer resolve. The repository is also published at
 [gitlab.com/tirael8308/Tanukarr](https://gitlab.com/tirael8308/Tanukarr),
 which receives the same commits, tags and release assets.
 
-See the [0.1.4 release notes](docs/releases/0.1.4.md),
+See the [0.1.5 release notes](docs/releases/0.1.5.md) and
+[verification ledger](docs/releases/0.1.5-verification.md), the
+[0.1.4 release notes](docs/releases/0.1.4.md),
 [publication report](docs/releases/0.1.4-publication.md) and
 [verification ledger](docs/releases/0.1.4-verification.md), the
 [0.1.3 release notes](docs/releases/0.1.3.md),
@@ -285,12 +288,12 @@ the complete YAML and named-volume/bind-mount alternatives.
 ### Quick start
 
 ```bash
-docker pull ghcr.io/kvasfan/tanukarr:0.1.4
+docker pull ghcr.io/kvasfan/tanukarr:0.1.5
 docker run -d --name tanukarr \
   -p 127.0.0.1:6970:8989 \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -e UMASK=002 \
   -v tanukarr-config:/config -v /path/to/media:/media \
-  --restart unless-stopped ghcr.io/kvasfan/tanukarr:0.1.4
+  --restart unless-stopped ghcr.io/kvasfan/tanukarr:0.1.5
 ```
 
 Replace `/path/to/media` with your actual writable media/download parent and
@@ -350,6 +353,7 @@ and release notes for available tags, architectures and digests.
 
 | Tag | What you get |
 |---|---|
+| `0.1.5` | Series pages are addressed by series ID (`/series/<slug>/<id>`); old slug-only links redirect and keep the requested collection season. Two series may share a title slug (migration 254, schema 254; roll back only with a pre-upgrade backup). Adapted from upstream Sonarr; see the 0.1.5 release notes. |
 | `0.1.4` | Collection search finds collection-numbered anime releases ("Collection S02") and bare single-season batches; codec size factors are editable on the Quality page and apply to every profile; quality-limit sliders are back; Ignore download keeps the download in the client; further upstream, gaboy498-byte and ikatun fixes. v5 queue removal now takes `removalMethod`/`blocklistMethod`. See the 0.1.4 release notes. |
 | `0.1.3` | Library-screen fixes: collection covers load in the virtualized library grid, collection search shows progress, Quality page saves publish one profile-batch event (about 3 s instead of 17 s on a large library) and keep edits made during a save. The release tag runs the light gate profile on code that passed the full profile on `main`; see the 0.1.3 release notes. |
 | `0.1.2` | First release from `KvasFan/Tanukarr`: the 0.1.1 application with repository, package and logo links pointing at the new namespace, and a release workflow that tolerates a missing earlier image on main builds only. Executed checks are recorded in the 0.1.2 verification ledger. |
