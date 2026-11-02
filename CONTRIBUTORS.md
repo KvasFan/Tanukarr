@@ -803,6 +803,32 @@ under the upstream application section.
 Local adaptation: the November 2, 2026 commit "Search collection members by collection
 season and edit codec factors and limits on the Quality page".
 
+### November 2, 2026 imports from upstream Sonarr, gaboy498-byte and ikatun
+
+Upstream Sonarr fixes picked with their original authors (`git cherry-pick -x`):
+
+- [1f546e5e3](https://github.com/Sonarr/Sonarr/commit/1f546e5e3fb3b96042cfee9513ab455b8d0c5a21): Mark McDowall. Ignore download no longer removes it from the download client (v5 removal and blocklist methods).
+- 3abdde77e, 460022a72, 1da336d94: Ion Bazan. Expired cache entries, validated database restore, auto tags on full refresh.
+- bc7c87def, 94a76f1f1, 179ff2635, 7d09ae5d4: Bogdan. Authentication response cache, pushed releases with unknown indexer names, queue status count, bulk tag removal.
+- 2dc61580b, 7ccafd3a1, 90eab43f0, 7f6028bf9, 615764804, 2605a40a8, b949ab097, 8e25f1631, 43d500c02: Mark McDowall. Allowed-host wildcards, release profile deletion, custom format import and score saving, Manual Import release group, unmonitoring under unmonitored series, command body deserialization, long log message cleansing, episode file details from History/Queue.
+- 274039128, 4525a01dc: StevieTV. Average file size, iCal all-day events.
+- d9d5f5ed9: ljlongwing. Missing/cutoff lists after toggling monitored.
+- f1513a82e, 0bffefe7c: Christopher Plieger (cplieger). Missing episode file response, version header on API errors.
+
+Fork sources:
+
+- [92a00a545](https://github.com/gaboy498-byte/Sonarr-Pro/commit/92a00a545): gaboy498-byte. Limit renamed extras to successfully renamed episode files.
+- [7a4a8fd2d](https://github.com/gaboy498-byte/Sonarr-Pro/commit/7a4a8fd2d1c6ed7cb1dfbb6a1baaad6694dfa1d0): Matt Flowers. Bulk removal guard for overlapping pending releases (QueueController hunk only).
+- [d98500cfc](https://github.com/ikatun/Sonarr-Pro/commit/d98500cfcd9775af0db17484cb79d51e5343494e): Ivo Katunaric; declared co-author Claude. Search episodes whose air date moved into the recent past (`src/` only).
+- [b3a1036fd](https://github.com/ikatun/Sonarr-Pro/commit/b3a1036fd): Ivo Katunaric; declared Claude Code session. Complete-series search first for single-season series.
+
+Local Claude assistant (Claude Opus 5.5 through Claude Code, explicit current
+environment identity) resolved the conflicts against the fork. It kept the fork's
+broader `api_key` log rules and its log cleansing in every build. It ported the
+episode-file fix to the fork's episode summary and the pending-removal guard onto
+upstream's removal methods. It also declared the logged error in the
+restore-failure test.
+
 ## Reviewed source work not delivered
 
 Matt Flowers also authored the magnet metadata retrieval/redirect inspection
