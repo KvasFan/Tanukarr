@@ -203,6 +203,7 @@ hosted checks, public assets and image, with the original author credits intact.
 | October 18, 2026 eager library collection covers, collection-search progress feedback, single profile-batch event for quality-definition saves, in-flight Quality page edits kept, regression tests and English ledger | Claude Fable 5.1 (`claude-fable-5-1`) through Claude Code | Same explicit session identity; the inherited profile, pending-release and lazy-image code stays credited to upstream Sonarr and its original authors; executed evidence belongs to the October 18 ledger |
 | Tanukarr 0.1.3 release preparation: version, release notes, light gate profile for release tags and packaging profile record | Claude Opus 5.5 (`claude-opus-5-5`) through Claude Code | Explicit model selected in the session; application changes are those of the October 18 rows; executed evidence belongs to the 0.1.3 verification ledger and publication report |
 | October 18, 2026 hosted-fixture diagnosis: container-log capture, host-owned SQLite snapshot for fixture database inspection, PostgreSQL readiness query | Claude Fable 5.1 (`claude-fable-5-1`), then Claude Opus 5.5 (`claude-opus-5-5`) after an explicit model switch, through Claude Code | Both identities were selected explicitly in the session; the snapshot commit carries both trailers; executed evidence belongs to the October 18 ledger |
+| November 2, 2026 collection-season complete-series search, adapted ikatun bare-title single-season packs, editable codec factors and quality-definition sliders | Claude Opus 5.5 (`claude-opus-5-5`) through Claude Code | Explicit model selected in the session; the bare-pack rule stays credited to Ivo Katunaric (ikatun `45efd065f`) and the slider to upstream Sonarr |
 | Original Kakarotto README | Claude Opus 5 | Original README declaration, preserved as attribution |
 | Preserved Kakarotto source commits | Claude Opus 4.8 (22 trailers), Claude (4 trailers) | Exact Co-Authored-By names; the generic label has no exact model |
 | Ikatun final five feature commits | Claude Opus 5.5 | Exact source Co-Authored-By name alongside Ivo Katunaric |
@@ -782,6 +783,25 @@ and the Quality page keeps edits made while a save is in flight.
 
 Local adaptation: the October 18, 2026 commit referenced by the
 [October 18 ledger](docs/local-deployment-verification-2026-10-18.md).
+
+### Bare-title single-season packs, collection-season search, codec factors and quality sliders on the Quality page
+
+Ivo Katunaric (ikatun); the source commit declares a Claude Code session
+(`Claude-Session` trailer) without encoding a model.
+
+- [45efd065f](https://github.com/ikatun/Sonarr-Pro/commit/45efd065f3e631c3039ffaf11ef4e640ba8ee2d1): Ivo Katunaric; declared Claude Code session. Accept bare-title packs in complete-series search for single-season series.
+
+Local Claude assistant (Claude Opus 5.5 through Claude Code, explicit current
+environment identity) adapted it to the fork's anime absolute-range parsing and
+added dual/multi-audio as bare-pack tokens. It also added the collection title and
+collection season numbers to complete-series searches of collection members, and
+accepted the year-dash-season form. On the Quality page it made the codec factors
+editable for all profiles and added range sliders to the quality definitions. The
+sliders follow the profile editor's slider, which is upstream Sonarr code credited
+under the upstream application section.
+
+Local adaptation: the November 2, 2026 commit "Search collection members by collection
+season and edit codec factors and limits on the Quality page".
 
 ## Reviewed source work not delivered
 

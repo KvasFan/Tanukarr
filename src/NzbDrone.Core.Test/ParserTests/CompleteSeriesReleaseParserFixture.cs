@@ -157,6 +157,56 @@ namespace NzbDrone.Core.Test.ParserTests
             CompleteSeriesReleaseParser.Parse("No Reservations S01", _criteria).Should().NotBeNull();
         }
 
+        private void GivenSingleSeasonSeries()
+        {
+            _criteria.Series.Seasons = new List<Season> { new Season { SeasonNumber = 0 }, new Season { SeasonNumber = 1 } };
+            _criteria.Episodes = Enumerable.Range(1, 23).Select(e => new Episode { SeasonNumber = 1, EpisodeNumber = e }).ToList();
+        }
+
+        [TestCase("No Reservations (BD 1080p HEVC x265 10-bit FLAC)")]
+        [TestCase("No Reservations BD 1080p Hi10p FLAC5 1 x264x [Dual-Audio]")]
+        [TestCase("No.Reservations.1080p.BluRay.x265-GROUP")]
+        [TestCase("[Group] No Reservations [BD 1080p]")]
+        public void accepts_bare_title_pack_for_single_season_series(string title)
+        {
+            GivenSingleSeasonSeries();
+
+            var parsed = CompleteSeriesReleaseParser.Parse(title, _criteria);
+            parsed.Should().NotBeNull();
+            parsed.SeasonNumbers.Should().Equal(1);
+            parsed.FullSeason.Should().BeTrue();
+        }
+
+        [TestCase("No Reservations The Movie 1080p")]
+        [TestCase("No Reservations Again 1080p BluRay")]
+        [TestCase("No Reservations S01E01 1080p")]
+        [TestCase("No Reservations Episode 3 1080p")]
+        [TestCase("No Reservations S02 1080p")]
+        [TestCase("No Reservations (2007) 1080p")]
+        [TestCase("No Reservations")]
+        public void rejects_non_pack_titles_for_single_season_series(string title)
+        {
+            GivenSingleSeasonSeries();
+
+            CompleteSeriesReleaseParser.Parse(title, _criteria).Should().BeNull();
+        }
+
+        [Test]
+        public void rejects_bare_title_pack_for_multi_season_series()
+        {
+            _criteria.Series.Seasons = Enumerable.Range(1, 9).Select(s => new Season { SeasonNumber = s }).ToList();
+
+            CompleteSeriesReleaseParser.Parse("No Reservations BD 1080p x265", _criteria).Should().BeNull();
+        }
+
+        [Test]
+        public void rejects_bare_title_pack_when_seasons_unknown()
+        {
+            _criteria.Episodes = _criteria.Episodes.Take(1).ToList();
+
+            CompleteSeriesReleaseParser.Parse("No Reservations BD 1080p x265", _criteria).Should().BeNull();
+        }
+
         [TestCase("[Group] No Reservations - 01-26 [1080p]", true)]
         [TestCase("[Group] No Reservations - 01-12 [1080p]", false)]
         [TestCase("[Group] No Reservations COMPLETE 01-26 [1080p]", true)]
@@ -181,6 +231,108 @@ namespace NzbDrone.Core.Test.ParserTests
             var parsed = CompleteSeriesReleaseParser.Parse("No Reservations COMPLETE 1080p WEB-DL x265-GROUP", _criteria);
             parsed.Quality.Quality.Name.Should().Be("WEBDL-1080p");
             parsed.ReleaseGroup.Should().Be("GROUP");
+        }
+
+        private void GivenCollectionSecondSeason(bool interactive = true)
+        {
+            var series = new Series
+            {
+                Id = 564,
+                Title = "Assassination Classroom Second Season",
+                Year = 2016,
+                SeriesType = SeriesTypes.Anime,
+                Seasons = new List<Season> { new Season { SeasonNumber = 1 } },
+                AnimeGroupingMode = AnimeGroupingMode.Automatic,
+                AnimeGroupMemberKind = AnimeGroupMemberKind.Season,
+                AnimeGroupTitle = "Assassination Classroom",
+                AnimeGroupSeasonNumber = 2
+            };
+
+            _criteria = new CompleteSeriesSearchCriteria
+            {
+                Series = series,
+                SceneTitles = new List<string> { series.Title, "Ansatsu Kyoushitsu 2nd Season" },
+                Episodes = Enumerable.Range(1, 25).Select(e => new Episode { SeasonNumber = 1, EpisodeNumber = e, AbsoluteEpisodeNumber = e }).ToList(),
+                IncludeSeasonPacks = interactive
+            };
+            _criteria.UseCollectionNumbering();
+        }
+
+        [Test]
+        public void maps_collection_season_numbers_to_the_member()
+        {
+            GivenCollectionSecondSeason();
+
+            _criteria.CollectionTitle.Should().Be("Assassination Classroom");
+            _criteria.CollectionSeasons.Should().Equal(new Dictionary<int, int> { { 2, 1 } });
+            _criteria.CollectionQueryTitles.Should().Equal("Assassination Classroom S02");
+        }
+
+        [TestCase("Assassination Classroom S02 MULTi (VOSTFR-FRENCH) 1080p x265 10bit [Apoca]")]
+        [TestCase("[hchcsen] Assassination Classroom (2015) - Season 2 (S02) (BD 1080p HEVC x265 Opus 2.0) [Dual-Audio] | Ansatsu Kyoushitsu")]
+        public void accepts_collection_title_with_the_member_collection_season(string title)
+        {
+            GivenCollectionSecondSeason();
+
+            var parsed = CompleteSeriesReleaseParser.Parse(title, _criteria);
+            parsed.Should().NotBeNull();
+            parsed.SeasonNumbers.Should().Equal(1);
+            parsed.FullSeason.Should().BeTrue();
+            parsed.IsCompleteSeries.Should().BeTrue();
+            parsed.SeriesTitle.Should().Be("Assassination Classroom Second Season");
+            parsed.ReleaseTitle.Should().Be(title);
+        }
+
+        [Test]
+        public void accepts_bare_dual_audio_batch_for_single_season_member()
+        {
+            GivenCollectionSecondSeason();
+
+            var parsed = CompleteSeriesReleaseParser.Parse("[Exiled-Destiny] Assassination Classroom Second Season [Dual Audio]", _criteria);
+            parsed.Should().NotBeNull();
+            parsed.SeasonNumbers.Should().Equal(1);
+        }
+
+        [TestCase("Assassination Classroom S01 MULTi (VOSTFR-FRENCH) 1080p x265 10bit [Apoca]")]
+        [TestCase("[Sokudo] Assassination Classroom S01+S02+OVA [1080p BD AV1][dual audio]")]
+        [TestCase("[Exiled-Destiny] Assassination Classroom v2 [Dual Audio]")]
+        [TestCase("Assassination Classroom Complete Series 1080p")]
+        [TestCase("[Group] Assassination Classroom - 23-47 [1080p]")]
+        [TestCase("[hchcsen] Assassination Classroom (2015) - S00E02 - Episode 0 (BD 1080p HEVC x265 Opus 2.0)")]
+        [TestCase("Assassination Classroom (2020) S02 1080p")]
+        public void rejects_collection_titles_for_other_members_or_whole_collection(string title)
+        {
+            GivenCollectionSecondSeason();
+
+            CompleteSeriesReleaseParser.Parse(title, _criteria).Should().BeNull();
+        }
+
+        [Test]
+        public void ignores_collection_numbering_when_grouping_is_disabled()
+        {
+            GivenCollectionSecondSeason();
+            _criteria.Series.AnimeGroupingMode = AnimeGroupingMode.Disabled;
+            _criteria.CollectionTitle = null;
+            _criteria.CollectionSeasons = new Dictionary<int, int>();
+            _criteria.UseCollectionNumbering();
+
+            _criteria.CollectionQueryTitles.Should().BeEmpty();
+            CompleteSeriesReleaseParser.Parse("Assassination Classroom S02 1080p", _criteria).Should().BeNull();
+        }
+
+        [Test]
+        public void first_member_titled_like_the_collection_rejects_the_second_collection_season()
+        {
+            GivenCollectionSecondSeason();
+            _criteria.Series.Title = "Assassination Classroom";
+            _criteria.Series.Year = 2015;
+            _criteria.Series.AnimeGroupSeasonNumber = 1;
+            _criteria.SceneTitles = new List<string> { "Assassination Classroom" };
+            _criteria.UseCollectionNumbering();
+
+            CompleteSeriesReleaseParser.Parse("Assassination Classroom S02 MULTi 1080p x265", _criteria).Should().BeNull();
+            CompleteSeriesReleaseParser.Parse("[Exiled-Destiny] Assassination Classroom Second Season [Dual Audio]", _criteria).Should().BeNull();
+            CompleteSeriesReleaseParser.Parse("Assassination Classroom S01 MULTi 1080p x265", _criteria).SeasonNumbers.Should().Equal(1);
         }
     }
 }

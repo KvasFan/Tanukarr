@@ -24,6 +24,7 @@ namespace NzbDrone.Core.Profiles.Qualities
         bool Exists(int id);
         QualityProfile GetDefaultProfile(string name, Quality cutoff = null, params Quality[] allowed);
         void UpdateAllSizeLimits(params QualityProfileSizeLimit[] sizeLimits);
+        void UpdateAllCodecMultipliers(IDictionary<string, decimal> multipliers);
     }
 
     public class QualityProfileService : IQualityProfileService,
@@ -393,6 +394,37 @@ namespace NzbDrone.Core.Profiles.Qualities
             // One event for the batch: pending releases are re-mapped per event, which
             // costs seconds on a large library and would otherwise repeat per profile.
             _eventAggregator.PublishEvent(new QualityProfilesUpdatedEvent(all.Select(profile => profile.Id).ToList()));
+        }
+
+        public void UpdateAllCodecMultipliers(IDictionary<string, decimal> multipliers)
+        {
+            var requested = new CodecMultiplierOverrides(multipliers ?? new Dictionary<string, decimal>());
+            if (!CodecSizeNormalizer.ValidOverrides(requested))
+            {
+                throw new ValidationException(new[] { new ValidationFailure("codecMultipliers", "Codec factors must use supported family names and values from 0.01 to 10.") });
+            }
+
+            if (requested.Count == 0)
+            {
+                return;
+            }
+
+            lock (QualityDefinitionService.CatalogueLock)
+            {
+                // Only the edited families change; every other profile factor keeps its value.
+                var all = All();
+                foreach (var profile in all)
+                {
+                    profile.CodecMultipliers ??= new CodecMultiplierOverrides();
+                    foreach (var pair in requested)
+                    {
+                        profile.CodecMultipliers[pair.Key] = pair.Value;
+                    }
+                }
+
+                _qualityProfileRepository.UpdateMany(all);
+                _eventAggregator.PublishEvent(new QualityProfilesUpdatedEvent(all.Select(profile => profile.Id).ToList()));
+            }
         }
 
         private static void ValidateSize(double? size, string field, string prefix, List<ValidationFailure> errors)

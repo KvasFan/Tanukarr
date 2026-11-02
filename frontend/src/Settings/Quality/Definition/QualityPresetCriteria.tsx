@@ -27,6 +27,18 @@ export const CODEC_FAMILIES = [
   'Unknown',
 ];
 
+export const CODEC_LABELS: Record<string, string> = {
+  MPEG1: 'MPEG-1',
+  MPEG2: 'MPEG-2 / H.262 / x262',
+  MPEG4ASP: 'MPEG-4 ASP / XviD / DivX',
+  H263: 'H.263',
+  H264: 'H.264 / AVC / x264',
+  HEVC: 'H.265 / HEVC / x265',
+  VVC: 'H.266 / VVC / x266',
+  VC1: 'VC-1',
+  Unknown: 'Unknown / mixed / lossless',
+};
+
 interface QualityPresetCriteriaProps {
   definition: Pick<
     QualityDefinitionModel,

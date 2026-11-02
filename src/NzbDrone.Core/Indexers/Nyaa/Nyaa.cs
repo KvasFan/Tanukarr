@@ -54,6 +54,9 @@ namespace NzbDrone.Core.Indexers.Nyaa
                     .Where(s => !singleSeasons.Contains(s)).Select(s => $"{title} S{s:00}"));
             }
 
+            // Collection members are often released only under the collection title.
+            supplemental.AddRange(criteria.CollectionQueryTitles);
+
             supplemental = supplemental.Except(criteria.QueryTitles, StringComparer.OrdinalIgnoreCase).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             if (supplemental.Count > 0)
             {

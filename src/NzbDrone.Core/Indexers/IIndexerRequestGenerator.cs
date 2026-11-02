@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using NzbDrone.Core.IndexerSearch.Definitions;
 
 namespace NzbDrone.Core.Indexers
@@ -13,7 +15,8 @@ namespace NzbDrone.Core.Indexers
                 Series = searchCriteria.Series,
                 SceneTitles = searchCriteria.SceneTitles,
                 Episodes = searchCriteria.Episodes,
-                EpisodeQueryTitles = searchCriteria.QueryTitles,
+                EpisodeQueryTitles = searchCriteria.QueryTitles.Concat(searchCriteria.CollectionQueryTitles)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
                 InteractiveSearch = searchCriteria.InteractiveSearch,
                 UserInvokedSearch = searchCriteria.UserInvokedSearch,
                 MonitoredEpisodesOnly = searchCriteria.MonitoredEpisodesOnly

@@ -85,6 +85,36 @@ namespace Sonarr.Api.V3.Qualities
             return new JsonResult(CodecSizeNormalizer.DefaultMultipliers, new JsonSerializerOptions { DictionaryKeyPolicy = null });
         }
 
+        [HttpGet("codecfactors")]
+        public List<QualityCodecFactorResource> GetCodecFactors()
+        {
+            var profiles = _qualityProfileService.All();
+            return CodecSizeNormalizer.DefaultMultipliers.Select(pair =>
+            {
+                var factors = profiles.Select(profile => profile.CodecMultipliers?.GetValueOrDefault(pair.Key, pair.Value) ?? pair.Value)
+                    .Distinct()
+                    .ToList();
+                var isMixed = factors.Count > 1;
+
+                return new QualityCodecFactorResource
+                {
+                    Codec = pair.Key,
+                    Factor = isMixed ? null : factors.DefaultIfEmpty(pair.Value).First(),
+                    IsMixed = isMixed,
+                    DefaultFactor = pair.Value
+                };
+            }).ToList();
+        }
+
+        [HttpPut("codecfactors")]
+        [Consumes("application/json")]
+        public List<QualityCodecFactorResource> UpdateCodecFactors([FromBody] Dictionary<string, decimal> factors)
+        {
+            _qualityProfileService.UpdateAllCodecMultipliers(factors);
+
+            return GetCodecFactors();
+        }
+
         [RestPostById]
         public ActionResult<QualityDefinitionResource> Create([FromBody] QualityDefinitionResource resource)
         {

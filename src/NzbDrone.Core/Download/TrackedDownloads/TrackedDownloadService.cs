@@ -327,12 +327,14 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                     episodes.Where(e => e.SceneSeasonNumber.HasValue).Select(e => e.SceneSeasonNumber.Value).Distinct().ToList()));
             }
 
-            var parsed = CompleteSeriesReleaseParser.Parse(grabs[0].SourceTitle, new CompleteSeriesSearchCriteria
+            var criteria = new CompleteSeriesSearchCriteria
             {
                 Series = series,
                 SceneTitles = titles.Where(t => t.IsNotNullOrWhiteSpace()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
                 Episodes = episodes
-            });
+            };
+            criteria.UseCollectionNumbering();
+            var parsed = CompleteSeriesReleaseParser.Parse(grabs[0].SourceTitle, criteria);
 
             if (parsed != null)
             {

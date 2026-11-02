@@ -43,8 +43,13 @@
   & td {
     padding: 8px 12px;
     border-bottom: 1px solid var(--hairline);
+    vertical-align: middle;
     text-align: left;
   }
+}
+
+.codecInput {
+  max-width: 120px;
 }
 
 @media (--breakpointSmall) {

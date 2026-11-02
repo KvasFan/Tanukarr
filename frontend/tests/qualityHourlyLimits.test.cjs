@@ -69,7 +69,16 @@ function inputNode(renderer, name) {
   return renderer.root.findAllByType('input').find((input) => input.props.name === name);
 }
 
-function fixture({ mixed = false, failedSave = false, deferredSave = false, codecError = false, codecs = { 'MPEG-2': 0.5, 'H.264': 1, HEVC: 1.67, AV1: 2.22, Other: 1 }, extraMocks = {} } = {}) {
+function codecRequests(item) {
+  return item.requests.filter((request) => request.path === '/qualitydefinition/codecfactors').map((request) => request.body);
+}
+
+function codecFactors(factors, mixed = []) {
+  return Object.entries(factors).map(([codec, factor]) => ({ codec, factor: mixed.includes(codec) ? null : factor,
+    isMixed: mixed.includes(codec), defaultFactor: factor }));
+}
+
+function fixture({ mixed = false, failedSave = false, deferredSave = false, codecError = false, codecs = codecFactors({ MPEG2: 0.5, H264: 1, HEVC: 1.67, AV1: 2.22, Unknown: 1 }), extraMocks = {} } = {}) {
   const requests = [];
   const invalidations = [];
   let saved = null;
@@ -95,10 +104,14 @@ function fixture({ mixed = false, failedSave = false, deferredSave = false, code
     'Components/Form/FormInputHelpText': ({ text: help }) => React.createElement('p', null, help),
     'Components/Tooltip/Popover': ({ anchor, body }) => React.createElement('div', null, anchor, body),
     'react-slider': (props) => React.createElement('div', { 'data-slider': true, 'data-values': props.value, 'data-max': props.max, onChange: props.onChange }),
-    'Helpers/Hooks/useApiQuery': ({ path: queryPath }) => ({ data: queryPath.endsWith('/codecs') ? codecs : (saved ?? originals),
-      isFetched: true, isFetching: false, error: queryPath.endsWith('/codecs') && codecError ? new Error('Private codec response') : null }),
-    'Helpers/Hooks/useApiMutation': () => ({ mutate() {
-      return undefined;
+    'Helpers/Hooks/useApiQuery': ({ path: queryPath }) => {
+      const isCodec = queryPath.endsWith('/codecfactors');
+      return { data: isCodec ? (codecError ? undefined : codecs) : (saved ?? originals),
+        isFetched: true, isFetching: false, error: isCodec && codecError ? new Error('Private codec response') : null };
+    },
+    'Helpers/Hooks/useApiMutation': ({ path: requestPath, mutationOptions }) => ({ mutate(body) {
+      requests.push({ path: requestPath, body: structuredClone(body) });
+      mutationOptions?.onSuccess?.(codecs);
     }, isPending: false, error: null }),
     'Settings/useSettings': { useSaveSettings: function useSaveSettings(requestPath, onSuccess) {
       const [saveError, setSaveError] = React.useState(null);
@@ -241,7 +254,7 @@ for (const grouped of [false, true]) {
 
 test('actual quality rows show all stored limits as editable one-hour values and corresponding GiB', () => {
   const item = fixture();
-  assert.equal(item.renderer.root.findAllByType('input').filter((input) => input.props.type === 'number').length, 6);
+  assert.equal(item.renderer.root.findAllByType('input').filter((input) => input.props.type === 'number' && !input.props.name.startsWith('codecFactor.')).length, 6);
   assert.equal(item.input('2.minSize').props.value, '60');
   assert.equal(item.input('2.preferredSize').props.value, '5700');
   assert.equal(item.input('2.maxSize').props.value, '11994');
@@ -528,14 +541,54 @@ test('failed Save keeps edited values and renders a safe error without a private
   item.close();
 });
 
-test('codec examples use backend-provided policy factors rather than fixed client values and remain read-only', () => {
-  const item = fixture({ codecs: { 'MPEG-2': 0.5, 'H.264': 1, HEVC: 1.91, AV1: 2.22, Other: 1 } });
+test('codec examples use backend-provided policy factors rather than fixed client values', () => {
+  const item = fixture({ codecs: codecFactors({ MPEG2: 0.5, H264: 1, HEVC: 1.91, AV1: 2.22, Unknown: 1 }) });
   const rows = item.renderer.root.findByType('tbody').findAllByType('tr');
   assert.equal(rows.length, 5);
   assert.match(text(item.renderer), /1\.91.*GiB/);
   assert.match(text(item.renderer), /2\.22.*GiB/);
-  assert.equal(item.renderer.root.findAllByType('input').filter((input) => input.props.type === 'number').length, 6);
+  assert.equal(item.input('codecFactor.HEVC').props.value, '1.91');
   assert.deepEqual(item.requests, []);
+  item.close();
+});
+
+test('saving an edited codec factor sends only that codec family', () => {
+  const item = fixture();
+  item.edit('codecFactor.HEVC', '1.8');
+  item.save();
+  assert.deepEqual(codecRequests(item), [{ HEVC: 1.8 }]);
+  item.close();
+});
+
+test('typing a codec factor back to its saved value leaves nothing to save', () => {
+  const item = fixture();
+  item.edit('codecFactor.HEVC', '1.8');
+  item.edit('codecFactor.HEVC', '1.67');
+  item.save();
+  assert.deepEqual(codecRequests(item), []);
+  item.close();
+});
+
+test('a codec factor that differs between profiles is shown as mixed and only sent when edited', () => {
+  const item = fixture({ codecs: codecFactors({ H264: 1, HEVC: 1.67 }, ['HEVC']) });
+  assert.equal(item.input('codecFactor.HEVC').props.placeholder, 'Mixed');
+  item.edit('codecFactor.H264', '1.1');
+  item.save();
+  assert.deepEqual(codecRequests(item), [{ H264: 1.1 }]);
+  item.close();
+});
+
+test('dragging one quality-definition slider thumb edits only that limit', () => {
+  const item = fixture({ mixed: true });
+  const slider = item.renderer.root.findAllByProps({ 'data-slider': true })[0];
+  const [minimum, preferred, maximum] = slider.props['data-values'];
+  TestRenderer.act(() => slider.props.onChange([minimum, preferred, maximum - 10]));
+  item.save();
+  const [request] = item.requests[0].body;
+  assert.equal(request.id, 2);
+  assert.ok(request.maxSize > 0 && request.maxSize < 199.9);
+  assert.equal(Object.prototype.hasOwnProperty.call(request, 'minSize'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(request, 'preferredSize'), false);
   item.close();
 });
 

@@ -12,7 +12,8 @@ namespace NzbDrone.Core.Indexers.Nyaa
 
         public virtual IndexerPageableRequestChain GetSearchRequests(CompleteSeriesSearchCriteria searchCriteria)
         {
-            return GetTitleRequests(searchCriteria.QueryTitles.Concat(searchCriteria.PackQueryTitles).Concat(searchCriteria.SeasonPackQueryTitles));
+            return GetTitleRequests(searchCriteria.QueryTitles.Concat(searchCriteria.PackQueryTitles).Concat(searchCriteria.SeasonPackQueryTitles)
+                .Concat(searchCriteria.CollectionQueryTitles));
         }
 
         public IndexerPageableRequestChain GetTitleRequests(IEnumerable<string> titles)

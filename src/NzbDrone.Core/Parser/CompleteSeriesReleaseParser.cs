@@ -12,6 +12,7 @@ namespace NzbDrone.Core.Parser
         private static readonly Regex SeasonRange = new Regex(@"\b(?:s|seasons?|series)\s*(?<first>\d{1,3})\s*(?:-|–|—|to)\s*(?:s|seasons?|series)?\s*(?<last>\d{1,3})(?![a-z0-9])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Season = new Regex(@"\b(?:s|seasons?|series)\s*(?<season>\d{1,3})(?![a-z0-9])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Complete = new Regex(@"^(?:the\s+)?(?:complete(?:\s+(?:series|collection))?|(?:entire|full)\s+series|all\s+seasons|box\s*set)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex BareQuality = new Regex(@"^(?:bd|bdrip|blu-?ray|brrip|bdremux|remux|web(?:-?dl|-?rip)?|hdtv|dvd(?:rip)?|\d{3,4}p|x26[45]|h\s?26[45]|hevc|avc|hi10p?|10-?bit|dual[\s-]?audio|multi[\s-]?audio)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Episode = new Regex(@"\bs\d+\s*e\d+|\b\d+x\d+\b|\b(?:episodes?|parts?|volumes?|cours?)(?=\b|\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AbsoluteRange = new Regex(@"^\s*(?<first>\d{1,4})\s*(?:-|~|\u2013|\u2014|to)\s*(?<last>\d{1,4})(?![\p{L}\p{N}])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -42,6 +43,21 @@ namespace NzbDrone.Core.Parser
                 }
             }
 
+            // A collection member is also released under the collection title with the
+            // collection's season number ("Collection S02" for its second entry).
+            var viaCollection = false;
+            if (suffix == null && criteria.CollectionTitle.IsNotNullOrWhiteSpace() && criteria.CollectionSeasons.Count > 0)
+            {
+                var words = SearchCriteriaBase.GetCleanSceneTitle(criteria.CollectionTitle).Split('+');
+                var pattern = @"^(?:the[\W_]+)?" + string.Join(@"[\W_]+", words.Select(Regex.Escape)) + @"(?=$|[\W_])(?<suffix>.*)$";
+                var match = Regex.Match(cleaned, pattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    suffix = match.Groups["suffix"].Value;
+                    viaCollection = true;
+                }
+            }
+
             if (suffix == null)
             {
                 return null;
@@ -51,13 +67,21 @@ namespace NzbDrone.Core.Parser
             var year = Regex.Match(description, @"^(?<year>(?:19|20)\d{2})(?:\s+|$)");
             if (year.Success)
             {
-                if (criteria.Series.Year != int.Parse(year.Groups["year"].Value))
+                var releaseYear = int.Parse(year.Groups["year"].Value);
+
+                // A collection title carries the year its first entry aired.
+                if (viaCollection ? criteria.Series.Year > 0 && releaseYear > criteria.Series.Year : criteria.Series.Year != releaseYear)
                 {
                     return null;
                 }
 
-                matchedTitle += $" ({year.Groups["year"].Value})";
-                description = description.Substring(year.Length).Trim();
+                if (!viaCollection)
+                {
+                    matchedTitle += $" ({releaseYear})";
+                }
+
+                // "Title (2015) - Season 2" separates the year from the season with a dash.
+                description = description.Substring(year.Length).Trim(' ', '-');
             }
 
             if (Episode.IsMatch(description))
@@ -65,8 +89,18 @@ namespace NzbDrone.Core.Parser
                 return null;
             }
 
+            // Some trackers name a single-season show's only pack with nothing but the
+            // title and quality tokens. Accept that only when the library knows of exactly
+            // one regular season, so it cannot stand in for a multi-season run.
+            var bareSingleSeasonPack = !viaCollection && BareQuality.IsMatch(description) &&
+                !Regex.IsMatch(description, @"\b(?:seasons?|series|complete)\b|^\d+\s*-\s*\d+", RegexOptions.IgnoreCase) &&
+                !Season.IsMatch(description) &&
+                expectedSeasons.Length == 1 &&
+                criteria.Series.Seasons != null &&
+                criteria.Series.Seasons.Where(s => s.SeasonNumber > 0).Select(s => s.SeasonNumber).SequenceEqual(expectedSeasons);
+
             // A longer, different series title must not match a shorter alias prefix.
-            if (!Complete.IsMatch(description) && !Season.IsMatch(description.Split(' ')[0]) &&
+            if (!bareSingleSeasonPack && !Complete.IsMatch(description) && !Season.IsMatch(description.Split(' ')[0]) &&
                 !Regex.IsMatch(description, @"^(?:seasons?|series)\s+\d+", RegexOptions.IgnoreCase) &&
                 !(criteria.Series.SeriesType == SeriesTypes.Anime && AbsoluteRange.IsMatch(description)))
             {
@@ -78,6 +112,12 @@ namespace NzbDrone.Core.Parser
             var absoluteRange = criteria.Series.SeriesType == SeriesTypes.Anime ? AbsoluteRange.Match(absoluteDescription) : null;
             if (absoluteRange?.Success == true)
             {
+                // Absolute numbers under the collection title count the whole collection.
+                if (viaCollection)
+                {
+                    return null;
+                }
+
                 var first = int.Parse(absoluteRange.Groups["first"].Value);
                 var last = int.Parse(absoluteRange.Groups["last"].Value);
                 if (first <= 0 || last < first || criteria.Episodes.Any(e => !e.AbsoluteEpisodeNumber.HasValue ||
@@ -101,6 +141,19 @@ namespace NzbDrone.Core.Parser
                 seasons.UnionWith(Enumerable.Range(first, last - first + 1));
             }
 
+            if (viaCollection)
+            {
+                // Only an explicit collection season identifies this member; a bare or
+                // COMPLETE collection title covers other members too.
+                if (seasons.Count == 0 || seasons.Any(season => !criteria.CollectionSeasons.ContainsKey(season)))
+                {
+                    return null;
+                }
+
+                seasons = seasons.Select(season => criteria.CollectionSeasons[season]).ToHashSet();
+                matchedTitle = criteria.Series.Title;
+            }
+
             // Explicit season coverage takes precedence over a misleading COMPLETE label.
             var coveredSeasons = expectedSeasons;
             if (seasons.Count > 0)
@@ -117,7 +170,7 @@ namespace NzbDrone.Core.Parser
             {
                 // Absolute coverage was verified above, including ranges following COMPLETE.
             }
-            else if (!Complete.IsMatch(description) || Regex.IsMatch(description, @"\bseason\b", RegexOptions.IgnoreCase))
+            else if (!bareSingleSeasonPack && (!Complete.IsMatch(description) || Regex.IsMatch(description, @"\bseason\b", RegexOptions.IgnoreCase)))
             {
                 return null;
             }

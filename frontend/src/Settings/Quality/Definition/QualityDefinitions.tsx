@@ -16,7 +16,10 @@ import translate from 'Utilities/String/translate';
 import QualityCodecSizeFactors from './QualityCodecSizeFactors';
 import QualityDefinition from './QualityDefinition';
 import QualityPresetEditor from './QualityPresetEditor';
-import { useManageQualityDefinitions } from './useQualityDefinitions';
+import {
+  useManageCodecFactors,
+  useManageQualityDefinitions,
+} from './useQualityDefinitions';
 import styles from './QualityDefinitions.module.css';
 
 interface QualityDefinitionsProps {
@@ -46,6 +49,8 @@ function QualityDefinitions({
     updateDefinition,
     saveQualityDefinitions,
   } = useManageQualityDefinitions();
+  const codecFactors = useManageCodecFactors();
+  const saveCodecFactors = codecFactors.save;
   const handleCopy = useCallback(
     (id: number) => setEditor({ copy: items.find((item) => item.id === id) }),
     [items]
@@ -64,15 +69,22 @@ function QualityDefinitions({
   useEffect(() => {
     setChildSave(() => {
       saveQualityDefinitions();
+      saveCodecFactors();
     });
-  }, [saveQualityDefinitions, setChildSave]);
+  }, [saveCodecFactors, saveQualityDefinitions, setChildSave]);
 
   useEffect(() => {
     onChildStateChange({
-      isSaving,
-      hasPendingChanges,
+      isSaving: isSaving || codecFactors.isSaving,
+      hasPendingChanges: hasPendingChanges || codecFactors.hasPendingChanges,
     });
-  }, [hasPendingChanges, isSaving, onChildStateChange]);
+  }, [
+    codecFactors.hasPendingChanges,
+    codecFactors.isSaving,
+    hasPendingChanges,
+    isSaving,
+    onChildStateChange,
+  ]);
 
   useEffect(() => {
     if (wasResettingQualityDefinitions && !isResettingQualityDefinitions) {
@@ -149,7 +161,12 @@ function QualityDefinitions({
             onClose={handleClose}
           />
         ) : null}
-        <QualityCodecSizeFactors />
+        <QualityCodecSizeFactors
+          items={codecFactors.items}
+          error={codecFactors.error}
+          saveError={codecFactors.saveError}
+          setFactor={codecFactors.setFactor}
+        />
       </PageSectionContent>
     </FieldSet>
   );

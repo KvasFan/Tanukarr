@@ -207,6 +207,32 @@ namespace NzbDrone.Core.Test.Profiles
             NoWrite();
         }
 
+        [Test]
+        public void should_apply_only_the_edited_codec_factor_to_every_profile()
+        {
+            _profiles[0].CodecMultipliers = new CodecMultiplierOverrides { { "HEVC", 1.5m }, { "AV1", 2m } };
+            _profiles[1].CodecMultipliers = null;
+
+            Subject.UpdateAllCodecMultipliers(new Dictionary<string, decimal> { { "hevc", 1.8m } });
+
+            _profiles.Should().OnlyContain(profile => profile.CodecMultipliers["HEVC"] == 1.8m);
+            _profiles[0].CodecMultipliers["AV1"].Should().Be(2m);
+            _profiles[1].CodecMultipliers.Should().NotContainKey("AV1");
+            Mocker.GetMock<IQualityProfileRepository>().Verify(repository => repository.UpdateMany(_profiles), Times.Once());
+            Mocker.GetMock<IEventAggregator>()
+                .Verify(aggregator => aggregator.PublishEvent(It.IsAny<QualityProfilesUpdatedEvent>()), Times.Once());
+        }
+
+        [TestCase("HEVC", 0)]
+        [TestCase("HEVC", 11)]
+        [TestCase("NotACodec", 1)]
+        public void should_reject_invalid_codec_factors_without_writing(string codec, decimal factor)
+        {
+            Assert.Throws<ValidationException>(() => Subject.UpdateAllCodecMultipliers(new Dictionary<string, decimal> { { codec, factor } }));
+
+            NoWrite();
+        }
+
         private void NoWrite()
         {
             Mocker.GetMock<IQualityProfileRepository>()

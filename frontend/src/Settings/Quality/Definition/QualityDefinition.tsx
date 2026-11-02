@@ -3,6 +3,7 @@ import TextInput from 'Components/Form/TextInput';
 import QualityDefinitionModel from 'Quality/QualityDefinitionModel';
 import translate from 'Utilities/String/translate';
 import QualityDefinitionSizeInput from './QualityDefinitionSizeInput';
+import QualityDefinitionSizeSlider from './QualityDefinitionSizeSlider';
 import QualityPresetActions from './QualityPresetActions';
 import QualityPresetCriteria from './QualityPresetCriteria';
 import { useManageQualityDefinitions } from './useQualityDefinitions';
@@ -63,6 +64,12 @@ function QualityDefinition({
     [id, updateDefinition]
   );
 
+  const handleSliderChange = useCallback(
+    (field: 'minSize' | 'preferredSize' | 'maxSize', value: number | null) =>
+      updateDefinition(id, field, value),
+    [id, updateDefinition]
+  );
+
   const sizes = [
     {
       field: 'minSize',
@@ -107,6 +114,13 @@ function QualityDefinition({
           onChange={handleSizeChange}
         />
       ))}
+      <QualityDefinitionSizeSlider
+        qualityName={quality.name}
+        minSize={minSizeIsMixed ? null : minSize}
+        preferredSize={preferredSizeIsMixed ? null : preferredSize}
+        maxSize={maxSizeIsMixed ? null : maxSize}
+        onChange={handleSliderChange}
+      />
       <div className={styles.details}>
         {isRetired ? <span>{translate('QualityPresetDeleted')}</span> : null}
         {onCopy ? (

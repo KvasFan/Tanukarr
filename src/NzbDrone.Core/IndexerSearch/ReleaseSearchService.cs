@@ -84,6 +84,7 @@ namespace NzbDrone.Core.IndexerSearch
 
             var criteria = Get<CompleteSeriesSearchCriteria>(series, episodes, !interactiveSearch, userInvokedSearch, interactiveSearch);
             criteria.IncludeSeasonPacks = interactiveSearch;
+            criteria.UseCollectionNumbering();
             criteria.SceneTitles = new[] { series.Title }.Concat(criteria.SceneTitles).Concat(series.AlternateTitles ?? new List<string>())
                 .Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 

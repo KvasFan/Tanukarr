@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import useApiMutation from 'Helpers/Hooks/useApiMutation';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import { usePendingItemsStore } from 'Helpers/Hooks/usePendingItemsStore';
@@ -16,8 +16,101 @@ const CRITERIA_FIELDS = [
   'titlePattern',
 ] as const;
 
-export const useQualityCodecMultipliers = () =>
-  useApiQuery<Record<string, number>>({ path: `${PATH}/codecs` });
+const CODEC_FACTORS_PATH = `${PATH}/codecfactors`;
+const DEFAULT_CODEC_FACTORS: QualityCodecFactor[] = [];
+
+export interface QualityCodecFactor {
+  codec: string;
+  // Null when quality profiles use different factors for this codec family.
+  factor: number | null;
+  isMixed: boolean;
+  defaultFactor: number;
+}
+
+export const useManageCodecFactors = () => {
+  const queryClient = useQueryClient();
+  const { data, error } = useApiQuery<QualityCodecFactor[]>({
+    path: CODEC_FACTORS_PATH,
+  });
+  const [pending, setPending] = useState<Record<string, number>>({});
+  const submitted = useRef<Record<string, number> | null>(null);
+
+  const {
+    mutate,
+    isPending: isSaving,
+    error: saveError,
+  } = useApiMutation<QualityCodecFactor[], Record<string, number>>({
+    path: CODEC_FACTORS_PATH,
+    method: 'PUT',
+    mutationOptions: {
+      onSuccess: (updated) => {
+        queryClient.setQueryData([CODEC_FACTORS_PATH], updated);
+        const sent = submitted.current;
+        submitted.current = null;
+        // A factor edited again while the request was in flight stays pending.
+        setPending((current) =>
+          Object.fromEntries(
+            Object.entries(current).filter(
+              ([codec, factor]) => sent?.[codec] !== factor
+            )
+          )
+        );
+        queryClient.invalidateQueries({ queryKey: ['/qualityprofile'] });
+      },
+    },
+  });
+
+  const items = useMemo(
+    () =>
+      (data ?? DEFAULT_CODEC_FACTORS).map((item) =>
+        Object.prototype.hasOwnProperty.call(pending, item.codec)
+          ? { ...item, factor: pending[item.codec], isMixed: false }
+          : item
+      ),
+    [data, pending]
+  );
+
+  const setFactor = useCallback(
+    (codec: string, factor: number | null) => {
+      const saved = data?.find((item) => item.codec === codec);
+
+      setPending((current) => {
+        const { [codec]: _removed, ...rest } = current;
+
+        // Clearing the field, or typing the saved value back, discards the edit.
+        if (
+          factor == null ||
+          !Number.isFinite(factor) ||
+          (saved && !saved.isMixed && saved.factor === factor)
+        ) {
+          return rest;
+        }
+
+        return { ...rest, [codec]: factor };
+      });
+    },
+    [data]
+  );
+
+  const save = useCallback(() => {
+    if (isSaving || !Object.keys(pending).length) {
+      return;
+    }
+
+    submitted.current = pending;
+    mutate(pending);
+  }, [isSaving, mutate, pending]);
+
+  return {
+    items,
+    error,
+    saveError,
+    isSaving,
+    hasPendingChanges: Object.keys(pending).length > 0,
+    setFactor,
+    save,
+  };
+};
 
 type QualityDefinitionUpdate = Pick<
   QualityDefinitionModel,
