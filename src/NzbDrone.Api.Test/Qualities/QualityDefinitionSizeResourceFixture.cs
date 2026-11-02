@@ -186,6 +186,36 @@ namespace NzbDrone.Api.Test.Qualities
         }
 
         [Test]
+        public void should_report_codec_factors_shared_by_every_profile_or_mixed_and_apply_edits_to_all_profiles()
+        {
+            var profiles = Mocker.GetMock<IQualityProfileService>().Object.All();
+            profiles[0].CodecMultipliers = new CodecMultiplierOverrides { { "HEVC", 1.5m }, { "AV1", 2m } };
+            profiles[1].CodecMultipliers = new CodecMultiplierOverrides { { "AV1", 2m } };
+            Mocker.GetMock<IQualityProfileService>().Setup(service => service.All()).Returns(profiles);
+
+            var factors = _useV3
+                ? Mocker.Resolve<V3Controller>().GetCodecFactors().Select(item => (item.Codec, item.Factor, item.IsMixed, item.DefaultFactor)).ToList()
+                : Mocker.Resolve<V5Controller>().GetCodecFactors().Value.Select(item => (item.Codec, item.Factor, item.IsMixed, item.DefaultFactor)).ToList();
+
+            factors.Select(item => item.Codec).Should().Equal(CodecSizeNormalizer.DefaultMultipliers.Keys);
+            factors.Single(item => item.Codec == "HEVC").Should().Be(("HEVC", (decimal?)null, true, 1.67m));
+            factors.Single(item => item.Codec == "AV1").Should().Be(("AV1", (decimal?)2m, false, 2.22m));
+            factors.Single(item => item.Codec == "H264").Should().Be(("H264", (decimal?)1m, false, 1m));
+
+            var edit = new Dictionary<string, decimal> { { "HEVC", 1.8m } };
+            if (_useV3)
+            {
+                Mocker.Resolve<V3Controller>().UpdateCodecFactors(edit);
+            }
+            else
+            {
+                Mocker.Resolve<V5Controller>().UpdateCodecFactors(edit);
+            }
+
+            Mocker.GetMock<IQualityProfileService>().Verify(service => service.UpdateAllCodecMultipliers(edit), Times.Once());
+        }
+
+        [Test]
         public void should_reject_minimum_above_finite_maximum_with_null_preferred_inside_nested_groups()
         {
             ValidateProfile(2, null, 1, true).Should().BeFalse();

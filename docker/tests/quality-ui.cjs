@@ -191,10 +191,37 @@ async function main(input) {
         assert.equal(catalog[name], factor);
         const row = page.getByRole('row').filter({ has: page.getByRole('cell', { name, exact: true }) });
         await row.waitFor({ state: 'visible' });
-        assert.deepEqual(await row.getByRole('cell').allTextContents(), [name, factor.toFixed(2), factor.toFixed(2) + ' GiB/h']);
+        // Factor (editable), default factor and the equivalent size of a 1 GiB hour.
+        assert.deepEqual(await row.getByRole('cell').allTextContents(), [name, '', factor.toFixed(2), factor.toFixed(2) + ' GiB/h']);
+        assert.equal(Number(await row.locator('input[type="number"]').inputValue()), factor);
       }
       assert.equal(Object.keys(catalog).length, 15);
       observations.codecCatalog = catalog;
+    });
+    await check('an edited codec factor is saved to every profile and can be restored from the same table', async () => {
+      const hevc = page.locator('input[name="codecFactor.HEVC"]');
+      const saveCodecs = async (value) => {
+        await hevc.fill(String(value));
+        const pending = page.waitForResponse((response) =>
+          /^\/api\/v[35]\/qualitydefinition\/codecfactors$/.test(new URL(response.url()).pathname)
+          && response.request().method() === 'PUT');
+        await globalSave().click();
+        const response = await pending;
+        assert.equal(response.status(), 200);
+        assert.deepEqual(response.request().postDataJSON(), { HEVC: value });
+        await noChanges().waitFor({ state: 'visible' });
+      };
+      await saveCodecs(1.8);
+      for (const profile of await profiles()) {
+        assert.equal(profile.codecMultipliers.HEVC, 1.8, 'Profile ' + profile.name + ' kept its previous HEVC factor');
+        assert.equal(profile.codecMultipliers.AV1, 2.22, 'An unedited codec factor changed');
+      }
+      const factors = await api('/api/v5/qualitydefinition/codecfactors');
+      assert.deepEqual(factors.find((item) => item.codec === 'HEVC'), { codec: 'HEVC', factor: 1.8, isMixed: false, defaultFactor: 1.67 });
+      await saveCodecs(1.67);
+      for (const profile of await profiles()) {
+        assert.equal(profile.codecMultipliers.HEVC, 1.67);
+      }
     });
     await check('global 120 MiB per hour saves as 2 MiB per minute in every profile without changing other fields', async () => {
       const before = await profiles();
