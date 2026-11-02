@@ -226,17 +226,32 @@ namespace NzbDrone.Core.Test.TvTests.SeriesServiceTests
         }
 
         [Test]
-        public void should_not_hide_an_unrelated_slug_unique_constraint()
+        public void should_not_hide_an_unrelated_unique_constraint()
+        {
+            // Title slugs are no longer unique (migration 254); the TVDB ID still is.
+            var first = Member(100, 1);
+            var second = Member(100, 2);
+            second.TitleSlug = "persistence-fixture-other";
+            second.Path = Path.Combine(TempFolder, "Member other");
+
+            Action add = () => Subject.AddSeries(new List<Series> { first, second }, true);
+
+            VerifyUniqueConstraint(add, nameof(Series.TvdbId));
+            AllStoredModels.Should().BeEmpty();
+            VerifyNoImported();
+        }
+
+        [Test]
+        public void should_store_members_that_share_a_title_slug()
         {
             var first = Member(100, 1);
             var second = Member(101, 2);
             second.TitleSlug = first.TitleSlug;
 
-            Action add = () => Subject.AddSeries(new List<Series> { first, second }, true);
+            Subject.AddSeries(new List<Series> { first, second }, true);
 
-            VerifyUniqueConstraint(add, nameof(Series.TitleSlug));
-            AllStoredModels.Should().BeEmpty();
-            VerifyNoImported();
+            AllStoredModels.Should().HaveCount(2);
+            AllStoredModels.Should().OnlyContain(series => series.TitleSlug == first.TitleSlug);
         }
 
         [Test]
