@@ -92,7 +92,11 @@ namespace NzbDrone.Core.IndexerSearch
                                 !initialCoverage.Contains(e.Id))
                     .Select(e => e.SeasonNumber).Distinct().Count();
 
-                if (incompleteSeasons > 1)
+                // A single-season show's season pack is also its complete-series pack, and some
+                // trackers only name it by title, so try the complete-series search for it too.
+                var singleSeasonSeries = series.Seasons.Count(s => s.SeasonNumber > 0) == 1;
+
+                if (incompleteSeasons > 1 || (incompleteSeasons == 1 && singleSeasonSeries))
                 {
                     try
                     {

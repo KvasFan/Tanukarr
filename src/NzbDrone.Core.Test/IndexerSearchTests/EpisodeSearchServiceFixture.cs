@@ -60,6 +60,23 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             return new Episode { Id = id, SeriesId = SeriesId, SeasonNumber = season, Monitored = true, AirDateUtc = DateTime.UtcNow.AddDays(-30) };
         }
 
+        [TestCase(1, new[] { "complete", "season 1" })]
+        [TestCase(2, new[] { "season 1" })]
+        public void should_try_complete_series_for_single_season_series(int regularSeasons, string[] expected)
+        {
+            // Ergo Proxy: one regular season, missing episodes, tracker pack named only by title.
+            _episodes = new List<Episode> { Episode(1, 1), Episode(2, 1) };
+            Mocker.GetMock<ISeriesService>().Setup(s => s.GetSeries(SeriesId)).Returns(new Series
+            {
+                Id = SeriesId,
+                Seasons = Enumerable.Range(0, regularSeasons + 1).Select(n => new Season { SeasonNumber = n, Monitored = true }).ToList()
+            });
+
+            Subject.Execute(new MissingEpisodeSearchCommand(SeriesId) { Monitored = true });
+
+            _searches.Should().Equal(expected);
+        }
+
         [Test]
         public void should_try_complete_series_first_then_regular_seasons_then_specials()
         {

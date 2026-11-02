@@ -105,6 +105,22 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             Mocker.GetMock<ISearchForReleases>().Verify(s => s.CompleteSeriesSearch(_series.Id, true, false), Times.Exactly(searches));
         }
 
+        [TestCase(1, 1)]
+        [TestCase(2, 0)]
+        public void complete_search_runs_for_single_season_series_with_missing_episodes(int regularSeasons, int searches)
+        {
+            _series.Seasons = Enumerable.Range(1, regularSeasons).Select(n => new Season { SeasonNumber = n, Monitored = true }).ToList();
+            var episodes = new List<Episode>
+            {
+                new Episode { Id = 1, SeasonNumber = 1, Monitored = true, AirDateUtc = DateTime.UtcNow.AddDays(-1) }
+            };
+            Mocker.GetMock<IEpisodeService>().Setup(s => s.GetEpisodeBySeries(_series.Id)).Returns(episodes);
+
+            Subject.Execute(new SeriesSearchCommand { SeriesId = _series.Id, Trigger = CommandTrigger.Manual });
+
+            Mocker.GetMock<ISearchForReleases>().Verify(s => s.CompleteSeriesSearch(_series.Id, true, false), Times.Exactly(searches));
+        }
+
         [Test]
         public void should_fall_back_when_complete_search_is_unavailable()
         {

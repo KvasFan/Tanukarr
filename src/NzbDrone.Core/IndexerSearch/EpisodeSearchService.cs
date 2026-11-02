@@ -23,6 +23,7 @@ namespace NzbDrone.Core.IndexerSearch
         private readonly IEpisodeService _episodeService;
         private readonly IEpisodeCutoffService _episodeCutoffService;
         private readonly IQueueService _queueService;
+        private readonly ISeriesService _seriesService;
         private readonly Logger _logger;
 
         public EpisodeSearchService(ISearchForReleases releaseSearchService,
@@ -30,6 +31,7 @@ namespace NzbDrone.Core.IndexerSearch
                                     IEpisodeService episodeService,
                                     IEpisodeCutoffService episodeCutoffService,
                                     IQueueService queueService,
+                                    ISeriesService seriesService,
                                     Logger logger)
         {
             _releaseSearchService = releaseSearchService;
@@ -37,7 +39,19 @@ namespace NzbDrone.Core.IndexerSearch
             _episodeService = episodeService;
             _episodeCutoffService = episodeCutoffService;
             _queueService = queueService;
+            _seriesService = seriesService;
             _logger = logger;
+        }
+
+        private bool IsSingleSeasonSeries(int seriesId, IEnumerable<Episode> missing)
+        {
+            if (!missing.Any(e => e.SeasonNumber > 0))
+            {
+                return false;
+            }
+
+            var series = _seriesService.GetSeries(seriesId);
+            return series?.Seasons != null && series.Seasons.Count(s => s.SeasonNumber > 0) == 1;
         }
 
         private async Task SearchForBulkEpisodes(List<Episode> episodes, bool monitoredOnly, bool userInvokedSearch, bool missingOnly = false)
@@ -48,14 +62,16 @@ namespace NzbDrone.Core.IndexerSearch
             var grabbedEpisodeIds = new HashSet<int>();
 
             // Missing searches try a complete-series pack first for every series missing more than one regular
-            // season (after adding a series, or "search all missing"), like SeriesSearchService; full multi-season
+            // season, or missing episodes of a single-season series (after adding a series, or "search all missing"),
+            // like SeriesSearchService; full multi-season
             // packs then outrank season packs and episodes, and the per-group refresh below drops every episode a
             // grabbed pack covers.
             if (missingOnly && monitoredOnly)
             {
                 foreach (var seriesEpisodes in episodes.GroupBy(e => e.SeriesId))
                 {
-                    if (seriesEpisodes.Where(e => e.SeasonNumber > 0).Select(e => e.SeasonNumber).Distinct().Count() < 2)
+                    if (seriesEpisodes.Where(e => e.SeasonNumber > 0).Select(e => e.SeasonNumber).Distinct().Count() < 2 &&
+                        !IsSingleSeasonSeries(seriesEpisodes.Key, seriesEpisodes))
                     {
                         continue;
                     }
