@@ -17,6 +17,7 @@ repeat past verification.
 | --- | --- |
 | [Tanukarr 0.1.5](releases/0.1.5.md) | Series pages addressed by series ID with redirects from slug-only links, duplicate title slugs allowed (migration 254) |
 | [0.1.5 verification](releases/0.1.5-verification.md) | Executed local and hosted checks for the 0.1.5 application code and release |
+| [0.1.5 publication](releases/0.1.5-publication.md) | Exact source/public digest on GitHub, light-profile tag run, assets, checks of the published image and the pending GitLab mirror |
 | [Tanukarr 0.1.4](releases/0.1.4.md) | Collection-season search for anime collections, bare single-season batches, editable codec factors, quality-limit sliders, and upstream/gaboy498-byte/ikatun fixes |
 | [0.1.4 verification](releases/0.1.4-verification.md) | Executed local and hosted checks for the 0.1.4 application code and release |
 | [0.1.4 publication](releases/0.1.4-publication.md) | Exact source/public digest on GitHub, light-profile tag run, assets, checks of the published image and the pending GitLab mirror |
